@@ -5,7 +5,8 @@ Plateforme de **mobilité interurbaine** (réservation, billetterie, partenaires
 
 Ce document sert de **mémoire projet** : vision, environnement, règles de qualité, backlog prioritaire et **suivi des fonctionnalités**.  
 **À jour** : chaque nouvelle fonctionnalité livrée doit compléter la [table de suivi](#suivi-des-fonctionnalités) et, si besoin, une sous-section dédiée.  
-**Dernière révision documentaire** : **25 avril 2026** (Docker : `docker-compose`, `backend/Dockerfile`, variables d’environnement, profils). Détails datés : [CHANGELOG](CHANGELOG.md).
+**Prochaine étape & phasage** (CI/CD, produit, prod) : voir [ROADMAP.md](ROADMAP.md).  
+**Dernière révision documentaire** : **avril 2026** (Docker, CI GitHub, `ROADMAP`). Détails datés : [CHANGELOG](CHANGELOG.md).
 
 ### Résumé des évolutions récentes (code)
 
@@ -65,7 +66,8 @@ Mobili permet de **rechercher**, **réserver** et **payer** des trajets interurb
 | Frontend   | Angular, `ng serve` → **http://localhost:4200** |
 | API        | **http://localhost:8080** (préfixe `/v1` côté client selon config) |
 | Paiement   | **FedaPay sandbox** ; webhooks via **ngrok** en dev |
-| CI         | **GitHub** prévu ; pipeline à brancher plus tard |
+| CI         | **GitHub Actions** — workflow [`ci.yml`](.github/workflows/ci.yml) (tests `mvn` + `ng` sur `main` / `develop`) |
+| CD         | [`.github/workflows/cd.yml`](.github/workflows/cd.yml) : build **image Docker** API ; **déploiement AWS** = placeholder (voir [ROADMAP](ROADMAP.md)) |
 | Données    | **Dev uniquement** pour l’instant ; pas de données réelles / prod en local tant que la politique n’est pas formalisée |
 | Secrets    | Fichiers **`.env` hors dépôt** (ou gestionnaire de secrets) — à durcir avant prod |
 
@@ -207,8 +209,9 @@ Suite : …
 
 ### CI / pipeline
 
-- **Maintenant** : pas de blocage CI obligatoire ; exécuter **localement** `mvn test` et `npm run test` + `npm run build` avant de passer à la suite.
-- **Ensuite** : pipeline GitHub qui **échoue la PR** si les tests ou le build cassent.
+- **CI GitHub (actif)** : sur chaque push / PR vers `main` ou `develop`, exécution des tests backend (PostgreSQL de service) et du build + tests frontend. Sur le dépôt, un run **rouge** signale l’échec ; tu peux configurer les **branch protection rules** pour **exiger** les checks verts avant merge.
+- **Avant de pousser** : garder l’habitude d’exécuter **localement** `mvn test` (ou `./mvnw test`) et `npm run test` + `ng build` dans `frontend/` — gain de temps et logs plus lisibles.
+- **Suite (CD, staging, prod)** : [ROADMAP.md](ROADMAP.md) ; le workflow **CD** ne fait aujourd’hui que vérifier le **build Docker** de l’API (pas d’hébergement automatisé).
 
 ---
 
@@ -276,7 +279,7 @@ Suite : …
 | **B** | Anti surbooking | Contraintes / verrous selon modèle de données |
 | **C** | Front recherche & détail | Résultats clairs (direct vs même bus / segment) |
 | **D** | Paiement & scanner | Cohérence FedaPay + validation ticket avec nouvelles règles |
-| **E** | Industrialisation | CI GitHub, secrets, envs, puis **Capacitor** si besoin store |
+| **E** | Industrialisation | **CI** : fait — secrets + envs **staging/prod** ; **CD** cloud ; puis **Capacitor** si besoin store (détail [ROADMAP](ROADMAP.md)) |
 
 **Décision produit à trancher** : la « descente » est-elle déclenchée par **chauffeur / partenaire / admin** uniquement, ou aussi par le **voyageur** dans l’app ? (impact UX + permissions.)
 
@@ -431,9 +434,11 @@ Les URLs ci-dessous sont le suffixe après la base configurée (ex. `http://loca
 
 - `backend/` — API Spring ([README backend](./backend/README.md)), **Dockerfile** pour l’image JAR
 - `frontend/` — SPA Angular ([README frontend](./frontend/README.md))
+- [`.github/workflows/`](.github/workflows/) — **CI** (tests) et **CD** (Docker + placeholder déploiement)
 - [`docker-compose.yml`](docker-compose.yml) — PostgreSQL + API (voir [§ Docker](#docker))
 - **`.env` à la racine** (non versionné) — modèle d’en-tête [§ Docker — fichier `.env`](#docker-root-env)
 - `docs/` — notes techniques (ex. [recherche multi-arrêts](./docs/recherche-segments.md))
+- [`ROADMAP.md`](ROADMAP.md) — **feuille de route** (prochaines phases : métier, déploiement, durcissement, mobile)
 - [`CHANGELOG.md`](CHANGELOG.md) — historique de documentation / livraisons par date
 
 ---

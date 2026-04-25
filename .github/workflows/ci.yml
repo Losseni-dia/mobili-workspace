@@ -54,10 +54,12 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # mvnw doit être 100755 dans Git ; sh ./mvnw marche aussi si le bit exécutable manque
+      # Résout Permission denied (126) si mvnw est 100644 ou checkout sans +x
       - name: Tests Maven
         working-directory: backend
-        run: sh ./mvnw -B test
+        run: |
+          chmod +x mvnw
+          sh ./mvnw -B test
 
   frontend:
     name: Frontend (Node + Angular)
