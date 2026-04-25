@@ -2,6 +2,9 @@
 # Renseigne les secrets GitHub : AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, etc.
 name: CD
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   # Décommente quand le pipeline de prod est prêt (attention : déploie à chaque push) :

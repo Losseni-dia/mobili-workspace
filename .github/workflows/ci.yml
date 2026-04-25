@@ -1,6 +1,10 @@
 # CI : tests backend (PostgreSQL) + build & tests frontend
 name: CI
 
+# Évite les avertissements Node 20 sur les actions (runner JS) — voir changelog GitHub Actions
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main, develop]
@@ -50,9 +54,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # mvnw doit être 100755 dans Git ; sh ./mvnw marche aussi si le bit exécutable manque
       - name: Tests Maven
         working-directory: backend
-        run: ./mvnw -B test
+        run: sh ./mvnw -B test
 
   frontend:
     name: Frontend (Node + Angular)
