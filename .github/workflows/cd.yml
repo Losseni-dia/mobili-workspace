@@ -1,0 +1,45 @@
+# CD — déploiement (AWS ou autre) : lancer manuellement ou activer le trigger ci-dessous
+# Renseigne les secrets GitHub : AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, etc.
+name: CD
+
+on:
+  workflow_dispatch:
+  # Décommente quand le pipeline de prod est prêt (attention : déploie à chaque push) :
+  # push:
+  #   branches: [main]
+
+concurrency:
+  group: cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # id-token: write  # pour OIDC vers AWS, à activer quand le rôle IAM OIDC est configuré
+
+jobs:
+  # Valide que l’image API se construit (même logique que docker build local)
+  build-api-image:
+    name: Vérification image Docker (API)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker build backend
+        run: docker build -t mobili-api:cd ./backend
+
+  deploy:
+    name: Déploiement (placeholder)
+    runs-on: ubuntu-latest
+    needs: [build-api-image]
+    # environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rappel configuration AWS
+        run: |
+          echo "Branchez ici le déploiement : ECR (docker push), ECS/Fargate, RDS déjà géré, S3+CloudFront pour le front."
+          echo "Exemples de secrets : AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ECR_REGISTRY, etc."
+          echo "Ou OIDC : permissions id-token: write + aws-actions/configure-aws-credentials"
+
+      - name: Suite déploiement AWS
+        run: |
+          echo "Quand tu es prêt : ajoute login ECR, docker push, mise à jour ECS, invalidation CloudFront, etc."

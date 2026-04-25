@@ -1,0 +1,82 @@
+# CI : tests backend (PostgreSQL) + build & tests frontend
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (Java 21)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-postgres
+          POSTGRES_DB: mobili_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mobili_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://localhost:5432/mobili_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: ci-postgres
+      JWT_SECRET: ci-jwt-test-secret-min-32-chars-for-hs256-xxxxxxxx
+      FEDAPAY_SECRET_KEY: sk_test_ci
+      FEDAPAY_WEBHOOK_SECRET: whsec_ci_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Tests Maven
+        working-directory: backend
+        run: ./mvnw -B test
+
+  frontend:
+    name: Frontend (Node + Angular)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (production)
+        working-directory: frontend
+        run: npx ng build --configuration=production
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npx ng test --watch=false
+        env:
+          CI: "true"
