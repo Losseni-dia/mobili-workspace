@@ -1,0 +1,68 @@
+<div class="edit-partner-container">
+    <div class="form-card">
+        <h2>⚙️ Paramètres de l'entreprise</h2>
+        <p class="subtitle">Modifiez les informations de votre compagnie de transport</p>
+
+        @if (loadComplete() && partnerId()) {
+        <div class="registration-code-box" role="region" aria-label="Code d’inscription gare">
+            <div class="registration-code-box__text">
+                <span class="registration-code-box__label">Code d’inscription (responsables gare)</span>
+                <p class="registration-code-box__hint">
+                    Communiquez ce code à vos responsables de gare pour qu’ils créent leur compte Mobili
+                    (menu S’inscrire → Gare).
+                </p>
+            </div>
+            @if (registrationCode()) {
+            <div class="registration-code-box__row">
+                <code class="registration-code-box__value">{{ registrationCode() }}</code>
+                <button type="button" class="btn-copy" (click)="copyRegistrationCode()">
+                    @if (copyFeedback()) { Copié } @else { Copier }
+                </button>
+            </div>
+            } @else {
+            <p class="registration-code-box__empty">Aucun code reçu. Rechargez la page ou contactez le support.</p>
+            }
+        </div>
+        }
+
+        <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()">
+
+            <div class="logo-upload-section">
+                <div class="preview-container" (click)="fileInput.click()">
+                    <div class="overlay"><span>Changer le logo</span></div>
+                </div>
+                <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" hidden>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nom de la compagnie</label>
+                    <input type="text" formControlName="name" placeholder="Ex: Yalla Transport">
+                </div>
+
+                <div class="form-group">
+                    <label>N° RCCM / Registre</label>
+                    <input type="text" formControlName="businessNumber" placeholder="Ex: CI-ABJ-01...">
+                </div>
+
+                <div class="form-group">
+                    <label>Email de contact</label>
+                    <input type="email" formControlName="email" placeholder="contact@compagnie.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="text" formControlName="phone" placeholder="+225 ...">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" (click)="onCancel()">Annuler</button>
+            
+            <button type="submit" class="btn-primary" [disabled]="isLoading()">
+                Enregistrer
+            </button>
+            </div>
+        </form>
+    </div>
+</div>

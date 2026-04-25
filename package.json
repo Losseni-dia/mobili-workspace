@@ -1,0 +1,12 @@
+{
+  "name": "mobili",
+  "private": true,
+  "description": "Script unique : compilation + tests backend + build + tests frontend",
+  "scripts": {
+    "verify": "node scripts/run-verify.mjs",
+    "verify:backend": "cd backend && mvn -B test",
+    "verify:backend:compile": "cd backend && mvn -B compile -DskipTests",
+    "verify:frontend": "cd frontend && npx ng build --configuration=development",
+    "verify:frontend:test": "cd frontend && npx ng test --watch=false"
+  }
+}

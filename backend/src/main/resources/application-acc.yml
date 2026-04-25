@@ -1,0 +1,22 @@
+# Recette / préproduction : schéma aligné sur Flyway (validate), logs raisonnables.
+# Adapter mobili.cors.allowed-origins à l’URL réelle du front (HTTPS).
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.mobili.backend: INFO
+    org.hibernate.SQL: WARN
+
+mobili:
+  cors:
+    allowed-origins:
+      - https://CHANGE-ME-acc.votredomaine.ci
+      - http://localhost:4200

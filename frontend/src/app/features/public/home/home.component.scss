@@ -1,0 +1,449 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+// ======================================================================
+//  HERO PREMIUM
+// ======================================================================
+.home-page {
+  min-height: 100vh;
+}
+
+.hero {
+  position: relative;
+  padding: 90px 20px 140px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba($mobili-yellow, 0.35), transparent 55%),
+    radial-gradient(circle at 92% 80%, rgba($mobili-blue-soft, 0.35), transparent 60%),
+    linear-gradient(135deg, $mobili-blue 0%, $mobili-blue-deep 100%);
+  color: $white;
+  overflow: hidden;
+  text-align: center;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(60px);
+  }
+  &::before {
+    top: -80px;
+    left: -80px;
+    width: 320px;
+    height: 320px;
+    background: rgba($mobili-yellow, 0.25);
+  }
+  &::after {
+    bottom: -100px;
+    right: -80px;
+    width: 380px;
+    height: 380px;
+    background: rgba($mobili-blue-soft, 0.3);
+  }
+
+  .hero-title {
+    @include heading-xl;
+    color: $white;
+    max-width: 780px;
+    margin: 0 auto 14px;
+
+    .accent {
+      background: $gradient-gold;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  .hero-subtitle {
+    max-width: 560px;
+    margin: 0 auto 36px;
+    font-size: 1.05rem;
+    color: rgba($white, 0.82);
+    line-height: 1.6;
+  }
+}
+
+// ====== CARTE DE RECHERCHE ==========================================
+.search-card {
+  position: relative;
+  z-index: 2;
+  margin: -80px auto 0;
+  max-width: 960px;
+  background: $white;
+  padding: 28px;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-xl;
+  border: 1px solid rgba($mobili-blue, 0.06);
+
+  .search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .input-block {
+      label { @include input-label; }
+      input { @include input; }
+      select { @include input; }
+    }
+
+    .btn-main {
+      @include btn-primary;
+      padding: 16px 24px;
+    }
+  }
+}
+
+// ======================================================================
+//  SECTION TRAJETS
+// ======================================================================
+.trips-section {
+  padding: 60px 20px 80px;
+  max-width: 920px;
+  margin: 0 auto;
+
+  h2 {
+    @include heading-lg;
+    margin-bottom: 30px;
+    position: relative;
+    padding-left: 18px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10%;
+      bottom: 10%;
+      width: 5px;
+      border-radius: 5px;
+      background: $gradient-gold;
+    }
+  }
+
+  .loading-hint { color: $gray-500; margin-bottom: 12px; }
+
+  .trips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+}
+
+// ====== CARTE TRAJET =================================================
+.trip-card {
+  display: grid;
+  // minmax(0, …) : les items de grille ne forcent plus la largeur intrinsèque des images (sinon débordement)
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 200px);
+  background: $white;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  border: 1px solid rgba($mobili-blue, 0.06);
+  box-shadow: $shadow-sm;
+  transition: all $t-base;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+    border-color: rgba($mobili-yellow, 0.5);
+
+    .trip-image__inner {
+      box-shadow:
+        inset 0 0 0 1px rgba($mobili-yellow, 0.45),
+        0 4px 18px rgba($mobili-blue, 0.12);
+    }
+
+    .trip-image__media {
+      filter: brightness(1.04);
+    }
+
+    .trip-action .btn-book { background: $gradient-gold; }
+  }
+
+  .trip-image {
+    // Même fond que la carte : pas de « deuxième rectangle » gris quand l’image est en contain
+    // (bandes haut/bas) et cohérence si le fond de page n’est pas blanc.
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    display: block;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 12px 12px 12px 14px;
+    background: $white;
+
+    // Flex + contain : le véhicule entier reste visible, centré, sans manger les bords arrondis
+    &__inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      height: 150px;
+      padding: 10px;
+      border-radius: $radius-md;
+      overflow: hidden;
+      background: $white;
+      // Relief très léger : reste lisible sur fond de page coloré
+      box-shadow:
+        inset 0 0 0 1px rgba($mobili-blue, 0.07),
+        0 2px 10px rgba($mobili-blue-deep, 0.04);
+      transition: box-shadow $t-slow;
+    }
+
+    &__media {
+      display: block;
+      align-self: center;
+      flex: 0 1 auto;
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      object-fit: contain;
+      object-position: center;
+      transition: filter $t-slow;
+    }
+
+    .placeholder-img {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      font-size: 3.25rem;
+      line-height: 1;
+      background: radial-gradient(
+        ellipse 90% 80% at 50% 15%,
+        rgba($mobili-yellow, 0.18) 0%,
+        transparent 55%
+      );
+    }
+  }
+
+  .trip-details {
+    min-width: 0;
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+
+    .route-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: $mobili-blue-deep;
+
+      .city { text-transform: capitalize; }
+      .arrow {
+        color: $mobili-yellow-dark;
+        font-size: 1.1rem;
+      }
+    }
+
+    .time-info {
+      font-size: 0.88rem;
+      color: $gray-600;
+      font-weight: 600;
+
+      strong { color: $mobili-blue; }
+    }
+
+    .boarding-info {
+      width: fit-content;
+      padding: 7px 14px 7px 10px;
+      font-size: 0.82rem;
+      color: $mobili-blue-deep;
+      background: rgba($mobili-yellow, 0.18);
+      border-left: 3px solid $mobili-yellow;
+      border-radius: 0 $radius-sm $radius-sm 0;
+
+      strong { font-weight: 800; }
+    }
+
+    .stops-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+
+      &::before {
+        content: 'Passant par :';
+        display: block;
+        width: 100%;
+        font-size: 0.65rem;
+        color: $gray-500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+
+      .stop-badge {
+        padding: 4px 10px;
+        border-radius: $radius-pill;
+        background: $mobili-blue-fog;
+        color: $mobili-blue;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border: 1px solid rgba($mobili-blue, 0.08);
+      }
+    }
+
+    .partner-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: $gray-500;
+
+      .transport-badge {
+        padding: 3px 10px;
+        border-radius: $radius-pill;
+        font-size: 0.7rem;
+        font-weight: 800;
+        background: rgba($mobili-blue, 0.1);
+        color: $mobili-blue-deep;
+        &--carpool {
+          background: rgba(139, 92, 246, 0.12);
+          color: #5b21b6;
+        }
+      }
+
+      .vehicle-type {
+        padding: 3px 10px;
+        background: rgba($station-green, 0.1);
+        color: $station-green;
+        border-radius: $radius-pill;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: capitalize;
+      }
+
+      .dot { color: $gray-300; }
+      .company { color: $mobili-blue-deep; font-weight: 700; }
+    }
+  }
+
+  .trip-action {
+    min-width: 0;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(180deg, rgba($mobili-blue, 0.03), rgba($mobili-yellow, 0.08));
+    border-left: 2px dashed rgba($mobili-blue, 0.12);
+
+    .price-tag {
+      text-align: center;
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: $mobili-blue;
+
+      span {
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-left: 4px;
+        color: $gray-500;
+      }
+    }
+
+    .seats-left {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: $station-green;
+
+      &.low { color: $danger; }
+
+      .sold-out { color: $gray-500; }
+    }
+
+    .btn-book {
+      @include btn-primary;
+      padding: 12px 18px;
+      font-size: 0.86rem;
+      letter-spacing: 0.6px;
+
+      &:disabled {
+        background: $gray-200;
+        color: $gray-500;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+.no-results {
+  margin-top: 30px;
+  padding: 40px 20px;
+  text-align: center;
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px dashed rgba($mobili-blue, 0.25);
+
+  p {
+    color: $gray-600;
+    font-size: 1rem;
+    margin-bottom: 16px;
+  }
+
+  .btn-reset { @include btn-ghost; }
+}
+
+// ======================================================================
+//  RESPONSIVE
+// ======================================================================
+@media (max-width: 768px) {
+  .trip-card {
+    grid-template-columns: 1fr !important;
+
+    .trip-image {
+      padding: 14px 16px 0;
+
+      &__inner {
+        max-width: none;
+        width: 100%;
+        height: 168px;
+      }
+    }
+    .trip-action {
+      border-left: none !important;
+      border-top: 2px dashed rgba($mobili-blue, 0.12);
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      padding: 18px 24px !important;
+
+      .btn-book { padding: 10px 18px; }
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .search-card {
+    .search-form {
+      flex-direction: row;
+      align-items: flex-end;
+
+      .input-block { flex: 1; }
+      .btn-main { height: 52px; padding: 0 40px; }
+    }
+  }
+}

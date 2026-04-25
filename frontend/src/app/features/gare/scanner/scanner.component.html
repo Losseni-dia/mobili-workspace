@@ -1,0 +1,50 @@
+<div class="scanner-page">
+    <div class="scanner-header">
+        <a class="btn-back" [routerLink]="backToAccueil()" title="Retour à l'accueil">✕</a>
+        <h1>Scanner embarquement</h1>
+        <p class="who">
+            <span>{{ auth.currentUser()?.firstname }} {{ auth.currentUser()?.lastname }}</span>
+            @if (auth.currentUser()?.stationName) {
+                <span class="station">· {{ auth.currentUser()?.stationName }}</span>
+            }
+        </p>
+    </div>
+
+    <div class="camera-container">
+        @if (isScanning()) {
+        <zxing-scanner (scanSuccess)="onCodeResult($event)" [formats]="allowedFormats">
+        </zxing-scanner>
+
+        <div class="scan-overlay">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            <div class="scan-line"></div>
+        </div>
+        }
+
+        @if (scanResult()) {
+        <div class="status-overlay success">
+            <div class="status-content">
+                <div class="icon">✅</div>
+                <h2>VALIDE</h2>
+                <p class="passenger">{{ scanResult().passengerFullName }}</p>
+                <p class="seat">Siège : {{ scanResult().seatNumber }}</p>
+                <button (click)="resetScanner()" class="btn-action">Scanner Suivant</button>
+            </div>
+        </div>
+        }
+
+        @if (errorMessage()) {
+        <div class="status-overlay error">
+            <div class="status-content">
+                <div class="icon">❌</div>
+                <h2>REFUSÉ</h2>
+                <p class="msg">{{ errorMessage() }}</p>
+                <button (click)="resetScanner()" class="btn-action">Réessayer</button>
+            </div>
+        </div>
+        }
+    </div>
+</div>

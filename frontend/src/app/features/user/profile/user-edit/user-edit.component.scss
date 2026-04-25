@@ -1,0 +1,108 @@
+@use "sass:color";
+@import '../../../../styles/variables';
+@import '../../../../styles/mixins';
+
+.edit-profile-container {
+  display: flex;
+  justify-content: center;
+
+  .profile-card {
+    width: 100%;
+    max-width: 820px;
+    background: $white;
+    padding: 32px;
+    border: 1px solid $gray-200;
+    border-radius: $radius-md;
+    animation: cardIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+    .card-header {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid $gray-100;
+
+      h2 {
+        margin: 0 0 6px;
+        font-family: $font-display;
+        font-size: 1.25rem;
+        font-weight: 900;
+        color: $mobili-blue-deep;
+        letter-spacing: -0.3px;
+      }
+
+      p { color: $gray-500; font-size: 0.9rem; }
+    }
+  }
+}
+
+.avatar-upload-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+
+  .avatar-wrapper {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    background: $gradient-gold;
+    border: 4px solid $white;
+    box-shadow: 0 12px 25px rgba($mobili-blue, 0.18);
+    transition: transform $t-base;
+
+    &:hover { transform: scale(1.04); }
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+
+    .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba($mobili-blue-deep, 0.7);
+      color: $white;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transition: opacity $t-base;
+
+      span { font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; font-size: 0.72rem; }
+    }
+
+    &:hover .avatar-overlay { opacity: 1; }
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 24px;
+
+  .full-width { grid-column: 1 / -1; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+
+    label { @include input-label; }
+    input { @include input; padding: 11px 14px; }
+  }
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid $gray-100;
+
+  .btn-cancel { @include btn-ghost; flex: 1; padding: 14px; }
+  .btn-save { @include btn-primary; flex: 1; padding: 14px; }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

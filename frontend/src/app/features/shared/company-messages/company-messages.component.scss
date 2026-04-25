@@ -1,0 +1,466 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.pgc {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pgc-hero {
+  margin-bottom: 1.25rem;
+  h1 {
+    font-family: $font-display;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    margin: 0 0 0.4rem;
+  }
+}
+.pgc-lead {
+  margin: 0;
+  color: $gray-600;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 56rem;
+}
+
+.pgc-alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: $radius-md;
+  background: rgba($danger, 0.08);
+  border: 1px solid rgba($danger, 0.25);
+  color: $mobili-blue-deep;
+  font-size: 0.9rem;
+}
+
+.pgc-grid {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pgc-threads {
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  box-shadow: $shadow-sm;
+  padding: 1rem 0.9rem;
+}
+
+.pgc-threads-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  h2 {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $gray-500;
+  }
+}
+
+.pgc-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pgc-thread-pill {
+  width: 100%;
+  text-align: left;
+  border: 1px solid $gray-200;
+  background: $gray-100;
+  border-radius: $radius-sm;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  transition: background $t-base, border-color $t-base;
+  &:hover {
+    background: $white;
+    border-color: rgba($station-green, 0.4);
+  }
+  &--active {
+    border-color: $station-green;
+    background: rgba($station-green, 0.1);
+  }
+}
+.pgc-thread-title {
+  display: block;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: $mobili-blue-deep;
+}
+.pgc-thread-meta {
+  display: block;
+  font-size: 0.72rem;
+  color: $gray-500;
+  margin-top: 0.2rem;
+}
+
+.pgc-conv {
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px solid $gray-200;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $shadow-sm;
+}
+
+.pgc-placeholder {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: $gray-500;
+  font-size: 0.9rem;
+}
+
+.pgc-messages {
+  flex: 1;
+  padding: 1rem 1.1rem;
+  max-height: min(50vh, 480px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pgc-msg {
+  border-bottom: 1px solid $gray-100;
+  padding-bottom: 0.75rem;
+  &:last-child {
+    border-bottom: none;
+  }
+}
+.pgc-msg-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  time {
+    color: $gray-400;
+  }
+  strong {
+    color: $mobili-blue;
+    font-size: 0.85rem;
+  }
+}
+.pgc-msg-body {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: $mobili-blue-deep;
+  white-space: pre-wrap;
+}
+
+.pgc-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid $gray-200;
+  background: $gray-100;
+  textarea {
+    width: 100%;
+    border-radius: $radius-sm;
+    border: 1px solid $gray-300;
+    padding: 0.5rem 0.6rem;
+    font-family: $font-sans;
+    font-size: 0.9rem;
+  }
+}
+
+.pgc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid $gray-300;
+  background: $white;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  &--primary {
+    @include btn-primary;
+    border: none;
+  }
+}
+.pgc-muted {
+  color: $gray-500;
+  font-size: 0.88rem;
+  padding: 0.5rem;
+}
+
+// Modal
+.pgc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.pgc-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: $white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  border: 1px solid $gray-200;
+}
+
+.pgc-modal-head__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pgc-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 1rem;
+  border-bottom: 1px solid $gray-200;
+  background: linear-gradient(180deg, $gray-100 0%, $white 100%);
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.12rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    font-family: $font-display;
+    letter-spacing: -0.02em;
+  }
+}
+
+.pgc-modal-sub {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: $gray-500;
+  max-width: 26rem;
+}
+
+.pgc-icon-close {
+  border: none;
+  background: $gray-100;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: $gray-600;
+  flex-shrink: 0;
+  transition: background $t-base, color $t-base;
+  &:hover {
+    background: $gray-200;
+    color: $mobili-blue-deep;
+  }
+}
+
+.pgc-create-form {
+  padding: 1.15rem 1.25rem 1.3rem;
+}
+
+.pgc-form-field {
+  margin-bottom: 1.1rem;
+  &--scope {
+    margin-bottom: 0.9rem;
+  }
+}
+
+.pgc-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0 0 0.4rem;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pgc-input,
+.pgc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid $gray-200;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: $font-sans;
+  line-height: 1.4;
+  color: $mobili-blue-deep;
+  background: $white;
+  transition: border-color $t-base, box-shadow $t-base;
+  &:hover {
+    border-color: $gray-300;
+  }
+  &:focus {
+    outline: none;
+    border-color: rgba($mobili-blue, 0.45);
+    box-shadow: 0 0 0 3px rgba($mobili-blue, 0.12);
+  }
+  &::placeholder {
+    color: $gray-400;
+  }
+}
+.pgc-textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+// Cartes d’options (périmètre)
+.pgc-scope-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pgc-scope-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid $gray-200;
+  background: $white;
+  cursor: pointer;
+  transition: border-color $t-base, background $t-base, box-shadow $t-base;
+
+  &:hover {
+    border-color: rgba($mobili-blue, 0.3);
+    background: $gray-100;
+  }
+
+  &:has(.pgc-scope-card__input:checked) {
+    border-color: rgba($mobili-blue, 0.5);
+    background: linear-gradient(135deg, rgba($mobili-blue, 0.07) 0%, $white 100%);
+    box-shadow: 0 0 0 1px rgba($mobili-blue, 0.15);
+  }
+}
+
+.pgc-scope-card__input {
+  margin: 0.2rem 0 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex-shrink: 0;
+  accent-color: $mobili-blue;
+  cursor: pointer;
+}
+
+.pgc-scope-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pgc-scope-card__title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: $mobili-blue-deep;
+}
+
+.pgc-scope-card__desc {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: $gray-500;
+  font-weight: 500;
+}
+
+// Liste gares
+.pgc-station-pick {
+  margin: 0 0 1.1rem;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pgc-station-pick__list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid $gray-200;
+  border-radius: 10px;
+  background: $gray-100;
+  padding: 0.4rem 0.45rem;
+}
+
+.pgc-ck {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  color: $mobili-blue-deep;
+  cursor: pointer;
+  transition: background $t-base;
+  &:hover {
+    background: $white;
+  }
+  input {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: $mobili-blue;
+  }
+  strong {
+    font-weight: 800;
+  }
+}
+.pgc-ck__text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.pgc-station-pick__empty {
+  margin: 0.5rem;
+  padding: 0.25rem;
+}
+
+.pgc-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid $gray-200;
+}
+
+.pgc-btn--ghost {
+  background: $white;
+  color: $mobili-blue-deep;
+  border: 1px solid $gray-200;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  &:hover {
+    background: $gray-100;
+    border-color: $gray-300;
+  }
+}

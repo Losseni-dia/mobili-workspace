@@ -1,0 +1,30 @@
+<div class="chauffeur-shell">
+  <div class="chauffeur-shell__inner">
+    <nav class="chauffeur-nav" aria-label="Navigation espace conducteur">
+      <a
+        routerLink="/chauffeur"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="chauffeur-nav__link"
+        title="Listing des services et conduite"
+      >
+        <span class="chauffeur-nav__icon" aria-hidden="true">◆</span>
+        <span class="chauffeur-nav__text">
+          <span class="chauffeur-nav__label">Départs & conduite</span>
+        </span>
+      </a>
+      <a
+        routerLink="/chauffeur/scan"
+        routerLinkActive="active"
+        class="chauffeur-nav__link"
+        title="Valider un billet (QR code)"
+      >
+        <span class="chauffeur-nav__icon" aria-hidden="true">▣</span>
+        <span class="chauffeur-nav__text">
+          <span class="chauffeur-nav__label">Valider billets (QR)</span>
+        </span>
+      </a>
+    </nav>
+  </div>
+  <router-outlet />
+</div>

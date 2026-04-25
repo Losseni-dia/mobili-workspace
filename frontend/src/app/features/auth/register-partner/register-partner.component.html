@@ -1,0 +1,39 @@
+<div class="register-container">
+    <div class="register-card">
+        <h2>Inscription compagnie</h2>
+        <p>Renseignez les informations de votre entreprise de transport (après création du compte utilisateur).</p>
+
+        <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()">
+            <div class="field">
+                <label>Nom de la société</label>
+                <input type="text" formControlName="name" placeholder="Ex: Mobili Express">
+            </div>
+
+            <div class="field">
+                <label>Email professionnel</label>
+                <input type="email" formControlName="email" placeholder="contact@compagnie.com">
+            </div>
+
+            <div class="field">
+                <label>Téléphone</label>
+                <input type="text" formControlName="phone" placeholder="+221 77 ...">
+            </div>
+
+            <div class="field">
+                <label>Numéro de Registre de Commerce</label>
+                <input type="text" formControlName="businessNumber" placeholder="RC-DAK-2026-...">
+            </div>
+
+            <div class="field">
+                <label>Logo de l'entreprise</label>
+                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="file-input">
+            </div>
+
+            <div class="actions">
+                <button type="submit" [disabled]="partnerForm.invalid || isLoading()" class="btn-primary">
+                    {{ isLoading() ? 'Traitement...' : 'Valider mon inscription' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

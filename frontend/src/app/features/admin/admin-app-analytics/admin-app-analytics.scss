@@ -1,0 +1,91 @@
+@import '../admin-dashboard/admin-dashboard';
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-hero {
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    letter-spacing: -0.3px;
+  }
+
+  .page-lead {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: $gray-600;
+  }
+}
+
+.doc-block {
+  margin-bottom: 22px;
+  padding: 18px 20px;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+
+  h2 {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: $mobili-blue-deep;
+  }
+
+  p, .doc-list {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: $gray-600;
+  }
+
+  .doc-list {
+    padding-left: 1.1rem;
+    li { margin-bottom: 8px; }
+    code { font-size: 0.78rem; background: $white; padding: 1px 6px; border-radius: 4px; }
+  }
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.chip {
+  border: 1px solid $gray-200;
+  background: $white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: $gray-600;
+  transition: background 0.2s, border-color 0.2s;
+  &:hover { border-color: rgba($mobili-blue, 0.4); color: $mobili-blue-deep; }
+  &.active {
+    background: rgba($mobili-blue, 0.1);
+    border-color: rgba($mobili-blue, 0.35);
+    color: $mobili-blue-deep;
+  }
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 28px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: $mobili-blue;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+// KPI sans .kpi-head (puce seule)
+.kpi-grid--login .kpi .kpi-chip { margin-bottom: 10px; display: block; }

@@ -1,0 +1,425 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+@import '../../../styles/data-panel';
+
+// ======================================================================
+//  Page gares — alignement dashboard / espace partenaire
+// ======================================================================
+.gares-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 4px;
+}
+
+.gares-redirect-hint {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: $radius-md;
+  background: rgba($mobili-blue, 0.06);
+  border: 1px solid rgba($mobili-blue, 0.15);
+  color: $mobili-blue-deep;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+// ---- Bandeau héro ----
+.gares-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px 24px;
+  align-items: start;
+  padding: 24px 26px;
+  margin-bottom: 22px;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($station-green, 0.2);
+  background:
+    linear-gradient(135deg, rgba($station-green, 0.08) 0%, rgba($mobili-blue, 0.04) 50%, $white 100%),
+    $white;
+  box-shadow: $shadow-sm;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gares-hero-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  border-radius: 14px;
+  background: $station-green-soft;
+  border: 1px solid rgba($station-green, 0.25);
+  flex-shrink: 0;
+}
+
+.gares-hero-text {
+  min-width: 0;
+}
+
+.gares-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $station-green;
+}
+
+.gares-title {
+  margin: 0 0 10px;
+  font-family: $font-display;
+  font-size: clamp(1.35rem, 2.2vw, 1.6rem);
+  font-weight: 900;
+  color: $mobili-blue-deep;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+.gares-lead {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: $gray-600;
+  code {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: $gray-100;
+    color: $gray-800;
+  }
+  strong {
+    color: $mobili-blue-deep;
+    font-weight: 800;
+  }
+}
+
+.gares-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  justify-content: flex-end;
+  align-items: stretch;
+  @media (max-width: 900px) {
+    justify-content: flex-start;
+  }
+}
+
+.gares-hero-stat {
+  text-align: right;
+  padding: 10px 16px;
+  border-radius: $radius-md;
+  background: $white;
+  border: 1px solid $gray-200;
+  min-width: 120px;
+  &--pending {
+    border-color: rgba($warning, 0.45);
+    background: rgba($warning, 0.06);
+  }
+  @media (max-width: 900px) {
+    text-align: left;
+    max-width: 200px;
+  }
+}
+
+.gares-hero-stat-value--warn {
+  color: $warning;
+}
+
+.gares-hero-stat-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $gray-500;
+  margin-bottom: 4px;
+}
+
+.gares-hero-stat-value {
+  font-family: $font-display;
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: $station-green;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+// ---- Gares en attente (rappel) ----
+.gares-pending-panel {
+  margin-bottom: 18px;
+}
+
+.gares-pending-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0 20px 4px;
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid $gray-100;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.gares-pending-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.gares-pending-meta {
+  color: $gray-500;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.gares-pending-code {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: $gray-100;
+  color: $gray-800;
+}
+
+// ---- Colonne principale : liste (priorité), puis formulaire compact ----
+.gares-main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.gares-form-card {
+  order: 2;
+  .panel-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    background: linear-gradient(180deg, rgba($mobili-blue, 0.03) 0%, $white 100%);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+.gares-list-card {
+  order: 1;
+
+  .panel-head h2 {
+    margin: 0;
+  }
+}
+
+.gares-list-body {
+  min-height: 80px;
+}
+
+// ---- Formulaire (ligne sur grand écran) ----
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 4px 4px 8px;
+
+  .ig span {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: $gray-600;
+    margin-bottom: 6px;
+  }
+
+  input {
+    @include input;
+    width: 100%;
+  }
+
+  &--inline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 12px 14px;
+    align-items: end;
+    padding: 10px 4px 8px;
+    min-width: 0;
+
+    > .ig,
+    > .add-form-actions {
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr 1fr;
+      .add-form-actions {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 720px) {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+
+    .ig span {
+      overflow-wrap: anywhere;
+    }
+
+    .add-form-actions {
+      margin-top: 0;
+      padding-bottom: 2px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      white-space: normal;
+      line-height: 1.2;
+      text-align: center;
+      padding: 10px 12px;
+      @media (min-width: 901px) {
+        width: auto;
+        min-width: min(100%, 11.5rem);
+        white-space: nowrap;
+        padding: 0 1rem;
+      }
+    }
+  }
+}
+
+.add-form-actions {
+  margin-top: 4px;
+}
+
+.btn-submit {
+  @include btn-primary;
+  width: 100%;
+  min-height: 46px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba($mobili-blue, 0.2);
+  white-space: nowrap;
+  &:disabled {
+    opacity: 0.55;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+}
+
+// ---- Alerte & cellules ----
+.gares-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 8px 20px 20px;
+  padding: 16px 18px;
+  border-radius: $radius-md;
+  background: $danger-soft;
+  border: 1px solid rgba($danger, 0.25);
+  p {
+    margin: 4px 0 0;
+    font-size: 0.88rem;
+    color: $gray-700;
+  }
+  strong {
+    font-size: 0.9rem;
+    color: $danger;
+  }
+}
+
+.gares-alert-ico {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: $danger;
+  color: $white;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.gare-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  .gare-pin {
+    opacity: 0.65;
+  }
+  strong {
+    font-weight: 800;
+  }
+}
+
+.data-table th.right,
+.data-table td.right {
+  text-align: right;
+}
+
+.gares-validate-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.status-pill.pending {
+  background: rgba($warning, 0.14);
+  color: $warning;
+}
+
+.status-pill.ok {
+  background: rgba($success, 0.12);
+  color: $success;
+}
+
+.btn-approve {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: $radius-sm;
+  border: 1px solid $station-green;
+  background: $white;
+  color: $station-green;
+  cursor: pointer;
+  transition: all $t-base;
+  &:hover {
+    background: rgba($station-green, 0.08);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.gares-chauffeurs-cell {
+  max-width: 16rem;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  vertical-align: top;
+}
+
+.gares-chauffeurs-list {
+  margin: 0;
+  padding: 0 0 0 1rem;
+  list-style: disc;
+  color: $mobili-blue-deep;
+  strong {
+    font-weight: 800;
+  }
+}
+
+.gares-chauffeurs-empty {
+  color: $gray-500;
+}

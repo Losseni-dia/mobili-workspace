@@ -1,0 +1,89 @@
+<div class="user-shell" [class.collapsed]="collapsed()">
+    <aside class="shell-sidebar">
+        <div class="sidebar-brand">
+            <a routerLink="/" class="brand-logo">
+                <span class="brand-dot"></span>
+                @if (!collapsed()) { <span class="brand-name">MOBILI</span> }
+            </a>
+            <button type="button" class="collapse-btn" (click)="toggleSidebar()" [title]="collapsed() ? 'Déplier' : 'Replier'">
+                {{ collapsed() ? '›' : '‹' }}
+            </button>
+        </div>
+
+        <div
+            class="sidebar-user"
+            [attr.title]="collapsed() ? (authService.currentUser()?.firstname + ' ' + authService.currentUser()?.lastname + ' (@' + authService.currentUser()?.login + ')') : null">
+            <div class="su-avatar">
+                @if (avatarUrl()) {
+                    <img [src]="avatarUrl()" alt="Photo de profil" draggable="false">
+                } @else {
+                    <span>{{ userInitials() }}</span>
+                }
+            </div>
+            <div class="su-meta">
+                <strong>{{ authService.currentUser()?.firstname }} {{ authService.currentUser()?.lastname }}</strong>
+                <span class="mono">&#64;{{ authService.currentUser()?.login }}</span>
+                @if (authService.currentUser()?.email) {
+                    <span class="su-email" [title]="authService.currentUser()?.email">{{ authService.currentUser()?.email }}</span>
+                }
+                @if (authService.currentUser()?.roles?.length) {
+                    <div class="su-roles" aria-label="Rôles">
+                        @for (role of authService.currentUser()?.roles; track role) {
+                            <span class="su-role-pill">{{ role.replace('ROLE_', '') }}</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            @for (item of navItems; track item.path) {
+                <a [routerLink]="item.path" routerLinkActive="active" class="nav-link" [title]="item.label">
+                    <span class="nav-icon">{{ item.icon }}</span>
+                    @if (!collapsed()) { <span class="nav-label">{{ item.label }}</span> }
+                </a>
+            }
+        </nav>
+
+        @if (!collapsed()) {
+            <div class="cta-card">
+                <p class="cta-title">Prêt pour un nouveau voyage ?</p>
+                <p class="cta-desc">Trouve un trajet en quelques secondes.</p>
+                <a routerLink="/" class="cta-btn">🔎 Rechercher</a>
+            </div>
+        } @else {
+            <a routerLink="/" class="nav-link cta-compact" title="Rechercher un voyage">
+                <span class="nav-icon">🔎</span>
+            </a>
+        }
+
+        <div class="sidebar-footer">
+            <a routerLink="/" class="nav-link soft" title="Retour à l'accueil">
+                <span class="nav-icon">🏠</span>
+                @if (!collapsed()) { <span class="nav-label">Retour site</span> }
+            </a>
+            <button type="button" class="nav-link soft logout" (click)="logout()" title="Déconnexion">
+                <span class="nav-icon">⎋</span>
+                @if (!collapsed()) { <span class="nav-label">Déconnexion</span> }
+            </button>
+        </div>
+    </aside>
+
+    <div class="shell-main">
+        <header class="shell-topbar">
+            <div class="topbar-left">
+                <div class="crumb">
+                    <span class="crumb-root">Mon compte</span>
+                    <span class="crumb-sep">/</span>
+                    <span class="crumb-current">{{ pageInfo().crumb }}</span>
+                </div>
+                <h1 class="page-title">{{ pageInfo().title }}</h1>
+                <p class="page-desc">{{ pageInfo().desc }}</p>
+            </div>
+        </header>
+
+        <div class="shell-content">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</div>

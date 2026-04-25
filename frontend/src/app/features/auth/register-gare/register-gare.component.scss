@@ -1,0 +1,220 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - #{$header-height});
+  padding: 32px 16px 48px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba($station-green, 0.12), transparent 50%),
+    radial-gradient(circle at 82% 90%, rgba($mobili-blue, 0.12), transparent 55%),
+    linear-gradient(180deg, $gray-50 0%, $mobili-blue-fog 100%);
+}
+
+.register-gare-card {
+  width: 100%;
+  max-width: 520px;
+  background: $white;
+  border-radius: $radius-xl;
+  padding: 2rem;
+  box-shadow: $shadow-xl;
+  border: 1px solid rgba($station-green, 0.12);
+  animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @media (min-width: 768px) {
+    padding: 2.5rem;
+  }
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+
+  h2 {
+    @include heading-lg;
+    margin: 0.25rem 0 6px;
+  }
+
+  p {
+    color: $gray-500;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+}
+
+.back-link {
+  display: inline-block;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 auto 0.5rem;
+  color: $mobili-blue-soft;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: $gray-600;
+  margin: 0 0 0.75rem;
+}
+
+.station-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.segmented {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  border-radius: $radius-md;
+  overflow: hidden;
+  border: 1px solid $gray-200;
+  background: $gray-100;
+
+  .seg {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: $gray-600;
+    cursor: pointer;
+    transition: background $t-base, color $t-base;
+
+    &.active {
+      background: $white;
+      color: $mobili-blue-deep;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 480px) {
+    flex-direction: row;
+    gap: 1rem;
+    .form-group {
+      flex: 1;
+    }
+  }
+}
+
+.form-group {
+  margin-bottom: 1.1rem;
+
+  label {
+    @include input-label;
+  }
+}
+
+.form-control,
+select.form-control {
+  @include input;
+  font-size: 16px;
+  width: 100%;
+}
+
+.alert {
+  margin-bottom: 1rem;
+  padding: 12px 14px;
+  background: $danger-soft;
+  color: $danger;
+  border: 1px solid rgba($danger, 0.25);
+  border-radius: $radius-sm;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.alert-ok {
+  background: rgba($success, 0.1);
+  color: $gray-800;
+  border: 1px solid rgba($success, 0.35);
+  font-weight: 600;
+}
+
+.post-success-hint {
+  margin: 1rem 0 0;
+  text-align: center;
+  .link-next {
+    font-weight: 800;
+    color: $mobili-blue;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: $gray-500;
+}
+
+.field-error {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: $danger;
+}
+
+.btn-primary {
+  @include btn-primary;
+  &.full {
+    width: 100%;
+    padding: 14px 16px;
+    margin-top: 0.5rem;
+  }
+}
+
+.password-wrap {
+  position: relative;
+
+  .form-control {
+    padding-right: 88px;
+  }
+
+  .toggle-pw {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $radius-sm;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $mobili-blue-soft;
+    cursor: pointer;
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

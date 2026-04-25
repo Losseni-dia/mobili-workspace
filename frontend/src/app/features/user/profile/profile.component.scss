@@ -1,0 +1,207 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+@import '../../../styles/data-panel';
+
+// ======================================================================
+//  KPI
+// ======================================================================
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.kpi {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  padding: 20px 22px;
+  transition: all $t-base;
+
+  &:hover { transform: translateY(-2px); border-color: rgba($mobili-blue, 0.3); box-shadow: $shadow-md; }
+
+  .kpi-label { color: $gray-500; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
+
+  .kpi-value {
+    margin-top: 8px;
+    font-family: $font-display;
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    letter-spacing: -0.6px;
+    line-height: 1.1;
+
+    .kpi-suffix {
+      margin-left: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: $gray-500;
+    }
+  }
+
+  .kpi-bar {
+    margin-top: 14px;
+    height: 4px;
+    border-radius: 4px;
+    background: $gray-100;
+    overflow: hidden;
+
+    span { display: block; height: 100%; border-radius: inherit; background: $mobili-blue; width: 60%; }
+
+    &.gold span { background: $gradient-gold; width: 78%; }
+    &.green span { background: $success; width: 70%; }
+    &.purple span { background: $admin-purple; width: 88%; }
+  }
+}
+
+// ======================================================================
+//  PANELS
+// ======================================================================
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+
+  @media (max-width: 1050px) { grid-template-columns: 1fr; }
+
+  &.panel-grid--single {
+    grid-template-columns: 1fr;
+  }
+}
+
+.count-chip.link {
+  cursor: pointer;
+  text-decoration: none;
+  transition: all $t-base;
+  &:hover { background: $mobili-blue; color: $white; }
+}
+
+// ======================================================================
+//  CARTES VOYAGE (prochains voyages)
+// ======================================================================
+.trip-cards {
+  list-style: none;
+  padding: 14px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trip-card {
+  display: grid;
+  grid-template-columns: 78px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  transition: all $t-base;
+
+  &:hover {
+    transform: translateX(3px);
+    background: $mobili-blue-fog;
+    border-color: rgba($mobili-blue, 0.25);
+  }
+
+  .trip-date {
+    text-align: center;
+    padding: 8px 6px;
+    background: $white;
+    border-radius: $radius-sm;
+    border: 1px solid $gray-200;
+
+    .trip-day {
+      display: block;
+      font-family: $font-display;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: $mobili-blue;
+      line-height: 1;
+    }
+
+    .trip-month {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: $gray-500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .trip-time {
+      display: block;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid $gray-100;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: $mobili-blue-deep;
+    }
+  }
+
+  .trip-route {
+    min-width: 0;
+
+    strong {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: $mobili-blue-deep;
+      font-weight: 800;
+      font-size: 1rem;
+      text-transform: capitalize;
+
+      .arrow { color: $mobili-yellow-dark; }
+    }
+
+    .trip-meta {
+      display: block;
+      margin-top: 4px;
+      color: $gray-500;
+      font-size: 0.82rem;
+
+      .mono {
+        font-family: 'Fira Code', 'Consolas', monospace;
+        color: $mobili-blue;
+      }
+    }
+  }
+
+  .trip-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+
+    .price {
+      color: $mobili-blue;
+      font-weight: 900;
+      font-size: 1rem;
+    }
+  }
+}
+
+// ======================================================================
+//  Route mini (table activité)
+// ======================================================================
+.route-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+
+  strong { color: $mobili-blue-deep; font-weight: 800; }
+  .arrow { color: $mobili-yellow-dark; font-weight: 900; }
+}
+
+.data-table .amount {
+  color: $mobili-blue;
+  font-weight: 900;
+}

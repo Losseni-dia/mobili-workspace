@@ -1,0 +1,76 @@
+@use "sass:color";
+
+// ====== COULEURS MOBILI =================================================
+$mobili-yellow: #FFCC00;
+$mobili-yellow-soft: #FFE27A;
+$mobili-yellow-dark: #E6B800;
+
+$mobili-blue: #092990;
+$mobili-blue-deep: #05164d;
+$mobili-blue-soft: #1e3ac0;
+$mobili-blue-fog: #eef1ff;
+
+$admin-purple: #6b21a8;
+$station-green: #15803d;
+$station-green-soft: #dcfce7;
+
+$danger: #dc2626;
+$danger-soft: #fee2e2;
+$success: #16a34a;
+$warning: #d97706;
+
+// ====== NEUTRES ==========================================================
+$white: #ffffff;
+$gray-50: #f8faff;
+$gray-100: #f1f4fb;
+$gray-200: #e2e8f0;
+$gray-300: #cbd5e1;
+$gray-400: #94a3b8;
+$gray-500: #64748b;
+$gray-600: #475569;
+$gray-700: #334155;
+$gray-800: #1e293b;
+$gray-900: #0f172a;
+
+// Aliases existants conservés (compat)
+$gray-light: $gray-100;
+$text-dark: $mobili-blue-deep;
+
+// ====== TYPOGRAPHIE ======================================================
+$font-sans: 'Inter', 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+$font-display: 'Inter', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+
+// ====== RAYONS ==========================================================
+$radius-xs: 6px;
+$radius-sm: 10px;
+$radius-md: 14px;
+$radius-lg: 20px;
+$radius-xl: 28px;
+$radius-pill: 999px;
+
+// ====== OMBRES (douces, premium) =========================================
+$shadow-xs: 0 1px 2px rgba($mobili-blue-deep, 0.05);
+$shadow-sm: 0 4px 10px rgba($mobili-blue-deep, 0.06);
+$shadow-md: 0 10px 24px rgba($mobili-blue-deep, 0.08);
+$shadow-lg: 0 20px 45px rgba($mobili-blue-deep, 0.12);
+$shadow-xl: 0 30px 70px rgba($mobili-blue-deep, 0.18);
+$shadow-yellow: 0 14px 30px rgba($mobili-yellow, 0.45);
+
+// ====== TRANSITIONS =====================================================
+$t-fast: 0.15s ease;
+$t-base: 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+$t-slow: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+// ====== GRADIENTS SIGNATURES =============================================
+$gradient-hero: linear-gradient(135deg, $mobili-blue 0%, $mobili-blue-deep 100%);
+$gradient-gold: linear-gradient(135deg, $mobili-yellow 0%, $mobili-yellow-dark 100%);
+$gradient-mesh:
+  radial-gradient(circle at 15% 20%, rgba($mobili-yellow, 0.20), transparent 55%),
+  radial-gradient(circle at 85% 80%, rgba($mobili-blue, 0.14), transparent 55%),
+  linear-gradient(180deg, $gray-50 0%, $mobili-blue-fog 100%);
+$gradient-card: linear-gradient(180deg, $white 0%, rgba($mobili-blue-fog, 0.5) 100%);
+
+// ====== LAYOUT ==========================================================
+$container-max: 1200px;
+$container-narrow: 860px;
+$header-height: 80px;

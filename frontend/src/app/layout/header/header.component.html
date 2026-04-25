@@ -1,0 +1,105 @@
+<header class="header">
+    <a routerLink="/" class="logo">MOBILI</a>
+
+    <nav class="nav-container">
+        @if (authService.isLoggedIn()) {
+
+            @if (showGareEspaceLink()) {
+                <a
+                    routerLink="/gare"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: false }"
+                    class="nav-item station"
+                    title="Espace gare / scanner"
+                >
+                    🚉 Gare
+                </a>
+            }
+
+            @if (showCovoiturageEspaceLink()) {
+                <a routerLink="/covoiturage/accueil" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }" class="nav-item cov">
+                    🚗 Covoiturage
+                </a>
+            }
+
+            @if (showChauffeurProLink()) {
+                <a routerLink="/chauffeur" routerLinkActive="active" class="nav-item driver" title="Services, itinéraire et scan billets">
+                    🚐 Chauffeur
+                </a>
+            }
+
+            @if (authService.hasRole('ADMIN')) {
+                <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item admin-link">
+                    🛠️ Admin
+                </a>
+            }
+
+            @if (showPartenaireEspaceLink()) {
+                <a
+                    routerLink="/partenaire/dashboard"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: false }"
+                    class="nav-item partner-link"
+                    title="Espace compagnie : voyages, réservations"
+                >
+                    🏢 Partenaire
+                </a>
+            }
+
+        }
+    </nav>
+
+    <div class="actions">
+        @if (authService.isLoggedIn()) {
+            <a
+                class="header-bell"
+                [routerLink]="notificationsPath()"
+                title="Notifications"
+                [attr.aria-label]="'Ouvrir les notifications'">
+                <span class="bell-ico" aria-hidden="true">🔔</span>
+                @if (mobiliInbox.hasUnread()) {
+                    <span class="bell-badge" aria-hidden="true">{{ mobiliInbox.unreadCount() > 9 ? '9+' : mobiliInbox.unreadCount() }}</span>
+                }
+            </a>
+
+            <a routerLink="/my-account/profile" routerLinkActive="active" class="avatar-link" title="Mon espace voyageur">
+                @let avatar = getAvatarUrl(authService.currentUser()?.avatarUrl);
+                @if (avatar) {
+                    <img [src]="avatar" alt="Profil" draggable="false">
+                } @else {
+                    <span class="header-initials">
+                        {{ getInitials(authService.currentUser()?.firstname, authService.currentUser()?.lastname) }}
+                    </span>
+                }
+            </a>
+
+            <button
+                type="button"
+                (click)="logout()"
+                class="btn-logout"
+                title="Se déconnecter"
+                aria-label="Se déconnecter"
+            >
+                <svg
+                    class="btn-logout__ico"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+                <!--<span class="btn-logout__text">Déconnexion</span>-->
+            </button>
+        } @else {
+            <a routerLink="/auth/login" class="link-auth">Connexion</a>
+            <button class="btn-register" routerLink="/auth/inscription">S'inscrire</button>
+        }
+    </div>
+</header>

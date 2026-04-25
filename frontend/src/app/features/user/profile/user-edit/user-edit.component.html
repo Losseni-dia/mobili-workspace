@@ -1,0 +1,54 @@
+<div class="edit-profile-container">
+    <div class="profile-card">
+        <div class="card-header">
+            <h2>👤 Mon Profil Personnel</h2>
+            <p>Gérez vos informations de connexion et votre avatar</p>
+        </div>
+
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+            <div class="avatar-upload-section">
+                <div class="avatar-wrapper" (click)="avatarInput.click()">
+                    <img [src]="avatarPreview() || 'assets/images/default-avatar.png'" alt="Avatar">
+                    <div class="avatar-overlay">
+                        <span>Changer la photo</span>
+                    </div>
+                </div>
+                <input #avatarInput type="file" (change)="onFileSelected($event)" accept="image/*" hidden>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label>Prénom</label>
+                    <input type="text" formControlName="firstname" placeholder="Votre prénom">
+                </div>
+
+                <div class="field">
+                    <label>Nom</label>
+                    <input type="text" formControlName="lastname" placeholder="Votre nom">
+                </div>
+
+                <div class="field">
+                    <label>Nom d'utilisateur (Login)</label>
+                    <input type="text" formControlName="login" placeholder="Pseudo">
+                </div>
+
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" formControlName="email" placeholder="email@exemple.com">
+                </div>
+
+                <div class="field full-width">
+                    <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                    <input type="password" formControlName="password" placeholder="••••••••">
+                </div>
+            </div>
+
+        <div class="actions">
+            <button type="button" class="btn-cancel" (click)="onCancel()">Annuler</button>
+            <button type="submit" class="btn-save" [disabled]="userForm.invalid || isLoading()">
+                {{ isLoading() ? 'Enregistrement...' : 'Mettre à jour mon profil' }}
+            </button>
+        </div>
+        </form>
+    </div>
+</div>

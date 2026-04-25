@@ -1,0 +1,282 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.gare-welcome {
+  margin-bottom: 1.5rem;
+
+  .greet {
+    font-family: $font-display;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    margin: 0 0 0.4rem;
+  }
+
+  .sub {
+    margin: 0;
+    color: $gray-600;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .id {
+    color: $gray-400;
+    font-size: 0.85em;
+  }
+}
+
+.gare-pending-callout {
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: $radius-md;
+  background: rgba($station-green, 0.1);
+  border: 1px solid rgba($station-green, 0.28);
+  color: $mobili-blue-deep;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.gare-chauffeurs {
+  max-width: 900px;
+  margin-bottom: 1.75rem;
+  padding: 1.1rem 1.2rem;
+  background: $white;
+  border: 1px solid rgba($mobili-blue, 0.12);
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+}
+
+.gare-chauffeurs-title {
+  font-family: $font-display;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: $mobili-blue-deep;
+  margin: 0 0 0.35rem;
+}
+
+.gare-chauffeurs-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: $gray-600;
+}
+
+.gare-chauffeurs-status,
+.gare-chauffeurs-err {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.gare-chauffeurs-err {
+  color: $danger;
+}
+
+.gare-chauffeurs-list {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  line-height: 1.45;
+  color: $mobili-blue-deep;
+  strong {
+    font-weight: 800;
+  }
+}
+
+.gare-chauffeurs-empty {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: $gray-600;
+}
+
+.gare-chauffeurs-link {
+  margin: 0;
+  font-size: 0.88rem;
+  a {
+    font-weight: 700;
+    color: $mobili-blue-soft;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.gare-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  max-width: 900px;
+
+  @media (min-width: 700px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.action-card {
+  display: block;
+  padding: 1.25rem 1.35rem;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color $t-base, box-shadow $t-base;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    border-color: rgba($station-green, 0.35);
+    box-shadow: $shadow-md;
+  }
+
+  &--primary {
+    border-color: rgba($station-green, 0.4);
+    background: linear-gradient(180deg, $station-green-soft 0%, $white 100%);
+  }
+
+  .action-icon {
+    font-size: 1.75rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $mobili-blue-deep;
+  }
+
+  p {
+    margin: 0 0 0.75rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: $gray-600;
+  }
+
+  .action-cta {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: $mobili-blue-soft;
+  }
+}
+
+.gare-company {
+  max-width: 900px;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $gray-200;
+}
+
+.gare-company-title {
+  font-family: $font-display;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: $mobili-blue-deep;
+  margin: 0 0 0.4rem;
+}
+
+.gare-company-lead {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: $gray-600;
+}
+
+.gare-company-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+
+  @media (min-width: 520px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.company-card {
+  display: block;
+  padding: 1rem 1.1rem;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color $t-base, box-shadow $t-base;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    border-color: rgba($mobili-blue, 0.35);
+    box-shadow: $shadow-md;
+  }
+
+  &--accent {
+    border-color: rgba($mobili-blue, 0.25);
+    background: linear-gradient(180deg, rgba($mobili-blue-soft, 0.2) 0%, $white 100%);
+  }
+
+  .company-card-icon {
+    font-size: 1.35rem;
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: $mobili-blue-deep;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: $gray-600;
+  }
+}
+
+.action-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  text-decoration: none;
+  color: inherit;
+  pointer-events: none;
+}
+
+.gare-company--locked .gare-company-locked-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: $radius-sm;
+  background: $gray-100;
+  border: 1px dashed $gray-300;
+  color: $gray-600;
+  font-size: 0.9rem;
+}
+
+.gare-tips {
+  max-width: 900px;
+  margin-top: 1.75rem;
+  padding: 1rem 1.1rem;
+  background: $gray-100;
+  border-radius: $radius-sm;
+  border: 1px solid $gray-200;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $gray-500;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: $gray-600;
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+}

@@ -1,0 +1,95 @@
+<section class="booking-toolbar">
+    <div class="revenue-chip">
+        <span class="chip-label">Total filtré</span>
+        <strong>{{ totalRevenue() | number }} FCFA</strong>
+    </div>
+
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" placeholder="Passager ou réf…">
+        </label>
+
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="filterDate()" (ngModelChange)="filterDate.set($event)">
+        </label>
+
+        <label class="filter">
+            <span class="f-ico">🗺️</span>
+            <select [ngModel]="filterRoute()" (ngModelChange)="filterRoute.set($event)">
+                <option value="">Tous les trajets</option>
+                @for (route of uniqueRoutes(); track route) {
+                    <option [value]="route">{{ route }}</option>
+                }
+            </select>
+        </label>
+    </div>
+</section>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Réservations de vos clients</h2>
+            <p>Toutes les réservations rattachées à vos trajets, en temps réel.</p>
+        </div>
+        <span class="count-chip">{{ filteredBookings().length }} résultats</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des réservations…</div>
+    } @else if (filteredBookings().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Passager</th>
+                        <th>Trajet</th>
+                        <th>Date</th>
+                        <th>Sièges</th>
+                        <th>Statut</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (booking of filteredBookings(); track booking.id) {
+                        <tr>
+                            <td class="mono">#{{ booking.reference }}</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">{{ booking.customerName?.[0] }}</div>
+                                    <div class="user-meta">
+                                        <strong>{{ booking.customerName }}</strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ booking.tripRoute }}</td>
+                            <td class="mono">{{ booking.date | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td>
+                                <div class="seat-tags">
+                                    @for (seat of booking.seatNumbers; track seat) {
+                                        <span class="seat-chip">{{ seat }}</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-pill" [ngClass]="getStatusClass(booking.status)">
+                                    <span class="dot"></span>
+                                    {{ booking.status }}
+                                </span>
+                            </td>
+                            <td class="right amount">{{ booking.amount | number }} FCFA</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">🔎</div>
+            <strong>Aucune réservation trouvée</strong>
+            <p>Modifie tes filtres pour élargir la recherche.</p>
+        </div>
+    }
+</section>

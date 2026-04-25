@@ -1,0 +1,296 @@
+// Variables Officielles Mobili
+$mobili-blue: #092990;
+$mobili-yellow: #FFCC00;
+$mobili-dark: #05164d;
+$mobili-light-bg: #f8faff;
+$mobili-gray: #a0aec0;
+
+.booking-layout {
+  display: flex;
+  gap: 40px;
+  padding: 40px;
+  max-width: 1400px;
+  margin: 20px auto;
+  background: $mobili-light-bg;
+  border-radius: 30px;
+
+  // Bloc de choix du segment (embarquement / descente)
+  .segment-picker {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: rgba($mobili-blue, 0.04);
+    border-radius: 16px;
+    border: 1px solid rgba($mobili-blue, 0.08);
+
+    .segment-hint {
+      margin: 0 0 14px;
+      color: $mobili-dark;
+      font-size: 0.92rem;
+    }
+
+    .segment-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .segment-field {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: $mobili-dark;
+
+      span { margin-bottom: 6px; }
+
+      select {
+        padding: 10px 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: white;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: $mobili-dark;
+
+        &:focus {
+          outline: none;
+          border-color: $mobili-blue;
+          box-shadow: 0 0 0 3px rgba($mobili-blue, 0.1);
+        }
+      }
+    }
+
+    .fares-details {
+      margin: 8px 0 12px;
+      summary {
+        cursor: pointer;
+        font-weight: 700;
+        color: $mobili-blue;
+        font-size: 0.9rem;
+      }
+      .fares-list {
+        list-style: none;
+        padding: 10px 0 0;
+        margin: 0;
+        font-size: 0.9rem;
+        li {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 0;
+          border-bottom: 1px dashed #e2e8f0;
+          .fare-price {
+            margin-left: auto;
+            font-weight: 700;
+            color: $mobili-blue;
+          }
+        }
+      }
+    }
+
+    .segment-price {
+      margin-top: 6px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: $mobili-yellow;
+      color: $mobili-blue;
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .warn {
+        color: #b45309;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  // Section Gauche : Le Bus (La Structure)
+  .seat-selection {
+    flex: 1.2;
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba($mobili-blue, 0.05);
+    border-top: 5px solid $mobili-blue; // Rappel de la couleur principale
+
+    h2 { 
+      color: $mobili-blue;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 30px;
+    }
+  }
+
+  // Section Droite : Le Formulaire (L'Action)
+  .passenger-details {
+    flex: 1;
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba($mobili-blue, 0.1);
+    height: fit-content;
+    position: sticky;
+    top: 40px;
+
+    h2 { 
+      color: $mobili-blue;
+      font-size: 1.5rem;
+      border-left: 5px solid $mobili-yellow; // Accent jaune sur le titre
+      padding-left: 15px;
+      margin-bottom: 30px;
+    }
+
+    .input-field {
+      margin-bottom: 25px;
+      animation: fadeInSlide 0.4s ease-out;
+
+      label { 
+        display: block; 
+        margin-bottom: 10px; 
+        font-weight: 700; 
+        color: $mobili-dark;
+        font-size: 0.85rem;
+        
+        strong { color: $mobili-blue; }
+      }
+
+      input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        
+        &:focus { 
+          border-color: $mobili-blue;
+          box-shadow: 0 0 0 4px rgba($mobili-blue, 0.1);
+          outline: none;
+        }
+      }
+    }
+  }
+
+  // Résumé financier avant validation
+  .booking-summary {
+    background: rgba($mobili-blue, 0.02);
+    padding: 20px;
+    border-radius: 16px;
+    margin-top: 30px;
+    border: 1px solid rgba($mobili-blue, 0.05);
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      color: $mobili-dark;
+
+      &.total {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px dashed #e2e8f0;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: $mobili-blue;
+      }
+    }
+  }
+
+  // Bouton de Confirmation Mobili (Jaune sur Bleu)
+  button[type="submit"] {
+    width: 100%;
+    margin-top: 25px;
+    padding: 20px;
+    background: $mobili-yellow;
+    color: $mobili-blue; // Texte bleu sur fond jaune pour un contraste maximal
+    border: none;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 10px 20px rgba($mobili-yellow, 0.3);
+
+    &:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba($mobili-yellow, 0.4);
+      filter: brightness(1.05);
+    }
+
+    &:disabled {
+      background: #edf2f7;
+      color: $mobili-gray;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.grid-bus {
+  display: grid;
+  // 2 sièges (45px chacun) | 1 allée (20px) | 2 sièges (45px chacun)
+  grid-template-columns: repeat(2, 45px) 20px repeat(2, 45px); 
+  gap: 12px;
+  justify-content: center;
+  padding: 25px;
+  background: #ffffff;
+  border: 3px solid #ddd;
+  border-radius: 15px;
+  max-height: 600px;
+  overflow-y: auto;
+
+  // Design des sièges
+  .seat {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+
+    &.selected { background: #FFCC00; color: #000; }
+    &.occupied { background: #555; color: #fff; cursor: not-allowed; opacity: 0.6; }
+    &:hover:not(.occupied) { transform: scale(1.1); }
+  }
+
+  // L'astuce : On force les sièges à sauter la 3ème colonne (l'allée)
+  // On cible les sièges qui devraient tomber sur la colonne 3 et on les décale
+  .seat:nth-child(4n+3) {
+    grid-column: 4; // Saute par dessus la colonne 3
+  }
+  .seat:nth-child(4n+4) {
+    grid-column: 5;
+  }
+}
+
+// Ton spinner Mobili
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #FFCC00; 
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

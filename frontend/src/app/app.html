@@ -1,0 +1,8 @@
+<app-header></app-header>
+<app-notification-banner></app-notification-banner>
+<main>
+    <router-outlet></router-outlet>
+</main>
+@if (showGlobalFooter()) {
+    <app-footer></app-footer>
+}

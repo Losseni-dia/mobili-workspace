@@ -1,0 +1,47 @@
+<div class="channel">
+  <p class="back"><a [routerLink]="backLink()">← Retour</a></p>
+  <header class="head">
+    <h1>Fil du voyage</h1>
+    <p class="muted">
+      Annonces de retard et messages de la gare ou du partenaire. Tous les passagers titulaires d’un billet
+      reçoivent un avis.
+    </p>
+  </header>
+
+  @if (canPost()) {
+    <div class="compose">
+      <label for="msg-body">Publier un message</label>
+      <textarea
+        id="msg-body"
+        rows="3"
+        [(ngModel)]="draft"
+        placeholder="Ex. Retard 15 min à cause d’un embouteillage en centre-ville."
+        [disabled]="sending"
+      ></textarea>
+      <button type="button" class="btn-send" (click)="send()" [disabled]="sending || !draft.trim()">
+        {{ sending ? 'Envoi…' : 'Publier' }}
+      </button>
+    </div>
+  } @else {
+    <p class="hint">En tant que voyageur, vous lisez les annonces. La publication est réservée à la gare, au partenaire ou à l’administrateur.</p>
+  }
+
+  @if (loading()) {
+    <p class="muted">Chargement des messages…</p>
+  } @else if (messages().length === 0) {
+    <p class="empty">Aucun message pour l’instant.</p>
+  } @else {
+    <ol class="thread">
+      @for (m of messages(); track m.id) {
+        <li class="bubble">
+          <div class="who">
+            <strong>{{ m.authorName }}</strong>
+            <span class="role">{{ m.authorRole }}</span>
+            <time [attr.datetime]="m.createdAt">{{ m.createdAt | date: 'dd/MM/yyyy HH:mm' }}</time>
+          </div>
+          <p class="text">{{ m.body }}</p>
+        </li>
+      }
+    </ol>
+  }
+</div>

@@ -1,0 +1,197 @@
+<div class="page">
+    <header class="page-hero">
+        <h1>Statistiques métier</h1>
+        <p class="page-lead">
+            Indicateurs commerciaux et opérationnels issus des <strong>réservations confirmées ou complétées</strong> (hors seules annulations).
+            Le top 10 classe les trajets : par <strong>volume de billets</strong> (nombre de ventes) et par <strong>chiffre d’affaires</strong> (FCFA).
+        </p>
+    </header>
+
+    <section class="doc-block">
+        <h2>Périmètre &amp; méthodologie</h2>
+        <p>
+            <strong>Période</strong> : {{ periodLabel() }}.<br />
+            <strong>Horodatage</strong> : la fenêtre s’applique à la <code>date de création</code> de la réservation côté base (même principe que votre pilotage comptable journalier).<br />
+            <strong>Statuts retenus</strong> : confirmé, complété, vente guichet (hors brouillons en attente).<br />
+            <strong>Top 10</strong> : deux classements indépendants (volume ≠ CA si panier moyen diffère).<br />
+            <strong>Graphiques circulaires</strong> : part du <strong>top 5</strong> par rapport au total période ; le reste est regroupé sous « Autres ».
+        </p>
+    </section>
+
+    <div class="period-bar">
+        <span class="period-label">Fenêtre d’analyse :</span>
+        <div class="chip-row">
+            <button type="button" class="chip" [class.active]="period() === 'DAY'" (click)="setPeriod('DAY')">Jour</button>
+            <button type="button" class="chip" [class.active]="period() === 'WEEK'" (click)="setPeriod('WEEK')">7 jours</button>
+            <button type="button" class="chip" [class.active]="period() === 'MONTH'" (click)="setPeriod('MONTH')">30 jours</button>
+        </div>
+    </div>
+
+    @if (loadError()) {
+        <p class="err">Impossible de charger les statistiques métier.</p>
+    } @else if (stats(); as s) {
+        <p class="range-hint">
+            Du <strong>{{ s.fromInclusive | date: "dd/MM/yyyy HH:mm" }}</strong> au
+            <strong>{{ s.toExclusive | date: "dd/MM/yyyy HH:mm" }}</strong> (heure serveur)
+        </p>
+
+        <section class="kpi-grid kpi-5">
+            <article class="kpi">
+                <span class="kpi-chip gold">🎫</span>
+                <div class="kpi-value">{{ s.totalBookings | number }}</div>
+                <div class="kpi-label">Billets / réservations (période)</div>
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip green">🚌</span>
+                <div class="kpi-value">{{ s.activeTripCount | number }}</div>
+                <div class="kpi-label">Trajets distincts actifs (ayant des ventes)</div>
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip gold">💰</span>
+                <div class="kpi-value">{{ s.totalRevenueFcfa | number }} <span class="kpi-suf">FCFA</span></div>
+                <div class="kpi-label">Chiffre d’affaires (période)</div>
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip blue">↗</span>
+                <div class="kpi-value">{{ s.avgRevenuePerBooking | number: "1.0-0" }} <span class="kpi-suf">FCFA</span></div>
+                <div class="kpi-label">Panier moyen (CA ÷ billets)</div>
+            </article>
+        </section>
+
+        <div class="donut-grid">
+            <div class="donut-card">
+                <h3>Part du CA (top 5 + autres)</h3>
+                <div class="donut-wrap">
+                    <svg
+                        class="donut-svg"
+                        viewBox="0 0 100 100"
+                        role="img"
+                        aria-label="Graphique de répartition du chiffre d'affaires"
+                    >
+                        @for (seg of revenueDonutSegments(); track $index) {
+                            <g
+                                class="donut-slice"
+                                [attr.transform]="revenueSliceTransform($index, seg)"
+                                (pointerenter)="hoveredRevenue.set($index)"
+                                (pointerleave)="hoveredRevenue.set(null)"
+                            >
+                                <path [attr.d]="seg.path" [attr.fill]="seg.color" />
+                            </g>
+                        }
+                    </svg>
+                </div>
+                <ul class="donut-legend">
+                    @for (sl of s.revenueByTripDonut; track sl.label) {
+                        <li
+                            (pointerenter)="hoveredRevenue.set($index)"
+                            (pointerleave)="hoveredRevenue.set(null)"
+                        >
+                            <span class="leg-pct">{{ sl.percentOfTotal | number: "1.1-1" }} %</span>
+                            <span class="leg-txt" [title]="sl.label">{{ sl.label }}</span>
+                            <span class="leg-val">{{ sl.revenueFcfa | number }} F</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="donut-card">
+                <h3>Part des réservations (top 5 + autres)</h3>
+                <div class="donut-wrap">
+                    <svg
+                        class="donut-svg"
+                        viewBox="0 0 100 100"
+                        role="img"
+                        aria-label="Graphique de répartition des réservations"
+                    >
+                        @for (seg of volumeDonutSegments(); track $index) {
+                            <g
+                                class="donut-slice"
+                                [attr.transform]="volumeSliceTransform($index, seg)"
+                                (pointerenter)="hoveredVolume.set($index)"
+                                (pointerleave)="hoveredVolume.set(null)"
+                            >
+                                <path [attr.d]="seg.path" [attr.fill]="seg.color" />
+                            </g>
+                        }
+                    </svg>
+                </div>
+                <ul class="donut-legend">
+                    @for (sl of s.volumeByTripDonut; track sl.label) {
+                        <li
+                            (pointerenter)="hoveredVolume.set($index)"
+                            (pointerleave)="hoveredVolume.set(null)"
+                        >
+                            <span class="leg-pct">{{ sl.percentOfTotal | number: "1.1-1" }} %</span>
+                            <span class="leg-txt" [title]="sl.label">{{ sl.label }}</span>
+                            <span class="leg-val">{{ sl.bookingCount | number }} bil.</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="tables-2">
+            <section class="panel">
+                <header class="panel-head">
+                    <h2>Top 10 — volume (billets)</h2>
+                </header>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Route</th>
+                                <th>Partenaire</th>
+                                <th>Billets</th>
+                                <th>CA (FCFA)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (r of s.top10ByBookings; track r.tripId) {
+                                <tr>
+                                    <td class="t-rank">{{ r.rank }}</td>
+                                    <td>{{ r.route }}</td>
+                                    <td>{{ r.partnerName }}</td>
+                                    <td class="t-num">{{ r.bookingCount | number }}</td>
+                                    <td class="t-num">{{ r.revenueFcfa | number }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="panel">
+                <header class="panel-head">
+                    <h2>Top 10 — rentabilité (CA)</h2>
+                </header>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Route</th>
+                                <th>Partenaire</th>
+                                <th>CA (FCFA)</th>
+                                <th>Billets</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (r of s.top10ByRevenue; track r.tripId) {
+                                <tr>
+                                    <td class="t-rank">{{ r.rank }}</td>
+                                    <td>{{ r.route }}</td>
+                                    <td>{{ r.partnerName }}</td>
+                                    <td class="t-num">{{ r.revenueFcfa | number }}</td>
+                                    <td class="t-num">{{ r.bookingCount | number }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    } @else {
+        <p class="loading">Chargement des indicateurs…</p>
+    }
+
+    <a routerLink="/admin/dashboard" class="back-link">← Retour à la vue d’ensemble</a>
+</div>

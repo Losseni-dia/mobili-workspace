@@ -1,0 +1,123 @@
+<section class="gare-welcome">
+    <h2 class="greet">Bonjour{{ firstName() ? ', ' + firstName() : '' }} 👋</h2>
+    <p class="sub">
+        Vous êtes connecté en <strong>responsable gare</strong> pour
+        <strong>{{ stationName() }}</strong>@if (stationId()) { <span class="id"> (gare n°{{ stationId() }})</span> }.
+    </p>
+    @if (gareActionsLocked()) {
+        <p class="gare-pending-callout" role="status">
+            <strong>Validation requise.</strong> Votre gare n’est pas encore autorisée par le dirigeant de la compagnie. Vous ne
+            pourrez ni publier de trajet, ni utiliser le scanner, ni accéder aux outils compagnie tant que celle-ci n’aura pas
+            validé la gare (menu Partenaire → Gares). Merci de patienter.
+        </p>
+    }
+</section>
+
+<section class="gare-chauffeurs" aria-labelledby="gare-chauffeurs-heading">
+    <h2 id="gare-chauffeurs-heading" class="gare-chauffeurs-title">Chauffeurs affectés à votre gare</h2>
+    <p class="gare-chauffeurs-lead">
+        Liste des chauffeurs salariés que le dirigeant ou un compte gare a rattachés à <strong>{{ stationName() }}</strong>.
+        Pour inscrire ou modifier l’affectation, utilisez la page compagnie.
+    </p>
+    @if (stationChauffeursLoading()) {
+        <p class="gare-chauffeurs-status">Chargement…</p>
+    } @else if (stationChauffeursError()) {
+        <p class="gare-chauffeurs-err" role="alert">{{ stationChauffeursError() }}</p>
+    } @else if (myStation(); as st) {
+        @if (st.assignedChauffeurs && st.assignedChauffeurs.length > 0) {
+            <ul class="gare-chauffeurs-list">
+                @for (ch of st.assignedChauffeurs; track ch.id) {
+                    <li>
+                        {{ ch.firstname?.trim() || '' }}
+                        <strong>{{ ch.lastname?.trim() || '—' }}</strong>
+                    </li>
+                }
+            </ul>
+        } @else {
+            <p class="gare-chauffeurs-empty">Aucun chauffeur n’est encore affecté à cette gare.</p>
+        }
+    } @else {
+        <p class="gare-chauffeurs-empty">Impossible d’afficher le détail de la gare.</p>
+    }
+    <p class="gare-chauffeurs-link">
+        <a routerLink="/partenaire/chauffeurs">Ouvrir la page Chauffeurs (inscription &amp; affectation) →</a>
+    </p>
+</section>
+
+<div class="gare-action-grid" [class.gare-action-grid--locked]="gareActionsLocked()">
+    @if (gareActionsLocked()) {
+        <div class="action-card action-card--primary action-card--disabled" aria-disabled="true">
+            <span class="action-icon" aria-hidden="true">📷</span>
+            <h3>Scanner des billets</h3>
+            <p>Disponible après validation de la gare par le dirigeant.</p>
+        </div>
+        <div class="action-card action-card--disabled" aria-disabled="true">
+            <span class="action-icon" aria-hidden="true">👤</span>
+            <h3>Profil &amp; gare</h3>
+            <p>Disponible après validation.</p>
+        </div>
+    } @else {
+        <a routerLink="/gare/scan" class="action-card action-card--primary">
+            <span class="action-icon" aria-hidden="true">📷</span>
+            <h3>Scanner des billets</h3>
+            <p>Validez les QR code à l’embarquement. C’est l’action principale de l’espace gare.</p>
+            <span class="action-cta">Ouvrir le scanner →</span>
+        </a>
+
+        <a routerLink="/gare/profil" class="action-card">
+            <span class="action-icon" aria-hidden="true">👤</span>
+            <h3>Profil &amp; gare</h3>
+            <p>Coordonnées du compte, gare affectée, modifier nom, e-mail ou mot de passe.</p>
+            <span class="action-cta">Voir le profil →</span>
+        </a>
+    }
+</div>
+
+<section class="gare-company" aria-labelledby="gare-company-heading" [class.gare-company--locked]="gareActionsLocked()">
+    <h2 id="gare-company-heading" class="gare-company-title">Compagnie — voyages &amp; réservations</h2>
+    <p class="gare-company-lead">
+        En tant que responsable gare, vous pouvez gérer les trajets et les réservations de votre compagnie comme sur l’espace
+        partenaire, une fois la gare validée.
+    </p>
+    <div class="gare-company-grid">
+        @if (gareActionsLocked()) {
+            <p class="gare-company-locked-hint" role="status">
+                Ces raccourcis seront actifs dès que le dirigeant aura validé votre gare.
+            </p>
+        } @else {
+            <a routerLink="/partenaire/dashboard" class="company-card">
+                <span class="company-card-icon" aria-hidden="true">📊</span>
+                <h3>Tableau de bord</h3>
+                <p>Vue d’ensemble et activité récente.</p>
+            </a>
+            <a routerLink="/partenaire/trips" class="company-card">
+                <span class="company-card-icon" aria-hidden="true">🚌</span>
+                <h3>Mes voyages</h3>
+                <p>Consulter et modifier les trajets publiés.</p>
+            </a>
+            <a routerLink="/partenaire/add-trip" class="company-card company-card--accent">
+                <span class="company-card-icon" aria-hidden="true">＋</span>
+                <h3>Publier un trajet</h3>
+                <p>Créer un nouveau trajet pour la compagnie.</p>
+            </a>
+            <a routerLink="/partenaire/bookings" class="company-card">
+                <span class="company-card-icon" aria-hidden="true">🎫</span>
+                <h3>Réservations</h3>
+                <p>Réservations des passagers sur vos voyages.</p>
+            </a>
+            <a routerLink="/partenaire/settings" class="company-card">
+                <span class="company-card-icon" aria-hidden="true">🏢</span>
+                <h3>Profil compagnie</h3>
+                <p>Informations et paramètres de l’entreprise.</p>
+            </a>
+        }
+    </div>
+</section>
+
+<div class="gare-tips">
+    <h3>À savoir</h3>
+    <ul>
+        <li>En cas d’imprévu, rafraîchissez la page du scanner si la caméra ne démarre pas (autorisation navigateur).</li>
+        <li>Les voyageurs présentent le QR reçu après paiement — un scan valide confirme l’embarquement.</li>
+    </ul>
+</div>

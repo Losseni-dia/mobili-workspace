@@ -1,0 +1,177 @@
+<div class="pgc">
+  <header class="pgc-hero">
+    <h1>Messages compagnie ↔ gares</h1>
+    <p class="pgc-lead">
+      Canal <strong>collectif</strong> (toutes les gares) ou <strong>ciblé</strong> (choix des gares). Les responsables
+      reçoivent une notification et peuvent répondre ici.
+    </p>
+  </header>
+
+  @if (error()) {
+    <div class="pgc-alert" role="alert">{{ error() }}</div>
+  }
+
+  <div class="pgc-grid">
+    <aside class="pgc-threads" aria-label="Fils de discussion">
+      <div class="pgc-threads-head">
+        <h2>Conversations</h2>
+        <button type="button" class="pgc-btn pgc-btn--primary" (click)="openCreate()">+ Nouveau</button>
+      </div>
+      @if (loading()) {
+        <p class="pgc-muted">Chargement…</p>
+      } @else if (threads().length === 0) {
+        <p class="pgc-muted">Aucun fil. Créez le premier message.</p>
+      } @else {
+        <ul class="pgc-thread-list">
+          @for (t of threads(); track t.id) {
+            <li>
+              <button
+                type="button"
+                class="pgc-thread-pill"
+                [class.pgc-thread-pill--active]="selectedId() === t.id"
+                (click)="selectThread(t.id, true)"
+              >
+                <span class="pgc-thread-title">{{ t.title }}</span>
+                <span class="pgc-thread-meta">{{ scopeLabel(t) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+
+    <section class="pgc-conv" [attr.aria-label]="'Messages du fil'">
+      @if (selectedId() == null) {
+        <p class="pgc-placeholder">Sélectionnez une conversation ou créez-en une.</p>
+      } @else {
+        <div class="pgc-messages" #scroll>
+          @if (loadingMessages()) {
+            <p class="pgc-muted">Chargement des messages…</p>
+          } @else {
+            @for (m of messages(); track m.id) {
+              <div class="pgc-msg">
+                <div class="pgc-msg-head">
+                  <strong>{{ authorLabel(m) }}</strong>
+                  <time [attr.datetime]="m.createdAt">{{ m.createdAt | date : 'dd/MM/yyyy HH:mm' }}</time>
+                </div>
+                <p class="pgc-msg-body">{{ m.body }}</p>
+              </div>
+            } @empty {
+              <p class="pgc-muted">Aucun message.</p>
+            }
+          }
+        </div>
+        <form [formGroup]="replyForm" (ngSubmit)="onReply()" class="pgc-reply">
+          <label class="visually-hidden" for="pgc-reply">Répondre</label>
+          <textarea id="pgc-reply" formControlName="body" rows="2" placeholder="Votre message…"></textarea>
+          <button type="submit" class="pgc-btn pgc-btn--primary" [disabled]="replyForm.invalid">Envoyer</button>
+        </form>
+      }
+    </section>
+  </div>
+</div>
+
+@if (showCreate()) {
+  <div class="pgc-modal-backdrop" (click)="closeCreate()">
+    <div class="pgc-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="pgc-modal-title">
+      <header class="pgc-modal-head">
+        <div class="pgc-modal-head__text">
+          <h2 id="pgc-modal-title">Nouvelle conversation</h2>
+          <p class="pgc-modal-sub">Donnez un titre, choisissez le périmètre, puis votre premier message.</p>
+        </div>
+        <button type="button" class="pgc-icon-close" (click)="closeCreate()" aria-label="Fermer">×</button>
+      </header>
+      <form [formGroup]="newThreadForm" (ngSubmit)="onCreateSubmit()" class="pgc-create-form">
+        @if (error()) {
+          <div class="pgc-alert" role="alert">{{ error() }}</div>
+        }
+        <div class="pgc-form-field">
+          <label for="t-title" class="pgc-label">Titre du fil</label>
+          <input
+            id="t-title"
+            class="pgc-input"
+            type="text"
+            formControlName="title"
+            placeholder="Ex. consigne d’embarquement, point du jour"
+            autocomplete="off"
+          />
+        </div>
+
+        @if (canBroadcast() && !gareOnly()) {
+          <div class="pgc-form-field pgc-form-field--scope">
+            <span class="pgc-label" id="pgc-scope-legend">Qui reçoit ce message ?</span>
+            <div class="pgc-scope-cards" role="radiogroup" aria-labelledby="pgc-scope-legend">
+              <label class="pgc-scope-card">
+                <input
+                  class="pgc-scope-card__input"
+                  type="radio"
+                  name="scope"
+                  [value]="'ALL'"
+                  formControlName="scope"
+                />
+                <span class="pgc-scope-card__body">
+                  <span class="pgc-scope-card__title">Tout le réseau</span>
+                  <span class="pgc-scope-card__desc">Toutes les gares · fil collectif</span>
+                </span>
+              </label>
+              <label class="pgc-scope-card">
+                <input
+                  class="pgc-scope-card__input"
+                  type="radio"
+                  name="scope"
+                  [value]="'TARGETED'"
+                  formControlName="scope"
+                />
+                <span class="pgc-scope-card__body">
+                  <span class="pgc-scope-card__title">Gares ciblées</span>
+                  <span class="pgc-scope-card__desc">Choisissez une ou plusieurs gares ci-dessous</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        }
+
+        @if (newThreadForm.get('scope')?.value === 'TARGETED' && canBroadcast() && !gareOnly()) {
+          <div class="pgc-station-pick" role="group" aria-label="Gares concernées">
+            <span class="pgc-label">Gares concernées</span>
+            <div class="pgc-station-pick__list">
+              @for (g of stations(); track g.id) {
+                <label class="pgc-ck">
+                  <input
+                    type="checkbox"
+                    [checked]="isStationSelected(g.id)"
+                    (change)="toggleStation(g.id)"
+                  />
+                  <span class="pgc-ck__text"><strong>{{ g.city }}</strong> · {{ g.name }}</span>
+                </label>
+              } @empty {
+                <p class="pgc-muted pgc-station-pick__empty">Aucune gare enregistrée.</p>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="pgc-form-field">
+          <label for="t-first" class="pgc-label">Premier message</label>
+          <textarea
+            id="t-first"
+            class="pgc-textarea"
+            formControlName="firstMessage"
+            rows="4"
+            placeholder="Écrivez le contenu de votre message…"
+          ></textarea>
+        </div>
+        <div class="pgc-modal-actions">
+          <button type="button" class="pgc-btn pgc-btn--ghost" (click)="closeCreate()">Annuler</button>
+          <button
+            type="submit"
+            class="pgc-btn pgc-btn--primary"
+            [disabled]="newThreadForm.invalid || creating()"
+          >
+            {{ creating() ? 'Création…' : 'Créer le fil' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

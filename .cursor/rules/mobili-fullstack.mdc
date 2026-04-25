@@ -1,0 +1,12 @@
+---
+description: Penser back + front pour Mobili (monorepo) et ne pas n’en toucher qu’une seule brique sans vérification
+alwaysApply: true
+---
+
+# Mobili — prise en charge full-stack
+
+- Le dépôt est la **racine** `mobili` : y figurent `backend/`, `frontend/`, `docker-compose.yml`, README racine, etc.
+- Pour une tâche **API, métier, auth, réservation, trajets, paiement, rôles, CORS, env** : traiter d’abord (ou en parallèle) le **backend**, puis vérifier si le **frontend** requiert un ajustement (types, service HTTP, garde, route, UI) — et **l’inverse** pour toute tâche **écran, route Angular, appel API**.
+- S’il y a doute, **ouvrir les deux côtés** (ou au moins rechercher `frontend/src` + `backend/src` pour l’endroit cohérent) avant de conclure.
+- Les commits peuvent cibler un seul sous-dossier, mais l’**intention** de revue = pas laisser le front en décalage avec l’API (ou l’API sans l’intégration front si la fonction est exposée à l’utilisateur).
+- Après changements substantiels : `npm run verify` (voir règle de vérification) lorsque c’est possible.

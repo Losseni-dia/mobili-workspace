@@ -1,0 +1,47 @@
+<div class="inscription-page">
+  <div class="inscription-inner">
+    <header class="inscription-header">
+      <a routerLink="/" class="logo-link">MOBILI</a>
+      <h1>S’inscrire</h1>
+      <p>Choisissez le type de compte qui correspond à votre situation.</p>
+    </header>
+
+    <ul class="choice-list" role="list">
+      <li>
+        <button type="button" class="choice-card" (click)="goVoyageur()">
+          <span class="icon" aria-hidden="true">🧳</span>
+          <span class="title">Voyageur</span>
+          <span class="desc">Réserver des trajets, gérer vos billets et votre profil.</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" class="choice-card" (click)="goSociete()">
+          <span class="icon" aria-hidden="true">🏢</span>
+          <span class="title">Société (partenaire)</span>
+          <span class="desc">Créer un compte, puis enregistrer votre entreprise de transport.</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" class="choice-card choice-card--gare" (click)="goGare()">
+          <span class="icon" aria-hidden="true">🚉</span>
+          <span class="title">Gare</span>
+          <span class="desc">Vous avez reçu un code de votre compagnie ? Inscrivez-vous en tant que responsable gare.</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" class="choice-card choice-card--carpool" (click)="goCovoiturage()">
+          <span class="icon" aria-hidden="true">🚗</span>
+          <span class="title">Chauffeur covoiturage</span>
+          <span class="desc"
+            >Proposez des trajets en covoiturage : CNI recto/verso et date de validité requises.</span
+          >
+        </button>
+      </li>
+    </ul>
+
+    <p class="footer-hint">
+      Vous avez déjà un compte ?
+      <a routerLink="/auth/login" class="link">Connexion</a>
+    </p>
+  </div>
+</div>

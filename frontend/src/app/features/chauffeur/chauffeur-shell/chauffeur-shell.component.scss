@@ -1,0 +1,92 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.chauffeur-shell {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: $gray-50;
+}
+
+.chauffeur-shell__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0.65rem 1.25rem 0;
+  box-sizing: border-box;
+}
+
+.chauffeur-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.15rem 0 0.35rem;
+}
+
+.chauffeur-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0.4rem 1.1rem 0.4rem 0.85rem;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: $gray-600;
+  background: $white;
+  border: 1px solid $gray-200;
+  box-shadow: $shadow-xs;
+  transition: background $t-base, border-color $t-base, color $t-base, box-shadow $t-base,
+    transform $t-base;
+
+  &:hover {
+    border-color: rgba($mobili-blue, 0.2);
+    color: $mobili-blue-deep;
+    box-shadow: $shadow-sm;
+  }
+
+  &.active {
+    color: $mobili-blue-deep;
+    background: linear-gradient(180deg, $white 0%, rgba($mobili-blue-fog, 0.65) 100%);
+    border-color: rgba($mobili-yellow, 0.6);
+    box-shadow: 0 0 0 1px rgba($mobili-yellow, 0.25), $shadow-sm;
+  }
+}
+
+.chauffeur-nav__icon {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: $radius-sm;
+  background: $mobili-blue-fog;
+  color: $mobili-blue;
+  font-size: 0.65rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.chauffeur-nav__link.active .chauffeur-nav__icon {
+  background: rgba($mobili-yellow, 0.25);
+  color: $mobili-blue-deep;
+}
+
+.chauffeur-nav__text {
+  min-width: 0;
+}
+
+.chauffeur-nav__label {
+  font-weight: 800;
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+@media (max-width: 480px) {
+  .chauffeur-nav {
+    flex-direction: column;
+  }
+
+  .chauffeur-nav__link {
+    width: 100%;
+  }
+}

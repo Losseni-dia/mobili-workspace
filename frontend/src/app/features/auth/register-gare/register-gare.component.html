@@ -1,0 +1,151 @@
+<div class="login-wrapper">
+  <div class="login-card register-gare-card">
+    @if (step() === 1) {
+      <div class="login-header">
+        <a routerLink="/auth/inscription" class="back-link">← Types d’inscription</a>
+        <h2>Code compagnie</h2>
+        <p>Entrez le code unique fourni par votre compagnie de transport (partenaire Mobili).</p>
+      </div>
+
+      <form (ngSubmit)="runPreview()" [formGroup]="codeForm" novalidate>
+        @if (errorMessage()) {
+          <div class="alert" role="alert">{{ errorMessage() }}</div>
+        }
+        <div class="form-group">
+          <label for="code">Code partenaire</label>
+          <input id="code" type="text" formControlName="partnerCode" placeholder="ex. A1B2C3D4" autocomplete="off" class="form-control" />
+        </div>
+        <button type="submit" class="btn-primary full" [disabled]="codeForm.invalid || isLoadingPreview()">
+          {{ isLoadingPreview() ? 'Vérification…' : 'Continuer' }}
+        </button>
+      </form>
+    } @else {
+      <div class="login-header">
+        <button type="button" class="back-link" (click)="backToCode()">← Modifier le code</button>
+        <h2>Responsable gare</h2>
+        <p>
+          <strong>{{ preview()?.partnerName }}</strong> — finalisez votre compte et le rattachement à la gare.
+        </p>
+      </div>
+
+      @if (awaitingApprovalMessage()) {
+        <div class="alert alert-ok" role="status">{{ awaitingApprovalMessage() }}</div>
+        <p class="post-success-hint">
+          <a routerLink="/auth/connexion" class="link-next">Aller à la connexion</a>
+        </p>
+      } @else {
+      <form (ngSubmit)="onSubmitGare()" [formGroup]="registerForm" novalidate>
+        @if (errorMessage()) {
+          <div class="alert" role="alert">{{ errorMessage() }}</div>
+        }
+
+        @if (preview(); as p) {
+          @if (p.stations.length > 0) {
+            <fieldset class="station-fieldset">
+              <legend class="visually-hidden">Gare</legend>
+              <div class="segmented">
+                <button
+                  type="button"
+                  class="seg"
+                  [class.active]="stationMode() === 'existing'"
+                  (click)="selectStationMode('existing')"
+                >
+                  Gare existante
+                </button>
+                <button
+                  type="button"
+                  class="seg"
+                  [class.active]="stationMode() === 'new'"
+                  (click)="selectStationMode('new')"
+                >
+                  Nouvelle gare
+                </button>
+              </div>
+              @if (stationMode() === 'existing') {
+                <div class="form-group">
+                  <label for="st">Gare</label>
+                  <select
+                    id="st"
+                    class="form-control"
+                    [value]="registerForm.get('stationId')?.value ?? ''"
+                    (change)="onStationIdChange($any($event.target).value)"
+                  >
+                    @for (s of p.stations; track s.id) {
+                      <option [value]="s.id">{{ s.name }} — {{ s.city }}</option>
+                    }
+                  </select>
+                </div>
+              } @else {
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="nsn">Nom de la gare</label>
+                    <input id="nsn" class="form-control" formControlName="newStationName" />
+                  </div>
+                  <div class="form-group">
+                    <label for="nsc">Ville</label>
+                    <input id="nsc" class="form-control" formControlName="newStationCity" />
+                  </div>
+                </div>
+              }
+            </fieldset>
+          } @else {
+            <p class="hint">Aucune gare n’est encore enregistrée pour ce partenaire. Créez la première fiche gare :</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="nsn2">Nom de la gare</label>
+                <input id="nsn2" class="form-control" formControlName="newStationName" />
+              </div>
+              <div class="form-group">
+                <label for="nsc2">Ville</label>
+                <input id="nsc2" class="form-control" formControlName="newStationCity" />
+              </div>
+            </div>
+          }
+        }
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fn">Prénom</label>
+            <input id="fn" class="form-control" formControlName="firstname" />
+          </div>
+          <div class="form-group">
+            <label for="ln">Nom</label>
+            <input id="ln" class="form-control" formControlName="lastname" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="lo">Identifiant (login)</label>
+          <input id="lo" class="form-control" formControlName="login" autocapitalize="off" />
+        </div>
+        <div class="form-group">
+          <label for="em">E-mail</label>
+          <input id="em" type="email" class="form-control" formControlName="email" />
+        </div>
+        <div class="form-group">
+          <label for="pw">Mot de passe</label>
+          <div class="password-wrap">
+            <input
+              id="pw"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+            <button type="button" class="toggle-pw" (click)="togglePassword()">
+              {{ showPassword() ? 'Masquer' : 'Afficher' }}
+            </button>
+          </div>
+          <p class="field-hint">Au moins 6 caractères (même règle qu’une connexion classique).</p>
+          @if (registerForm.get('password')?.touched && registerForm.get('password')?.errors?.['minlength']) {
+            <p class="field-error" role="alert">Le mot de passe est trop court.</p>
+          }
+        </div>
+
+        <button type="submit" class="btn-primary full" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Création…' : "Créer mon compte" }}
+        </button>
+      </form>
+      }
+    }
+  </div>
+</div>

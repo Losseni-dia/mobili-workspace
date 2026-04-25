@@ -1,0 +1,126 @@
+@import 'app/styles/variables';
+@import 'app/styles/mixins';
+
+// ============================================================
+//  Font Luxe : Inter (gratuit, très pro)
+// ============================================================
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+// ============================================================
+//  RESET + BASE
+// ============================================================
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: $font-sans;
+  font-size: 16px;
+  line-height: 1.55;
+  color: $mobili-blue-deep;
+  background: $gradient-mesh;
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: $mobili-blue;
+  text-decoration: none;
+  transition: color $t-base;
+
+  &:hover {
+    color: $mobili-blue-deep;
+  }
+}
+
+// Sélection textuelle
+::selection {
+  background: $mobili-yellow;
+  color: $mobili-blue-deep;
+}
+
+// Scrollbar raffinée (WebKit)
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba($mobili-blue, 0.18);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+
+  &:hover {
+    background: rgba($mobili-blue, 0.35);
+    background-clip: content-box;
+  }
+}
+
+// Focus ring accessibilité
+:focus-visible {
+  outline: 2px solid $mobili-blue;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// ============================================================
+//  LAYOUT HELPERS
+// ============================================================
+.container {
+  max-width: $container-max;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.container-narrow {
+  max-width: $container-narrow;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+// Utilitaires
+.text-center { text-align: center; }
+.muted { color: $gray-500; }
+// A11y (évite de dupliquer le bloc dans chaque composant — aligné sur _mixins::visually-hidden)
+.visually-hidden {
+  @include visually-hidden;
+}
+.noise {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+  }
+}

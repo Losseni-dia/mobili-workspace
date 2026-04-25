@@ -1,0 +1,152 @@
+<div class="chauff-page">
+  <header class="chauff-hero">
+    <div class="chauff-hero-icon" aria-hidden="true">🧑‍✈️</div>
+    <div class="chauff-hero-text">
+      <p class="chauff-eyebrow">Équipe</p>
+      <h1 class="chauff-title">Chauffeurs de la compagnie</h1>
+      <p class="chauff-lead">
+        Comptes salariés rattachés à votre entreprise. Vous pouvez les affecter à une gare de votre réseau (optionnel) ;
+        le dirigeant ou un compte gare peut enregistrer un chauffeur (identifiants de connexion).
+      </p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="chauff-alert" role="alert">
+      {{ error() }}
+    </div>
+  }
+
+  @if (canRegisterChauffeur()) {
+    <section class="data-panel chauff-form-card" aria-label="Enregistrer un chauffeur">
+      <header class="panel-head">
+        <h2>Nouveau chauffeur</h2>
+      </header>
+      @if (createError()) {
+        <div class="chauff-alert chauff-alert--create" role="alert">{{ createError() }}</div>
+      }
+      <form class="chauff-form" [formGroup]="form" (ngSubmit)="onCreateSubmit()">
+        <div class="chauff-form-grid">
+          <label class="chauff-field">
+            <span>Prénom</span>
+            <input type="text" formControlName="firstname" autocomplete="given-name" />
+          </label>
+          <label class="chauff-field">
+            <span>Nom</span>
+            <input type="text" formControlName="lastname" autocomplete="family-name" />
+          </label>
+          <label class="chauff-field chauff-field--wide">
+            <span>E-mail</span>
+            <input type="email" formControlName="email" autocomplete="email" />
+          </label>
+          <label class="chauff-field">
+            <span>Identifiant (login)</span>
+            <input type="text" formControlName="login" autocomplete="username" />
+          </label>
+          <label class="chauff-field">
+            <span>Mot de passe initial</span>
+            <input
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+              minlength="8"
+              maxlength="120"
+            />
+            <span class="chauff-field-hint">Au moins 8 caractères (même règle que le serveur).</span>
+            @if (form.controls.password.dirty && form.controls.password.value.length > 0 && form.controls.password.errors?.['minlength']) {
+              <span class="chauff-field-error" role="alert">Encore {{ 8 - form.controls.password.value.length }} caractère(s) minimum.</span>
+            }
+          </label>
+          <label class="chauff-field chauff-field--wide">
+            <span>Gare d’affectation (optionnel)</span>
+            <select formControlName="stationId">
+              <option [ngValue]="null">— Aucune (toute l’équipe / non défini) —</option>
+              @for (g of stations(); track g.id) {
+                <option [ngValue]="g.id">{{ g.name }} — {{ g.city }}</option>
+              }
+            </select>
+            <span class="chauff-field-hint">Parmi les gares rattachées à votre compagnie.</span>
+          </label>
+        </div>
+        <div class="chauff-form-actions">
+          @if (form.invalid && !createSubmitting()) {
+            <p class="chauff-form-hint-form" role="status">
+              Le bouton reste désactivé tant qu’un champ est manquant ou invalide (mot de passe : min. 8 caractères).
+            </p>
+          }
+          <button
+            type="submit"
+            class="chauff-btn-primary"
+            [disabled]="form.invalid || createSubmitting()"
+            [attr.aria-disabled]="form.invalid || createSubmitting()"
+          >
+            {{ createSubmitting() ? 'Enregistrement…' : 'Enregistrer le chauffeur' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="data-panel chauff-list-card" [attr.aria-busy]="isLoading()">
+    <header class="panel-head">
+      <h2>Liste</h2>
+    </header>
+    @if (affiliationError()) {
+      <div class="chauff-alert" role="alert">{{ affiliationError() }}</div>
+    }
+    @if (isLoading()) {
+      <p class="chauff-placeholder">Chargement…</p>
+    } @else if (items().length === 0 && !error()) {
+      <p class="chauff-placeholder">Aucun chauffeur société n’est enregistré pour l’instant.</p>
+    } @else if (items().length > 0) {
+      <div class="chauff-table-wrap">
+        <table class="chauff-table">
+          <thead>
+            <tr>
+              <th scope="col">Nom</th>
+              <th scope="col">E-mail</th>
+              <th scope="col">Gare d’affectation</th>
+              <th scope="col">Compte</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of items(); track c.id) {
+              <tr>
+                <td>
+                  <span class="chauff-name"
+                    >{{ c.firstname || '—' }} <strong>{{ c.lastname || '—' }}</strong></span
+                  >
+                </td>
+                <td>{{ c.email || '—' }}</td>
+                <td class="chauff-td-station">
+                  @if (canRegisterChauffeur()) {
+                    <label class="chauff-sr-only" [attr.for]="'aff-' + c.id">Gare d’affectation pour {{ c.lastname }}</label>
+                    <select
+                      [id]="'aff-' + c.id"
+                      class="chauff-station-select"
+                      [disabled]="affiliationSavingId() === c.id"
+                      [value]="c.affiliationStationId == null ? '' : c.affiliationStationId"
+                      (change)="onAffiliationChange(c, $any($event.target).value)"
+                    >
+                      <option value="">— Aucune —</option>
+                      @for (g of stations(); track g.id) {
+                        <option [value]="g.id">{{ g.name }} ({{ g.city }})</option>
+                      }
+                    </select>
+                  } @else {
+                    {{ c.affiliationStationName || '—' }}
+                  }
+                </td>
+                <td>
+                  <span [class.chauff-badge--ok]="c.enabled" [class.chauff-badge--off]="!c.enabled" class="chauff-badge">
+                    {{ c.enabled ? 'actif' : 'désactivé' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

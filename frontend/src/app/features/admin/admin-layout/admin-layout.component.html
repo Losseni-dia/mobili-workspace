@@ -1,0 +1,23 @@
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="logo">Mobili Admin</div>
+        <nav>
+            <a routerLink="/admin/dashboard" routerLinkActive="active">
+                <span>📊</span> Dashboard
+            </a>
+            <a routerLink="/admin/users" routerLinkActive="active">
+                <span>👥</span> Utilisateurs
+            </a>
+            <a routerLink="/admin/partners" routerLinkActive="active">
+                <span>🏢</span> Partenaires
+            </a>
+        </nav>
+        <div class="footer">
+            <a routerLink="/"><span>🏠</span> Retour au site</a>
+        </div>
+    </aside>
+
+    <main class="content">
+        <router-outlet></router-outlet>
+    </main>
+</div>

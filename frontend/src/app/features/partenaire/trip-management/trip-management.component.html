@@ -1,0 +1,143 @@
+<aside class="driver-tip">
+    <span class="tip-icon">🚐</span>
+    <div class="tip-text">
+        <strong>Besoin de transmettre un trajet à votre chauffeur ?</strong>
+        <span>Cliquez sur le code <em>#ID</em> dans la colonne « Code chauffeur » pour le copier.</span>
+    </div>
+</aside>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Tous vos voyages</h2>
+            <p>Gérez et modifiez les trajets publiés par votre compagnie.</p>
+        </div>
+        <div class="action-bar">
+            <span class="count-chip">{{ myTrips().length }} trajets</span>
+            <a routerLink="/partenaire/add-trip" class="action-cta">＋ Nouveau trajet</a>
+        </div>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement de vos trajets…</div>
+    } @else if (myTrips().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Code chauffeur</th>
+                        <th>Conducteur</th>
+                        <th>Véhicule</th>
+                        <th>Itinéraire</th>
+                        <th>Date</th>
+                        <th>Prix</th>
+                        <th>Places</th>
+                        <th class="right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (trip of myTrips(); track trip.id) {
+                        <tr>
+                            <td>
+                                <button
+                                    type="button"
+                                    class="trip-code-chip"
+                                    [class.copied]="copiedTripId() === trip.id"
+                                    (click)="copyTripId(trip.id, $event)"
+                                    title="Cliquez pour copier l'identifiant à donner au chauffeur"
+                                >
+                                    <span class="hash">#</span>
+                                    <span class="num">{{ trip.id }}</span>
+                                    <span class="copy-ico">
+                                        @if (copiedTripId() === trip.id) { ✓ } @else { ⧉ }
+                                    </span>
+                                </button>
+                            </td>
+                            <td class="chauffeur-cell">{{ chauffeurLabel(trip) }}</td>
+                            <td>
+                                <div class="trip-thumb">
+                                    @if (trip.vehicleImageUrl) {
+                                        <img [src]="IMAGE_BASE_URL + trip.vehicleImageUrl" alt="Véhicule">
+                                    } @else {
+                                        <span>🚌</span>
+                                    }
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="route-cell">
+                                    <strong>{{ trip.departureCity }}</strong>
+                                    <span class="arrow">→</span>
+                                    <strong>{{ trip.arrivalCity }}</strong>
+                                    <span class="type-pill">{{ formatVehicleType(trip.vehicleType) }}</span>
+                                </div>
+                                @if (trip.moreInfo) {
+                                    <div class="stops-line">📍 {{ trip.moreInfo }}</div>
+                                }
+                            </td>
+
+                            <td class="mono">
+                                <div>{{ trip.departureDateTime | date: 'dd MMM yyyy' }}</div>
+                                <div class="subtime">{{ trip.departureDateTime | date: 'HH:mm' }}</div>
+                            </td>
+
+                            <td>
+                                <span class="price-cell">{{ listPrice(trip) | number }} <small>FCFA</small></span>
+                            </td>
+
+                            <td>
+                                <div class="seats-pill" [class.low]="trip.availableSeats < 5">
+                                    <span class="seats-current">{{ trip.availableSeats }}</span>
+                                    <span class="seats-sep">/</span>
+                                    <span class="seats-total">{{ trip.totalSeats }}</span>
+                                </div>
+                            </td>
+
+                            <td class="right">
+                                <div class="row-actions">
+                                    <button class="icon-btn warn" title="Bloquer des places" (click)="openSeatManager(trip)">🚫</button>
+                                    <button class="icon-btn" title="Modifier" [routerLink]="['/partenaire/edit-trip', trip.id]">✎</button>
+                                    <button class="icon-btn danger" title="Supprimer" (click)="onDelete(trip.id)">🗑</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">📂</div>
+            <strong>Aucun trajet publié</strong>
+            <p>Créez votre premier voyage en quelques clics.</p>
+            <a routerLink="/partenaire/add-trip" class="action-cta">＋ Publier un trajet</a>
+        </div>
+    }
+</section>
+
+@if (selectedTripForSeats()) {
+    <div class="modal-overlay" (click)="selectedTripForSeats.set(null)">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Bloquer des places</h3>
+                <button class="close-btn" (click)="selectedTripForSeats.set(null)">×</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-subtitle">Bloquez les places vendues physiquement à la gare.</p>
+                <app-seat-picker
+                    [totalSeats]="selectedTripForSeats()!.totalSeats"
+                    [occupiedSeats]="occupiedSeatsForTrip()"
+                    (seatToggle)="onSeatsSelected($event)"
+                />
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" (click)="selectedTripForSeats.set(null)">Annuler</button>
+                <button class="btn-confirm" [disabled]="tempSelectedSeats().length === 0" (click)="confirmDeactivation()">
+                    Confirmer ({{ tempSelectedSeats().length }})
+                </button>
+            </div>
+        </div>
+    </div>
+}

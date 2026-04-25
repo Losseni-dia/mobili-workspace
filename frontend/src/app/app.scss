@@ -1,0 +1,186 @@
+@use "sass:color";
+@import '../styles.scss';
+
+.header {
+    background-color: $mobili-yellow;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-height: 80px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    .logo {
+        text-decoration: none;
+        color: $mobili-blue;
+        font-weight: 900;
+        font-size: 1.8rem;
+        letter-spacing: -1px;
+        flex-shrink: 0;
+    }
+
+    .nav-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 0 12px;
+            border-right: 1px solid rgba($mobili-blue, 0.15);
+
+            &:last-of-type {
+                border-right: none;
+            }
+
+            .btn-link {
+                text-decoration: none;
+                font-weight: 800;
+                font-size: 0.85rem;
+                padding: 6px 12px;
+                border-radius: 6px;
+                border: 1.5px solid transparent;
+                transition: all 0.2s ease-in-out;
+                text-align: center;
+
+                // Variantes par espace
+                &.admin {
+                    color: $admin-purple;
+                    border-color: $admin-purple;
+                }
+
+                &.company {
+                    color: $mobili-blue;
+                    border-color: $mobili-blue;
+                }
+
+                &.station {
+                    color: $station-green;
+                    border-color: $station-green;
+                }
+
+                // États actifs
+                &.active {
+                    color: $white;
+
+                    &.admin {
+                        background: $admin-purple;
+                    }
+
+                    &.company {
+                        background: $mobili-blue;
+                    }
+
+                    &.station {
+                        background: $station-green;
+                    }
+                }
+
+                &:hover:not(.active) {
+                    background: rgba($white, 0.6);
+                }
+            }
+
+            .sub-nav {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+
+                .sub-link {
+                    font-size: 0.7rem;
+                    color: color.adjust($mobili-blue, $lightness: 10%);
+                    text-decoration: none;
+                    font-weight: 600;
+                    opacity: 0.8;
+
+                    &:hover {
+                        opacity: 1;
+                        text-decoration: underline;
+                    }
+                }
+            }
+        }
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+
+        .partner {
+            color: $mobili-blue;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 1px dashed $mobili-blue;
+
+            &:hover {
+                color: color.adjust($mobili-blue, $lightness: 20%);
+            }
+        }
+
+        .btn-account {
+            background-color: $mobili-blue;
+            color: $white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+
+            &:hover {
+                transform: translateY(-2px);
+                background-color: color.adjust($mobili-blue, $lightness: -10%);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            }
+        }
+    }
+}
+
+// Mobile First - Adaptabilité
+@media (max-width: 1024px) {
+    .header {
+        flex-direction: column;
+        height: auto;
+        padding: 15px 10px;
+
+        .logo {
+            margin-bottom: 10px;
+        }
+
+        .nav-container {
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            gap: 10px;
+            margin-bottom: 15px;
+
+            .nav-group {
+                border-right: none;
+                border-bottom: 1px solid rgba($mobili-blue, 0.1);
+                padding: 10px;
+                width: 45%; // Deux groupes par ligne sur tablette
+            }
+        }
+
+        .actions {
+            width: 100%;
+            justify-content: space-around;
+            padding-top: 10px;
+            border-top: 1px solid rgba($mobili-blue, 0.1);
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .header .nav-container .nav-group {
+        width: 100%; // Un groupe par ligne sur petit mobile
+    }
+}

@@ -1,0 +1,323 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+$sidebar-w: 248px;
+$sidebar-w-collapsed: 76px;
+$topbar-h: 108px;
+
+:host {
+  display: block;
+  background: #f5f6fa;
+  min-height: 100vh;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: $sidebar-w 1fr;
+  min-height: 100vh;
+  transition: grid-template-columns $t-base;
+
+  &.collapsed {
+    grid-template-columns: $sidebar-w-collapsed 1fr;
+  }
+}
+
+// ======================================================================
+//  SIDEBAR — sombre, sobre, avec accent doré
+// ======================================================================
+.shell-sidebar {
+  background: #0b1533;
+  color: rgba($white, 0.85);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  border-right: 1px solid rgba($white, 0.04);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  margin-bottom: 10px;
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: $white;
+    font-weight: 900;
+    font-size: 1.05rem;
+    letter-spacing: 2.5px;
+    text-decoration: none;
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: $mobili-yellow;
+      box-shadow: 0 0 0 4px rgba($mobili-yellow, 0.18);
+    }
+  }
+
+  .collapse-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba($white, 0.06);
+    color: rgba($white, 0.7);
+    border: 1px solid rgba($white, 0.06);
+    font-size: 1rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all $t-base;
+
+    &:hover {
+      background: rgba($mobili-yellow, 0.18);
+      color: $mobili-yellow;
+    }
+  }
+}
+
+.sidebar-admin {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba($white, 0.06);
+
+  .sa-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: $gradient-hero;
+    color: $white;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  .sa-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    min-width: 0;
+
+    strong {
+      color: $white;
+      font-weight: 800;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sa-role {
+      margin-top: 3px;
+      font-size: 0.68rem;
+      color: $mobili-yellow;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: $radius-sm;
+  color: rgba($white, 0.72);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: all $t-base;
+  border: 1px solid transparent;
+
+  .nav-icon {
+    font-size: 1.05rem;
+    width: 22px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(.active) {
+    background: rgba($white, 0.05);
+    color: $white;
+  }
+
+  &.active {
+    background: rgba($mobili-yellow, 0.14);
+    color: $mobili-yellow;
+    border-color: rgba($mobili-yellow, 0.24);
+    font-weight: 800;
+
+    .nav-icon { color: $mobili-yellow; }
+  }
+
+  &.soft {
+    color: rgba($white, 0.45);
+    font-size: 0.85rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+
+    &:hover { color: rgba($white, 0.8); }
+  }
+
+  &.soft.logout:hover {
+    color: $danger;
+    background: rgba($danger, 0.12);
+  }
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba($white, 0.06);
+}
+
+.admin-shell.collapsed .sidebar-brand { justify-content: center; }
+.admin-shell.collapsed .collapse-btn { position: absolute; top: 22px; right: -13px; background: $white; color: #0b1533; border-color: rgba($mobili-blue-deep, 0.2); box-shadow: $shadow-sm; z-index: 2; }
+.admin-shell.collapsed .nav-link { justify-content: center; padding: 11px 0; }
+.admin-shell.collapsed .sidebar-admin {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding-bottom: 10px;
+
+  .sa-meta { display: none; }
+  .sa-avatar { width: 38px; height: 38px; }
+}
+
+// ======================================================================
+//  MAIN — contenu
+// ======================================================================
+.shell-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.shell-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 22px 32px 18px;
+  background: $white;
+  border-bottom: 1px solid $gray-200;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  .topbar-left {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .crumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: $gray-500;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
+
+    .crumb-root { color: $mobili-blue; }
+    .crumb-sep { color: $gray-300; }
+    .crumb-current { color: $mobili-blue-deep; }
+  }
+
+  .page-title {
+    font-family: $font-display;
+    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
+
+  .page-desc {
+    margin: 4px 0 0;
+    color: $gray-500;
+    font-size: 0.92rem;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+}
+
+.topbar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-sm;
+  background: $gray-100;
+  color: $gray-700;
+  border: 1px solid $gray-200;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all $t-base;
+
+  &:hover { background: $mobili-blue-fog; color: $mobili-blue; border-color: rgba($mobili-blue, 0.2); }
+}
+
+.shell-content {
+  flex: 1;
+  padding: 28px 32px 60px;
+}
+
+// ======================================================================
+//  RESPONSIVE
+// ======================================================================
+@media (max-width: 880px) {
+  .admin-shell, .admin-shell.collapsed { grid-template-columns: 1fr; }
+  .shell-sidebar { position: static; height: auto; flex-direction: row; padding: 14px 16px; overflow-x: auto; }
+  .sidebar-admin {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    margin: 0 12px 0 0;
+    padding: 6px 12px 6px 6px;
+    margin-bottom: 0;
+    border-bottom: none;
+    border-right: 1px solid rgba($white, 0.06);
+
+    .sa-avatar { width: 36px; height: 36px; }
+    .sa-meta strong { max-width: 120px; }
+  }
+
+  .sidebar-brand { margin-bottom: 0; margin-right: 10px; }
+  .sidebar-nav { flex-direction: row; flex: initial; gap: 6px; }
+  .sidebar-footer { margin-top: 0; padding: 0; border: none; border-left: 1px solid rgba($white, 0.06); margin-left: 8px; padding-left: 10px; display: flex; gap: 4px; }
+  .shell-topbar { padding: 18px 20px; flex-wrap: wrap; }
+  .shell-content { padding: 22px 20px 40px; }
+}

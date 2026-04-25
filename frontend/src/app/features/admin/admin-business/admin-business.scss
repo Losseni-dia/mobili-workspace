@@ -1,0 +1,211 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+@import '../admin-dashboard/admin-dashboard.scss';
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-hero {
+  margin-bottom: 20px;
+  h1 {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+  }
+  .page-lead {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: $gray-600;
+  }
+}
+
+.doc-block {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  h2 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: $mobili-blue-deep;
+  }
+  p {
+    margin: 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: $gray-600;
+    code { font-size: 0.78rem; background: $white; padding: 1px 5px; border-radius: 4px; }
+  }
+}
+
+.period-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.period-label { font-size: 0.85rem; font-weight: 700; color: $gray-600; }
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  border: 1px solid $gray-200;
+  background: $white;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: $gray-600;
+  &:hover { border-color: rgba($mobili-blue, 0.4); }
+  &.active {
+    background: rgba($mobili-blue, 0.12);
+    border-color: rgba($mobili-blue, 0.35);
+    color: $mobili-blue-deep;
+  }
+}
+
+.range-hint {
+  font-size: 0.8rem;
+  color: $gray-500;
+  margin: 0 0 16px;
+}
+
+.kpi-5 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 24px;
+  .kpi { padding: 18px; }
+  .kpi-suf { font-size: 0.75rem; color: $gray-500; font-weight: 700; margin-left: 2px; }
+}
+
+.donut-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.donut-card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  padding: 20px 22px;
+  transition: border-color 0.25s ease, box-shadow 0.3s ease;
+  &:hover {
+    border-color: rgba($mobili-blue, 0.2);
+    box-shadow: 0 4px 20px rgba($mobili-blue-deep, 0.08);
+  }
+  h3 {
+    margin: 0 0 14px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: $mobili-blue-deep;
+  }
+}
+
+.donut-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 8px 22px rgba(15, 23, 42, 0.1));
+}
+
+.donut-svg {
+  $donut-sz: 240px;
+  width: $donut-sz;
+  height: $donut-sz;
+  display: block;
+  overflow: visible;
+}
+
+.donut-slice {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition: transform 0.25s ease-out;
+  path {
+    cursor: pointer;
+    stroke: rgba(255, 255, 255, 0.5);
+    stroke-width: 0.35;
+    vector-effect: non-scaling-stroke;
+  }
+  &:hover path {
+    filter: brightness(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donut-slice {
+    transition: none;
+  }
+}
+
+.donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.78rem;
+  li {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid $gray-100;
+    align-items: start;
+  }
+  .leg-pct { font-weight: 800; color: $mobili-blue; }
+  .leg-txt {
+    color: $gray-700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .leg-val { text-align: right; color: $gray-500; font-variant-numeric: tabular-nums; }
+}
+
+.tables-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  @media (max-width: 1024px) { grid-template-columns: 1fr; }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  th, td { padding: 8px 10px; text-align: left; border-top: 1px solid $gray-200; }
+  th {
+    background: $gray-50;
+    color: $gray-500;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+  }
+  .t-rank { width: 28px; font-weight: 900; color: $mobili-blue; }
+  .t-num { text-align: right; font-variant-numeric: tabular-nums; }
+}
+
+.err { color: #b91c1c; font-weight: 600; }
+.loading { color: $gray-500; }
+
+.back-link {
+  display: inline-block;
+  margin-top: 24px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: $mobili-blue;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.table-wrap { overflow-x: auto; max-height: 360px; overflow-y: auto; }

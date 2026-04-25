@@ -1,0 +1,78 @@
+@import '../../../styles/data-panel';
+
+// Ligne de rattachement (compagnie / gare) sous le nom
+.company-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.32rem;
+  max-width: 100%;
+  padding: 0.22rem 0.5rem 0.22rem 0.4rem;
+  border-radius: 6px;
+  background: #f0f4ff;
+  border: 1px solid #e0e7ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.25;
+}
+
+.company-line__ic {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.company-line__txt {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.company-line--covo {
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.35);
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+
+.role-pill--covo {
+  background: rgba(13, 148, 136, 0.14) !important;
+  color: #0d9488 !important;
+  font-weight: 800;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+}
+
+.employer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin-top: 0.45rem;
+  max-width: min(100%, 22rem);
+}
+
+.employer-row__label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.employer-row__select {
+  flex: 1;
+  min-width: 10rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  &:focus-visible {
+    outline: 2px solid #0d9488;
+    outline-offset: 1px;
+  }
+}

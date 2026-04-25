@@ -1,0 +1,6 @@
+@if (notificationService.notification(); as notif) {
+  <div class="banner" [class.error]="notif.level === 'error'" [class.success]="notif.level === 'success'">
+    <span>{{ notif.message }}</span>
+    <button type="button" (click)="notificationService.clear()">Fermer</button>
+  </div>
+}

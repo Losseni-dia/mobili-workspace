@@ -1,0 +1,46 @@
+<div class="cov-shell" [class.collapsed]="collapsed()">
+  <aside class="cov-sidebar">
+    <div class="cov-brand">
+      <a routerLink="/covoiturage/accueil" class="cov-logo">
+        <span class="dot"></span>
+        <span>MOBILI</span>
+      </a>
+      <button type="button" class="cov-collapse" (click)="toggle()" [attr.aria-label]="collapsed() ? 'Déplier' : 'Replier'">
+        {{ collapsed() ? '›' : '‹' }}
+      </button>
+    </div>
+    <p class="cov-badge" [attr.title]="'Espace covoiturage (non compagnie)'">Covoiturage</p>
+    <nav class="cov-nav">
+      <a routerLink="/covoiturage/accueil" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="cov-link">
+        <span>🏠</span> @if (!collapsed()) { <span>Accueil</span> }
+      </a>
+      <a routerLink="/covoiturage/publier" routerLinkActive="active" class="cov-link" title="Proposer un trajet sur le réseau">
+        <span>➕</span> @if (!collapsed()) { <span>Publier</span> }
+      </a>
+      <a routerLink="/covoiturage/piloter" routerLinkActive="active" class="cov-link" title="Même outil que l’espace pro, pour vos trajets.">
+        <span>🚐</span> @if (!collapsed()) { <span>Piloter un trajet</span> }
+      </a>
+      <a routerLink="/covoiturage/scan" routerLinkActive="active" class="cov-link" title="Valider un QR code à l’embarquement (vos trajets)">
+        <span>📷</span> @if (!collapsed()) { <span>Scanner billets</span> }
+      </a>
+      <a routerLink="/covoiturage/notifications" routerLinkActive="active" class="cov-link">
+        <span>🔔</span> @if (!collapsed()) { <span>Notifications</span> }
+      </a>
+    </nav>
+    <div class="cov-footer">
+      <a routerLink="/" class="cov-link soft">@if (!collapsed()) { ← Site }</a>
+      <button type="button" class="cov-link soft" (click)="logout()">@if (!collapsed()) { Déconnexion }</button>
+    </div>
+  </aside>
+  <div class="cov-main">
+    @if (!pageTitle().hideTop) {
+      <header class="cov-top">
+        <h1>{{ pageTitle().t }}</h1>
+        <p>{{ pageTitle().d }}</p>
+      </header>
+    }
+    <div class="cov-outlet">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

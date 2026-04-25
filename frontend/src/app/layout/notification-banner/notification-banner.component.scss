@@ -1,0 +1,33 @@
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #eef2ff;
+  color: #1e293b;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.banner.error {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border-bottom-color: #fecaca;
+}
+
+.banner.success {
+  background: #dcfce7;
+  color: #14532d;
+  border-bottom-color: #bbf7d0;
+}
+
+button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  font-weight: 600;
+}

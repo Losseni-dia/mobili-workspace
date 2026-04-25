@@ -1,0 +1,136 @@
+<section class="kpi-grid">
+    <article class="kpi">
+        <div class="kpi-label">Réservations</div>
+        <div class="kpi-value">{{ totalBookings() }}</div>
+        <div class="kpi-bar"><span></span></div>
+    </article>
+
+    <article class="kpi">
+        <div class="kpi-label">Places réservées</div>
+        <div class="kpi-value">{{ totalSeats() }}</div>
+        <div class="kpi-bar gold"><span></span></div>
+    </article>
+
+    <article class="kpi">
+        <div class="kpi-label">Total dépensé</div>
+        <div class="kpi-value">{{ totalSpent() | number: '1.0-0' }} <span class="kpi-suffix">FCFA</span></div>
+        <div class="kpi-bar green"><span></span></div>
+    </article>
+
+    <article class="kpi">
+        <div class="kpi-label">Voyages à venir</div>
+        <div class="kpi-value">{{ upcomingBookings().length }}</div>
+        <div class="kpi-bar purple"><span></span></div>
+    </article>
+</section>
+
+<section class="panel-grid panel-grid--single">
+    <article class="data-panel upcoming">
+        <header class="panel-head">
+            <div>
+                <h2>Prochains voyages</h2>
+                <p>Tes 3 prochaines réservations classées par date.</p>
+            </div>
+            <a routerLink="/my-account/my-tickets" class="count-chip link">Voir mes billets →</a>
+        </header>
+
+        @if (isLoadingBookings()) {
+            <div class="loader">Chargement…</div>
+        } @else if (upcomingBookings().length > 0) {
+            <ul class="trip-cards">
+                @for (b of upcomingBookings(); track b.id) {
+                    <li class="trip-card">
+                        <div class="trip-date">
+                            <span class="trip-day">{{ b.departureDateTime | date: 'dd' }}</span>
+                            <span class="trip-month">{{ b.departureDateTime | date: 'MMM' }}</span>
+                            <span class="trip-time">{{ b.departureDateTime | date: 'HH:mm' }}</span>
+                        </div>
+                        <div class="trip-route">
+                            <strong>
+                                {{ b.boardingCity || b.departureCity }}
+                                <span class="arrow">→</span>
+                                {{ b.alightingCity || b.arrivalCity }}
+                            </strong>
+                            <span class="trip-meta">
+                                {{ b.numberOfSeats }} place{{ b.numberOfSeats > 1 ? 's' : '' }}
+                                · ref <span class="mono">#{{ b.reference }}</span>
+                            </span>
+                        </div>
+                        <div class="trip-side">
+                            <span class="status-pill" [ngClass]="statusClass(b.status)">
+                                <span class="dot"></span>
+                                {{ b.status }}
+                            </span>
+                            <strong class="price">{{ (b.totalPrice || b.amount) | number: '1.0-0' }} FCFA</strong>
+                        </div>
+                    </li>
+                }
+            </ul>
+        } @else {
+            <div class="empty">
+                <div class="empty-icon">🌍</div>
+                <strong>Aucun voyage prévu</strong>
+                <p>Réserve ton prochain trajet en quelques clics.</p>
+                <a routerLink="/" class="primary-btn">Trouver un voyage</a>
+            </div>
+        }
+    </article>
+</section>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Activité récente</h2>
+            <p>Tes dernières réservations sur Mobili.</p>
+        </div>
+        <a routerLink="/my-account/bookings" class="count-chip link">Toutes les réservations →</a>
+    </header>
+
+    @if (isLoadingBookings()) {
+        <div class="loader">Chargement de tes réservations…</div>
+    } @else if (recentBookings().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Trajet</th>
+                        <th>Date</th>
+                        <th>Places</th>
+                        <th>Statut</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (b of recentBookings(); track b.id) {
+                        <tr>
+                            <td class="mono">#{{ b.reference }}</td>
+                            <td>
+                                <div class="route-mini">
+                                    <strong>{{ b.boardingCity || b.departureCity }}</strong>
+                                    <span class="arrow">→</span>
+                                    <strong>{{ b.alightingCity || b.arrivalCity }}</strong>
+                                </div>
+                            </td>
+                            <td class="mono">{{ b.departureDateTime | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td>{{ b.numberOfSeats }}</td>
+                            <td>
+                                <span class="status-pill" [ngClass]="statusClass(b.status)">
+                                    <span class="dot"></span>
+                                    {{ b.status }}
+                                </span>
+                            </td>
+                            <td class="right amount">{{ (b.totalPrice || b.amount) | number: '1.0-0' }} FCFA</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">📭</div>
+            <strong>Aucune réservation pour le moment</strong>
+            <p>Lance-toi : trouve ton prochain trajet en un clin d'œil.</p>
+        </div>
+    }
+</section>

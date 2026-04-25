@@ -1,0 +1,166 @@
+<div class="admin-partners-page">
+  @if (isLoading()) {
+    <section class="data-panel">
+      <div class="loader">Chargement des partenaires…</div>
+    </section>
+  } @else {
+    <section class="data-panel data-panel--split" aria-labelledby="h-public">
+      <header class="panel-head">
+        <div>
+          <h2 id="h-public">Compagnies & transport</h2>
+          <p>Partenaires inscrits (lignes, gares, offres liées à une compagnie).</p>
+        </div>
+        <span class="count-chip">{{ publicPartners().length }} compagnie{{ publicPartners().length > 1 ? 's' : '' }}</span>
+      </header>
+      @if (publicPartners().length === 0) {
+        <p class="empty-hint">Aucune compagnie enregistrée pour l’instant.</p>
+      } @else {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Compagnie</th>
+                <th>Email contact</th>
+                <th>Statut</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of publicPartners(); track p.id) {
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <div class="partner-avatar">
+                        @if (p.logoUrl) {
+                          <img
+                            [src]="IMAGE_BASE_URL + p.logoUrl"
+                            alt="logo"
+                            (error)="$any($event.target).style.display = 'none'"
+                          />
+                        } @else {
+                          <span class="initial-placeholder">{{ p.name.charAt(0) }}</span>
+                        }
+                      </div>
+                      <div class="user-meta">
+                        <strong>{{ p.name }}</strong>
+                        <span class="mono">ID #{{ p.id }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mono">{{ p.email }}</td>
+                  <td>
+                    <span class="status-pill" [class.active]="p.enabled" [class.warn]="!p.enabled">
+                      <span class="dot"></span>
+                      {{ p.enabled ? 'Actif' : 'En attente' }}
+                    </span>
+                  </td>
+                  <td class="right">
+                    <button
+                      class="row-btn"
+                      [class.danger]="p.enabled"
+                      [class.success]="!p.enabled"
+                      (click)="togglePartner(p.id)"
+                    >
+                      {{ p.enabled ? 'Suspendre' : 'Approuver' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="data-panel data-panel--split data-panel--covo" aria-labelledby="h-cov">
+      <header class="panel-head panel-head--covo-only">
+        <div>
+          <h2 id="h-cov">Chauffeurs covoiturage (particuliers)</h2>
+          <p>
+            Comptes créés via l’inscription <strong>chauffeur covoiturage</strong>. Ici vous
+            <strong>suspendez ou réactivez chaque compte</strong> — pas besoin d’agir sur un « partenaire pool ». Pour
+            tous les rôles, voir aussi
+            <a routerLink="/admin/users" class="inline-link">Utilisateurs</a>.
+          </p>
+        </div>
+        <span class="count-chip count-chip--teal"
+          >{{ covoiturageSoloDrivers().length }} compte{{ covoiturageSoloDrivers().length > 1 ? 's' : '' }}</span
+        >
+      </header>
+
+      <div class="covo-drivers covo-drivers--standalone">
+        <div class="covo-drivers__inner">
+          @if (covoiturageSoloDrivers().length === 0) {
+            <p class="empty-hint covo-drivers__empty">Aucun chauffeur covoiturage inscrit pour l’instant.</p>
+          } @else {
+            <div class="table-container table-container--covo-drivers">
+              <table class="data-table data-table--covo-drivers">
+                <thead>
+                  <tr>
+                    <th>Conducteur</th>
+                    <th>Email</th>
+                    <th>KYC</th>
+                    <th>Compte</th>
+                    <th class="right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of covoiturageSoloDrivers(); track d.id) {
+                    <tr>
+                      <td>
+                        <div class="user-cell user-cell--driver">
+                          <div
+                            class="partner-avatar partner-avatar--driver partner-avatar--teal"
+                            [class.partner-avatar--has-photo]="!!d.covoiturageDriverPhotoUrl"
+                          >
+                            @if (d.covoiturageDriverPhotoUrl) {
+                              <img
+                                [src]="IMAGE_BASE_URL + d.covoiturageDriverPhotoUrl"
+                                [alt]="'Photo ' + d.firstname"
+                              />
+                            } @else {
+                              <span class="initial-placeholder" aria-hidden="true">{{
+                                (d.firstname || '?').charAt(0)
+                              }}</span>
+                            }
+                          </div>
+                          <div class="user-meta">
+                            <strong>{{ d.firstname }} {{ d.lastname }}</strong>
+                            <span class="mono">ID utilisateur #{{ d.id }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="mono">{{ d.email }}</td>
+                      <td>
+                        <span class="kyc-pill" [ngClass]="kycPillClass(d.covoiturageKycStatus)">{{
+                          kycLabel(d.covoiturageKycStatus)
+                        }}</span>
+                      </td>
+                      <td>
+                        <span class="status-pill" [class.active]="d.enabled" [class.warn]="!d.enabled">
+                          <span class="dot"></span>
+                          {{ d.enabled ? 'Actif' : 'Inactif' }}
+                        </span>
+                      </td>
+                      <td class="right">
+                        <button
+                          type="button"
+                          class="row-btn"
+                          [class.danger]="d.enabled"
+                          [class.success]="!d.enabled"
+                          (click)="toggleDriverAccount(d)"
+                        >
+                          {{ d.enabled ? 'Suspendre' : 'Réactiver' }}
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

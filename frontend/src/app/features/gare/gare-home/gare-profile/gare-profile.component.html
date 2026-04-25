@@ -1,0 +1,51 @@
+@let u = user();
+@if (u) {
+    <div class="profile-layout">
+        <section class="card card--gare">
+            <h3 class="card-title">Gare affectée</h3>
+            <p class="gare-name">{{ u.stationName || '—' }}</p>
+            @if (u.stationId) {
+                <p class="gare-meta">Identifiant gare côté Mobili : <code>{{ u.stationId }}</code></p>
+            }
+            <p class="card-hint">Cette gare a été rattachée à votre compte à l’inscription (ou par votre compagnie).</p>
+        </section>
+
+        <section class="card">
+            <h3 class="card-title">Votre compte</h3>
+            <dl class="data-list">
+                <div>
+                    <dt>Prénom</dt>
+                    <dd>{{ u.firstname }}</dd>
+                </div>
+                <div>
+                    <dt>Nom</dt>
+                    <dd>{{ u.lastname }}</dd>
+                </div>
+                <div>
+                    <dt>Identifiant</dt>
+                    <dd class="mono">{{ u.login }}</dd>
+                </div>
+                <div>
+                    <dt>E-mail</dt>
+                    <dd>{{ u.email }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h3 class="card-title">Rôles</h3>
+            <ul class="role-pills" aria-label="Rôles sur la plateforme">
+                @for (r of roleLabels(); track r) {
+                    <li class="role-pill">{{ r }}</li>
+                }
+            </ul>
+        </section>
+
+        <div class="actions">
+            <a routerLink="/gare/compte" class="btn-primary">Modifier mes informations</a>
+            <a routerLink="/gare/scan" class="btn-secondary">Aller au scanner</a>
+        </div>
+    </div>
+} @else {
+    <p class="empty">Session introuvable. Reconnectez-vous.</p>
+}

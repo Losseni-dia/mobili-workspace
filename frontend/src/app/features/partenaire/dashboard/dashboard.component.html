@@ -1,0 +1,114 @@
+@if (!isGareOnly() && stations().length > 0) {
+    <div class="station-filter">
+        <label for="dash-station">Périmètre</label>
+        <select
+            id="dash-station"
+            name="stationFilter"
+            [(ngModel)]="stationFilter"
+            (ngModelChange)="onStationFilterChange()"
+        >
+            <option [ngValue]="'all'">Toutes les gares</option>
+            @for (g of stations(); track g.id) {
+                <option [ngValue]="g.id">{{ g.city }} — {{ g.name }}</option>
+            }
+        </select>
+    </div>
+}
+@if (isGareOnly()) {
+    <p class="gare-hint">Statistiques de <strong>votre gare</strong> (périmètre gare).</p>
+}
+
+<section class="kpi-grid">
+    @for (stat of stats; track stat.label; let i = $index) {
+        <article class="kpi" [class]="'kpi-' + i">
+            <div class="kpi-label">{{ stat.label }}</div>
+            <div class="kpi-value">{{ stat.value }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
+    }
+</section>
+
+<section class="panel-grid">
+    <article class="data-panel">
+        <header class="panel-head">
+            <div>
+                <h2>Dernières réservations</h2>
+                <p>Suivi en temps réel des clients qui ont réservé.</p>
+            </div>
+            @if (recentBookings().length > 0) {
+                <a routerLink="/partenaire/bookings" class="count-chip link">Voir tout →</a>
+            }
+        </header>
+
+        @if (recentBookings().length > 0) {
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Trajet</th>
+                            <th>Date</th>
+                            <th class="right">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (booking of recentBookings(); track booking.id) {
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="avatar">{{ booking.customerName?.[0] }}</div>
+                                        <div class="user-meta">
+                                            <strong>{{ booking.customerName }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ booking.tripRoute }}</td>
+                                <td class="mono">{{ booking.date | date: 'dd/MM HH:mm' }}</td>
+                                <td class="right amount">{{ booking.amount | number }} FCFA</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        } @else {
+            <div class="empty">
+                <div class="empty-icon">📭</div>
+                <strong>Aucune réservation pour le moment.</strong>
+                <p>Dès qu'un client réservera un de vos trajets, vous le verrez ici.</p>
+            </div>
+        }
+    </article>
+
+    <article class="data-panel">
+        <header class="panel-head">
+            <div>
+                <h2>Raccourcis</h2>
+                <p>Actions rapides pour gérer votre activité.</p>
+            </div>
+        </header>
+
+        <div class="shortcuts">
+            <a routerLink="/partenaire/add-trip" class="shortcut gold">
+                <span class="sc-ico">＋</span>
+                <div>
+                    <strong>Publier un trajet</strong>
+                    <span>Définissez vos arrêts et vos prix par étape.</span>
+                </div>
+            </a>
+            <a routerLink="/partenaire/trips" class="shortcut">
+                <span class="sc-ico">🚌</span>
+                <div>
+                    <strong>Gérer mes voyages</strong>
+                    <span>Modifier, bloquer ou supprimer un trajet.</span>
+                </div>
+            </a>
+            <a routerLink="/partenaire/bookings" class="shortcut">
+                <span class="sc-ico">🎫</span>
+                <div>
+                    <strong>Mes réservations</strong>
+                    <span>Liste complète avec filtres et revenus.</span>
+                </div>
+            </a>
+        </div>
+    </article>
+</section>

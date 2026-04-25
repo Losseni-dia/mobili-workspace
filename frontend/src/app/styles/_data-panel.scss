@@ -1,0 +1,249 @@
+@use "sass:color";
+@import 'variables';
+@import 'mixins';
+
+// ======================================================================
+//  DATA PANEL & TABLE — look SaaS cohérent admin + partenaire
+// ======================================================================
+
+.data-panel {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 24px;
+    border-bottom: 1px solid $gray-100;
+
+    h2 {
+      margin: 0 0 3px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: $mobili-blue-deep;
+      letter-spacing: -0.2px;
+    }
+
+    p {
+      margin: 0;
+      color: $gray-500;
+      font-size: 0.88rem;
+    }
+
+    .count-chip {
+      padding: 6px 14px;
+      border-radius: $radius-pill;
+      background: $mobili-blue-fog;
+      color: $mobili-blue;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  .loader {
+    padding: 48px 24px;
+    text-align: center;
+    color: $gray-500;
+    font-weight: 600;
+  }
+
+  .empty {
+    padding: 56px 24px;
+    text-align: center;
+    color: $gray-500;
+
+    .empty-icon { font-size: 2.4rem; margin-bottom: 10px; opacity: 0.45; }
+    strong { display: block; color: $mobili-blue-deep; font-size: 1rem; margin-bottom: 4px; }
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead th {
+    padding: 12px 20px;
+    background: $gray-50;
+    color: $gray-500;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+
+    &.right { text-align: right; }
+  }
+
+  tbody td {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+    color: $mobili-blue-deep;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: middle;
+
+    &.right { text-align: right; }
+    &.mono {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      color: $gray-600;
+      letter-spacing: -0.2px;
+    }
+  }
+
+  tbody tr {
+    transition: background $t-base;
+    &:hover td { background: $gray-50; }
+    &:last-child td { border-bottom: none; }
+  }
+}
+
+// ---- Cellule utilisateur / entité avec avatar ----
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .avatar,
+  .partner-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 0.78rem;
+    color: $white;
+    background: $gradient-hero;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+    overflow: hidden;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    .initial-placeholder { font-size: 1.1rem; }
+  }
+
+  .partner-avatar {
+    background: $gradient-gold;
+    color: $mobili-blue-deep;
+  }
+
+  .user-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+
+    strong { color: $mobili-blue-deep; font-weight: 800; font-size: 0.92rem; }
+
+    .partner-tag {
+      margin-top: 4px;
+      padding: 3px 10px;
+      border-radius: $radius-pill;
+      background: $mobili-blue-fog;
+      color: $mobili-blue;
+      font-size: 0.7rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    .mono {
+      margin-top: 3px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.74rem;
+      color: $gray-500;
+    }
+  }
+}
+
+// ---- Pill de rôle ----
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.role-pill {
+  padding: 3px 10px;
+  border-radius: $radius-pill;
+  background: rgba($admin-purple, 0.1);
+  color: $admin-purple;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+
+  &.driver { background: rgba($station-green, 0.1); color: $station-green; }
+}
+
+// ---- Status pill générique ----
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: $radius-pill;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.85;
+  }
+
+  &.active { background: rgba($success, 0.12); color: $success; }
+  &.blocked { background: $danger-soft; color: $danger; }
+  &.warn { background: rgba($warning, 0.14); color: $warning; }
+  &.info { background: rgba($mobili-blue, 0.1); color: $mobili-blue; }
+}
+
+// ---- Bouton de ligne ----
+.row-btn {
+  padding: 7px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid $gray-200;
+  background: $white;
+  color: $gray-700;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all $t-base;
+  white-space: nowrap;
+
+  &:hover { background: $gray-100; border-color: $gray-300; }
+
+  &.danger {
+    background: $danger-soft;
+    color: $danger;
+    border-color: rgba($danger, 0.3);
+    &:hover { background: $danger; color: $white; border-color: $danger; }
+  }
+
+  &.success {
+    background: rgba($success, 0.1);
+    color: $success;
+    border-color: rgba($success, 0.3);
+    &:hover { background: $success; color: $white; border-color: $success; }
+  }
+}

@@ -1,0 +1,166 @@
+<div class="gare-shell" [class.collapsed]="collapsed()">
+    <aside class="shell-sidebar">
+        <div class="sidebar-brand">
+            <a routerLink="/gare/accueil" class="brand-logo">
+                <span class="brand-dot"></span>
+                @if (!collapsed()) {
+                    <span class="brand-name">MOBILI</span>
+                }
+            </a>
+            <button
+                type="button"
+                class="collapse-btn"
+                (click)="toggleSidebar()"
+                [title]="collapsed() ? 'Déplier' : 'Replier'"
+            >
+                {{ collapsed() ? '›' : '‹' }}
+            </button>
+        </div>
+
+        <div
+            class="sidebar-gare-user"
+            [attr.title]="
+                collapsed()
+                    ? (authService.currentUser()?.firstname || '') +
+                      ' — ' +
+                      stationLine()
+                    : null
+            "
+        >
+            <div class="sg-avatar">
+                <span>{{ userInitials() }}</span>
+            </div>
+            @if (!collapsed()) {
+                <div class="sg-meta">
+                    <strong>{{ authService.currentUser()?.firstname }} {{ authService.currentUser()?.lastname }}</strong>
+                    <span class="sg-station">🚉 {{ stationLine() }}</span>
+                    <span class="sg-mono">&#64;{{ authService.currentUser()?.login }}</span>
+                </div>
+            }
+        </div>
+
+        <div class="sidebar-nav-wrap">
+            <p class="nav-section-title" [class.nav-section-title--hidden]="collapsed()">Espace gare</p>
+            <nav class="sidebar-nav" aria-label="Espace gare">
+                @for (item of navItems; track item.path) {
+                    @if (gareActionsLocked() && item.path !== '/gare/accueil' && item.path !== '/gare/company-messages') {
+                        <span
+                            class="nav-link nav-link--disabled"
+                            [title]="'En attente de validation du dirigeant de la compagnie'"
+                        >
+                            <span class="nav-icon">{{ item.icon }}</span>
+                            @if (!collapsed()) {
+                                <span class="nav-label">{{ item.label }}</span>
+                            }
+                        </span>
+                    } @else {
+                        <a
+                            [routerLink]="item.path"
+                            routerLinkActive="active"
+                            [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+                            class="nav-link"
+                            [title]="item.label"
+                        >
+                            <span class="nav-icon">{{ item.icon }}</span>
+                            @if (!collapsed()) {
+                                <span class="nav-label">{{ item.label }}</span>
+                            }
+                        </a>
+                    }
+                }
+            </nav>
+
+            <p class="nav-section-title" [class.nav-section-title--hidden]="collapsed()">Compagnie</p>
+            <nav class="sidebar-nav company-nav" aria-label="Espace compagnie">
+                @for (item of companyNavItems; track item.path) {
+                    @if (gareActionsLocked() && !isGareCompanyNavEntryAlwaysAllowed(item)) {
+                        <span
+                            class="nav-link nav-link--disabled"
+                            [title]="'En attente de validation du dirigeant de la compagnie'"
+                        >
+                            <span class="nav-icon">{{ item.icon }}</span>
+                            @if (!collapsed()) {
+                                <span class="nav-label">{{ item.label }}</span>
+                            }
+                        </span>
+                    } @else {
+                        <a
+                            [routerLink]="item.path"
+                            routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: false }"
+                            class="nav-link"
+                            [title]="item.label"
+                        >
+                            <span class="nav-icon">{{ item.icon }}</span>
+                            @if (!collapsed()) {
+                                <span class="nav-label">{{ item.label }}</span>
+                            }
+                        </a>
+                    }
+                }
+            </nav>
+        </div>
+
+        @if (!collapsed()) {
+            <div class="cta-card" [class.cta-card--disabled]="gareActionsLocked()">
+                <p class="cta-title">Embarquement</p>
+                <p class="cta-desc">Scannez les QR codes des passagers à l’entrée du bus.</p>
+                @if (gareActionsLocked()) {
+                    <span class="cta-btn cta-btn--disabled">Disponible après validation</span>
+                } @else {
+                    <a routerLink="/gare/scan" class="cta-btn">Ouvrir le scanner</a>
+                }
+            </div>
+        } @else {
+            @if (gareActionsLocked()) {
+                <span class="nav-link cta-compact nav-link--disabled" title="En attente de validation">
+                    <span class="nav-icon">📷</span>
+                </span>
+            } @else {
+                <a routerLink="/gare/scan" class="nav-link cta-compact" title="Scanner">
+                    <span class="nav-icon">📷</span>
+                </a>
+            }
+        }
+
+        <div class="sidebar-footer">
+            <a routerLink="/" class="nav-link soft" title="Retour au site">
+                <span class="nav-icon">🏠</span>
+                @if (!collapsed()) {
+                    <span class="nav-label">Retour site</span>
+                }
+            </a>
+            <button type="button" class="nav-link soft logout" (click)="logout()" title="Déconnexion">
+                <span class="nav-icon">⎋</span>
+                @if (!collapsed()) {
+                    <span class="nav-label">Déconnexion</span>
+                }
+            </button>
+        </div>
+    </aside>
+
+    <div class="shell-main">
+        <header class="shell-topbar">
+            <div class="topbar-left">
+                <div class="crumb">
+                    <span class="crumb-root">Gare</span>
+                    <span class="crumb-sep">/</span>
+                    <span class="crumb-current">{{ pageInfo().crumb }}</span>
+                </div>
+                <h1 class="page-title">{{ pageInfo().title }}</h1>
+                <p class="page-desc">{{ pageInfo().desc }}</p>
+            </div>
+        </header>
+
+        <div class="shell-content">
+            @if (gareActionsLocked()) {
+                <div class="gare-pending-strip" role="status">
+                    <strong>Compte en attente</strong> — le dirigeant de votre compagnie doit valider la gare
+                    <strong> {{ stationLine() }} </strong>
+                    avant toute action (trajets, scanner, accès compagnie).
+                </div>
+            }
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</div>

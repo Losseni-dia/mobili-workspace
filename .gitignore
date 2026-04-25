@@ -1,0 +1,8 @@
+# Secrets (tout le monorepo)
+.env
+**/.env
+
+# Divers
+*.log
+.DS_Store
+Thumbs.db

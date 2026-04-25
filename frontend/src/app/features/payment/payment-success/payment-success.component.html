@@ -1,0 +1,61 @@
+<div class="success-container" *ngIf="!loading">
+    <div class="card-mobili text-center">
+
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+
+        <h1 class="display-4-mobili">Paiement Réussi !</h1>
+        <p class="text-muted">Votre voyage <strong>Mobili</strong> est maintenant confirmé.</p>
+        <p class="text-muted" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+        <div class="recap-ticket" *ngIf="bookingDetails">
+            <h5>DÉTAILS DE LA RÉSERVATION</h5>
+
+            <div class="info-line">
+                <span class="label">Référence</span>
+                <span class="value">{{bookingDetails.reference}}</span>
+            </div>
+
+            <div class="info-line">
+                <span class="label">Trajet</span>
+                <span class="value">{{bookingDetails.departureCity}} ➔ {{bookingDetails.arrivalCity}}</span>
+            </div>
+
+            <div class="info-line">
+                <span class="label">Date de départ</span>
+                <span class="value">{{bookingDetails.departureDateTime | date:'dd MMM yyyy à HH:mm'}}</span>
+            </div>
+
+            <div class="info-line" *ngIf="bookingDetails.seatNumbers.length">
+                <span class="label">Vos places</span>
+                <span class="badge-seat">
+                    Siège {{bookingDetails.seatNumbers.join(', ')}}
+                </span>
+            </div>
+
+            <div class="info-line border-0 mt-3">
+                <span class="label">Total payé</span>
+                <span class="price-tag">{{bookingDetails.totalPrice | number}} FCFA</span>
+            </div>
+        </div>
+
+        <div class="btn-group-mobili">
+            <a class="btn-mobili btn-primary-mobili" routerLink="/my-account/my-tickets">
+                <i class="fas fa-ticket-alt me-2"></i> Télécharger mes tickets
+            </a>
+            <a class="btn-mobili btn-outline-mobili" routerLink="/">
+                <i class="fas fa-home me-2"></i> Retour à l'accueil
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="success-container" *ngIf="loading">
+    <div class="text-center">
+        <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem; color: #FFCC00 !important;"
+            role="status"></div>
+        <h2 class="mt-4 fw-bold" style="color: #092990;">Finalisation en cours...</h2>
+        <p class="text-muted">Nous confirmons votre réservation auprès de FedaPay.</p>
+    </div>
+</div>

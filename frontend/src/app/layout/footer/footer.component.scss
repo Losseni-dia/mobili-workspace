@@ -1,0 +1,122 @@
+@use "sass:color";
+@import '../../styles/variables';
+@import '../../styles/mixins';
+
+.main-footer {
+  margin-top: auto;
+  background: $gradient-hero;
+  color: rgba($white, 0.9);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 10% 0%, rgba($mobili-yellow, 0.18), transparent 50%),
+      radial-gradient(circle at 90% 110%, rgba($mobili-yellow, 0.12), transparent 55%);
+    pointer-events: none;
+  }
+
+  .quick-info {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 50px 24px;
+    max-width: $container-max;
+    margin: 0 auto;
+
+    .info-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      background: rgba($white, 0.07);
+      border: 1px solid rgba($white, 0.12);
+      border-radius: $radius-md;
+      backdrop-filter: blur(8px);
+      transition: transform $t-base, background $t-base, border-color $t-base;
+
+      &:hover {
+        transform: translateY(-3px);
+        background: rgba($white, 0.12);
+        border-color: rgba($mobili-yellow, 0.5);
+      }
+
+      .icon {
+        font-size: 1.6rem;
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: $radius-sm;
+        background: rgba($mobili-yellow, 0.2);
+        color: $mobili-yellow;
+        flex-shrink: 0;
+      }
+
+      .text {
+        display: flex;
+        flex-direction: column;
+
+        strong {
+          color: $white;
+          font-size: 0.95rem;
+          font-weight: 800;
+          letter-spacing: 0.2px;
+        }
+
+        span {
+          color: rgba($white, 0.7);
+          font-size: 0.78rem;
+        }
+      }
+    }
+  }
+
+  .footer-bottom {
+    position: relative;
+    padding: 22px 24px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: rgba($white, 0.7);
+    border-top: 1px solid rgba($white, 0.1);
+
+    p { margin-bottom: 10px; }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+
+      a {
+        color: rgba($white, 0.85);
+        font-weight: 600;
+        text-decoration: none;
+        position: relative;
+        transition: color $t-base;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -4px;
+          height: 2px;
+          background: $mobili-yellow;
+          transform: scaleX(0);
+          transform-origin: center;
+          transition: transform $t-base;
+        }
+
+        &:hover {
+          color: $white;
+
+          &::after { transform: scaleX(1); }
+        }
+      }
+    }
+  }
+}

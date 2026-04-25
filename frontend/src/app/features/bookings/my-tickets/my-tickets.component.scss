@@ -1,0 +1,346 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.tickets-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: none;
+}
+
+.loader {
+  text-align: center;
+  padding: 60px 20px;
+  color: $gray-500;
+  font-weight: 600;
+}
+
+.tickets-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+// ======================================================================
+//  TICKET CARD
+// ======================================================================
+.ticket-wrapper {
+  animation: ticketIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.ticket-card {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  background: $white;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-lg;
+  border: 1px solid rgba($mobili-blue, 0.06);
+  position: relative;
+  transition: transform $t-base, box-shadow $t-base;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: $shadow-xl;
+  }
+
+  // Perforation centrale
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: $gray-50;
+    border-radius: 50%;
+    z-index: 2;
+    left: calc(100% - 240px - 11px);
+  }
+  &::before {
+    top: -11px;
+    box-shadow: inset 0 -3px 6px rgba($mobili-blue-deep, 0.1);
+  }
+  &::after {
+    bottom: -11px;
+    box-shadow: inset 0 3px 6px rgba($mobili-blue-deep, 0.1);
+  }
+}
+
+.ticket-main {
+  padding: 26px 28px;
+  background: linear-gradient(180deg, $white 0%, rgba($mobili-blue-fog, 0.5) 100%);
+}
+
+.ticket-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+
+  .partner {
+    font-weight: 900;
+    color: $mobili-blue;
+    font-size: 0.95rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .status-badge {
+    padding: 5px 14px;
+    border-radius: $radius-pill;
+    background: rgba($success, 0.12);
+    color: $success;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+
+    &.used {
+      background: $gray-200;
+      color: $gray-600;
+    }
+  }
+}
+
+.route-display {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 10px;
+
+  .point {
+    display: flex;
+    flex-direction: column;
+
+    .time {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: $mobili-blue;
+    }
+
+    .city {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: $mobili-blue-deep;
+      text-transform: capitalize;
+      letter-spacing: -0.4px;
+    }
+  }
+
+  .point:last-child {
+    text-align: right;
+  }
+
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    .bus-icon {
+      font-size: 1.4rem;
+      filter: drop-shadow(0 4px 10px rgba($mobili-blue, 0.3));
+    }
+
+    .line {
+      width: 60px;
+      height: 2px;
+      background: repeating-linear-gradient(
+        to right,
+        $mobili-blue 0 4px,
+        transparent 4px 8px
+      );
+    }
+  }
+}
+
+.ticket-footer {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 2px dashed rgba($mobili-blue, 0.15);
+
+  .info-group {
+    display: flex;
+    flex-direction: column;
+
+    .label {
+      font-size: 0.68rem;
+      color: $gray-500;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      font-weight: 800;
+      color: $mobili-blue-deep;
+      font-size: 0.92rem;
+    }
+  }
+}
+
+.ticket-stub {
+  padding: 26px 20px;
+  background: $gradient-hero;
+  color: $white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  text-align: center;
+  gap: 14px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 18px;
+    bottom: 18px;
+    width: 2px;
+    border-left: 2px dashed rgba($white, 0.4);
+  }
+
+  .stub-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .label {
+      font-size: 0.65rem;
+      color: rgba($white, 0.65);
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      color: $white;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+  }
+
+  .seat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: $mobili-yellow;
+    color: $mobili-blue-deep;
+    border-radius: $radius-md;
+    font-weight: 900;
+
+    .seat-icon { font-size: 1rem; }
+    .seat-number { font-size: 1.1rem; letter-spacing: 0.5px; }
+  }
+
+  .qr-code {
+    padding: 6px;
+    background: $white;
+    border-radius: $radius-sm;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+
+    img { width: 100px; height: 100px; display: block; }
+  }
+
+  .serial {
+    font-size: 0.75rem;
+    color: rgba($white, 0.7);
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+}
+
+.ticket-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .btn-download {
+    @include btn-ghost;
+    padding: 10px 18px;
+    font-size: 0.82rem;
+  }
+
+  .btn-channel {
+    @include btn-ghost;
+    padding: 10px 18px;
+    font-size: 0.82rem;
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+// ======================================================================
+//  EMPTY STATE
+// ======================================================================
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: $white;
+  border-radius: $radius-lg;
+  border: 1px dashed rgba($mobili-blue, 0.25);
+
+  .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    @include heading-md;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: $gray-500;
+    margin-bottom: 22px;
+  }
+
+  .btn-primary { @include btn-primary; }
+}
+
+@keyframes ticketIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ======================================================================
+//  RESPONSIVE
+// ======================================================================
+@media (max-width: 720px) {
+  .ticket-card {
+    grid-template-columns: 1fr;
+
+    &::before,
+    &::after {
+      left: -11px;
+      right: auto;
+      display: none;
+    }
+  }
+
+  .ticket-stub::before {
+    left: 18px;
+    right: 18px;
+    top: 0;
+    bottom: auto;
+    height: 2px;
+    width: auto;
+    border-left: none;
+    border-top: 2px dashed rgba($white, 0.4);
+  }
+
+  .route-display { grid-template-columns: 1fr; gap: 20px; }
+  .route-display .connector { transform: rotate(90deg); }
+}

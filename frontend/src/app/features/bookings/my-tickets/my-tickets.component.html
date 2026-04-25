@@ -1,0 +1,98 @@
+<div class="tickets-container">
+    <header class="page-header">
+        <h1>🎫 Mes Titres de Transport</h1>
+        <p>Retrouvez ici vos billets pour vos prochains voyages Mobili.</p>
+    </header>
+
+    @if (isLoading()) {
+    <div class="loader">Chargement de vos titres...</div>
+    } @else if (tickets().length > 0) {
+    <div class="tickets-grid">
+        @for (ticket of tickets(); track ticket.ticketNumber) {
+        <div class="ticket-wrapper">
+            <div class="ticket-card" [id]="'ticket-' + ticket.ticketNumber">
+                <div class="ticket-main">
+                    <div class="ticket-top">
+                        <span class="partner">{{ ticket.partnerName || 'TRANSPORT MOBILI' }}</span>
+                        <span class="status-badge" [class.used]="ticket.status === 'UTILISÉ'">
+                            {{ ticket.status }}
+                        </span>
+                    </div>
+
+                    <div class="route-display">
+                        <div class="point">
+                            <span class="time">{{ ticket.departureDateTime | date:'HH:mm' }}</span>
+                            <span class="city">{{ ticket.departureCity }}</span>
+                        </div>
+
+                        <div class="connector">
+                            <span class="bus-icon mirror">🚌</span>
+                            <div class="line"></div>
+                        </div>
+
+                        <div class="point">
+                            <span class="time"></span>
+                            <span class="city">{{ ticket.arrivalCity }}</span>
+                        </div>
+                    </div>
+
+                    <div class="ticket-footer">
+                        <div class="info-group">
+                            <span class="label">DATE</span>
+                            <span class="value">{{ ticket.departureDateTime | date:'dd MMM yyyy' }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="label">PASSAGER</span>
+                            <span class="value">{{ ticket.passengerFullName }}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="label">PRIX</span>
+                            <span class="value">{{ ticket.price | number }} FCFA</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ticket-stub">
+                    <div class="stub-info">
+                        <span class="label">SIÈGE</span>
+                        <div class="seat-badge">
+                            <span class="seat-icon">💺</span>
+                            <span class="seat-number">{{ ticket.seatNumber || 'N/A' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="stub-info">
+                        <span class="label">VÉHICULE</span>
+                        <span class="value">{{ ticket.vehiculePlateNumber }}</span>
+                    </div>
+
+                    <div class="qr-code">
+                        <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + ticket.qrCodeData"
+                            alt="QR Code Validation">
+                    </div>
+
+                    <span class="serial">{{ ticket.ticketNumber }}</span>
+                </div>
+            </div>
+            <div class="ticket-actions">
+                <button (click)="downloadTicket(ticket)" class="btn-download">
+                    📥 Enregistrer l'image (Galerie)
+                </button>
+                @if (ticket.tripId) {
+                    <a class="btn-channel" [routerLink]="['/my-account/trip-channel', ticket.tripId]">
+                        💬 Annonces du voyage
+                    </a>
+                }
+            </div>
+        </div>
+        }
+    </div>
+    } @else {
+    <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h2>Aucun ticket trouvé</h2>
+        <p>Vous n'avez pas encore effectué de réservation.</p>
+        <button routerLink="/" class="btn-primary">Rechercher un trajet</button>
+    </div>
+    }
+</div>

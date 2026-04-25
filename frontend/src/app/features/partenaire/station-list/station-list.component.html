@@ -1,0 +1,184 @@
+<div class="gares-page">
+  <header class="gares-hero">
+    <div class="gares-hero-icon" aria-hidden="true">🏤</div>
+    <div class="gares-hero-text">
+      <p class="gares-eyebrow">Réseau & périmètre</p>
+      <h1 class="gares-title">Vos gares</h1>
+      <p class="gares-lead">
+        Chaque gare regroupe l’équipe et l’activité d’un lieu d’embarquement.
+      </p>
+    </div>
+    <div class="gares-hero-stats" aria-live="polite">
+      <div class="gares-hero-stat">
+        <span class="gares-hero-stat-label">Gares enregistrées</span>
+        <span class="gares-hero-stat-value">{{ stations().length }}</span>
+      </div>
+      @if (isPartnerManager() && pendingStations().length > 0) {
+        <div class="gares-hero-stat gares-hero-stat--pending">
+          <span class="gares-hero-stat-label">En attente d’approbation</span>
+          <span class="gares-hero-stat-value gares-hero-stat-value--warn">{{ pendingStations().length }}</span>
+        </div>
+      }
+    </div>
+  </header>
+
+  @if (needValidationHint()) {
+    <div class="gares-redirect-hint" role="status">
+      <strong>Publication de trajets</strong> : créez une gare puis validez-la ci-dessous (ou via « En attente ») pour activer
+      les voyages et l’espace compagnie.
+    </div>
+  }
+
+  @if (isPartnerManager() && pendingStations().length > 0) {
+    <section class="data-panel gares-pending-panel" aria-label="Gares en attente de validation">
+      <header class="panel-head">
+        <h2>En attente de votre validation</h2>
+      </header>
+      <ul class="gares-pending-list">
+        @for (g of pendingStations(); track g.id) {
+          <li>
+            <span class="gares-pending-name"
+              ><strong>{{ g.name }}</strong> <span class="gares-pending-meta">{{ g.city }}</span
+              > · <code class="gares-pending-code">{{ g.code || 'code non assigné' }}</code></span
+            >
+            <button
+              type="button"
+              class="btn-approve"
+              (click)="approve(g)"
+              [disabled]="approvingId() === g.id"
+            >
+              {{ approvingId() === g.id ? '…' : 'Approuver' }}
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <div class="gares-main">
+    <section class="data-panel gares-list-card" aria-label="Inventaire des gares">
+      <header class="panel-head">
+        <h2>Gares</h2>
+      </header>
+      <div class="gares-list-body">
+        @if (isLoading()) {
+          <div class="loader">Chargement du réseau…</div>
+        } @else if (error()) {
+          <div class="gares-alert gares-alert--err" role="alert">
+            <span class="gares-alert-ico" aria-hidden="true">!</span>
+            <div>
+              <strong>Impossible de charger</strong>
+              <p>{{ error() }}</p>
+            </div>
+          </div>
+        } @else if (stations().length === 0) {
+          <div class="empty">
+            <div class="empty-icon" aria-hidden="true">🏢</div>
+            <strong>Aucune gare pour l’instant</strong>
+            <p>Utilisez le formulaire sous le tableau.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Ville</th>
+                  <th>Code</th>
+                  <th>Responsable</th>
+                  <th>Chauffeurs affectés</th>
+                  <th>Validation</th>
+                  <th class="right">Actif (trajets)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (g of stations(); track g.id) {
+                  <tr>
+                    <td>
+                      <div class="gare-name-cell">
+                        <span class="gare-pin" aria-hidden="true">📍</span>
+                        <strong>{{ g.name }}</strong>
+                      </div>
+                    </td>
+                    <td>{{ g.city }}</td>
+                    <td class="mono">{{ g.code || '—' }}</td>
+                    <td>{{ g.responsibleName?.trim() || '—' }}</td>
+                    <td class="gares-chauffeurs-cell">
+                      @if (g.assignedChauffeurs?.length) {
+                        <ul class="gares-chauffeurs-list">
+                          @for (ch of g.assignedChauffeurs; track ch.id) {
+                            <li>
+                              {{ ch.firstname?.trim() || '' }} <strong>{{ ch.lastname?.trim() || '—' }}</strong>
+                            </li>
+                          }
+                        </ul>
+                      } @else {
+                        <span class="gares-chauffeurs-empty">—</span>
+                      }
+                    </td>
+                    <td class="gares-validate">
+                      <div class="gares-validate-inner">
+                        @if (isPending(g)) {
+                          <span class="status-pill pending" title="En attente du dirigeant">
+                            <span class="dot" aria-hidden="true"></span>
+                            En attente
+                          </span>
+                          @if (isPartnerManager()) {
+                            <button
+                              type="button"
+                              class="btn-approve"
+                              (click)="approve(g)"
+                              [disabled]="approvingId() === g.id"
+                            >
+                              {{ approvingId() === g.id ? '…' : 'Approuver' }}
+                            </button>
+                          }
+                        } @else {
+                          <span class="status-pill ok" title="Gare approuvée"
+                            >Validée</span
+                          >
+                        }
+                      </div>
+                    </td>
+                    <td class="right">
+                      <span
+                        class="status-pill"
+                        [class.active]="g.active"
+                        [class.blocked]="!g.active"
+                        [attr.title]="
+                          g.active ? 'Gare prête (trajets si validée)' : 'Gare inactive / suspension'
+                        "
+                      >
+                        <span class="dot" aria-hidden="true"></span>
+                        {{ g.active ? 'Oui' : 'Non' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="data-panel gares-form-card" aria-label="Nouvelle gare">
+      <header class="panel-head gares-form-card__head">
+        <h2 class="gares-form-card__title">Ajouter une gare</h2>
+      </header>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="add-form add-form--inline">
+        <label class="ig">
+          <span>Nom de la gare</span>
+          <input type="text" formControlName="name" placeholder="ex. Gare UTB Adjamé" autocomplete="off" />
+        </label>
+        <label class="ig">
+          <span>Ville</span>
+          <input type="text" formControlName="city" placeholder="ex. Abidjan" autocomplete="off" />
+        </label>
+        <div class="add-form-actions">
+          <button type="submit" class="btn-submit" [disabled]="form.invalid">Enregistrer la gare</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>

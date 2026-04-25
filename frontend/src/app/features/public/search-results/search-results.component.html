@@ -1,0 +1,94 @@
+<div class="results-page">
+  <div class="search-info">
+    <h2>
+      @if (searchParams.departure || searchParams.arrival) {
+      {{ searchParams.departure || '…' }} → {{ searchParams.arrival || '…' }}
+      } @else {
+      Résultats de recherche
+      }
+    </h2>
+    @if (searchParams.date) {
+    <p>{{ searchParams.date | date : 'fullDate' }}</p>
+    }
+    @if (searchParams.transportType) {
+    <p class="search-transport">
+      @switch (searchParams.transportType) {
+        @case ('COVOITURAGE') { Covoiturage uniquement }
+        @case ('PUBLIC') { Transport public uniquement }
+        @default { {{ searchParams.transportType }} }
+      }
+    </p>
+    }
+  </div>
+
+  @if (loading) {
+  <p class="status-hint">Chargement des résultats…</p>
+  }
+  @if (error) {
+  <p class="error-banner">{{ error }}</p>
+  }
+
+  <div class="trips-list">
+    @if (!loading && !error && trips.length === 0) {
+    <div class="empty-state">
+      <p>Aucun trajet trouvé pour cette recherche.</p>
+    </div>
+    }
+
+    @for (trip of trips; track trip.id) {
+    <div class="trip-card">
+      <div class="trip-main">
+        <div class="time-box">
+          <span class="time">{{ trip.departureDateTime | date : 'HH:mm' }}</span>
+          <span class="city">{{ trip.departureCity }}</span>
+        </div>
+
+        <div class="duration-indicator">
+          <div class="line"></div>
+          <span class="icon">🚌</span>
+        </div>
+
+        <div class="time-box">
+          <span class="time route-terminus">{{ trip.arrivalCity }}</span>
+          <span class="city">Arrivée</span>
+        </div>
+      </div>
+
+      <div class="trip-meta">
+        <span>{{ trip.departureDateTime | date : 'EEE d MMM' }}</span>
+        @if (trip.boardingPoint) {
+        <span>· 📍 {{ trip.boardingPoint }}</span>
+        }
+      </div>
+
+      <div class="trip-details">
+        <div class="partner">
+          @if (trip.transportType === 'COVOITURAGE') {
+          <span class="tt-badge tt-badge--pool">Covoiturage</span>
+          } @else {
+          <span class="tt-badge">Transport public</span>
+          }
+          <strong>{{ trip.partnerName }}</strong>
+          <span>{{ formatVehicleType(trip.vehicleType) }}</span>
+        </div>
+        <div class="pricing">
+          <span class="seats" [class.low]="trip.availableSeats < 5">
+            @if (trip.availableSeats > 0) {
+            {{ trip.availableSeats }} places restantes
+            } @else {
+            Complet
+            }
+          </span>
+          <span class="price">{{ listPrice(trip) | number }} FCFA</span>
+        </div>
+      </div>
+
+      @if (trip.availableSeats > 0) {
+      <a class="btn-book" [routerLink]="['/booking/trip', trip.id]">Réserver</a>
+      } @else {
+      <span class="btn-book btn-book--soldout">Complet</span>
+      }
+    </div>
+    }
+  </div>
+</div>

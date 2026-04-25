@@ -1,0 +1,147 @@
+<div class="page">
+    <header class="page-hero">
+        <h1>Analyse applicative &amp; journal technique</h1>
+        <p class="page-lead">
+            Toutes les métadonnées enregistrées pour comprendre l’usage de la plateforme, les frictions (connexions, recherches vides) et le comportement côté API.
+            Aucun nom complet ni e-mail n’est affiché — uniquement des identifiants techniques, des libellés de routes ou des compteurs agrégés.
+        </p>
+    </header>
+
+    <section class="doc-block">
+        <h2>Types d’événements suivis (côté serveur)</h2>
+        <ul class="doc-list">
+            <li><strong>Échec de connexion</strong> : tentative refusée (identifiant inconnu, compte désactivé ou mot de passe incorrect).</li>
+            <li><strong>Recherche sans résultat</strong> : requête <code>GET /v1/trips/search</code> avec critères de villes / date et zéro trajet retourné (utile pour ajuster l’offre ou les textes d’aide).</li>
+            <li><strong>Réservation créée / paiement confirmé</strong> : cycle de vente (création, puis validation portefeuille ou FedaPay).</li>
+            <li><strong>Trajet publié</strong> : nouvelle offre enregistrée par un partenaire.</li>
+            <li><strong>Erreur serveur</strong> : exception non gérée (classe d’exception enregistrée ; pas de fuite de données clients).</li>
+        </ul>
+    </section>
+
+    <section class="doc-block">
+        <h2>Connexions (table <code>login_events</code>)</h2>
+        <p>
+            Chaque connexion réussie (POST <code>/v1/auth/login</code>) alimente un <strong>comptage par jour</strong> et le nombre d’<strong>utilisateurs uniques</strong> par date calendaire.
+            Les graphiques ci-dessous permettent d’évaluer l’<strong>engagement</strong> et d’anticiper la charge, sans conserver le mot de passe.
+        </p>
+    </section>
+
+    @if (loginStats(); as ls) {
+        <section class="kpi-grid kpi-grid--login">
+            <article class="kpi">
+                <span class="kpi-chip teal">🔑</span>
+                <div class="kpi-value">{{ ls.todayTotalLogins | number }}</div>
+                <div class="kpi-label">Connexions aujourd’hui</div>
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip orange">👤</span>
+                <div class="kpi-value">{{ ls.todayUniqueUsers | number }}</div>
+                <div class="kpi-label">Utilisateurs uniques (jour)</div>
+            </article>
+        </section>
+
+        @if (ls.history.length) {
+            <section class="panel">
+                <header class="panel-head">
+                    <h2>Connexions par jour</h2>
+                    <span class="panel-hint">30 jours</span>
+                </header>
+                <div class="chart-bar">
+                    @for (day of ls.history; track day.date) {
+                        <div
+                            class="bar-col"
+                            [title]="day.date + ' — ' + day.totalLogins + ' conn. / ' + day.uniqueUsers + ' uniques'"
+                        >
+                            <div class="bar-fill" [style.height.%]="(day.totalLogins / maxLogins()) * 100"></div>
+                            <span class="bar-label">{{ day.date | date: 'dd/MM' }}</span>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    }
+
+    <section class="doc-block">
+        <h2>Agrégats d’événements (produit / sécurité)</h2>
+        <p>Choisis la fenêtre d’analyse. Les compteurs sont <strong>additifs</strong> sur l’intervalle (ré-exécutions, tests multipliés).</p>
+        <div class="chip-row">
+            <button type="button" class="chip" [class.active]="analyticsDays() === 7" (click)="setAnalyticsDays(7)">7 jours</button>
+            <button type="button" class="chip" [class.active]="analyticsDays() === 14" (click)="setAnalyticsDays(14)">14 jours</button>
+            <button type="button" class="chip" [class.active]="analyticsDays() === 30" (click)="setAnalyticsDays(30)">30 jours</button>
+        </div>
+    </section>
+
+    <section class="panel">
+        <header class="panel-head">
+            <h2>Totaux par type d’événement</h2>
+            <span class="panel-hint">{{ analyticsDays() }} derniers jours</span>
+        </header>
+        @if (analyticsLoadError()) {
+            <p class="analytics-error">Impossible de charger l’agrégat.</p>
+        } @else if (analyticsSummary(); as asum) {
+            @if (asum.byType.length) {
+                <ul class="analytics-list">
+                    @for (row of asum.byType; track row.type) {
+                        <li>
+                            <span class="al-label">{{ eventTypeLabel(row.type) }}</span>
+                            <span class="al-count">{{ row.count | number }}</span>
+                        </li>
+                    }
+                </ul>
+            } @else {
+                <p class="analytics-empty">Aucun enregistrement sur cette période.</p>
+            }
+        } @else {
+            <p class="analytics-empty">Chargement…</p>
+        }
+    </section>
+
+    <section class="panel">
+        <header class="panel-head">
+            <h2>Journal détaillé (ligne à ligne)</h2>
+            <span class="panel-hint">200 derniers enregistrements</span>
+        </header>
+        <p class="analytics-intro">Horodatage serveur, type et libellé généré par l’API. Export possible via copie de tableau pour analyse ultérieure.</p>
+        @if (recentEventsError()) {
+            <p class="analytics-error">Chargement du journal impossible.</p>
+        } @else if (recentEvents(); as evs) {
+            @if (evs.length) {
+                <div class="table-wrap">
+                    <table class="evt-table">
+                        <thead>
+                            <tr>
+                                <th>Date / heure</th>
+                                <th>Type</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (row of evs; track row.id) {
+                                <tr>
+                                    <td class="evt-td-time">{{ row.occurredAt | date: 'dd/MM/yyyy, HH:mm:ss' }}</td>
+                                    <td class="evt-td-type">{{ eventTypeLabel(row.eventType) }}</td>
+                                    <td class="evt-td-detail">{{ row.detail }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            } @else {
+                <p class="analytics-empty">Journal vide.</p>
+            }
+        } @else {
+            <p class="analytics-empty">Chargement…</p>
+        }
+    </section>
+
+    <section class="doc-block">
+        <h2>Périmètre RGPD &amp; rétention</h2>
+        <p>
+            Données à finalité d’<strong>amélioration produit, sécurité et fiabilité</strong>. Ajuste la rétention en base (purge programmée) et documente
+            le traitement dans ta politique de confidentialité. Les journaux d’accès contiennent des <strong>identifiants techniques</strong> (id utilisateur,
+            id trajet) : limite l’accès admin à un nombre restreint de rôles.
+        </p>
+    </section>
+
+    <a routerLink="/admin/dashboard" class="back-link">← Retour à la vue d’ensemble</a>
+</div>

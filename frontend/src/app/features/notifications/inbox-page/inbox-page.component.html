@@ -1,0 +1,49 @@
+<div class="inbox">
+  <header class="inbox-head">
+    <h1>Notifications</h1>
+    <p class="muted">Billets, annonces sur vos voyages et alertes compagnie.</p>
+    @if (totalElements() > 0) {
+      <button type="button" class="btn-ghost" (click)="markAll()">Tout marquer comme lu</button>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Chargement…</p>
+  } @else if (items().length === 0) {
+    <div class="empty">
+      <p>Aucune notification pour le moment.</p>
+    </div>
+  } @else {
+    <ul class="inbox-list">
+      @for (n of items(); track n.id) {
+        <li
+          class="inbox-item"
+          [class.unread]="!n.read"
+          (click)="markRead(n)"
+        >
+          <div class="meta">
+            <span class="pill">{{ typeLabel(n) }}</span>
+            <time [attr.datetime]="n.createdAt">{{ n.createdAt | date: 'dd/MM/yyyy HH:mm' }}</time>
+          </div>
+          <h2 class="title">{{ n.title }}</h2>
+          <p class="body">{{ n.body }}</p>
+          @if (n.tripId && channelLink(n.tripId)) {
+            <a
+              class="link-channel"
+              [routerLink]="channelLink(n.tripId)!"
+              (click)="$event.stopPropagation()"
+            >Voir le fil du voyage</a>
+          }
+          @if (n.partnerGareComThreadId != null && companyComBasePath()) {
+            <a
+              class="link-channel"
+              [routerLink]="companyComBasePath()!"
+              [queryParams]="{ thread: n.partnerGareComThreadId }"
+              (click)="$event.stopPropagation()"
+            >Ouvrir la conversation</a>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

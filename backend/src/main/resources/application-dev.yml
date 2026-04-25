@@ -1,0 +1,20 @@
+# Développement local : schéma tolérant, SQL visible, CORS localhost.
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.mobili.backend: DEBUG
+    org.hibernate.SQL: DEBUG
+
+mobili:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+      - http://127.0.0.1:4200

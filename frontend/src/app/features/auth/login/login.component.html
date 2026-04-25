@@ -1,0 +1,44 @@
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="assets/images/logo-mobili.png" alt="Mobili Logo" class="logo">
+            <h2>Connexion</h2>
+            <p>Accédez à vos trajets et réservations</p>
+        </div>
+
+        <form (submit)="onSubmit()" #loginForm="ngForm">
+            @if (postRegisterHint()) {
+                <div class="info-banner" role="status">{{ postRegisterHint() }}</div>
+            }
+            <div class="form-group">
+                <label for="login">Nom d'utilisateur</label>
+                <div class="input-with-icon">
+                    <input type="text" id="login" name="login" [(ngModel)]="credentials.login" required
+                        placeholder="Ex: kone_225">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <div class="input-with-icon">
+                    <input type="password" id="password" name="password" [(ngModel)]="credentials.password" required
+                        placeholder="••••••••">
+                </div>
+            </div>
+
+            @if (errorMessage()) {
+                <div class="error-banner" role="alert">{{ errorMessage() }}</div>
+            }
+
+            <button type="submit" class="btn-submit" [disabled]="!loginForm.valid || isLoading()">
+                <span *ngIf="!isLoading()">Se connecter</span>
+                <span *ngIf="isLoading()" class="loader"></span>
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <span>Pas encore de compte ?</span>
+            <a routerLink="/auth/inscription">Inscrivez-vous gratuitement</a>
+        </div>
+    </div>
+</div>

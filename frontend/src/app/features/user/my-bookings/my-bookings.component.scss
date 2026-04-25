@@ -1,0 +1,159 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+@import '../../../styles/data-panel';
+
+.bookings-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.revenue-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 18px;
+  background: $gradient-hero;
+  color: $white;
+  border-radius: $radius-md;
+  min-width: 200px;
+
+  .chip-label {
+    font-size: 0.7rem;
+    color: rgba($white, 0.75);
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  strong {
+    margin-top: 4px;
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: $mobili-yellow;
+    letter-spacing: -0.3px;
+  }
+}
+
+.status-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: $radius-pill;
+  background: $white;
+  border: 1px solid $gray-200;
+  color: $gray-600;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all $t-base;
+
+  .count {
+    padding: 1px 8px;
+    border-radius: $radius-pill;
+    background: $gray-100;
+    color: $gray-600;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  &:hover { background: $mobili-blue-fog; color: $mobili-blue; border-color: rgba($mobili-blue, 0.25); }
+
+  &.active {
+    background: $mobili-blue;
+    color: $white;
+    border-color: $mobili-blue;
+    box-shadow: 0 8px 16px rgba($mobili-blue, 0.25);
+    .count { background: rgba($white, 0.18); color: $white; }
+  }
+
+  &.success.active { background: $success; border-color: $success; box-shadow: 0 8px 16px rgba($success, 0.25); }
+  &.warn.active { background: $warning; border-color: $warning; box-shadow: 0 8px 16px rgba($warning, 0.25); }
+  &.danger.active { background: $danger; border-color: $danger; box-shadow: 0 8px 16px rgba($danger, 0.25); }
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  transition: all $t-base;
+
+  &:focus-within { border-color: $mobili-blue; box-shadow: 0 0 0 3px rgba($mobili-blue, 0.12); }
+
+  .s-ico { opacity: 0.6; }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.9rem;
+    color: $mobili-blue-deep;
+    min-width: 220px;
+  }
+}
+
+// ====== Cellules table ======
+.route-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+
+  strong { color: $mobili-blue-deep; font-weight: 800; }
+  .arrow { color: $mobili-yellow-dark; font-weight: 900; }
+}
+
+.full-route {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: $gray-500;
+  text-transform: capitalize;
+}
+
+.seats {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: $mobili-blue-deep;
+
+  .seat-mini {
+    display: inline-flex;
+    gap: 4px;
+
+    span {
+      padding: 2px 8px;
+      background: $mobili-yellow;
+      color: $mobili-blue-deep;
+      border-radius: $radius-pill;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+  }
+}
+
+.data-table .amount {
+  color: $mobili-blue;
+  font-weight: 900;
+}
+
+.empty .primary-btn {
+  @include btn-primary;
+  margin-top: 14px;
+  padding: 12px 22px;
+  display: inline-flex;
+}

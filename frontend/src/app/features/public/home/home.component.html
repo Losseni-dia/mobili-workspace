@@ -1,0 +1,125 @@
+<div class="home-page">
+    <section class="hero">
+        <h1 class="hero-title">
+            <span class="accent">Mobili</span><br>
+            Voyagez seulement...
+        </h1>
+        <p class="hero-subtitle">
+            Réserve ta place en quelques secondes, paie avec Wave, MTN Money, Orange Money etc, et embarque l'esprit tranquille.
+        </p>
+    </section>
+
+    <div class="search-card">
+        <form class="search-form" [formGroup]="searchForm">
+            <div class="input-block">
+                <label>Départ</label>
+                <input type="text" formControlName="departure" placeholder="D'où partez-vous ?">
+            </div>
+
+            <div class="input-block">
+                <label>Arrivée</label>
+                <input type="text" formControlName="arrival" placeholder="Où allez-vous ?">
+            </div>
+
+            <div class="input-block">
+                <label>Date</label>
+                <input type="date" formControlName="date">
+            </div>
+
+            <div class="input-block input-block--transport">
+                <label>Type de transport</label>
+                <select formControlName="transportType">
+                    <option value="">Tous</option>
+                    <option value="PUBLIC">Transport public</option>
+                    <option value="COVOITURAGE">Covoiturage</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <section class="trips-section container">
+        <h2>Trajets disponibles ({{ filteredTrips.length }})</h2>
+        @if (loadingTrips) {
+        <p class="loading-hint">Mise à jour des résultats…</p>
+        }
+        <div class="trips-grid">
+            @for (trip of filteredTrips; track trip.id) {
+            <div class="trip-card">
+                <div class="trip-image">
+                    <div class="trip-image__inner">
+                        @if (trip.vehicleImageUrl) {
+                        <img
+                            class="trip-image__media"
+                            [src]="IMAGE_BASE_URL + trip.vehicleImageUrl"
+                            (error)="$any($event.target).src = 'assets/images/default-vehicle.png'"
+                            alt="Photo du véhicule"
+                            loading="lazy" />
+                        } @else {
+                        <div class="placeholder-img" aria-hidden="true">🚌</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="trip-details">
+                    <div class="route-header">
+                        <span class="city">{{ trip.departureCity }}</span>
+                        <span class="arrow">➔</span>
+                        <span class="city">{{ trip.arrivalCity }}</span>
+                    </div>
+
+                    <div class="time-info">
+                        📅 {{ trip.departureDateTime | date:'dd MMM' }} à
+                        <strong>{{ trip.departureDateTime | date:'HH:mm' }}</strong>
+                    </div>
+
+                    <div class="boarding-info" *ngIf="trip.boardingPoint">
+                        <span class="pin-icon">📍</span>
+                        Embarquement : <strong>{{ trip.boardingPoint }}</strong>
+                    </div>
+
+                    <div *ngIf="trip.moreInfo" class="stops-container">
+                        <span class="stop-badge" *ngFor="let stop of trip.moreInfo.split(',')">
+                            {{ stop.trim() }}
+                        </span>
+                    </div>
+
+                    <div class="partner-info">
+                        <span class="transport-badge" [class.transport-badge--carpool]="trip.transportType === 'COVOITURAGE'">
+                            {{ transportTypeLabel(trip) }}
+                        </span>
+                        <span class="dot">•</span>
+                        <span class="vehicle-type">{{ formatVehicleType(trip.vehicleType) }}</span>
+                        <span class="dot">•</span>
+                        <span class="company">{{ trip.partnerName }}</span>
+                    </div>
+                </div>
+
+                <div class="trip-action">
+                    <div class="price-tag">{{ listPrice(trip) | number }} <span>FCFA</span></div>
+
+                    <div class="seats-left" [class.low]="trip.availableSeats < 5">
+                        @if (trip.availableSeats > 0) {
+                        {{ trip.availableSeats }} places restantes
+                        } @else {
+                        <span class="sold-out">Complet</span>
+                        }
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-book"
+                        (click)="openBooking(trip)"
+                        [disabled]="trip.availableSeats === 0">
+                        Réserver
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+
+        <div class="no-results" *ngIf="filteredTrips.length === 0">
+            <p>Aucun voyage ne correspond à votre recherche. 🚌</p>
+            <button class="btn-reset" (click)="resetFilter()">Voir tous les voyages</button>
+        </div>
+    </section>
+</div>

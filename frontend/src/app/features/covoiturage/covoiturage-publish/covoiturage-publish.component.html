@@ -1,0 +1,105 @@
+<div class="pub">
+  <h1 class="visually-hidden">Publier un trajet</h1>
+
+  <div class="pub-card">
+    @if (err()) {
+      <p class="alert" role="alert">{{ err() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="pub-form">
+      <section class="form-section" aria-labelledby="section-route">
+        <h3 class="form-section__title" id="section-route">Itinéraire</h3>
+        <div class="row two">
+          <label class="field">
+            <span>Départ (ville)</span>
+            <input type="text" formControlName="departureCity" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Arrivée (ville)</span>
+            <input type="text" formControlName="arrivalCity" autocomplete="off" />
+          </label>
+        </div>
+        <label class="field">
+          <span>Point de rendez-vous / embarquement</span>
+          <input type="text" formControlName="boardingPoint" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Étapes intermédiaires <span class="opt">(optionnel)</span></span>
+          <input type="text" formControlName="moreInfo" placeholder="Villes séparées par des virgules" />
+        </label>
+      </section>
+
+      <section class="form-section" aria-labelledby="section-veh">
+        <h3 class="form-section__title" id="section-veh">Véhicule &amp; photo</h3>
+        <div class="row two">
+          <label class="field">
+            <span>Immatriculation <span class="opt">(optionnel : sinon profil)</span></span>
+            <input type="text" formControlName="vehiculePlateNumber" placeholder="ex. AB-123-CD" />
+          </label>
+          <label class="field">
+            <span>Type de véhicule</span>
+            <select formControlName="vehicleType">
+              @for (vt of vehicleTypes; track vt.value) {
+                <option [value]="vt.value">{{ vt.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <div class="veh-photo" [class.veh-photo--empty]="!displayPhoto()">
+          <div class="veh-photo__preview">
+            @if (displayPhoto(); as src) {
+              <img [src]="src" alt="Photo du véhicule pour ce trajet" width="400" height="240" />
+            } @else {
+              <div class="veh-photo__placeholder" aria-hidden="true">
+                <span class="veh-photo__ico">🚗</span>
+                <p>Aucune photo sur le profil</p>
+                <p class="sub">Ajoutez-en une ci‑dessous ou complétez votre profil covoiturage.</p>
+              </div>
+            }
+          </div>
+          <div class="veh-photo__actions">
+            @if (hasVehicleHintFromProfile()) {
+              <p class="veh-photo__hint hint-profile">Utilisation de la photo enregistrée sur votre profil.</p>
+            }
+            @if (isUsingNewFile()) {
+              <p class="veh-photo__hint hint-new">Cette image remplace la photo du profil <strong>uniquement pour ce trajet</strong>.</p>
+            }
+            <label class="veh-photo__drop">
+              <input #vehFile type="file" accept="image/*" (change)="onFile($event)" />
+              <span class="veh-photo__drop-label">Choisir une autre photo</span>
+              <span class="veh-photo__drop-sub">JPG, PNG, WebP — optionnel</span>
+            </label>
+            @if (isUsingNewFile()) {
+              <button type="button" class="link-reset" (click)="clearNewFile(vehFile)">Revenir à la photo du profil</button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="section-when">
+        <h3 class="form-section__title" id="section-when">Date, prix, places</h3>
+        <div class="row two">
+          <label class="field">
+            <span>Date et heure de départ</span>
+            <input type="datetime-local" formControlName="departureDateTime" />
+          </label>
+          <label class="field">
+            <span>Prix par place (FCFA)</span>
+            <input type="number" formControlName="price" min="0" step="1" />
+          </label>
+        </div>
+        <label class="field field--narrow">
+          <span>Places à proposer</span>
+          <input type="number" formControlName="totalSeats" min="1" />
+        </label>
+      </section>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Publication…' : 'Publier le trajet' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

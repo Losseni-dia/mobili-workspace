@@ -1,0 +1,181 @@
+@use "sass:color";
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+@import '../../../styles/data-panel';
+
+.station-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $gray-600;
+  }
+  select {
+    min-width: min(100%, 280px);
+    padding: 10px 12px;
+    border-radius: $radius-md;
+    border: 1px solid $gray-200;
+    background: $white;
+    font-size: 0.95rem;
+  }
+}
+
+.gare-hint {
+  font-size: 0.9rem;
+  color: $gray-600;
+  margin: 0 0 14px;
+}
+
+// ======================================================================
+//  KPI
+// ======================================================================
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.kpi {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  padding: 20px 22px;
+  transition: border-color $t-base, transform $t-base, box-shadow $t-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba($mobili-blue, 0.3);
+    box-shadow: $shadow-md;
+  }
+
+  .kpi-label {
+    color: $gray-500;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+
+  .kpi-value {
+    margin-top: 8px;
+    font-family: $font-display;
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: $mobili-blue-deep;
+    letter-spacing: -0.6px;
+    line-height: 1.1;
+  }
+
+  .kpi-bar {
+    margin-top: 14px;
+    height: 4px;
+    border-radius: 4px;
+    background: $gray-100;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: $mobili-blue;
+      width: 68%;
+    }
+  }
+
+  &.kpi-0 .kpi-bar span { background: $mobili-blue; width: 72%; }
+  &.kpi-1 .kpi-bar span { background: $success; width: 56%; }
+  &.kpi-2 .kpi-bar span { background: $gradient-gold; width: 82%; }
+  &.kpi-3 .kpi-bar span { background: $admin-purple; width: 96%; }
+}
+
+// ======================================================================
+//  PANELS
+// ======================================================================
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 1050px) { grid-template-columns: 1fr; }
+}
+
+// ---- Raccourcis ----
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 10px;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $radius-sm;
+  text-decoration: none;
+  transition: all $t-base;
+
+  &:hover {
+    transform: translateX(3px);
+    background: $mobili-blue-fog;
+    border-color: rgba($mobili-blue, 0.25);
+  }
+
+  &.gold {
+    background: rgba($mobili-yellow, 0.12);
+    border-color: rgba($mobili-yellow-dark, 0.35);
+
+    .sc-ico {
+      background: $mobili-yellow;
+      color: $mobili-blue-deep;
+    }
+
+    &:hover {
+      background: rgba($mobili-yellow, 0.25);
+      border-color: $mobili-yellow-dark;
+    }
+  }
+
+  .sc-ico {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    background: rgba($mobili-blue, 0.1);
+    color: $mobili-blue;
+    flex-shrink: 0;
+    font-weight: 900;
+  }
+
+  > div { display: flex; flex-direction: column; }
+  strong { color: $mobili-blue-deep; font-size: 0.92rem; font-weight: 800; }
+  span { color: $gray-500; font-size: 0.8rem; margin-top: 2px; }
+}
+
+// ---- Montants ----
+.data-table .amount {
+  color: $station-green;
+  font-weight: 800;
+}
+
+// ---- Lien count-chip (navigation "Voir tout") ----
+.count-chip.link {
+  cursor: pointer;
+  text-decoration: none;
+  transition: all $t-base;
+
+  &:hover {
+    background: $mobili-blue;
+    color: $white;
+  }
+}

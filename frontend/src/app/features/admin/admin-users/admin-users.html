@@ -1,0 +1,111 @@
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Tous les utilisateurs</h2>
+            <p>
+                Sous chaque nom : <strong>compagnie</strong> et, pour les gares, <strong>nom de la gare</strong>. Le
+                covoiturage particulier apparaît comme <strong>covo</strong> (ligne d’info + pastille de rôle).
+            </p>
+        </div>
+        <span class="count-chip">{{ users().length }} comptes</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des utilisateurs…</div>
+    } @else {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Email</th>
+                        <th>Rôles</th>
+                        <th>Statut</th>
+                        <th class="right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (user of users(); track user.id) {
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">{{ user.firstname?.[0] }}{{ user.lastname?.[0] }}</div>
+                                    <div class="user-meta">
+                                        <strong>{{ user.firstname }} {{ user.lastname }}</strong>
+                                        @if (user.covoiturageSoloProfile) {
+                                            <span class="company-line company-line--covo" title="Chauffeur covoiturage particulier">covo</span>
+                                        } @else if (user.stationName && user.linkedCompanyName) {
+                                            <span class="company-line" [title]="'Gare ' + user.stationName + ' — ' + user.linkedCompanyName">
+                                                <span aria-hidden="true" class="company-line__ic">🏢</span>
+                                                <span class="company-line__txt">{{ user.linkedCompanyName }} · {{ user.stationName }}</span>
+                                            </span>
+                                        } @else if (user.stationName) {
+                                            <span class="company-line" [title]="'Gare'">
+                                                <span aria-hidden="true" class="company-line__ic">🚉</span>
+                                                <span class="company-line__txt">{{ user.stationName }}</span>
+                                            </span>
+                                        } @else if (user.linkedCompanyName) {
+                                            <span class="company-line" [title]="'Rattachement compagnie'">
+                                                <span aria-hidden="true" class="company-line__ic">🏢</span>
+                                                <span class="company-line__txt">{{ user.linkedCompanyName }}</span>
+                                            </span>
+                                        } @else if (user.partnerName) {
+                                            <span class="company-line" [title]="'Fiche partenaire'">
+                                                <span aria-hidden="true" class="company-line__ic">🏢</span>
+                                                <span class="company-line__txt">{{ user.partnerName }}</span>
+                                            </span>
+                                        }
+                                        @if (canAssignEmployerCompany(user)) {
+                                            <div class="employer-row">
+                                                <label [attr.for]="'emp-' + user.id" class="employer-row__label"
+                                                    >Société</label
+                                                >
+                                                <select
+                                                    [id]="'emp-' + user.id"
+                                                    class="employer-row__select"
+                                                    [ngModel]="user.employerPartnerId ?? null"
+                                                    (ngModelChange)="onEmployerPartnerPicked(user, $event)"
+                                                >
+                                                    <option [ngValue]="null">— Choisir la compagnie —</option>
+                                                    @for (p of transportPartners(); track p.id) {
+                                                        <option [ngValue]="p.id">{{ p.name }}</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="mono">{{ user.email }}</td>
+                            <td>
+                                <div class="roles">
+                                    @for (role of user.roles; track role) {
+                                        <span class="role-pill" [class.role-pill--covo]="role.replace('ROLE_', '') === 'CHAUFFEUR' && user.covoiturageSoloProfile">
+                                            {{ displayRole(role, user) }}
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-pill" [class.active]="user.enabled" [class.blocked]="!user.enabled">
+                                    <span class="dot"></span>
+                                    {{ user.enabled ? 'Actif' : 'Banni' }}
+                                </span>
+                            </td>
+                            <td class="right">
+                                <button
+                                    class="row-btn"
+                                    [class.danger]="user.enabled"
+                                    [class.success]="!user.enabled"
+                                    (click)="updateStatus(user)"
+                                >
+                                    {{ user.enabled ? 'Bannir' : 'Réactiver' }}
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

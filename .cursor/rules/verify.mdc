@@ -1,0 +1,19 @@
+---
+description: Lancer la vérification build + tests du monorepo après des changements de code
+alwaysApply: true
+---
+
+# Vérification Mobili
+
+**Après toute modification substantielle** du backend Spring (`backend/`) ou du frontend Angular (`frontend/`), exécuter **depuis la racine du dépôt** `mobili` :
+
+```bash
+npm run verify
+```
+
+Cette commande enchaîne : `mvn test` (backend), `ng build` (development) puis `ng test` (sans watch) pour le front.
+
+- Ne pas seulement proposer la commande à l’utilisateur : l’**exécuter** (shell) lorsque c’est le bon moment pour valider.
+- En cas d’échec (tests, build), **corriger** ou signaler l’erreur clairement avant de conclure.
+
+Si `ng test` échoue faute d’environnement navigateur sur la machine, le signaler ; le build + `mvn test` restent l’objectif minimum.

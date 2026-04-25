@@ -1,0 +1,155 @@
+<div class="booking-layout">
+    <section class="seat-selection">
+        <h2>Choisis ton trajet et tes places</h2>
+
+        @if (tripDetails(); as tripData) {
+            <div class="segment-picker">
+                <p class="segment-hint">
+                    Ce voyage passe par plusieurs villes. Choisis où tu montes et où tu descends :
+                    le prix s'adaptera automatiquement.
+                </p>
+
+                <div class="segment-grid">
+                    <label class="segment-field">
+                        <span>Je monte à</span>
+                        <select [value]="boardingIndex()" (change)="onBoardingChange($event)">
+                            @for (opt of boardingOptions(); track opt.index) {
+                                <option [value]="opt.index">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </label>
+
+                    <label class="segment-field">
+                        <span>Je descends à</span>
+                        <select [value]="alightingIndex()" (change)="onAlightingChange($event)">
+                            @for (opt of alightingOptions(); track opt.index) {
+                                <option [value]="opt.index">{{ opt.label }}</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+
+                @if (legFares().length > 0 && stopLabels().length > 2) {
+                    <details class="fares-details">
+                        <summary>Voir le tarif de chaque étape</summary>
+                        <ul class="fares-list">
+                            @for (fare of legFares(); track fare.fromStopIndex) {
+                                <li>
+                                    <strong>{{ stopLabels()[fare.fromStopIndex] }}</strong>
+                                    <span> → </span>
+                                    <strong>{{ stopLabels()[fare.toStopIndex] }}</strong>
+                                    <span class="fare-price">{{ fare.price | number: '1.0-0' }} FCFA</span>
+                                </li>
+                            }
+                        </ul>
+                    </details>
+                }
+
+                <div class="segment-price">
+                    @if (hasValidSegment()) {
+                        <span>Prix pour 1 place :</span>
+                        <strong>{{ pricePerSeat() | number: '1.0-0' }} FCFA</strong>
+                    } @else {
+                        <span class="warn">Choisis un arrêt de descente après celui d'embarquement.</span>
+                    }
+                </div>
+            </div>
+
+            <app-seat-picker
+                [totalSeats]="tripData.totalSeats"
+                [occupiedSeats]="occupiedSeats()"
+                (seatToggle)="onSeatToggle($event)"
+            />
+        } @else {
+            <div class="bus-loader">
+                <div class="spinner"></div>
+                <p>Chargement du trajet…</p>
+            </div>
+        }
+    </section>
+
+    <section class="passenger-details">
+        <h2>Détails des passagers</h2>
+
+        <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()">
+            <div formArrayName="passengerNames">
+                @for (seat of bookingForm.get('selectedSeats')?.value; track seat; let i = $index) {
+                    <div class="input-field">
+                        <label>Nom du passager - Siège <strong>{{ seat }}</strong></label>
+                        <input [formControlName]="i" placeholder="Entrez le nom complet">
+                    </div>
+                } @empty {
+                    <div class="empty-msg">
+                        Choisis ton segment puis clique sur un siège pour commencer.
+                    </div>
+                }
+            </div>
+
+            @if ((bookingForm.get('selectedSeats')?.value?.length ?? 0) > 0) {
+                <div class="luggage-block">
+                    <h3 class="luggage-block__title">Bagages (soute)</h3>
+                    <p class="luggage-block__hint">
+                        Inclus par passager (ce voyage) : {{ tripDetails()?.includedHoldBagsPerPassenger ?? 1 }} en soute,
+                        {{ tripDetails()?.includedCabinBagsPerPassenger ?? 1 }} en cabine. Bagages soute
+                        <strong>supplémentaires</strong> (payants) :
+                    </p>
+                    <label class="input-field">
+                        <span>Nombre de bagages soute en plus (max. {{ maxExtraHoldForSelection() }})</span>
+                        <input
+                            type="number"
+                            formControlName="extraHoldBags"
+                            min="0"
+                            [max]="maxExtraHoldForSelection()"
+                            step="1"
+                        />
+                    </label>
+                    @if ((tripDetails()?.extraHoldBagPrice ?? 0) > 0) {
+                        <p class="luggage-block__fee">
+                            Supplément unitaire : {{ tripDetails()?.extraHoldBagPrice | number: '1.0-0' }} FCFA
+                        </p>
+                    }
+                </div>
+            }
+
+            @if (bookingForm.get('selectedSeats')?.value?.length > 0) {
+                <div class="booking-summary">
+                    <div class="summary-line">
+                        <span>Trajet choisi :</span>
+                        <strong>{{ stopLabels()[boardingIndex()] }} → {{ stopLabels()[alightingIndex()] }}</strong>
+                    </div>
+                    <div class="summary-line">
+                        <span>Places sélectionnées :</span>
+                        <strong>{{ bookingForm.get('selectedSeats')?.value.length }}</strong>
+                    </div>
+                    <div class="summary-line">
+                        <span>Prix par place :</span>
+                        <strong>{{ pricePerSeat() | number: '1.0-0' }} FCFA</strong>
+                    </div>
+                    @if (luggageFeeAmount() > 0) {
+                        <div class="summary-line">
+                            <span>Supplément bagages :</span>
+                            <strong>{{ luggageFeeAmount() | number: '1.0-0' }} FCFA</strong>
+                        </div>
+                    }
+                    <div class="summary-line total">
+                        <span>Total à payer :</span>
+                        <strong>
+                            {{ totalBookingPrice() | number: '1.0-0' }} FCFA
+                        </strong>
+                    </div>
+                </div>
+            }
+
+            <button
+                type="submit"
+                [disabled]="
+                    bookingForm.invalid ||
+                    !hasValidSegment() ||
+                    bookingForm.get('selectedSeats')?.value?.length === 0
+                "
+            >
+                Confirmer la réservation
+            </button>
+        </form>
+    </section>
+</div>

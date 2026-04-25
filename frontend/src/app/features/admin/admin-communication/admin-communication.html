@@ -1,0 +1,112 @@
+<div class="comm-page data-panel">
+  <div class="panel-head panel-head--lite">
+    <h2>Message aux dirigeants</h2>
+  </div>
+
+  <div class="comm-body">
+    @if (loading()) {
+      <p class="muted">Chargement…</p>
+    } @else {
+      <div class="form-flow">
+        <label class="field">
+          <span>Objet</span>
+          <input type="text" [(ngModel)]="title" maxlength="300" placeholder="Sujet court (ex. Mise à jour app)" />
+        </label>
+        <label class="field">
+          <span>Message</span>
+          <textarea
+            rows="5"
+            [(ngModel)]="body"
+            maxlength="2000"
+            placeholder="Votre texte (maintenance, consigne, nouveauté…)"
+          ></textarea>
+        </label>
+      </div>
+
+      <div class="row-mode">
+        <span class="row-label">Envoyer</span>
+        <div class="pills">
+          <label class="pill">
+            <input type="radio" name="tmode" [value]="'BROADCAST'" [(ngModel)]="target" />
+            Tout le monde (filtre ci‑dessous)
+          </label>
+          <label class="pill">
+            <input type="radio" name="tmode" [value]="'PICK'" [(ngModel)]="target" />
+            À la carte
+          </label>
+        </div>
+      </div>
+
+      @if (target === 'BROADCAST') {
+        <div class="row-mode row-mode--tight">
+          <span class="row-label">Filtre</span>
+          <div class="pills pills--col">
+            <label class="pill">
+              <input type="radio" name="seg" [value]="'ALL'" [(ngModel)]="segment" />
+              Tous
+            </label>
+            <label class="pill">
+              <input type="radio" name="seg" [value]="'COMPANIES'" [(ngModel)]="segment" />
+              Lignes / compagnies seulement
+            </label>
+            <label class="pill">
+              <input type="radio" name="seg" [value]="'COVOITURAGE_POOL'" [(ngModel)]="segment" />
+              Pool covoiturage seulement
+            </label>
+          </div>
+        </div>
+        <p class="filter-note">« Tous » et « Pool covoit. » : dirigeants ciblés <strong>et</strong> comptes covoiturage validés (KYC approuvé). « Lignes » : compagnies uniquement.</p>
+        <label class="check-inline">
+          <input type="checkbox" [(ngModel)]="includeDisabled" />
+          Aussi les comptes suspendus
+        </label>
+      }
+
+      @if (target === 'PICK') {
+        <div class="pick-block">
+          <div class="pick-bar">
+            <span class="row-label">Choisir</span>
+            <div class="btn-row">
+              <button type="button" class="btn-ghost" (click)="selectPublicOnly()">+ Lignes</button>
+              <button type="button" class="btn-ghost" (click)="selectPoolOnly()">+ Pool</button>
+              <button type="button" class="btn-ghost" (click)="clearPick()">Vider</button>
+            </div>
+          </div>
+          <ul class="pick-list">
+            <li class="subhead">Lignes & compagnies</li>
+            @for (p of publicPartners(); track p.id) {
+              <li>
+                <label class="check line">
+                  <input type="checkbox" [checked]="isPicked(p.id)" (change)="togglePick(p.id)" />
+                  <span class="p-name">{{ p.name }}</span>
+                  @if (!p.enabled) {
+                    <span class="tag-off">off</span>
+                  }
+                </label>
+              </li>
+            }
+            <li class="subhead subhead--teal">Pool covoit.</li>
+            @for (p of poolPartners(); track p.id) {
+              <li>
+                <label class="check line">
+                  <input type="checkbox" [checked]="isPicked(p.id)" (change)="togglePick(p.id)" />
+                  <span class="p-name">{{ p.name }}</span>
+                  <span class="tag-pool">pool</span>
+                  @if (!p.enabled) {
+                    <span class="tag-off">off</span>
+                  }
+                </label>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="actions">
+        <button type="button" class="btn-primary" (click)="send()" [disabled]="sending()">
+          {{ sending() ? 'Envoi…' : 'Envoyer' }}
+        </button>
+      </div>
+    }
+  </div>
+</div>

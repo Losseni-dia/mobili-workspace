@@ -1,0 +1,69 @@
+<div class="admin-shell" [class.collapsed]="collapsed()">
+    <aside class="shell-sidebar">
+        <div class="sidebar-brand">
+            <a routerLink="/" class="brand-logo">
+                <span class="brand-dot"></span>
+                @if (!collapsed()) { <span class="brand-name">MOBILI</span> }
+            </a>
+            <button type="button" class="collapse-btn" (click)="toggleSidebar()" [title]="collapsed() ? 'Déplier' : 'Replier'">
+                {{ collapsed() ? '›' : '‹' }}
+            </button>
+        </div>
+
+        <div class="sidebar-admin"
+             [attr.title]="collapsed() ? (authService.currentUser()?.firstname + ' ' + authService.currentUser()?.lastname + ' — Admin') : null">
+            <div class="sa-avatar">{{ userInitials() }}</div>
+            <div class="sa-meta">
+                <strong>{{ authService.currentUser()?.firstname }} {{ authService.currentUser()?.lastname }}</strong>
+                <span class="sa-role">Administrateur</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            @for (item of navItems; track item.path) {
+                <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    class="nav-link"
+                    [title]="item.label"
+                >
+                    <span class="nav-icon">{{ item.icon }}</span>
+                    @if (!collapsed()) {
+                        <span class="nav-label">{{ item.label }}</span>
+                    }
+                </a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <a routerLink="/" class="nav-link soft" title="Retour à l'accueil">
+                <span class="nav-icon">🏠</span>
+                @if (!collapsed()) { <span class="nav-label">Retour site</span> }
+            </a>
+            <button type="button" class="nav-link soft logout" (click)="logout()" title="Déconnexion">
+                <span class="nav-icon">⎋</span>
+                @if (!collapsed()) { <span class="nav-label">Déconnexion</span> }
+            </button>
+        </div>
+    </aside>
+
+    <div class="shell-main">
+        <header class="shell-topbar">
+            <div class="topbar-left">
+                <div class="crumb">
+                    <span class="crumb-root">Admin</span>
+                    <span class="crumb-sep">/</span>
+                    <span class="crumb-current">{{ pageTitle() }}</span>
+                </div>
+                <h1 class="page-title">{{ pageTitle() }}</h1>
+                @if (pageDescription()) {
+                    <p class="page-desc">{{ pageDescription() }}</p>
+                }
+            </div>
+        </header>
+
+        <div class="shell-content">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+</div>

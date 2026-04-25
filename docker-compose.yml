@@ -1,0 +1,53 @@
+# Stack locale / serveur : PostgreSQL + API Mobili
+#
+# 1) Créer .env à la racine (à côté de ce fichier) — variables : README § Docker (ancre #docker-root-env)
+# 2) Remplir JWT_SECRET, FedaPay, etc.
+# 3) docker compose up --build
+#
+# L'API : http://localhost:8080/v1
+# - DB_URL pointe sur le service postgres (pas localhost — voir README).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mobili-postgres
+    environment:
+      POSTGRES_DB: mobili
+      POSTGRES_USER: mobili
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mobili}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - mobili_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mobili -d mobili"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mobili-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # URL interne au réseau Docker (override tout DB_URL d'un .env monétaire "localhost")
+      DB_URL: jdbc:postgresql://postgres:5432/mobili
+      DB_USERNAME: mobili
+      DB_PASSWORD: ${DB_PASSWORD:-mobili}
+      JWT_SECRET: ${JWT_SECRET}
+      FEDAPAY_SECRET_KEY: ${FEDAPAY_SECRET_KEY}
+      FEDAPAY_WEBHOOK_SECRET: ${FEDAPAY_WEBHOOK_SECRET}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    # Conserver les images uploadées entre redémarrages (même chemin relatif qu'en local)
+    volumes:
+      - mobili_uploads:/app/uploads
+
+volumes:
+  mobili_pgdata:
+  mobili_uploads:

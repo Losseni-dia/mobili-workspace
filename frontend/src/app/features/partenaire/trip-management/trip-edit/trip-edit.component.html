@@ -1,0 +1,192 @@
+<div class="edit-trip-container">
+    <div class="header">
+        <h2>Modifier le trajet</h2>
+        <p>Mettez à jour les informations de votre voyage</p>
+    </div>
+
+    <form [formGroup]="tripForm" (ngSubmit)="onSubmit()" class="trip-form">
+
+        <div class="image-upload-section">
+            <label>Image du véhicule</label>
+            <div class="preview-box" (click)="fileInput.click()">
+                @if (imagePreview()) {
+                <img [src]="imagePreview()" alt="Aperçu véhicule">
+                } @else {
+                <div class="placeholder">
+                    <span class="icon">🚌</span>
+                    <p>Cliquez pour changer l'image</p>
+                </div>
+                }
+                <div class="overlay">
+                    <span>Changer l'image</span>
+                </div>
+            </div>
+            <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" hidden>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="departureCity">Ville de départ</label>
+                <input id="departureCity" type="text" formControlName="departureCity" placeholder="Ex: Abidjan">
+            </div>
+
+            <div class="form-group">
+                <label for="arrivalCity">Ville d'arrivée</label>
+                <input id="arrivalCity" type="text" formControlName="arrivalCity" placeholder="Ex: Bouaké">
+            </div>
+
+            <div class="form-group">
+                <label for="departureDateTime">Date et Heure de départ</label>
+                <input id="departureDateTime" type="datetime-local" formControlName="departureDateTime">
+            </div>
+
+            <div class="form-group">
+                <label for="boardingPoint">Point d'embarquement</label>
+                <input id="boardingPoint" type="text" formControlName="boardingPoint" placeholder="Ex: Gare de Bassam">
+                <small>Compte gare : vous pouvez aligner le libellé sur le nom de votre gare.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="vehiculePlateNumber">Numéro de plaque</label>
+                <input id="vehiculePlateNumber" type="text" formControlName="vehiculePlateNumber"
+                    placeholder="Ex: 1234 AB 01">
+            </div>
+
+            <div class="form-group">
+                <label for="transportType">Type de transport</label>
+                <select id="transportType" formControlName="transportType">
+                    <option value="PUBLIC">Transport public</option>
+                    <option value="COVOITURAGE">Covoiturage</option>
+                </select>
+            </div>
+
+            @if (showChauffeurPicker()) {
+            <div class="form-group full-width">
+                <label for="chaff2">Chauffeur du service</label>
+                <select id="chaff2" formControlName="assignedChauffeurId">
+                    <option [ngValue]="null">— Aucun conducteur assigné —</option>
+                    @for (ch of eligibleChauffeurs(); track ch.id) {
+                        <option [ngValue]="ch.id">{{ ch.firstname?.trim() }} {{ ch.lastname?.trim() || '—' }}</option>
+                    }
+                </select>
+                <small>En principe affecté par le <strong>responsable de gare</strong> ; le dirigeant peut aussi modifier si besoin (ce n’est pas son rôle principal).</small>
+            </div>
+            }
+
+            <div class="form-group">
+                <label for="vehicleType">Type de véhicule</label>
+                <select id="vehicleType" formControlName="vehicleType">
+                    @for (o of vehicleTypeOptions; track o.name) {
+                        <option [value]="o.name">{{ o.label }}</option>
+                    }
+                </select>
+            </div>
+
+            @if (legRows().length === 0) {
+            <div class="form-group">
+                <label for="price">Prix (FCFA)</label>
+                <input id="price" type="number" formControlName="price" min="0" step="1">
+            </div>
+            }
+
+            <div class="form-group">
+                <label for="availableSeats">Places disponibles</label>
+                <input id="availableSeats" type="number" formControlName="availableSeats">
+            </div>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="stops">Villes traversées (escales, séparées par des virgules)</label>
+            <textarea id="stops" formControlName="stops" rows="3" placeholder="Ex : Yamoussoukro, Bouaflé, Daloa"></textarea>
+        </div>
+
+        <div class="form-grid full-width" style="margin-top: 1rem">
+            <h3 class="form-group full-width" style="grid-column: 1 / -1; margin: 0">Bagages (passagers)</h3>
+            <div class="form-group">
+                <label for="teCab">Cabine incluse / passager</label>
+                <input id="teCab" type="number" formControlName="includedCabinBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="form-group">
+                <label for="teHold">Soute incluse / passager</label>
+                <input id="teHold" type="number" formControlName="includedHoldBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="form-group">
+                <label for="teMax">Soute en plus max / passager</label>
+                <input id="teMax" type="number" formControlName="maxExtraHoldBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="form-group">
+                <label for="tePrice">Prix soute suppl. (FCFA / unité)</label>
+                <input id="tePrice" type="number" formControlName="extraHoldBagPrice" min="0" step="1" />
+            </div>
+        </div>
+
+        @if (needsOriginDestinationPrice()) {
+            <div class="form-group full-width origin-price-block">
+                <label
+                    for="odPrice"
+                >Prix trajet complet ({{ firstCityLabel() }} → {{ lastCityLabel() }}) (FCFA)</label>
+                <input
+                    id="odPrice"
+                    type="number"
+                    formControlName="originDestinationPrice"
+                    min="0"
+                    step="1"
+                />
+                <small>
+                    Tarif direct premier → dernier arrêt, <strong>indépendant</strong> de la somme des tronçons
+                    (portions) ci-dessous.
+                </small>
+            </div>
+        }
+
+        @if (legRows().length > 0) {
+            <div class="form-group full-width leg-fares-block">
+                <h3 class="leg-title">Prix de chaque tronçon (portions)</h3>
+                <p class="leg-hint">
+                    Sert aux trajets <em>partiels</em> sur la ligne. Somme de ces tronçons (aperçu) :
+                    <strong>{{ legsTotal() | number: '1.0-0' }} FCFA</strong>
+                    @if (needsOriginDestinationPrice()) { — trajet
+                    <strong>complet</strong> : prix indiqué ci-dessus. }
+                </p>
+                <table class="leg-table">
+                    <thead>
+                        <tr>
+                            <th>De</th>
+                            <th>Vers</th>
+                            <th>Prix (FCFA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of legRows(); track row.index) {
+                            <tr>
+                                <td>{{ row.fromLabel }}</td>
+                                <td>{{ row.toLabel }}</td>
+                                <td>
+                                    <input
+                                        class="leg-input"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        [value]="row.price"
+                                        (input)="onLegPriceInput(row.index, $event)"
+                                    />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="form-actions">
+            <button type="button" class="btn-secondary" routerLink="/partenaire/trips">
+                Annuler
+            </button>
+
+            <button type="submit" class="btn-primary" [disabled]="tripForm.invalid || isLoading()">
+                <i class="icon-save"></i>
+                {{ isLoading() ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+            </button>
+        </div>
+    </form>
+</div>

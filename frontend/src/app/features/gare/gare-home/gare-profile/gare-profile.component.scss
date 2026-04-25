@@ -1,0 +1,147 @@
+@import '../../../../styles/variables';
+@import '../../../../styles/mixins';
+
+.profile-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  max-width: 640px;
+}
+
+.card {
+  background: $white;
+  border: 1px solid $gray-200;
+  border-radius: $radius-md;
+  padding: 1.1rem 1.25rem;
+  box-shadow: $shadow-sm;
+
+  &--gare {
+    border-color: rgba($station-green, 0.28);
+    background: linear-gradient(180deg, $station-green-soft 0%, $white 55%);
+  }
+
+  .card-title {
+    margin: 0 0 0.65rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: $gray-500;
+    font-weight: 800;
+  }
+}
+
+.gare-name {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: $mobili-blue-deep;
+}
+
+.gare-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: $gray-600;
+
+  code {
+    background: $gray-100;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+}
+
+.card-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: $gray-500;
+}
+
+.data-list {
+  margin: 0;
+  display: grid;
+  gap: 0.65rem 1.5rem;
+
+  @media (min-width: 500px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  dt {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $gray-400;
+    font-weight: 800;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.92rem;
+    color: $mobili-blue-deep;
+    font-weight: 600;
+  }
+
+  .mono {
+    font-family: ui-monospace, monospace;
+    font-size: 0.88rem;
+  }
+}
+
+.role-pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.role-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: $gray-100;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: $gray-600;
+  border: 1px solid $gray-200;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.btn-primary {
+  @include btn-primary;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+.btn-secondary {
+  @include btn-secondary;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.88rem;
+}
+
+.empty {
+  color: $gray-500;
+  font-size: 0.95rem;
+}
