@@ -1,6 +1,6 @@
 /**
  * Correspondance hostname (navigateur) → URL API.
- * Ajoutez vos domaines réels (acc, prod) quand ils existent.
+ * Staging (recette) : int.mobili.com + api.int.mobili.com — override possible via index.html (meta / __MOBILI_API_URL__).
  */
 export const CONFIGURATION_DATA = {
   environments: [
@@ -17,6 +17,15 @@ export const CONFIGURATION_DATA = {
       domain: ['acc.mobili.example.com', 'mobili-acc.example.com'],
     },
     {
+      /** Déploiement de recette HTTPS (tests, Capacitor) — non prod */
+      env: 'staging',
+      domain: [
+        'app-staging.example.com',
+        'www.app-staging.example.com',
+        'staging.mobili.example.com',
+      ],
+    },
+    {
       env: 'prod',
       domain: ['mobili.example.com', 'www.mobili.example.com'],
     },
@@ -30,6 +39,9 @@ export const CONFIGURATION_DATA = {
     },
     acc: {
       apiUrl: 'https://api-acc.mobili.example.com/v1',
+    },
+    staging: {
+      apiUrl: 'https://api.int.mobili.com/v1',
     },
     prod: {
       apiUrl: 'https://api.mobili.example.com/v1',

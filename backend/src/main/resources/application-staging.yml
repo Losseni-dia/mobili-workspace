@@ -1,0 +1,30 @@
+# Staging : HTTPS, essais, Capacitor — pas la prod "finale".
+# Front recette : https://int.mobili.com (origines CORS = pages, pas l’URL de l’API).
+# Surcharge possible : MOBILI_CORS_ALLOWED-ORIGINS_0=... , _1=... (une entrée par origine).
+# Profil : SPRING_PROFILES_ACTIVE=staging
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.mobili.backend: INFO
+    org.hibernate.SQL: WARN
+
+mobili:
+  cors:
+    # Origines = pages qui appellent l’API (front HTTPS, jamais l’URL de l’API elle-même) + local + WebView Capacitor.
+    allowed-origins:
+      - https://int.mobili.com
+      - https://www.int.mobili.com
+      - http://localhost:4200
+      - http://127.0.0.1:4200
+      - capacitor://localhost
+      - http://localhost
+      - https://localhost
