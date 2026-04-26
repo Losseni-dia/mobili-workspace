@@ -110,9 +110,14 @@ L’URL publique d’**entrée** doit être **`https://api.int.mobili.ci`**.
 
 ---
 
-## 9. CD GitHub (plus tard)
+## 9. CD GitHub — ECR + ECS (activé)
 
-Le workflow [`.github/workflows/cd.yml`](../../.github/workflows/cd.yml) ne fait aujourd’hui que le **build Docker**. Pour **pousser l’image** vers **ECR** et déclencher un déploiement, il faudra des **secrets** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, _ou_ **OIDC** sur un rôle IAM) — voir la doc [GitHub : déploiement sur AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
+Le workflow [`.github/workflows/cd.yml`](../../.github/workflows/cd.yml) se déclenche sur **push** vers **`main`** ou **manuellement** (*Actions* → *CD* → *Run workflow*).
+
+- **Build** l’image `backend/Dockerfile`, **tag** `:${{ github.sha }}` + `:latest`, **push** vers ECR `mobili-backend-staging` (`eu-west-3`).  
+- **ECS** : si les **variables** du dépôt `ECS_CLUSTER` et `ECS_SERVICE` sont renseignées (*Settings* → *Secrets and variables* → *Actions* → *Variables*), exécute `update-service` avec `--force-new-deployment` pour prendre la nouvelle image. Sinon, seul le push ECR est fait (avertissement dans les logs).  
+- **Secrets** requis : `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (compte / utilisateur IAM avec droits ECR push + `ecs:UpdateService` sur le cluster cible).  
+- **OIDC** (recommandé à terme) : [doc GitHub – AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
 
 ---
 
