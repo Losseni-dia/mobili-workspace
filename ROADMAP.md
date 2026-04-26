@@ -31,10 +31,10 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 ### 2. Industrialisation & déploiement
 
 - **Environnements** : au minimum *staging* (API + front sur domaines dédiés), variables et secrets hors `.env` local.
-- **Profil Spring `staging`** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) — CORS front recette `https://int.mobili.com` (+ `www`) + local + origines Capacitor ; `SPRING_PROFILES_ACTIVE=staging` sur l’API (pas la prod). API cible : `https://api.int.mobili.com`.
-- **Front** : [`app.env.config.ts`](frontend/src/app/app.env.config.ts) — **`staging`** → `int.mobili.com` / `api.int.mobili.com/v1`. WebView : override via [`index.html`](frontend/src/index.html) (`meta mobili-api-base` ou `window.__MOBILI_API_URL__`).
+- **Profil Spring `staging`** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) — CORS front recette `https://int.mobili.ci` (+ `www`) + local + origines Capacitor ; `SPRING_PROFILES_ACTIVE=staging` sur l’API (pas la prod). API cible : `https://api.int.mobili.ci`.
+- **Front** : [`app.env.config.ts`](frontend/src/app/app.env.config.ts) — **`staging`** → `int.mobili.ci` / `api.int.mobili.ci/v1`. WebView : override via [`index.html`](frontend/src/index.html) (`meta mobili-api-base` ou `window.__MOBILI_API_URL__`).
 - **CD** : remplacer le placeholder dans [`.github/workflows/cd.yml`](.github/workflows/cd.yml) par une chaîne concrète (ex. ECR + ECS, ou autre) ; OIDC plutôt que clés longue durée si possible.
-- **Frontend** : pipeline de build (artefact `ng build`) et hébergement statique (S3 + CloudFront, Netlify, etc.) aligné sur l’URL API.
+- **Frontend** : pipeline de build (artefact `ng build`) et hébergement statique (S3 + CloudFront, Netlify, etc.) aligné sur l’URL API. **Guide AWS** : [`infra/aws/README.md`](infra/aws/README.md) — **briefing complet pour copilote (Gemini, etc.)** : [`docs/gemini-mobili-aws-roadmap.md`](docs/gemini-mobili-aws-roadmap.md).
 - **Observabilité** : logs structurés, healthcheck, alertes de base (même légères).
 
 ### 3. Durcissement avant ouverture large

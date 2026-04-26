@@ -1,6 +1,7 @@
 # Secrets (tout le monorepo)
 .env
 **/.env
+infra/aws/staging.env
 
 # Divers
 *.log

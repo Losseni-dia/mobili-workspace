@@ -1,7 +1,7 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
-@import '../../../styles/data-panel';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 // ======================================================================
 //  KPI
@@ -14,22 +14,22 @@
 }
 
 .kpi {
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
   padding: 20px 22px;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
-  &:hover { transform: translateY(-2px); border-color: rgba($mobili-blue, 0.3); box-shadow: $shadow-md; }
+  &:hover { transform: translateY(-2px); border-color: rgba(variables.$mobili-blue, 0.3); box-shadow: variables.$shadow-md; }
 
-  .kpi-label { color: $gray-500; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
+  .kpi-label { color: variables.$gray-500; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
 
   .kpi-value {
     margin-top: 8px;
-    font-family: $font-display;
+    font-family: variables.$font-display;
     font-size: 1.85rem;
     font-weight: 900;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     letter-spacing: -0.6px;
     line-height: 1.1;
 
@@ -37,7 +37,7 @@
       margin-left: 4px;
       font-size: 0.78rem;
       font-weight: 700;
-      color: $gray-500;
+      color: variables.$gray-500;
     }
   }
 
@@ -45,14 +45,14 @@
     margin-top: 14px;
     height: 4px;
     border-radius: 4px;
-    background: $gray-100;
+    background: variables.$gray-100;
     overflow: hidden;
 
-    span { display: block; height: 100%; border-radius: inherit; background: $mobili-blue; width: 60%; }
+    span { display: block; height: 100%; border-radius: inherit; background: variables.$mobili-blue; width: 60%; }
 
-    &.gold span { background: $gradient-gold; width: 78%; }
-    &.green span { background: $success; width: 70%; }
-    &.purple span { background: $admin-purple; width: 88%; }
+    &.gold span { background: variables.$gradient-gold; width: 78%; }
+    &.green span { background: variables.$success; width: 70%; }
+    &.purple span { background: variables.$admin-purple; width: 88%; }
   }
 }
 
@@ -75,8 +75,8 @@
 .count-chip.link {
   cursor: pointer;
   text-decoration: none;
-  transition: all $t-base;
-  &:hover { background: $mobili-blue; color: $white; }
+  transition: all variables.$t-base;
+  &:hover { background: variables.$mobili-blue; color: variables.$white; }
 }
 
 // ======================================================================
@@ -97,30 +97,30 @@
   align-items: center;
   gap: 16px;
   padding: 14px 18px;
-  background: $gray-50;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
-  transition: all $t-base;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  transition: all variables.$t-base;
 
   &:hover {
     transform: translateX(3px);
-    background: $mobili-blue-fog;
-    border-color: rgba($mobili-blue, 0.25);
+    background: variables.$mobili-blue-fog;
+    border-color: rgba(variables.$mobili-blue, 0.25);
   }
 
   .trip-date {
     text-align: center;
     padding: 8px 6px;
-    background: $white;
-    border-radius: $radius-sm;
-    border: 1px solid $gray-200;
+    background: variables.$white;
+    border-radius: variables.$radius-sm;
+    border: 1px solid variables.$gray-200;
 
     .trip-day {
       display: block;
-      font-family: $font-display;
+      font-family: variables.$font-display;
       font-size: 1.4rem;
       font-weight: 900;
-      color: $mobili-blue;
+      color: variables.$mobili-blue;
       line-height: 1;
     }
 
@@ -129,7 +129,7 @@
       margin-top: 2px;
       font-size: 0.7rem;
       font-weight: 800;
-      color: $gray-500;
+      color: variables.$gray-500;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -138,10 +138,10 @@
       display: block;
       margin-top: 4px;
       padding-top: 4px;
-      border-top: 1px solid $gray-100;
+      border-top: 1px solid variables.$gray-100;
       font-size: 0.75rem;
       font-weight: 700;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
     }
   }
 
@@ -153,23 +153,23 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
       font-weight: 800;
       font-size: 1rem;
       text-transform: capitalize;
 
-      .arrow { color: $mobili-yellow-dark; }
+      .arrow { color: variables.$mobili-yellow-dark; }
     }
 
     .trip-meta {
       display: block;
       margin-top: 4px;
-      color: $gray-500;
+      color: variables.$gray-500;
       font-size: 0.82rem;
 
       .mono {
         font-family: 'Fira Code', 'Consolas', monospace;
-        color: $mobili-blue;
+        color: variables.$mobili-blue;
       }
     }
   }
@@ -181,7 +181,7 @@
     gap: 6px;
 
     .price {
-      color: $mobili-blue;
+      color: variables.$mobili-blue;
       font-weight: 900;
       font-size: 1rem;
     }
@@ -197,11 +197,11 @@
   gap: 6px;
   text-transform: capitalize;
 
-  strong { color: $mobili-blue-deep; font-weight: 800; }
-  .arrow { color: $mobili-yellow-dark; font-weight: 900; }
+  strong { color: variables.$mobili-blue-deep; font-weight: 800; }
+  .arrow { color: variables.$mobili-yellow-dark; font-weight: 900; }
 }
 
 .data-table .amount {
-  color: $mobili-blue;
+  color: variables.$mobili-blue;
   font-weight: 900;
 }

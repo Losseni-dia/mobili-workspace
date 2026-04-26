@@ -1,27 +1,27 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .login-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - #{$header-height});
+  min-height: calc(100vh - #{variables.$header-height});
   padding: 40px 16px;
   background:
-    radial-gradient(circle at 20% 0%, rgba($mobili-yellow, 0.2), transparent 55%),
-    radial-gradient(circle at 80% 110%, rgba($mobili-blue, 0.14), transparent 55%),
-    linear-gradient(180deg, $gray-50 0%, $mobili-blue-fog 100%);
+    radial-gradient(circle at 20% 0%, rgba(variables.$mobili-yellow, 0.2), transparent 55%),
+    radial-gradient(circle at 80% 110%, rgba(variables.$mobili-blue, 0.14), transparent 55%),
+    linear-gradient(180deg, variables.$gray-50 0%, variables.$mobili-blue-fog 100%);
 }
 
 .login-card {
   width: 100%;
   max-width: 460px;
-  background: $white;
-  border-radius: $radius-xl;
+  background: variables.$white;
+  border-radius: variables.$radius-xl;
   padding: 2rem;
-  box-shadow: $shadow-xl;
-  border: 1px solid rgba($mobili-blue, 0.05);
+  box-shadow: variables.$shadow-xl;
+  border: 1px solid rgba(variables.$mobili-blue, 0.05);
   animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @media (min-width: 768px) {
@@ -35,16 +35,16 @@
     .logo {
       height: 64px;
       margin-bottom: 1rem;
-      filter: drop-shadow(0 6px 14px rgba($mobili-blue, 0.2));
+      filter: drop-shadow(0 6px 14px rgba(variables.$mobili-blue, 0.2));
     }
 
     h2 {
-      @include heading-lg;
+      @include mixins.heading-lg;
       margin-bottom: 6px;
     }
 
     p {
-      color: $gray-500;
+      color: variables.$gray-500;
       font-size: 0.9rem;
     }
   }
@@ -53,17 +53,17 @@
 .form-group {
   margin-bottom: 1.25rem;
 
-  label { @include input-label; }
-  input { @include input; font-size: 16px; }
+  label { @include mixins.input-label; }
+  input { @include mixins.input; font-size: 16px; }
 }
 
 .info-banner {
   margin: 0 0 1rem;
   padding: 12px 14px;
-  background: color.adjust($mobili-yellow, $lightness: 30%);
-  color: $mobili-blue-deep;
-  border: 1px solid rgba($mobili-yellow, 0.45);
-  border-radius: $radius-sm;
+  background: color.adjust(variables.$mobili-yellow, $lightness: 30%);
+  color: variables.$mobili-blue-deep;
+  border: 1px solid rgba(variables.$mobili-yellow, 0.45);
+  border-radius: variables.$radius-sm;
   font-size: 0.88rem;
   line-height: 1.45;
   text-align: left;
@@ -72,17 +72,17 @@
 .error-banner {
   margin: 10px 0 0;
   padding: 12px 14px;
-  background: $danger-soft;
-  color: $danger;
-  border: 1px solid rgba($danger, 0.25);
-  border-radius: $radius-sm;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  border: 1px solid rgba(variables.$danger, 0.25);
+  border-radius: variables.$radius-sm;
   font-weight: 600;
   font-size: 0.88rem;
   text-align: center;
 }
 
 .btn-submit {
-  @include btn-primary;
+  @include mixins.btn-primary;
   width: 100%;
   padding: 16px;
   margin-top: 1rem;
@@ -92,8 +92,8 @@
   .loader {
     width: 18px;
     height: 18px;
-    border: 2px solid rgba($mobili-blue-deep, 0.25);
-    border-top-color: $mobili-blue-deep;
+    border: 2px solid rgba(variables.$mobili-blue-deep, 0.25);
+    border-top-color: variables.$mobili-blue-deep;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -103,18 +103,18 @@
   margin-top: 2rem;
   text-align: center;
   font-size: 0.88rem;
-  color: $gray-600;
+  color: variables.$gray-600;
 
   a {
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
     font-weight: 800;
     margin-left: 6px;
     text-decoration: none;
-    border-bottom: 2px solid rgba($mobili-blue, 0.3);
-    transition: border-color $t-base;
+    border-bottom: 2px solid rgba(variables.$mobili-blue, 0.3);
+    transition: border-color variables.$t-base;
 
     &:hover {
-      border-bottom-color: $mobili-blue;
+      border-bottom-color: variables.$mobili-blue;
     }
   }
 }

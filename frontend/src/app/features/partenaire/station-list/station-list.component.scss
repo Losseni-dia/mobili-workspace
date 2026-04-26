@@ -1,6 +1,6 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
-@import '../../../styles/data-panel';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 // ======================================================================
 //  Page gares — alignement dashboard / espace partenaire
@@ -14,10 +14,10 @@
 .gares-redirect-hint {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
-  border-radius: $radius-md;
-  background: rgba($mobili-blue, 0.06);
-  border: 1px solid rgba($mobili-blue, 0.15);
-  color: $mobili-blue-deep;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$mobili-blue, 0.06);
+  border: 1px solid rgba(variables.$mobili-blue, 0.15);
+  color: variables.$mobili-blue-deep;
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -30,12 +30,12 @@
   align-items: start;
   padding: 24px 26px;
   margin-bottom: 22px;
-  border-radius: $radius-lg;
-  border: 1px solid rgba($station-green, 0.2);
+  border-radius: variables.$radius-lg;
+  border: 1px solid rgba(variables.$station-green, 0.2);
   background:
-    linear-gradient(135deg, rgba($station-green, 0.08) 0%, rgba($mobili-blue, 0.04) 50%, $white 100%),
-    $white;
-  box-shadow: $shadow-sm;
+    linear-gradient(135deg, rgba(variables.$station-green, 0.08) 0%, rgba(variables.$mobili-blue, 0.04) 50%, variables.$white 100%),
+    variables.$white;
+  box-shadow: variables.$shadow-sm;
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
   }
@@ -48,8 +48,8 @@
   place-items: center;
   font-size: 1.75rem;
   border-radius: 14px;
-  background: $station-green-soft;
-  border: 1px solid rgba($station-green, 0.25);
+  background: variables.$station-green-soft;
+  border: 1px solid rgba(variables.$station-green, 0.25);
   flex-shrink: 0;
 }
 
@@ -63,15 +63,15 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: $station-green;
+  color: variables.$station-green;
 }
 
 .gares-title {
   margin: 0 0 10px;
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: clamp(1.35rem, 2.2vw, 1.6rem);
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   letter-spacing: -0.4px;
   line-height: 1.15;
 }
@@ -80,16 +80,16 @@
   margin: 0;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: $gray-600;
+  color: variables.$gray-600;
   code {
     font-size: 0.8rem;
     padding: 2px 6px;
     border-radius: 6px;
-    background: $gray-100;
-    color: $gray-800;
+    background: variables.$gray-100;
+    color: variables.$gray-800;
   }
   strong {
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 800;
   }
 }
@@ -108,13 +108,13 @@
 .gares-hero-stat {
   text-align: right;
   padding: 10px 16px;
-  border-radius: $radius-md;
-  background: $white;
-  border: 1px solid $gray-200;
+  border-radius: variables.$radius-md;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
   min-width: 120px;
   &--pending {
-    border-color: rgba($warning, 0.45);
-    background: rgba($warning, 0.06);
+    border-color: rgba(variables.$warning, 0.45);
+    background: rgba(variables.$warning, 0.06);
   }
   @media (max-width: 900px) {
     text-align: left;
@@ -123,7 +123,7 @@
 }
 
 .gares-hero-stat-value--warn {
-  color: $warning;
+  color: variables.$warning;
 }
 
 .gares-hero-stat-label {
@@ -132,15 +132,15 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $gray-500;
+  color: variables.$gray-500;
   margin-bottom: 4px;
 }
 
 .gares-hero-stat-value {
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: 1.75rem;
   font-weight: 900;
-  color: $station-green;
+  color: variables.$station-green;
   line-height: 1;
   letter-spacing: -0.5px;
 }
@@ -161,7 +161,7 @@
     justify-content: space-between;
     gap: 10px 14px;
     padding: 12px 0;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid variables.$gray-100;
     &:last-child {
       border-bottom: none;
     }
@@ -174,7 +174,7 @@
 }
 
 .gares-pending-meta {
-  color: $gray-500;
+  color: variables.$gray-500;
   font-weight: 600;
   font-size: 0.88rem;
 }
@@ -184,8 +184,8 @@
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 6px;
-  background: $gray-100;
-  color: $gray-800;
+  background: variables.$gray-100;
+  color: variables.$gray-800;
 }
 
 // ---- Colonne principale : liste (priorité), puis formulaire compact ----
@@ -200,14 +200,14 @@
   .panel-head {
     align-items: flex-start;
     flex-wrap: wrap;
-    background: linear-gradient(180deg, rgba($mobili-blue, 0.03) 0%, $white 100%);
+    background: linear-gradient(180deg, rgba(variables.$mobili-blue, 0.03) 0%, variables.$white 100%);
   }
 
   &__title {
     margin: 0;
     font-size: 1.05rem;
     font-weight: 900;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
@@ -236,12 +236,12 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 700;
-    color: $gray-600;
+    color: variables.$gray-600;
     margin-bottom: 6px;
   }
 
   input {
-    @include input;
+    @include mixins.input;
     width: 100%;
   }
 
@@ -302,12 +302,12 @@
 }
 
 .btn-submit {
-  @include btn-primary;
+  @include mixins.btn-primary;
   width: 100%;
   min-height: 46px;
   font-weight: 800;
   letter-spacing: 0.3px;
-  box-shadow: 0 4px 14px rgba($mobili-blue, 0.2);
+  box-shadow: 0 4px 14px rgba(variables.$mobili-blue, 0.2);
   white-space: nowrap;
   &:disabled {
     opacity: 0.55;
@@ -323,17 +323,17 @@
   gap: 12px;
   margin: 8px 20px 20px;
   padding: 16px 18px;
-  border-radius: $radius-md;
-  background: $danger-soft;
-  border: 1px solid rgba($danger, 0.25);
+  border-radius: variables.$radius-md;
+  background: variables.$danger-soft;
+  border: 1px solid rgba(variables.$danger, 0.25);
   p {
     margin: 4px 0 0;
     font-size: 0.88rem;
-    color: $gray-700;
+    color: variables.$gray-700;
   }
   strong {
     font-size: 0.9rem;
-    color: $danger;
+    color: variables.$danger;
   }
 }
 
@@ -344,8 +344,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: $danger;
-  color: $white;
+  background: variables.$danger;
+  color: variables.$white;
   font-weight: 900;
   font-size: 0.85rem;
 }
@@ -375,27 +375,27 @@
 }
 
 .status-pill.pending {
-  background: rgba($warning, 0.14);
-  color: $warning;
+  background: rgba(variables.$warning, 0.14);
+  color: variables.$warning;
 }
 
 .status-pill.ok {
-  background: rgba($success, 0.12);
-  color: $success;
+  background: rgba(variables.$success, 0.12);
+  color: variables.$success;
 }
 
 .btn-approve {
   padding: 6px 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  border-radius: $radius-sm;
-  border: 1px solid $station-green;
-  background: $white;
-  color: $station-green;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$station-green;
+  background: variables.$white;
+  color: variables.$station-green;
   cursor: pointer;
-  transition: all $t-base;
+  transition: all variables.$t-base;
   &:hover {
-    background: rgba($station-green, 0.08);
+    background: rgba(variables.$station-green, 0.08);
   }
   &:disabled {
     opacity: 0.5;
@@ -414,12 +414,12 @@
   margin: 0;
   padding: 0 0 0 1rem;
   list-style: disc;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   strong {
     font-weight: 800;
   }
 }
 
 .gares-chauffeurs-empty {
-  color: $gray-500;
+  color: variables.$gray-500;
 }

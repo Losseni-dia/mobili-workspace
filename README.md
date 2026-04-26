@@ -6,11 +6,12 @@ Plateforme de **mobilité interurbaine** (réservation, billetterie, partenaires
 Ce document sert de **mémoire projet** : vision, environnement, règles de qualité, backlog prioritaire et **suivi des fonctionnalités**.  
 **À jour** : chaque nouvelle fonctionnalité livrée doit compléter la [table de suivi](#suivi-des-fonctionnalités) et, si besoin, une sous-section dédiée.  
 **Prochaine étape & phasage** (CI/CD, produit, prod) : voir [ROADMAP.md](ROADMAP.md).  
-**Dernière révision documentaire** : **avril 2026** (Docker, CI GitHub, `ROADMAP`). Détails datés : [CHANGELOG](CHANGELOG.md).
+**Dernière révision documentaire** : **avril 2026** (Docker, `.env` racine, build JAR / image, profil `staging`, guide AWS, CI GitHub, `ROADMAP`). Détails datés : [CHANGELOG](CHANGELOG.md).
 
 ### Résumé des évolutions récentes (code)
 
-- **Docker** : [`docker-compose.yml`](docker-compose.yml) (PostgreSQL + build de l’API), [`backend/Dockerfile`](backend/Dockerfile) ; variables en [§ Docker](#docker) et [`application.yml`](backend/src/main/resources/application.yml).
+- **Recette (staging)** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) (CORS `int.mobili.ci`, `DB_*` via env / RDS) ; **Docker** image = profil `staging` par défaut ([`backend/Dockerfile`](backend/Dockerfile)). [**Guide AWS** (S3, CloudFront, ECR, RDS, DNS)](infra/aws/README.md).
+- **Docker** : [`docker-compose.yml`](docker-compose.yml) (PostgreSQL + build de l’API), [`backend/Dockerfile`](backend/Dockerfile) ; **`.env` obligatoire à la racine** pour le compose — [§ Docker](#docker) et [`application.yml`](backend/src/main/resources/application.yml).
 - **Bagages** : politique par **voyage** (cabine / soute inclus, max soute en plus par passager, tarif supplément) ; **réservation** avec `extraHoldBags` et surtaxe ; **conducteur** : `GET /v1/trips/{id}/driver/luggage-summary` + carte UI sur la console. Migration **Flyway `V8`**.
 - **Espaces intégrés (shells)** : `/my-account/*`, `/partenaire/*`, `/admin/*` et **`/gare/*`** (responsable gare) passent par des *shells* (sidebar + barre sup.) ; le header public n’encombre pas les espaces connectés.
 - **Gare (responsable)** : espace dédié sous **`/gare`** (accueil, messages compagnie, scanner, profil, notifications, canal voyage d’un trajet) ; garde-fous **`gareOperationsGuard`** tant que le compte n’est pas validé / opérations autorisées par le partenaire.
@@ -74,14 +75,30 @@ Mobili permet de **rechercher**, **réserver** et **payer** des trajets interurb
 ### Commandes utiles (racine logique)
 
 ```bash
+# Monorepo — build front *recette* (S3 / CloudFront plus tard)
+npm run build:front:staging
+
 # Backend (depuis ./backend)
 mvn test
+mvn clean package -DskipTests   # JAR exécutable : target/backend-0.0.1-SNAPSHOT.jar
+
+# Image API (recette) — profil Spring *staging* par défaut dans le Dockerfile
+# À lancer depuis la racine du dépôt :
+docker build -t mobili-backend-staging:latest ./backend
 
 # Frontend (depuis ./frontend)
 npm run test -- --watch=false
 npm run build
 ng serve
 ```
+
+<a id="recette-aws"></a>
+
+### Recette & AWS (pousser l’image, RDS, front statique)
+
+- **Backend** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) (CORS `https://int.mobili.ci` / `www`, BDD via `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` — jamais de secrets dans Git). Image : [`backend/Dockerfile`](backend/Dockerfile) (`SPRING_PROFILES_ACTIVE=staging` par défaut).
+- **Guide pas à pas** (ACM, S3, CloudFront, RDS, DNS, ECR, ALB) : [`infra/aws/README.md`](infra/aws/README.md) ; contexte projet : [`docs/gemini-mobili-aws-roadmap.md`](docs/gemini-mobili-aws-roadmap.md).
+- **Local ≠ cloud** : les identifiants du `.env` local ne sont pas ceux de RDS/ECS — mêmes **noms** de variables, **autres** valeurs côté AWS.
 
 <a id="docker"></a>
 
@@ -93,7 +110,7 @@ Fichiers : [`docker-compose.yml`](docker-compose.yml) à la racine, [`backend/Do
 
 ### Fichier **`.env`** à la racine (non versionné)
 
-`docker compose` charge automatiquement le fichier **`.env`** placé **à côté** de `docker-compose.yml`. **Créer** ce fichier (secrets locaux) avec au minimum :
+`docker compose` charge automatiquement le fichier **`.env`** placé **à côté** de `docker-compose.yml` (**racine du dépôt** — pas seul `backend/.env` : le compose ne lit en général pas ce fichier-là). **Créer** ce fichier (secrets locaux) avec au minimum :
 
 ```env
 SPRING_PROFILES_ACTIVE=dev
@@ -103,12 +120,13 @@ FEDAPAY_WEBHOOK_SECRET=
 DB_PASSWORD=mobili
 ```
 
-Optionnel : `API_PORT`, `POSTGRES_PORT` (voir le compose). Ne pas commiter (voir [`.gitignore`](.gitignore)).
+Optionnel : `API_PORT`, `POSTGRES_PORT` (voir le compose). Ne pas commiter (voir [`.gitignore`](.gitignore)).  
+**Important** : le mot de passe PostgreSQL du conteneur est **figé** au **premier** `docker compose up` dans le **volume** `mobili_pgdata`. Si tu changes `DB_PASSWORD` dans `.env` **après coup**, l’appli ne pourra plus s’authentifier : soit remettre l’**ancien** mot de passe, soit recréer les données (`docker compose down -v` puis `up` — **destructif**).
 
 ### Prérequis
 
 - **Docker Engine** + **Docker Compose** (v2) installés.
-- Aucun JAR à builder à la main : l’**image** compile le backend **pendant** `docker build`.
+- JAR : optionnel en local — `mvn clean package -DskipTests` dans `backend/` produit `target/backend-0.0.1-SNAPSHOT.jar`. L’**image** Docker, elle, recompile le backend **pendant** `docker build` (pas besoin du JAR pour construire l’image).
 
 ### Que fait `docker compose` ?
 
@@ -132,10 +150,10 @@ Le **frontend Angular** n’est **pas** dans ce compose (vous le lancez avec `ng
 
 | Sujet | Détail |
 |--------|--------|
-| **`.env` local `backend/.env` vs racine** | `docker compose` lit le **`.env` à côté de `docker-compose.yml`**. Le compose **fixe** `DB_URL` et `DB_USERNAME` pour l’API (service `postgres`) ; seul **`DB_PASSWORD`** vient en général du **`.env` racine**. En dev **sans** Docker, `application.yml` a des **défauts** (user `postgres`, base `mobili_db` sur `localhost:5432`) : il suffit en principe de **`DB_PASSWORD`**. Sous **Docker**, les variables **injectées par le compose** (URL vers le service `postgres`, user `mobili`) priment. |
+| **`.env` local `backend/.env` vs racine** | `docker compose` lit le **`.env` à côté de `docker-compose.yml`**. Le compose **fixe** `DB_URL` et `DB_USERNAME` pour l’API (service `postgres`) ; seul **`DB_PASSWORD`** vient en général du **`.env` racine**. En dev **sans** Docker, `application.yml` a des **défauts** (user `postgres`, base `mobili_db` sur `localhost:5432`) : il suffit en principe de **`DB_PASSWORD`**. Sous **Docker**, les variables **injectées par le compose** (URL vers le service `postgres`, user `mobili`) priment. Un **`backend/.env` seul** ne pilote pas le compose : aligner les clés **à la racine** ou exporter les variables pour `java -jar`. |
 | **FedaPay / webhooks** | Même règle qu’en [§ Démo locale](#démo-locale) : l’extérieur doit atteindre `POST /v1/payments/callback` (ngrok, domaine, etc.). L’URL du callback est celle **visible depuis Internet**, pas celle interne Docker. |
-| **CORS** | En `dev`, les origines `localhost:4200` sont dans `application-dev.yml` / `MobiliCorsSettings`. En **acc/prod** derrière un domaine, mettre à jour `application-*.yml` ou des variables (voir [README backend — profils](backend/README.md)). |
-| **Profil Spring dans Docker** | Par défaut `SPRING_PROFILES_ACTIVE=dev` dans `.env`. Pour une image type recette, utiliser `acc` ou `prod` et les bons CORS. |
+| **CORS** | `dev` : `localhost:4200` (voir [README backend](backend/README.md)). **Recette** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) inclut notamment `https://int.mobili.ci` et `https://www.int.mobili.ci`. |
+| **Profil Spring** | Avec **`docker compose`**, `SPRING_PROFILES_ACTIVE=dev` dans le `.env` racine (par défaut). L’**image** [`backend/Dockerfile`](backend/Dockerfile) utilise **`staging` par défaut** — adapté à ECR/ECS ; surcharger en prod si besoin. |
 | **Stop / données** | `docker compose down` : les **volumes** `mobili_pgdata` et `mobili_uploads` **restent** sauf si `docker compose down -v`. |
 
 ### Commandes utiles
@@ -149,9 +167,10 @@ docker compose down -v           # tout supprimer y compris les données (destru
 
 ### Évolution / prod
 
-- Pousser les **mêmes images** sur un registry ; sur le serveur, fournir un **`.env` ou secrets** (Kubernetes secrets, PaaS, etc.) et la même logique d’environnement.
-- **HTTPS** géré en général par un **reverse proxy** (Traefik, Nginx, cloud load balancer) devant l’API.
-- Pour **packager le front** dans l’écosystème : image **Nginx** `COPY` du résultat de `ng build` — à ajouter plus tard si besoin.
+- **ECR** : `docker build` + `docker tag` + `docker push` vers le dépôt (ex. `mobili-backend-staging`) ; l’**URI** s’affiche dans la console ECR. **RDS** : récupérer l’**endpoint** pour `DB_URL` (JDBC) en variable d’environnement sur ECS / Beanstalk, **jamais** en dur dans l’image.
+- Pousser les **mêmes images** sur un registry ; sur le serveur, **secrets** (Parameter Store, Secrets Manager, variables de tâche) — mêmes **noms** de variables qu’en local, **autres** valeurs.
+- **HTTPS** géré en général par un **ALB** ou reverse proxy (Traefik, Nginx) — voir [§ Recette & AWS](#recette-aws) et [`infra/aws/README.md`](infra/aws/README.md).
+- **Front** : S3 + CloudFront, build `npm run build:front:staging` ; pas d’embarquage obligatoire dans l’image API.
 
 ---
 
@@ -161,7 +180,7 @@ docker compose down -v           # tout supprimer y compris les données (destru
 
 Objectif : payer en **sandbox FedaPay** avec un backend sur `localhost`, alors que FedaPay doit appeler un **webhook** accessible publiquement (pas `localhost`).
 
-1. **Variables d’environnement (backend)** — fichier **`.env`** à la racine de `backend/` (ou outil équivalent) : en principe **`DB_PASSWORD`** (URL et utilisateur par défaut : `postgres` + base `mobili_db` — voir [`application.yml`](backend/src/main/resources/application.yml) ; `DB_URL` / `DB_USERNAME` seulement si ton PostgreSQL local diffère), plus **`JWT_SECRET`**, **`FEDAPAY_SECRET_KEY`**, **`FEDAPAY_WEBHOOK_SECRET`**.
+1. **Variables d’environnement** — pour un **`mvn` / `mvnw` sans Docker** : secrets dans **`.env` à la racine du dépôt** (recommandé, même fichier que le compose) ou export manuel. Min. **`DB_PASSWORD`** si Postgres local = défauts [`application.yml`](backend/src/main/resources/application.yml) (`postgres` + `mobili_db` sur `localhost:5432`) ; sinon `DB_URL` / `DB_USERNAME`. Ajouter **`JWT_SECRET`**, **`FEDAPAY_SECRET_KEY`**, **`FEDAPAY_WEBHOOK_SECRET`**. (Stack **Docker** : [§ Docker — `.env`](#docker-root-env).)
 2. **Démarrer l’API** : depuis `backend/`, `.\mvnw.cmd spring-boot:run` (ou `mvn spring-boot:run`) — **port 8080** par défaut.
 3. **Exposer 8080 avec ngrok** (ex. binaire installé dans `C:\ngrok` sous Windows) :
    - `C:\ngrok\ngrok.exe http 8080`  
@@ -437,7 +456,8 @@ Les URLs ci-dessous sont le suffixe après la base configurée (ex. `http://loca
 - [`.github/workflows/`](.github/workflows/) — **CI** (tests) et **CD** (Docker + placeholder déploiement)
 - [`docker-compose.yml`](docker-compose.yml) — PostgreSQL + API (voir [§ Docker](#docker))
 - **`.env` à la racine** (non versionné) — modèle d’en-tête [§ Docker — fichier `.env`](#docker-root-env)
-- `docs/` — notes techniques (ex. [recherche multi-arrêts](./docs/recherche-segments.md))
+- `infra/aws/` — [guide de déploiement recette AWS](infra/aws/README.md) (`int.mobili.ci` / `api.int.mobili.ci`, DNS, certificats)
+- `docs/` — notes techniques (ex. [recherche multi-arrêts](./docs/recherche-segments.md)) ; [briefing complet AWS + contexte (Gemini, etc.)](docs/gemini-mobili-aws-roadmap.md)
 - [`ROADMAP.md`](ROADMAP.md) — **feuille de route** (prochaines phases : métier, déploiement, durcissement, mobile)
 - [`CHANGELOG.md`](CHANGELOG.md) — historique de documentation / livraisons par date
 

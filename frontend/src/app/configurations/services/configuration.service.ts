@@ -23,9 +23,9 @@ export class ConfigurationService {
             console.log('[Mobili Config] Mode: override (meta / window) →', override);
             return;
         }
-        const host = window.location.host;
+        const host = window.location.hostname;
         const envMatch = CONFIGURATION_DATA.environments.find(e =>
-            e.domain.some(d => host.includes(d))
+            e.domain.some(d => d === host)
         );
         const envName = (envMatch ? envMatch.env : 'local') as keyof typeof CONFIGURATION_DATA.variables;
         this.currentConfig = CONFIGURATION_DATA.variables[envName] ?? CONFIGURATION_DATA.variables.local;

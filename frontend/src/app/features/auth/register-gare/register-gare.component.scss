@@ -1,26 +1,26 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .login-wrapper {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - #{$header-height});
+  min-height: calc(100vh - #{variables.$header-height});
   padding: 32px 16px 48px;
   background:
-    radial-gradient(circle at 18% 12%, rgba($station-green, 0.12), transparent 50%),
-    radial-gradient(circle at 82% 90%, rgba($mobili-blue, 0.12), transparent 55%),
-    linear-gradient(180deg, $gray-50 0%, $mobili-blue-fog 100%);
+    radial-gradient(circle at 18% 12%, rgba(variables.$station-green, 0.12), transparent 50%),
+    radial-gradient(circle at 82% 90%, rgba(variables.$mobili-blue, 0.12), transparent 55%),
+    linear-gradient(180deg, variables.$gray-50 0%, variables.$mobili-blue-fog 100%);
 }
 
 .register-gare-card {
   width: 100%;
   max-width: 520px;
-  background: $white;
-  border-radius: $radius-xl;
+  background: variables.$white;
+  border-radius: variables.$radius-xl;
   padding: 2rem;
-  box-shadow: $shadow-xl;
-  border: 1px solid rgba($station-green, 0.12);
+  box-shadow: variables.$shadow-xl;
+  border: 1px solid rgba(variables.$station-green, 0.12);
   animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @media (min-width: 768px) {
@@ -34,12 +34,12 @@
   position: relative;
 
   h2 {
-    @include heading-lg;
+    @include mixins.heading-lg;
     margin: 0.25rem 0 6px;
   }
 
   p {
-    color: $gray-500;
+    color: variables.$gray-500;
     font-size: 0.92rem;
     line-height: 1.4;
   }
@@ -52,7 +52,7 @@
   border: none;
   padding: 0;
   margin: 0 auto 0.5rem;
-  color: $mobili-blue-soft;
+  color: variables.$mobili-blue-soft;
   font-weight: 600;
   font-size: 0.88rem;
   cursor: pointer;
@@ -65,7 +65,7 @@
 
 .hint {
   font-size: 0.9rem;
-  color: $gray-600;
+  color: variables.$gray-600;
   margin: 0 0 0.75rem;
 }
 
@@ -79,10 +79,10 @@
   display: flex;
   gap: 0;
   margin-bottom: 1rem;
-  border-radius: $radius-md;
+  border-radius: variables.$radius-md;
   overflow: hidden;
-  border: 1px solid $gray-200;
-  background: $gray-100;
+  border: 1px solid variables.$gray-200;
+  background: variables.$gray-100;
 
   .seg {
     flex: 1;
@@ -91,13 +91,13 @@
     font-weight: 700;
     border: none;
     background: transparent;
-    color: $gray-600;
+    color: variables.$gray-600;
     cursor: pointer;
-    transition: background $t-base, color $t-base;
+    transition: background variables.$t-base, color variables.$t-base;
 
     &.active {
-      background: $white;
-      color: $mobili-blue-deep;
+      background: variables.$white;
+      color: variables.$mobili-blue-deep;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
   }
@@ -120,13 +120,13 @@
   margin-bottom: 1.1rem;
 
   label {
-    @include input-label;
+    @include mixins.input-label;
   }
 }
 
 .form-control,
 select.form-control {
-  @include input;
+  @include mixins.input;
   font-size: 16px;
   width: 100%;
 }
@@ -134,18 +134,18 @@ select.form-control {
 .alert {
   margin-bottom: 1rem;
   padding: 12px 14px;
-  background: $danger-soft;
-  color: $danger;
-  border: 1px solid rgba($danger, 0.25);
-  border-radius: $radius-sm;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  border: 1px solid rgba(variables.$danger, 0.25);
+  border-radius: variables.$radius-sm;
   font-weight: 600;
   font-size: 0.88rem;
 }
 
 .alert-ok {
-  background: rgba($success, 0.1);
-  color: $gray-800;
-  border: 1px solid rgba($success, 0.35);
+  background: rgba(variables.$success, 0.1);
+  color: variables.$gray-800;
+  border: 1px solid rgba(variables.$success, 0.35);
   font-weight: 600;
 }
 
@@ -154,7 +154,7 @@ select.form-control {
   text-align: center;
   .link-next {
     font-weight: 800;
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
     text-decoration: none;
     &:hover {
       text-decoration: underline;
@@ -166,18 +166,18 @@ select.form-control {
   margin: 6px 0 0;
   font-size: 0.78rem;
   line-height: 1.35;
-  color: $gray-500;
+  color: variables.$gray-500;
 }
 
 .field-error {
   margin: 6px 0 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: $danger;
+  color: variables.$danger;
 }
 
 .btn-primary {
-  @include btn-primary;
+  @include mixins.btn-primary;
   &.full {
     width: 100%;
     padding: 14px 16px;
@@ -197,13 +197,13 @@ select.form-control {
     right: 6px;
     top: 50%;
     transform: translateY(-50%);
-    background: $white;
-    border: 1px solid $gray-200;
-    border-radius: $radius-sm;
+    background: variables.$white;
+    border: 1px solid variables.$gray-200;
+    border-radius: variables.$radius-sm;
     padding: 4px 8px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: $mobili-blue-soft;
+    color: variables.$mobili-blue-soft;
     cursor: pointer;
   }
 }

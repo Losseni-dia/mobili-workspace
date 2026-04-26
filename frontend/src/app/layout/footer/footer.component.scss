@@ -1,11 +1,11 @@
 @use "sass:color";
-@import '../../styles/variables';
-@import '../../styles/mixins';
+@use '../../styles/variables';
+@use '../../styles/mixins';
 
 .main-footer {
   margin-top: auto;
-  background: $gradient-hero;
-  color: rgba($white, 0.9);
+  background: variables.$gradient-hero;
+  color: rgba(variables.$white, 0.9);
   position: relative;
   overflow: hidden;
 
@@ -14,8 +14,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 10% 0%, rgba($mobili-yellow, 0.18), transparent 50%),
-      radial-gradient(circle at 90% 110%, rgba($mobili-yellow, 0.12), transparent 55%);
+      radial-gradient(circle at 10% 0%, rgba(variables.$mobili-yellow, 0.18), transparent 50%),
+      radial-gradient(circle at 90% 110%, rgba(variables.$mobili-yellow, 0.12), transparent 55%);
     pointer-events: none;
   }
 
@@ -25,7 +25,7 @@
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 16px;
     padding: 50px 24px;
-    max-width: $container-max;
+    max-width: variables.$container-max;
     margin: 0 auto;
 
     .info-card {
@@ -33,16 +33,16 @@
       align-items: center;
       gap: 14px;
       padding: 18px 20px;
-      background: rgba($white, 0.07);
-      border: 1px solid rgba($white, 0.12);
-      border-radius: $radius-md;
+      background: rgba(variables.$white, 0.07);
+      border: 1px solid rgba(variables.$white, 0.12);
+      border-radius: variables.$radius-md;
       backdrop-filter: blur(8px);
-      transition: transform $t-base, background $t-base, border-color $t-base;
+      transition: transform variables.$t-base, background variables.$t-base, border-color variables.$t-base;
 
       &:hover {
         transform: translateY(-3px);
-        background: rgba($white, 0.12);
-        border-color: rgba($mobili-yellow, 0.5);
+        background: rgba(variables.$white, 0.12);
+        border-color: rgba(variables.$mobili-yellow, 0.5);
       }
 
       .icon {
@@ -51,9 +51,9 @@
         height: 48px;
         display: grid;
         place-items: center;
-        border-radius: $radius-sm;
-        background: rgba($mobili-yellow, 0.2);
-        color: $mobili-yellow;
+        border-radius: variables.$radius-sm;
+        background: rgba(variables.$mobili-yellow, 0.2);
+        color: variables.$mobili-yellow;
         flex-shrink: 0;
       }
 
@@ -62,14 +62,14 @@
         flex-direction: column;
 
         strong {
-          color: $white;
+          color: variables.$white;
           font-size: 0.95rem;
           font-weight: 800;
           letter-spacing: 0.2px;
         }
 
         span {
-          color: rgba($white, 0.7);
+          color: rgba(variables.$white, 0.7);
           font-size: 0.78rem;
         }
       }
@@ -81,8 +81,8 @@
     padding: 22px 24px;
     text-align: center;
     font-size: 0.82rem;
-    color: rgba($white, 0.7);
-    border-top: 1px solid rgba($white, 0.1);
+    color: rgba(variables.$white, 0.7);
+    border-top: 1px solid rgba(variables.$white, 0.1);
 
     p { margin-bottom: 10px; }
 
@@ -92,11 +92,11 @@
       gap: 28px;
 
       a {
-        color: rgba($white, 0.85);
+        color: rgba(variables.$white, 0.85);
         font-weight: 600;
         text-decoration: none;
         position: relative;
-        transition: color $t-base;
+        transition: color variables.$t-base;
 
         &::after {
           content: '';
@@ -105,14 +105,14 @@
           right: 0;
           bottom: -4px;
           height: 2px;
-          background: $mobili-yellow;
+          background: variables.$mobili-yellow;
           transform: scaleX(0);
           transform-origin: center;
-          transition: transform $t-base;
+          transition: transform variables.$t-base;
         }
 
         &:hover {
-          color: $white;
+          color: variables.$white;
 
           &::after { transform: scaleX(1); }
         }

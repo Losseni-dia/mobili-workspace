@@ -1,10 +1,10 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .carpool-page {
   min-height: 100vh;
   padding: 2rem 1rem;
-  background: linear-gradient(160deg, $mobili-blue 0%, $mobili-blue-deep 100%);
+  background: linear-gradient(160deg, variables.$mobili-blue 0%, variables.$mobili-blue-deep 100%);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -13,42 +13,42 @@
 .carpool-card {
   max-width: 520px;
   width: 100%;
-  background: $white;
-  border-radius: $radius-lg;
+  background: variables.$white;
+  border-radius: variables.$radius-lg;
   padding: 1.5rem 1.35rem 1.75rem;
-  box-shadow: $shadow-lg;
+  box-shadow: variables.$shadow-lg;
 
   header {
     margin-bottom: 1.25rem;
     .back {
       display: inline-block;
       font-size: 0.9rem;
-      color: $gray-500;
+      color: variables.$gray-500;
       text-decoration: none;
       margin-bottom: 0.5rem;
       &:hover {
-        color: $mobili-blue;
+        color: variables.$mobili-blue;
       }
     }
     h1 {
-      font-family: $font-display;
-      color: $mobili-blue-deep;
+      font-family: variables.$font-display;
+      color: variables.$mobili-blue-deep;
       font-size: 1.35rem;
       margin: 0 0 0.5rem;
     }
     p {
       margin: 0;
-      color: $gray-600;
+      color: variables.$gray-600;
       font-size: 0.9rem;
       line-height: 1.5;
     }
   }
 
   .alert {
-    background: rgba($danger, 0.08);
-    color: $danger;
-    border: 1px solid rgba($danger, 0.25);
-    border-radius: $radius-md;
+    background: rgba(variables.$danger, 0.08);
+    color: variables.$danger;
+    border: 1px solid rgba(variables.$danger, 0.25);
+    border-radius: variables.$radius-md;
     padding: 0.65rem 0.75rem;
     font-size: 0.9rem;
     margin-bottom: 1rem;
@@ -56,13 +56,13 @@
 
   h2 {
     font-size: 0.95rem;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     margin: 1.25rem 0 0.5rem;
   }
 
   .hint {
     font-size: 0.8rem;
-    color: $gray-500;
+    color: variables.$gray-500;
     margin: -0.25rem 0 0.75rem;
   }
 
@@ -79,13 +79,13 @@
     span {
       font-size: 0.78rem;
       font-weight: 700;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
     }
     input[type='text'],
     input[type='email'],
     input[type='password'],
     input[type='date'] {
-      @include input;
+      @include mixins.input;
     }
   }
 
@@ -105,7 +105,7 @@
   }
 
   .btn-submit {
-    @include btn-primary;
+    @include mixins.btn-primary;
     margin-top: 0.5rem;
     width: 100%;
     border: none;
@@ -120,9 +120,9 @@
     margin-top: 1rem;
     text-align: center;
     font-size: 0.9rem;
-    color: $gray-500;
+    color: variables.$gray-500;
     a {
-      color: $mobili-blue;
+      color: variables.$mobili-blue;
       font-weight: 700;
     }
   }

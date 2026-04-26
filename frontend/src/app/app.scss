@@ -1,8 +1,10 @@
 @use "sass:color";
-@import '../styles.scss';
+@use '../styles.scss';
+@use './styles/variables' as variables;
+
 
 .header {
-    background-color: $mobili-yellow;
+    background-color: variables.$mobili-yellow;
     padding: 0 20px;
     display: flex;
     justify-content: space-between;
@@ -15,7 +17,7 @@
 
     .logo {
         text-decoration: none;
-        color: $mobili-blue;
+        color: variables.$mobili-blue;
         font-weight: 900;
         font-size: 1.8rem;
         letter-spacing: -1px;
@@ -32,7 +34,7 @@
             flex-direction: column;
             gap: 5px;
             padding: 0 12px;
-            border-right: 1px solid rgba($mobili-blue, 0.15);
+            border-right: 1px solid rgba(variables.$mobili-blue, 0.15);
 
             &:last-of-type {
                 border-right: none;
@@ -50,39 +52,39 @@
 
                 // Variantes par espace
                 &.admin {
-                    color: $admin-purple;
-                    border-color: $admin-purple;
+                    color: variables.$admin-purple;
+                    border-color: variables.$admin-purple;
                 }
 
                 &.company {
-                    color: $mobili-blue;
-                    border-color: $mobili-blue;
+                    color: variables.$mobili-blue;
+                    border-color: variables.$mobili-blue;
                 }
 
                 &.station {
-                    color: $station-green;
-                    border-color: $station-green;
+                    color: variables.$station-green;
+                    border-color: variables.$station-green;
                 }
 
                 // États actifs
                 &.active {
-                    color: $white;
+                    color: variables.$white;
 
                     &.admin {
-                        background: $admin-purple;
+                        background: variables.$admin-purple;
                     }
 
                     &.company {
-                        background: $mobili-blue;
+                        background: variables.$mobili-blue;
                     }
 
                     &.station {
-                        background: $station-green;
+                        background: variables.$station-green;
                     }
                 }
 
                 &:hover:not(.active) {
-                    background: rgba($white, 0.6);
+                    background: rgba(variables.$white, 0.6);
                 }
             }
 
@@ -93,7 +95,7 @@
 
                 .sub-link {
                     font-size: 0.7rem;
-                    color: color.adjust($mobili-blue, $lightness: 10%);
+                    color: color.adjust(variables.$mobili-blue, $lightness: 10%);
                     text-decoration: none;
                     font-weight: 600;
                     opacity: 0.8;
@@ -113,20 +115,20 @@
         gap: 15px;
 
         .partner {
-            color: $mobili-blue;
+            color: variables.$mobili-blue;
             font-size: 0.8rem;
             font-weight: 700;
             text-decoration: none;
-            border-bottom: 1px dashed $mobili-blue;
+            border-bottom: 1px dashed variables.$mobili-blue;
 
             &:hover {
-                color: color.adjust($mobili-blue, $lightness: 20%);
+                color: color.adjust(variables.$mobili-blue, $lightness: 20%);
             }
         }
 
         .btn-account {
-            background-color: $mobili-blue;
-            color: $white;
+            background-color: variables.$mobili-blue;
+            color: variables.$white;
             border: none;
             padding: 10px 20px;
             border-radius: 25px;
@@ -137,7 +139,7 @@
 
             &:hover {
                 transform: translateY(-2px);
-                background-color: color.adjust($mobili-blue, $lightness: -10%);
+                background-color: color.adjust(variables.$mobili-blue, $lightness: -10%);
                 box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             }
         }
@@ -164,7 +166,7 @@
 
             .nav-group {
                 border-right: none;
-                border-bottom: 1px solid rgba($mobili-blue, 0.1);
+                border-bottom: 1px solid rgba(variables.$mobili-blue, 0.1);
                 padding: 10px;
                 width: 45%; // Deux groupes par ligne sur tablette
             }
@@ -174,7 +176,7 @@
             width: 100%;
             justify-content: space-around;
             padding-top: 10px;
-            border-top: 1px solid rgba($mobili-blue, 0.1);
+            border-top: 1px solid rgba(variables.$mobili-blue, 0.1);
         }
     }
 }

@@ -1,11 +1,11 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .chauffeur-shell {
   min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  background: $gray-50;
+  background: variables.$gray-50;
 }
 
 .chauffeur-shell__inner {
@@ -29,26 +29,26 @@
   gap: 0.65rem;
   min-height: 3rem;
   padding: 0.4rem 1.1rem 0.4rem 0.85rem;
-  border-radius: $radius-md;
+  border-radius: variables.$radius-md;
   text-decoration: none;
-  color: $gray-600;
-  background: $white;
-  border: 1px solid $gray-200;
-  box-shadow: $shadow-xs;
-  transition: background $t-base, border-color $t-base, color $t-base, box-shadow $t-base,
-    transform $t-base;
+  color: variables.$gray-600;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  box-shadow: variables.$shadow-xs;
+  transition: background variables.$t-base, border-color variables.$t-base, color variables.$t-base, box-shadow variables.$t-base,
+    transform variables.$t-base;
 
   &:hover {
-    border-color: rgba($mobili-blue, 0.2);
-    color: $mobili-blue-deep;
-    box-shadow: $shadow-sm;
+    border-color: rgba(variables.$mobili-blue, 0.2);
+    color: variables.$mobili-blue-deep;
+    box-shadow: variables.$shadow-sm;
   }
 
   &.active {
-    color: $mobili-blue-deep;
-    background: linear-gradient(180deg, $white 0%, rgba($mobili-blue-fog, 0.65) 100%);
-    border-color: rgba($mobili-yellow, 0.6);
-    box-shadow: 0 0 0 1px rgba($mobili-yellow, 0.25), $shadow-sm;
+    color: variables.$mobili-blue-deep;
+    background: linear-gradient(180deg, variables.$white 0%, rgba(variables.$mobili-blue-fog, 0.65) 100%);
+    border-color: rgba(variables.$mobili-yellow, 0.6);
+    box-shadow: 0 0 0 1px rgba(variables.$mobili-yellow, 0.25), variables.$shadow-sm;
   }
 }
 
@@ -57,17 +57,17 @@
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: $radius-sm;
-  background: $mobili-blue-fog;
-  color: $mobili-blue;
+  border-radius: variables.$radius-sm;
+  background: variables.$mobili-blue-fog;
+  color: variables.$mobili-blue;
   font-size: 0.65rem;
   font-weight: 900;
   flex-shrink: 0;
 }
 
 .chauffeur-nav__link.active .chauffeur-nav__icon {
-  background: rgba($mobili-yellow, 0.25);
-  color: $mobili-blue-deep;
+  background: rgba(variables.$mobili-yellow, 0.25);
+  color: variables.$mobili-blue-deep;
 }
 
 .chauffeur-nav__text {

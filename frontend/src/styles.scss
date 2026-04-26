@@ -1,5 +1,5 @@
-@import 'app/styles/variables';
-@import 'app/styles/mixins';
+@use 'app/styles/variables';
+@use 'app/styles/mixins';
 
 // ============================================================
 //  Font Luxe : Inter (gratuit, très pro)
@@ -23,11 +23,11 @@ html {
 }
 
 body {
-  font-family: $font-sans;
+  font-family: variables.$font-sans;
   font-size: 16px;
   line-height: 1.55;
-  color: $mobili-blue-deep;
-  background: $gradient-mesh;
+  color: variables.$mobili-blue-deep;
+  background: variables.$gradient-mesh;
   background-attachment: fixed;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -46,19 +46,19 @@ button {
 }
 
 a {
-  color: $mobili-blue;
+  color: variables.$mobili-blue;
   text-decoration: none;
-  transition: color $t-base;
+  transition: color variables.$t-base;
 
   &:hover {
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 }
 
 // Sélection textuelle
 ::selection {
-  background: $mobili-yellow;
-  color: $mobili-blue-deep;
+  background: variables.$mobili-yellow;
+  color: variables.$mobili-blue-deep;
 }
 
 // Scrollbar raffinée (WebKit)
@@ -72,20 +72,20 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba($mobili-blue, 0.18);
+  background: rgba(variables.$mobili-blue, 0.18);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
 
   &:hover {
-    background: rgba($mobili-blue, 0.35);
+    background: rgba(variables.$mobili-blue, 0.35);
     background-clip: content-box;
   }
 }
 
 // Focus ring accessibilité
 :focus-visible {
-  outline: 2px solid $mobili-blue;
+  outline: 2px solid variables.$mobili-blue;
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -94,23 +94,23 @@ a {
 //  LAYOUT HELPERS
 // ============================================================
 .container {
-  max-width: $container-max;
+  max-width: variables.$container-max;
   margin: 0 auto;
   padding: 0 24px;
 }
 
 .container-narrow {
-  max-width: $container-narrow;
+  max-width: variables.$container-narrow;
   margin: 0 auto;
   padding: 0 24px;
 }
 
 // Utilitaires
 .text-center { text-align: center; }
-.muted { color: $gray-500; }
+.muted { color: variables.$gray-500; }
 // A11y (évite de dupliquer le bloc dans chaque composant — aligné sur _mixins::visually-hidden)
 .visually-hidden {
-  @include visually-hidden;
+  @include mixins.visually-hidden;
 }
 .noise {
   position: relative;

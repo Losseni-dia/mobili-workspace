@@ -1,6 +1,6 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .edit-partner-container {
   display: flex;
@@ -9,25 +9,25 @@
   .form-card {
     width: 100%;
     max-width: 760px;
-    background: $white;
+    background: variables.$white;
     padding: 30px;
-    border: 1px solid $gray-200;
-    border-radius: $radius-md;
+    border: 1px solid variables.$gray-200;
+    border-radius: variables.$radius-md;
     animation: cardIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
     h2 {
       margin: 0 0 4px;
       text-align: center;
-      font-family: $font-display;
+      font-family: variables.$font-display;
       font-size: 1.25rem;
       font-weight: 900;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
       letter-spacing: -0.3px;
     }
 
     .subtitle {
       text-align: center;
-      color: $gray-500;
+      color: variables.$gray-500;
       font-size: 0.9rem;
       margin-bottom: 1.25rem;
     }
@@ -35,9 +35,9 @@
     .registration-code-box {
       margin: 0 0 1.5rem;
       padding: 1rem 1.1rem;
-      border-radius: $radius-md;
-      border: 1px solid rgba($station-green, 0.35);
-      background: linear-gradient(180deg, $station-green-soft 0%, $white 100%);
+      border-radius: variables.$radius-md;
+      border: 1px solid rgba(variables.$station-green, 0.35);
+      background: linear-gradient(180deg, variables.$station-green-soft 0%, variables.$white 100%);
     }
 
     .registration-code-box__text {
@@ -48,14 +48,14 @@
       display: block;
       font-weight: 800;
       font-size: 0.88rem;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
     }
 
     .registration-code-box__hint {
       margin: 0.4rem 0 0;
       font-size: 0.82rem;
       line-height: 1.45;
-      color: $gray-600;
+      color: variables.$gray-600;
     }
 
     .registration-code-box__row {
@@ -72,14 +72,14 @@
       font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: $mobili-blue-deep;
-      background: $white;
-      border: 1px solid $gray-200;
-      border-radius: $radius-sm;
+      color: variables.$mobili-blue-deep;
+      background: variables.$white;
+      border: 1px solid variables.$gray-200;
+      border-radius: variables.$radius-sm;
     }
 
     .btn-copy {
-      @include btn-secondary;
+      @include mixins.btn-secondary;
       font-size: 0.85rem;
       font-weight: 700;
       padding: 0.5rem 1rem;
@@ -88,7 +88,7 @@
     .registration-code-box__empty {
       margin: 0;
       font-size: 0.85rem;
-      color: $gray-600;
+      color: variables.$gray-600;
     }
   }
 }
@@ -105,10 +105,10 @@
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
-    background: $gray-100;
-    border: 3px solid $white;
-    box-shadow: $shadow-md;
-    transition: transform $t-base;
+    background: variables.$gray-100;
+    border: 3px solid variables.$white;
+    box-shadow: variables.$shadow-md;
+    transition: transform variables.$t-base;
 
     &:hover { transform: scale(1.04); }
 
@@ -117,12 +117,12 @@
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba($mobili-blue-deep, 0.7);
-      color: $white;
+      background: rgba(variables.$mobili-blue-deep, 0.7);
+      color: variables.$white;
       display: grid;
       place-items: center;
       opacity: 0;
-      transition: opacity $t-base;
+      transition: opacity variables.$t-base;
 
       span {
         font-weight: 800;
@@ -150,16 +150,16 @@
   flex-direction: column;
   gap: 8px;
 
-  label { @include input-label; margin-bottom: 0; }
-  input { @include input; padding: 11px 14px; }
+  label { @include mixins.input-label; margin-bottom: 0; }
+  input { @include mixins.input; padding: 11px 14px; }
 }
 
 .form-actions {
   display: flex;
   gap: 10px;
 
-  .btn-secondary { @include btn-ghost; flex: 1; padding: 13px; }
-  .btn-primary { @include btn-primary; flex: 1; padding: 13px; }
+  .btn-secondary { @include mixins.btn-ghost; flex: 1; padding: 13px; }
+  .btn-primary { @include mixins.btn-primary; flex: 1; padding: 13px; }
 }
 
 @keyframes cardIn {

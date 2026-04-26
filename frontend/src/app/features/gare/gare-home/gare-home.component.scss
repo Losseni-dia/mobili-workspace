@@ -1,26 +1,26 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .gare-welcome {
   margin-bottom: 1.5rem;
 
   .greet {
-    font-family: $font-display;
+    font-family: variables.$font-display;
     font-size: 1.35rem;
     font-weight: 900;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     margin: 0 0 0.4rem;
   }
 
   .sub {
     margin: 0;
-    color: $gray-600;
+    color: variables.$gray-600;
     font-size: 0.95rem;
     line-height: 1.5;
   }
 
   .id {
-    color: $gray-400;
+    color: variables.$gray-400;
     font-size: 0.85em;
   }
 }
@@ -28,10 +28,10 @@
 .gare-pending-callout {
   margin: 1rem 0 0;
   padding: 0.9rem 1rem;
-  border-radius: $radius-md;
-  background: rgba($station-green, 0.1);
-  border: 1px solid rgba($station-green, 0.28);
-  color: $mobili-blue-deep;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$station-green, 0.1);
+  border: 1px solid rgba(variables.$station-green, 0.28);
+  color: variables.$mobili-blue-deep;
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -40,17 +40,17 @@
   max-width: 900px;
   margin-bottom: 1.75rem;
   padding: 1.1rem 1.2rem;
-  background: $white;
-  border: 1px solid rgba($mobili-blue, 0.12);
-  border-radius: $radius-md;
-  box-shadow: $shadow-sm;
+  background: variables.$white;
+  border: 1px solid rgba(variables.$mobili-blue, 0.12);
+  border-radius: variables.$radius-md;
+  box-shadow: variables.$shadow-sm;
 }
 
 .gare-chauffeurs-title {
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: 1.05rem;
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   margin: 0 0 0.35rem;
 }
 
@@ -58,7 +58,7 @@
   margin: 0 0 0.85rem;
   font-size: 0.88rem;
   line-height: 1.5;
-  color: $gray-600;
+  color: variables.$gray-600;
 }
 
 .gare-chauffeurs-status,
@@ -68,14 +68,14 @@
 }
 
 .gare-chauffeurs-err {
-  color: $danger;
+  color: variables.$danger;
 }
 
 .gare-chauffeurs-list {
   margin: 0 0 0.75rem;
   padding-left: 1.2rem;
   line-height: 1.45;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   strong {
     font-weight: 800;
   }
@@ -84,7 +84,7 @@
 .gare-chauffeurs-empty {
   margin: 0 0 0.75rem;
   font-size: 0.9rem;
-  color: $gray-600;
+  color: variables.$gray-600;
 }
 
 .gare-chauffeurs-link {
@@ -92,7 +92,7 @@
   font-size: 0.88rem;
   a {
     font-weight: 700;
-    color: $mobili-blue-soft;
+    color: variables.$mobili-blue-soft;
     text-decoration: none;
     &:hover {
       text-decoration: underline;
@@ -114,22 +114,22 @@
 .action-card {
   display: block;
   padding: 1.25rem 1.35rem;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
   text-decoration: none;
   color: inherit;
-  transition: border-color $t-base, box-shadow $t-base;
-  box-shadow: $shadow-sm;
+  transition: border-color variables.$t-base, box-shadow variables.$t-base;
+  box-shadow: variables.$shadow-sm;
 
   &:hover {
-    border-color: rgba($station-green, 0.35);
-    box-shadow: $shadow-md;
+    border-color: rgba(variables.$station-green, 0.35);
+    box-shadow: variables.$shadow-md;
   }
 
   &--primary {
-    border-color: rgba($station-green, 0.4);
-    background: linear-gradient(180deg, $station-green-soft 0%, $white 100%);
+    border-color: rgba(variables.$station-green, 0.4);
+    background: linear-gradient(180deg, variables.$station-green-soft 0%, variables.$white 100%);
   }
 
   .action-icon {
@@ -142,20 +142,20 @@
     margin: 0 0 0.4rem;
     font-size: 1.05rem;
     font-weight: 800;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 
   p {
     margin: 0 0 0.75rem;
     font-size: 0.86rem;
     line-height: 1.45;
-    color: $gray-600;
+    color: variables.$gray-600;
   }
 
   .action-cta {
     font-size: 0.85rem;
     font-weight: 800;
-    color: $mobili-blue-soft;
+    color: variables.$mobili-blue-soft;
   }
 }
 
@@ -163,14 +163,14 @@
   max-width: 900px;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid $gray-200;
+  border-top: 1px solid variables.$gray-200;
 }
 
 .gare-company-title {
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: 1.05rem;
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   margin: 0 0 0.4rem;
 }
 
@@ -178,7 +178,7 @@
   margin: 0 0 1rem;
   font-size: 0.88rem;
   line-height: 1.5;
-  color: $gray-600;
+  color: variables.$gray-600;
 }
 
 .gare-company-grid {
@@ -198,22 +198,22 @@
 .company-card {
   display: block;
   padding: 1rem 1.1rem;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
   text-decoration: none;
   color: inherit;
-  transition: border-color $t-base, box-shadow $t-base;
-  box-shadow: $shadow-sm;
+  transition: border-color variables.$t-base, box-shadow variables.$t-base;
+  box-shadow: variables.$shadow-sm;
 
   &:hover {
-    border-color: rgba($mobili-blue, 0.35);
-    box-shadow: $shadow-md;
+    border-color: rgba(variables.$mobili-blue, 0.35);
+    box-shadow: variables.$shadow-md;
   }
 
   &--accent {
-    border-color: rgba($mobili-blue, 0.25);
-    background: linear-gradient(180deg, rgba($mobili-blue-soft, 0.2) 0%, $white 100%);
+    border-color: rgba(variables.$mobili-blue, 0.25);
+    background: linear-gradient(180deg, rgba(variables.$mobili-blue-soft, 0.2) 0%, variables.$white 100%);
   }
 
   .company-card-icon {
@@ -226,14 +226,14 @@
     margin: 0 0 0.25rem;
     font-size: 0.95rem;
     font-weight: 800;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 
   p {
     margin: 0;
     font-size: 0.8rem;
     line-height: 1.4;
-    color: $gray-600;
+    color: variables.$gray-600;
   }
 }
 
@@ -249,10 +249,10 @@
   grid-column: 1 / -1;
   margin: 0;
   padding: 0.9rem 1rem;
-  border-radius: $radius-sm;
-  background: $gray-100;
-  border: 1px dashed $gray-300;
-  color: $gray-600;
+  border-radius: variables.$radius-sm;
+  background: variables.$gray-100;
+  border: 1px dashed variables.$gray-300;
+  color: variables.$gray-600;
   font-size: 0.9rem;
 }
 
@@ -260,22 +260,22 @@
   max-width: 900px;
   margin-top: 1.75rem;
   padding: 1rem 1.1rem;
-  background: $gray-100;
-  border-radius: $radius-sm;
-  border: 1px solid $gray-200;
+  background: variables.$gray-100;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
 
   h3 {
     margin: 0 0 0.5rem;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: $gray-500;
+    color: variables.$gray-500;
   }
 
   ul {
     margin: 0;
     padding-left: 1.1rem;
-    color: $gray-600;
+    color: variables.$gray-600;
     font-size: 0.86rem;
     line-height: 1.5;
   }

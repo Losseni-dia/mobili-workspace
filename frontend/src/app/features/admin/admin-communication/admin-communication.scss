@@ -1,5 +1,6 @@
-@import '../../../styles/variables';
-@import '../admin-partners/admin-partners';
+@use "sass:color";
+@use '../../../styles/variables';
+@use '../admin-partners/admin-partners';
 
 .comm-page {
   max-width: 640px;
@@ -35,13 +36,13 @@
   span {
     font-size: 0.82rem;
     font-weight: 700;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 
   input,
   textarea {
-    border: 1px solid $gray-200;
-    border-radius: $radius-sm;
+    border: 1px solid variables.$gray-200;
+    border-radius: variables.$radius-sm;
     padding: 0.55rem 0.7rem;
     font: inherit;
   }
@@ -68,7 +69,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: $gray-400;
+  color: variables.$gray-400;
 }
 
 .pills {
@@ -92,10 +93,10 @@
   line-height: 1.3;
   cursor: pointer;
   padding: 0.4rem 0.15rem;
-  border-radius: $radius-sm;
+  border-radius: variables.$radius-sm;
 
   &:has(input:focus-visible) {
-    outline: 2px solid rgba($mobili-blue-deep, 0.35);
+    outline: 2px solid rgba(variables.$mobili-blue-deep, 0.35);
     outline-offset: 2px;
   }
 
@@ -107,7 +108,7 @@
 .filter-note {
   font-size: 0.8rem;
   line-height: 1.4;
-  color: $gray-500;
+  color: variables.$gray-500;
   margin: 0 0 0.5rem;
   max-width: 36rem;
 }
@@ -117,7 +118,7 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.88rem;
-  color: $gray-600;
+  color: variables.$gray-600;
   margin: 0 0 1rem;
   cursor: pointer;
 }
@@ -127,7 +128,7 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  color: $gray-800;
+  color: variables.$gray-800;
   font-size: 0.9rem;
   cursor: pointer;
 }
@@ -152,17 +153,17 @@
 }
 
 .btn-ghost {
-  border: 1px solid rgba($mobili-blue-deep, 0.18);
-  background: $white;
-  color: $mobili-blue-deep;
+  border: 1px solid rgba(variables.$mobili-blue-deep, 0.18);
+  background: variables.$white;
+  color: variables.$mobili-blue-deep;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.28rem 0.55rem;
-  border-radius: $radius-sm;
+  border-radius: variables.$radius-sm;
   cursor: pointer;
 
   &:hover {
-    background: $gray-50;
+    background: variables.$gray-50;
   }
 }
 
@@ -172,13 +173,13 @@
   padding: 0;
   max-height: 280px;
   overflow: auto;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
-  background: $white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  background: variables.$white;
 
   li {
     padding: 0.35rem 0.8rem;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid variables.$gray-100;
 
     &:last-child {
       border-bottom: none;
@@ -189,14 +190,14 @@
 .subhead {
   position: sticky;
   top: 0;
-  background: $gray-50;
+  background: variables.$gray-50;
   font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: $gray-500;
+  color: variables.$gray-500;
   padding: 0.45rem 0.8rem !important;
-  border-bottom: 1px solid $gray-200;
+  border-bottom: 1px solid variables.$gray-200;
 }
 
 .subhead--teal {
@@ -218,8 +219,8 @@
 }
 
 .tag-off {
-  background: $gray-200;
-  color: $gray-600;
+  background: variables.$gray-200;
+  color: variables.$gray-600;
   padding: 0.08rem 0.3rem;
   border-radius: 4px;
 }
@@ -237,16 +238,16 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, $mobili-blue-deep, lighten($mobili-blue-deep, 6%));
-  color: $white;
+  background: linear-gradient(135deg, variables.$mobili-blue-deep, color.adjust(variables.$mobili-blue-deep, $lightness: 6%));
+  color: variables.$white;
   min-width: 8rem;
   padding: 0.65rem 1.4rem;
   font-weight: 800;
   font-size: 0.95rem;
   border: none;
-  border-radius: $radius-md;
+  border-radius: variables.$radius-md;
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba($mobili-blue-deep, 0.22);
+  box-shadow: 0 3px 12px rgba(variables.$mobili-blue-deep, 0.22);
 
   &:disabled {
     opacity: 0.55;
@@ -255,5 +256,5 @@
 }
 
 .muted {
-  color: $gray-500;
+  color: variables.$gray-500;
 }

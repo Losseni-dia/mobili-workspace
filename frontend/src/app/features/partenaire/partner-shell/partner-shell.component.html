@@ -16,7 +16,7 @@
                 @if (companyLogoUrl()) {
                     <img [src]="companyLogoUrl()" alt="Logo compagnie">
                 } @else {
-                    <span>{{ companyName()?.[0] || 'P' }}</span>
+                    <span>{{ companyName()[0] || 'P' }}</span>
                 }
             </div>
             <div class="sc-meta">

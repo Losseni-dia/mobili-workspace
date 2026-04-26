@@ -1,5 +1,5 @@
-@import '../../../../styles/variables';
-@import '../../../../styles/mixins';
+@use '../../../../styles/variables';
+@use '../../../../styles/mixins';
 
 .profile-layout {
   display: flex;
@@ -9,15 +9,15 @@
 }
 
 .card {
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
   padding: 1.1rem 1.25rem;
-  box-shadow: $shadow-sm;
+  box-shadow: variables.$shadow-sm;
 
   &--gare {
-    border-color: rgba($station-green, 0.28);
-    background: linear-gradient(180deg, $station-green-soft 0%, $white 55%);
+    border-color: rgba(variables.$station-green, 0.28);
+    background: linear-gradient(180deg, variables.$station-green-soft 0%, variables.$white 55%);
   }
 
   .card-title {
@@ -25,7 +25,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: $gray-500;
+    color: variables.$gray-500;
     font-weight: 800;
   }
 }
@@ -34,16 +34,16 @@
   margin: 0 0 0.35rem;
   font-size: 1.2rem;
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
 }
 
 .gare-meta {
   margin: 0 0 0.5rem;
   font-size: 0.85rem;
-  color: $gray-600;
+  color: variables.$gray-600;
 
   code {
-    background: $gray-100;
+    background: variables.$gray-100;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.9em;
@@ -54,7 +54,7 @@
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.4;
-  color: $gray-500;
+  color: variables.$gray-500;
 }
 
 .data-list {
@@ -76,14 +76,14 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: $gray-400;
+    color: variables.$gray-400;
     font-weight: 800;
   }
 
   dd {
     margin: 0;
     font-size: 0.92rem;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 600;
   }
 
@@ -105,11 +105,11 @@
 .role-pill {
   padding: 4px 10px;
   border-radius: 999px;
-  background: $gray-100;
+  background: variables.$gray-100;
   font-size: 0.78rem;
   font-weight: 800;
-  color: $gray-600;
-  border: 1px solid $gray-200;
+  color: variables.$gray-600;
+  border: 1px solid variables.$gray-200;
 }
 
 .actions {
@@ -120,7 +120,7 @@
 }
 
 .btn-primary {
-  @include btn-primary;
+  @include mixins.btn-primary;
   text-decoration: none;
   text-align: center;
   display: inline-flex;
@@ -131,7 +131,7 @@
 }
 
 .btn-secondary {
-  @include btn-secondary;
+  @include mixins.btn-secondary;
   text-decoration: none;
   text-align: center;
   display: inline-flex;
@@ -142,6 +142,6 @@
 }
 
 .empty {
-  color: $gray-500;
+  color: variables.$gray-500;
   font-size: 0.95rem;
 }

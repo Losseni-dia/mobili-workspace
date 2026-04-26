@@ -1,6 +1,6 @@
 @use 'sass:color';
-@import '../../../../styles/variables';
-@import '../../../../styles/mixins';
+@use '../../../../styles/variables';
+@use '../../../../styles/mixins';
 
 // ======================================================================
 //  Page : publication trajet (aligné espace partenaire / gares)
@@ -13,10 +13,10 @@
 }
 
 .add-trip-card {
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-lg;
+  box-shadow: variables.$shadow-sm;
   overflow: hidden;
   position: relative;
   animation: addTripIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -28,16 +28,16 @@
     right: 0;
     top: 0;
     height: 4px;
-    background: linear-gradient(90deg, $station-green 0%, $mobili-blue 50%, $mobili-yellow 100%);
+    background: linear-gradient(90deg, variables.$station-green 0%, variables.$mobili-blue 50%, variables.$mobili-yellow 100%);
   }
 }
 
 .add-trip-header {
   padding: 22px 24px 20px;
   background:
-    linear-gradient(135deg, rgba($station-green, 0.07) 0%, rgba($mobili-blue, 0.04) 45%, $white 100%),
-    $white;
-  border-bottom: 1px solid $gray-100;
+    linear-gradient(135deg, rgba(variables.$station-green, 0.07) 0%, rgba(variables.$mobili-blue, 0.04) 45%, variables.$white 100%),
+    variables.$white;
+  border-bottom: 1px solid variables.$gray-100;
 }
 
 .add-trip-header__row {
@@ -53,25 +53,25 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: $white;
-  border: 1px solid $gray-200;
-  color: $mobili-blue-deep;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  color: variables.$mobili-blue-deep;
   font-size: 1.1rem;
   font-weight: 800;
   text-decoration: none;
   line-height: 1;
-  box-shadow: $shadow-xs;
-  transition: all $t-base;
+  box-shadow: variables.$shadow-xs;
+  transition: all variables.$t-base;
 
   &:hover {
-    background: $mobili-blue;
-    color: $white;
-    border-color: $mobili-blue;
+    background: variables.$mobili-blue;
+    color: variables.$white;
+    border-color: variables.$mobili-blue;
     transform: translateX(-2px);
   }
 
   &:focus-visible {
-    outline: 2px solid $mobili-blue;
+    outline: 2px solid variables.$mobili-blue;
     outline-offset: 2px;
   }
 }
@@ -86,15 +86,15 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: $station-green;
+  color: variables.$station-green;
 }
 
 .add-trip-title {
   margin: 0;
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: clamp(1.2rem, 2.2vw, 1.4rem);
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   letter-spacing: -0.3px;
   line-height: 1.2;
 }
@@ -106,7 +106,7 @@
 // ---- Sections du formulaire ----
 .form-section {
   padding: 20px 24px 8px;
-  border-bottom: 1px solid $gray-100;
+  border-bottom: 1px solid variables.$gray-100;
 
   &:last-of-type {
     border-bottom: none;
@@ -120,7 +120,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: $gray-500;
+  color: variables.$gray-500;
 }
 
 .form-grid {
@@ -147,7 +147,7 @@
 
   label,
   .field-label-standalone {
-    @include input-label;
+    @include mixins.input-label;
     margin-bottom: 6px;
   }
 
@@ -159,14 +159,14 @@
 
   input,
   select {
-    @include input;
+    @include mixins.input;
     padding: 11px 14px;
     font-size: 0.94rem;
   }
 
   select {
     cursor: pointer;
-    background-color: $white;
+    background-color: variables.$white;
   }
 }
 
@@ -174,24 +174,24 @@
   margin-top: 6px;
   font-size: 0.78rem;
   line-height: 1.4;
-  color: $gray-500;
+  color: variables.$gray-500;
 }
 
 // ---- Avertissement gare ----
 .gare-pick-warn {
   margin: 0 0 16px;
   padding: 12px 14px;
-  border-radius: $radius-sm;
-  border: 1px solid rgba($warning, 0.4);
-  background: rgba($warning, 0.08);
-  color: $gray-800;
+  border-radius: variables.$radius-sm;
+  border: 1px solid rgba(variables.$warning, 0.4);
+  background: rgba(variables.$warning, 0.08);
+  color: variables.$gray-800;
   font-size: 0.86rem;
   line-height: 1.45;
 }
 
 .gare-pick label {
   font-weight: 800;
-  color: $gray-700;
+  color: variables.$gray-700;
 }
 
 // ---- Bloc tronçons & prix complet ----
@@ -199,9 +199,9 @@
 .origin-price-block {
   margin-top: 0;
   padding: 18px 18px 16px;
-  background: linear-gradient(180deg, $gray-50 0%, rgba($mobili-blue-fog, 0.45) 100%);
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: linear-gradient(180deg, variables.$gray-50 0%, rgba(variables.$mobili-blue-fog, 0.45) 100%);
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
 }
 
 .leg-title {
@@ -210,31 +210,31 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
 }
 
 .leg-hint {
   margin: 0 0 14px;
   font-size: 0.86rem;
-  color: $gray-600;
+  color: variables.$gray-600;
   line-height: 1.5;
 
   strong {
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
     font-weight: 800;
   }
   em {
     font-style: normal;
     font-weight: 700;
-    color: $gray-700;
+    color: variables.$gray-700;
   }
 }
 
 .leg-table-wrap {
   overflow-x: auto;
-  border-radius: $radius-sm;
-  border: 1px solid $gray-200;
-  background: $white;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
 }
 
 .leg-table {
@@ -245,13 +245,13 @@
   th,
   td {
     padding: 10px 14px;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid variables.$gray-100;
     text-align: left;
   }
 
   th {
-    background: $gray-50;
-    color: $gray-500;
+    background: variables.$gray-50;
+    color: variables.$gray-500;
     font-size: 0.65rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -260,7 +260,7 @@
 
   td {
     font-size: 0.9rem;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 600;
   }
 
@@ -270,7 +270,7 @@
 }
 
 .leg-input {
-  @include input;
+  @include mixins.input;
   max-width: 140px;
   width: 100%;
   padding: 8px 12px;
@@ -280,21 +280,21 @@
 
 // ---- Fichier ----
 .file-input {
-  @include input;
+  @include mixins.input;
   padding: 12px 14px;
-  background: $gray-50;
-  border: 1.5px dashed $gray-300;
+  background: variables.$gray-50;
+  border: 1.5px dashed variables.$gray-300;
   font-size: 0.86rem;
   font-weight: 600;
-  color: $gray-600;
+  color: variables.$gray-600;
   cursor: pointer;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
   &:hover {
-    background: $mobili-blue-fog;
-    border-color: rgba($mobili-blue, 0.45);
+    background: variables.$mobili-blue-fog;
+    border-color: rgba(variables.$mobili-blue, 0.45);
     border-style: solid;
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
   }
 }
 
@@ -307,42 +307,42 @@
   gap: 12px 14px;
   margin-top: 0;
   padding: 20px 24px 24px;
-  background: $gray-50;
-  border-top: 1px solid $gray-200;
+  background: variables.$gray-50;
+  border-top: 1px solid variables.$gray-200;
 }
 
 .btn-cancel {
   padding: 12px 20px;
-  border-radius: $radius-sm;
+  border-radius: variables.$radius-sm;
   font-weight: 800;
   font-size: 0.88rem;
-  color: $gray-600;
-  background: $white;
-  border: 1px solid $gray-200;
+  color: variables.$gray-600;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
   &:hover {
-    background: $gray-100;
-    color: $mobili-blue-deep;
-    border-color: $gray-300;
+    background: variables.$gray-100;
+    color: variables.$mobili-blue-deep;
+    border-color: variables.$gray-300;
   }
 }
 
 .btn-save {
-  @include btn-primary;
+  @include mixins.btn-primary;
   min-width: 200px;
   min-height: 48px;
   padding: 0 1.4rem;
   font-size: 0.9rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 16px rgba($mobili-blue, 0.22);
+  box-shadow: 0 4px 16px rgba(variables.$mobili-blue, 0.22);
   border: none;
 
   &:disabled {

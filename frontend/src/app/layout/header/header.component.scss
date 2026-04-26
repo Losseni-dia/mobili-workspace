@@ -1,6 +1,6 @@
 @use "sass:color";
-@import '../../styles/variables';
-@import '../../styles/mixins';
+@use '../../styles/variables';
+@use '../../styles/mixins';
 
 .header {
   position: sticky;
@@ -10,19 +10,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 32px;
-  min-height: $header-height;
-  background: rgba($mobili-yellow, 0.96);
+  min-height: variables.$header-height;
+  background: rgba(variables.$mobili-yellow, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 4px 20px rgba($mobili-blue-deep, 0.1);
-  border-bottom: 1px solid rgba($mobili-blue, 0.06);
+  box-shadow: 0 4px 20px rgba(variables.$mobili-blue-deep, 0.1);
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.06);
 
   .logo {
-    font-family: $font-display;
+    font-family: variables.$font-display;
     font-weight: 900;
     font-size: 1.8rem;
     letter-spacing: -1px;
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
     flex-shrink: 0;
     position: relative;
     padding-right: 14px;
@@ -36,7 +36,7 @@
       bottom: 22%;
       width: 3px;
       border-radius: 3px;
-      background: $mobili-blue-deep;
+      background: variables.$mobili-blue-deep;
       opacity: 0.15;
     }
   }
@@ -57,46 +57,46 @@
   font-weight: 800;
   font-size: 0.78rem;
   padding: 9px 18px;
-  border-radius: $radius-pill;
+  border-radius: variables.$radius-pill;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
   &.station {
-    color: $station-green;
-    background: $station-green-soft;
+    color: variables.$station-green;
+    background: variables.$station-green-soft;
 
     &.active,
     &:hover {
-      background: $station-green;
-      color: $white;
+      background: variables.$station-green;
+      color: variables.$white;
       transform: translateY(-1px);
     }
   }
 
   &.register-partner {
-    color: $mobili-blue;
-    background: rgba($white, 0.7);
-    border: 1.5px dashed rgba($mobili-blue, 0.35);
+    color: variables.$mobili-blue;
+    background: rgba(variables.$white, 0.7);
+    border: 1.5px dashed rgba(variables.$mobili-blue, 0.35);
 
     &:hover {
-      background: $white;
+      background: variables.$white;
       border-style: solid;
-      border-color: $mobili-blue;
+      border-color: variables.$mobili-blue;
       transform: translateY(-1px);
     }
   }
 
   &.driver {
-    color: $mobili-blue-deep;
-    background: rgba($white, 0.9);
-    border: 1.5px solid rgba($mobili-blue-deep, 0.2);
+    color: variables.$mobili-blue-deep;
+    background: rgba(variables.$white, 0.9);
+    border: 1.5px solid rgba(variables.$mobili-blue-deep, 0.2);
 
     &.active,
     &:hover {
-      background: $mobili-blue-deep;
-      color: $mobili-yellow;
-      border-color: $mobili-blue-deep;
+      background: variables.$mobili-blue-deep;
+      color: variables.$mobili-yellow;
+      border-color: variables.$mobili-blue-deep;
       transform: translateY(-1px);
     }
   }
@@ -106,7 +106,7 @@
     color: #0c4a6e;
     background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%);
     border: 1.5px solid rgba(13, 148, 136, 0.45);
-    box-shadow: 0 1px 0 rgba($white, 0.9) inset, 0 2px 8px rgba(15, 118, 110, 0.12);
+    box-shadow: 0 1px 0 rgba(variables.$white, 0.9) inset, 0 2px 8px rgba(15, 118, 110, 0.12);
 
     &:focus-visible {
       outline: 2px solid #0d9488;
@@ -115,7 +115,7 @@
 
     &.active,
     &:hover {
-      color: $white;
+      color: variables.$white;
       background: linear-gradient(165deg, #0d9488 0%, #0e7490 50%, #155e75 100%);
       border-color: #115e59;
       box-shadow: 0 4px 18px rgba(13, 148, 136, 0.38);
@@ -124,31 +124,31 @@
   }
 
   &.admin-link {
-    color: $admin-purple;
-    background: rgba($admin-purple, 0.08);
-    border: 1.5px solid rgba($admin-purple, 0.3);
+    color: variables.$admin-purple;
+    background: rgba(variables.$admin-purple, 0.08);
+    border: 1.5px solid rgba(variables.$admin-purple, 0.3);
 
     &.active,
     &:hover {
-      background: $admin-purple;
-      color: $white;
-      border-color: $admin-purple;
+      background: variables.$admin-purple;
+      color: variables.$white;
+      border-color: variables.$admin-purple;
       transform: translateY(-1px);
     }
   }
 
   &.partner-link {
-    color: $mobili-blue;
-    background: $white;
-    border: 1.5px solid rgba($mobili-blue, 0.2);
+    color: variables.$mobili-blue;
+    background: variables.$white;
+    border: 1.5px solid rgba(variables.$mobili-blue, 0.2);
 
     &.active,
     &:hover {
-      background: $mobili-blue;
-      color: $white;
-      border-color: $mobili-blue;
+      background: variables.$mobili-blue;
+      color: variables.$white;
+      border-color: variables.$mobili-blue;
       transform: translateY(-1px);
-      box-shadow: 0 8px 16px rgba($mobili-blue, 0.25);
+      box-shadow: 0 8px 16px rgba(variables.$mobili-blue, 0.25);
     }
   }
 }
@@ -168,24 +168,24 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: $white;
-    border: 1.5px solid rgba($mobili-blue, 0.15);
-    color: $mobili-blue;
+    background: variables.$white;
+    border: 1.5px solid rgba(variables.$mobili-blue, 0.15);
+    color: variables.$mobili-blue;
     padding: 9px 18px;
-    border-radius: $radius-pill;
+    border-radius: variables.$radius-pill;
     font-weight: 800;
     font-size: 0.78rem;
     letter-spacing: 0.6px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all $t-base;
+    transition: all variables.$t-base;
 
     &:hover {
-      background: $mobili-blue;
-      color: $white;
-      border-color: $mobili-blue;
+      background: variables.$mobili-blue;
+      color: variables.$white;
+      border-color: variables.$mobili-blue;
       transform: translateY(-1px);
-      box-shadow: 0 8px 16px rgba($mobili-blue, 0.2);
+      box-shadow: 0 8px 16px rgba(variables.$mobili-blue, 0.2);
     }
 
     .arrow {
@@ -194,13 +194,13 @@
     }
 
     &.admin-btn {
-      background: rgba($admin-purple, 0.08);
-      border-color: rgba($admin-purple, 0.3);
-      color: $admin-purple;
+      background: rgba(variables.$admin-purple, 0.08);
+      border-color: rgba(variables.$admin-purple, 0.3);
+      color: variables.$admin-purple;
 
       &:hover {
-        background: $admin-purple;
-        color: $white;
+        background: variables.$admin-purple;
+        color: variables.$white;
       }
     }
   }
@@ -210,15 +210,15 @@
     top: calc(100% + 10px);
     left: 0;
     min-width: 240px;
-    background: $white;
-    border-radius: $radius-md;
-    box-shadow: $shadow-lg;
-    border: 1px solid $gray-200;
+    background: variables.$white;
+    border-radius: variables.$radius-md;
+    box-shadow: variables.$shadow-lg;
+    border: 1px solid variables.$gray-200;
     padding: 8px;
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px);
-    transition: all $t-base;
+    transition: all variables.$t-base;
 
     &.right {
       left: auto;
@@ -232,9 +232,9 @@
       left: 24px;
       width: 12px;
       height: 12px;
-      background: $white;
-      border-left: 1px solid $gray-200;
-      border-top: 1px solid $gray-200;
+      background: variables.$white;
+      border-left: 1px solid variables.$gray-200;
+      border-top: 1px solid variables.$gray-200;
       transform: rotate(45deg);
     }
 
@@ -245,19 +245,19 @@
 
     .dropdown-header {
       padding: 12px 14px 10px;
-      border-bottom: 1px solid $gray-100;
+      border-bottom: 1px solid variables.$gray-100;
       margin-bottom: 6px;
 
       strong {
         display: block;
-        color: $mobili-blue-deep;
+        color: variables.$mobili-blue-deep;
         font-size: 0.92rem;
         font-weight: 800;
       }
 
       span {
         font-size: 0.74rem;
-        color: $gray-500;
+        color: variables.$gray-500;
       }
     }
 
@@ -266,35 +266,35 @@
       width: 100%;
       text-align: left;
       padding: 10px 14px;
-      border-radius: $radius-sm;
+      border-radius: variables.$radius-sm;
       background: none;
       border: none;
-      color: $gray-700;
+      color: variables.$gray-700;
       font-weight: 600;
       font-size: 0.88rem;
       cursor: pointer;
-      transition: all $t-fast;
+      transition: all variables.$t-fast;
       text-decoration: none;
 
       &:hover {
-        background: rgba($mobili-yellow, 0.22);
-        color: $mobili-blue;
+        background: rgba(variables.$mobili-yellow, 0.22);
+        color: variables.$mobili-blue;
         transform: translateX(3px);
       }
 
       &.logout {
-        color: $danger;
+        color: variables.$danger;
 
         &:hover {
-          background: $danger-soft;
-          color: $danger;
+          background: variables.$danger-soft;
+          color: variables.$danger;
         }
       }
     }
 
     .dropdown-divider {
       height: 1px;
-      background: $gray-100;
+      background: variables.$gray-100;
       margin: 6px 2px;
     }
   }
@@ -314,13 +314,13 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba($white, 0.75);
-    border: 1.5px solid rgba($mobili-blue-deep, 0.12);
+    background: rgba(variables.$white, 0.75);
+    border: 1.5px solid rgba(variables.$mobili-blue-deep, 0.12);
     text-decoration: none;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-size: 1rem;
     flex-shrink: 0;
-    transition: transform $t-base, background $t-base, border-color $t-base;
+    transition: transform variables.$t-base, background variables.$t-base, border-color variables.$t-base;
     .bell-ico {
       line-height: 1;
     }
@@ -340,19 +340,19 @@
       border-radius: 999px;
     }
     &:hover {
-      background: $white;
-      border-color: rgba($mobili-blue, 0.35);
+      background: variables.$white;
+      border-color: rgba(variables.$mobili-blue, 0.35);
       transform: scale(1.05);
     }
   }
 
   .user-welcome {
     font-size: 0.82rem;
-    color: $gray-700;
+    color: variables.$gray-700;
     font-weight: 600;
 
     strong {
-      color: $mobili-blue;
+      color: variables.$mobili-blue;
       font-weight: 800;
     }
   }
@@ -364,21 +364,21 @@
     height: 44px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2.5px solid $white;
-    box-shadow: 0 4px 12px rgba($mobili-blue-deep, 0.18);
-    background: $gradient-hero;
+    border: 2.5px solid variables.$white;
+    box-shadow: 0 4px 12px rgba(variables.$mobili-blue-deep, 0.18);
+    background: variables.$gradient-hero;
     text-decoration: none;
     cursor: pointer;
-    transition: transform $t-base, box-shadow $t-base, border-color $t-base;
+    transition: transform variables.$t-base, box-shadow variables.$t-base, border-color variables.$t-base;
 
     &:hover {
       transform: scale(1.06);
-      box-shadow: 0 6px 16px rgba($mobili-blue-deep, 0.28);
+      box-shadow: 0 6px 16px rgba(variables.$mobili-blue-deep, 0.28);
     }
 
     &.active {
-      border-color: $mobili-yellow;
-      box-shadow: 0 0 0 3px rgba($mobili-yellow, 0.35);
+      border-color: variables.$mobili-yellow;
+      box-shadow: 0 0 0 3px rgba(variables.$mobili-yellow, 0.35);
     }
 
     img {
@@ -392,7 +392,7 @@
       height: 100%;
       display: grid;
       place-items: center;
-      color: $white;
+      color: variables.$white;
       font-weight: 900;
       font-size: 0.95rem;
       letter-spacing: 0.5px;
@@ -406,25 +406,25 @@
     gap: 8px;
     min-height: 40px;
     padding: 0 14px 0 12px;
-    background: $white;
-    border: 1.5px solid rgba($mobili-blue-deep, 0.12);
-    border-radius: $radius-pill;
-    color: $gray-700;
-    font-family: $font-sans;
+    background: variables.$white;
+    border: 1.5px solid rgba(variables.$mobili-blue-deep, 0.12);
+    border-radius: variables.$radius-pill;
+    color: variables.$gray-700;
+    font-family: variables.$font-sans;
     font-size: 0.8rem;
     font-weight: 800;
     letter-spacing: 0.02em;
     cursor: pointer;
-    box-shadow: $shadow-xs;
-    transition: color $t-base, background $t-base, border-color $t-base, box-shadow $t-base,
-      transform $t-base;
+    box-shadow: variables.$shadow-xs;
+    transition: color variables.$t-base, background variables.$t-base, border-color variables.$t-base, box-shadow variables.$t-base,
+      transform variables.$t-base;
 
     &__ico {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
-      color: $gray-600;
-      transition: color $t-base;
+      color: variables.$gray-600;
+      transition: color variables.$t-base;
     }
 
     &__text {
@@ -432,13 +432,13 @@
     }
 
     &:hover {
-      background: $danger-soft;
-      color: $danger;
-      border-color: rgba($danger, 0.4);
-      box-shadow: 0 2px 10px rgba($danger, 0.12);
+      background: variables.$danger-soft;
+      color: variables.$danger;
+      border-color: rgba(variables.$danger, 0.4);
+      box-shadow: 0 2px 10px rgba(variables.$danger, 0.12);
 
       .btn-logout__ico {
-        color: $danger;
+        color: variables.$danger;
       }
     }
 
@@ -447,13 +447,13 @@
     }
 
     &:focus-visible {
-      outline: 2px solid $mobili-blue;
+      outline: 2px solid variables.$mobili-blue;
       outline-offset: 2px;
     }
   }
 
   .btn-register {
-    @include btn-secondary;
+    @include mixins.btn-secondary;
     padding: 10px 22px;
     font-size: 0.78rem;
     text-transform: uppercase;
@@ -461,16 +461,16 @@
   }
 
   .link-auth {
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 700;
     font-size: 0.88rem;
     padding: 9px 14px;
-    border-radius: $radius-sm;
-    transition: background $t-base;
+    border-radius: variables.$radius-sm;
+    transition: background variables.$t-base;
 
     &:hover {
-      background: rgba($white, 0.5);
-      color: $mobili-blue;
+      background: rgba(variables.$white, 0.5);
+      color: variables.$mobili-blue;
     }
   }
 }
@@ -490,7 +490,7 @@
     min-height: 40px;
     padding: 0 10px;
     .btn-logout__text {
-      @include visually-hidden;
+      @include mixins.visually-hidden;
     }
   }
 }

@@ -74,7 +74,7 @@
                             <td>
                                 <div class="seats">
                                     {{ b.numberOfSeats }}
-                                    @if (b.seatNumbers?.length) {
+                                    @if (b.seatNumbers.length) {
                                         <span class="seat-mini">@for (s of b.seatNumbers; track s) { <span>{{ s }}</span> }</span>
                                     }
                                 </div>

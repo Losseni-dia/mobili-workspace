@@ -1,7 +1,7 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
-@import '../../../styles/data-panel';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 .bookings-toolbar {
   display: flex;
@@ -15,14 +15,14 @@
   display: flex;
   flex-direction: column;
   padding: 12px 18px;
-  background: $gradient-hero;
-  color: $white;
-  border-radius: $radius-md;
+  background: variables.$gradient-hero;
+  color: variables.$white;
+  border-radius: variables.$radius-md;
   min-width: 200px;
 
   .chip-label {
     font-size: 0.7rem;
-    color: rgba($white, 0.75);
+    color: rgba(variables.$white, 0.75);
     font-weight: 800;
     letter-spacing: 1.2px;
     text-transform: uppercase;
@@ -32,7 +32,7 @@
     margin-top: 4px;
     font-size: 1.15rem;
     font-weight: 900;
-    color: $mobili-yellow;
+    color: variables.$mobili-yellow;
     letter-spacing: -0.3px;
   }
 }
@@ -49,37 +49,37 @@
   align-items: center;
   gap: 8px;
   padding: 9px 16px;
-  border-radius: $radius-pill;
-  background: $white;
-  border: 1px solid $gray-200;
-  color: $gray-600;
+  border-radius: variables.$radius-pill;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  color: variables.$gray-600;
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
   .count {
     padding: 1px 8px;
-    border-radius: $radius-pill;
-    background: $gray-100;
-    color: $gray-600;
+    border-radius: variables.$radius-pill;
+    background: variables.$gray-100;
+    color: variables.$gray-600;
     font-size: 0.72rem;
     font-weight: 800;
   }
 
-  &:hover { background: $mobili-blue-fog; color: $mobili-blue; border-color: rgba($mobili-blue, 0.25); }
+  &:hover { background: variables.$mobili-blue-fog; color: variables.$mobili-blue; border-color: rgba(variables.$mobili-blue, 0.25); }
 
   &.active {
-    background: $mobili-blue;
-    color: $white;
-    border-color: $mobili-blue;
-    box-shadow: 0 8px 16px rgba($mobili-blue, 0.25);
-    .count { background: rgba($white, 0.18); color: $white; }
+    background: variables.$mobili-blue;
+    color: variables.$white;
+    border-color: variables.$mobili-blue;
+    box-shadow: 0 8px 16px rgba(variables.$mobili-blue, 0.25);
+    .count { background: rgba(variables.$white, 0.18); color: variables.$white; }
   }
 
-  &.success.active { background: $success; border-color: $success; box-shadow: 0 8px 16px rgba($success, 0.25); }
-  &.warn.active { background: $warning; border-color: $warning; box-shadow: 0 8px 16px rgba($warning, 0.25); }
-  &.danger.active { background: $danger; border-color: $danger; box-shadow: 0 8px 16px rgba($danger, 0.25); }
+  &.success.active { background: variables.$success; border-color: variables.$success; box-shadow: 0 8px 16px rgba(variables.$success, 0.25); }
+  &.warn.active { background: variables.$warning; border-color: variables.$warning; box-shadow: 0 8px 16px rgba(variables.$warning, 0.25); }
+  &.danger.active { background: variables.$danger; border-color: variables.$danger; box-shadow: 0 8px 16px rgba(variables.$danger, 0.25); }
 }
 
 .search-input {
@@ -87,12 +87,12 @@
   align-items: center;
   gap: 10px;
   padding: 9px 14px;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-sm;
-  transition: all $t-base;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  transition: all variables.$t-base;
 
-  &:focus-within { border-color: $mobili-blue; box-shadow: 0 0 0 3px rgba($mobili-blue, 0.12); }
+  &:focus-within { border-color: variables.$mobili-blue; box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12); }
 
   .s-ico { opacity: 0.6; }
 
@@ -101,7 +101,7 @@
     outline: none;
     background: transparent;
     font-size: 0.9rem;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     min-width: 220px;
   }
 }
@@ -113,14 +113,14 @@
   gap: 6px;
   text-transform: capitalize;
 
-  strong { color: $mobili-blue-deep; font-weight: 800; }
-  .arrow { color: $mobili-yellow-dark; font-weight: 900; }
+  strong { color: variables.$mobili-blue-deep; font-weight: 800; }
+  .arrow { color: variables.$mobili-yellow-dark; font-weight: 900; }
 }
 
 .full-route {
   margin-top: 4px;
   font-size: 0.75rem;
-  color: $gray-500;
+  color: variables.$gray-500;
   text-transform: capitalize;
 }
 
@@ -129,7 +129,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 800;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
 
   .seat-mini {
     display: inline-flex;
@@ -137,9 +137,9 @@
 
     span {
       padding: 2px 8px;
-      background: $mobili-yellow;
-      color: $mobili-blue-deep;
-      border-radius: $radius-pill;
+      background: variables.$mobili-yellow;
+      color: variables.$mobili-blue-deep;
+      border-radius: variables.$radius-pill;
       font-size: 0.72rem;
       font-weight: 900;
     }
@@ -147,12 +147,12 @@
 }
 
 .data-table .amount {
-  color: $mobili-blue;
+  color: variables.$mobili-blue;
   font-weight: 900;
 }
 
 .empty .primary-btn {
-  @include btn-primary;
+  @include mixins.btn-primary;
   margin-top: 14px;
   padding: 12px 22px;
   display: inline-flex;

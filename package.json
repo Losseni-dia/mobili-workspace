@@ -3,6 +3,7 @@
   "private": true,
   "description": "Script unique : compilation + tests backend + build + tests frontend",
   "scripts": {
+    "build:front:staging": "cd frontend && npx ng build --configuration staging",
     "verify": "node scripts/run-verify.mjs",
     "verify:backend": "cd backend && mvn -B test",
     "verify:backend:compile": "cd backend && mvn -B compile -DskipTests",

@@ -1,37 +1,37 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 .register-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - #{$header-height});
+  min-height: calc(100vh - #{variables.$header-height});
   padding: 60px 20px;
   background:
-    radial-gradient(circle at 20% 0%, rgba($mobili-yellow, 0.18), transparent 55%),
-    radial-gradient(circle at 80% 100%, rgba($mobili-blue, 0.12), transparent 55%),
-    linear-gradient(180deg, $gray-50 0%, $mobili-blue-fog 100%);
+    radial-gradient(circle at 20% 0%, rgba(variables.$mobili-yellow, 0.18), transparent 55%),
+    radial-gradient(circle at 80% 100%, rgba(variables.$mobili-blue, 0.12), transparent 55%),
+    linear-gradient(180deg, variables.$gray-50 0%, variables.$mobili-blue-fog 100%);
 
   .register-card {
     width: 100%;
     max-width: 560px;
-    background: $white;
+    background: variables.$white;
     padding: 40px;
-    border-radius: $radius-xl;
-    box-shadow: $shadow-xl;
-    border: 1px solid rgba($mobili-blue, 0.06);
+    border-radius: variables.$radius-xl;
+    box-shadow: variables.$shadow-xl;
+    border: 1px solid rgba(variables.$mobili-blue, 0.06);
     animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
     h2 {
-      @include heading-lg;
+      @include mixins.heading-lg;
       text-align: center;
       margin-bottom: 8px;
     }
 
     > p {
       text-align: center;
-      color: $gray-500;
+      color: variables.$gray-500;
       margin-bottom: 36px;
       font-size: 0.94rem;
     }
@@ -48,21 +48,21 @@ form {
     flex-direction: column;
     gap: 8px;
 
-    label { @include input-label; margin-bottom: 0; }
+    label { @include mixins.input-label; margin-bottom: 0; }
 
-    input { @include input; }
+    input { @include mixins.input; }
 
     .file-input {
       padding: 14px;
-      border: 1.5px dashed rgba($mobili-blue, 0.3);
-      background: $mobili-blue-fog;
-      border-radius: $radius-md;
+      border: 1.5px dashed rgba(variables.$mobili-blue, 0.3);
+      background: variables.$mobili-blue-fog;
+      border-radius: variables.$radius-md;
       cursor: pointer;
-      color: $mobili-blue;
+      color: variables.$mobili-blue;
 
       &:hover {
-        border-color: $mobili-yellow-dark;
-        background: rgba($mobili-yellow, 0.1);
+        border-color: variables.$mobili-yellow-dark;
+        background: rgba(variables.$mobili-yellow, 0.1);
       }
     }
   }
@@ -71,7 +71,7 @@ form {
     margin-top: 12px;
 
     .btn-primary {
-      @include btn-secondary;
+      @include mixins.btn-secondary;
       width: 100%;
       padding: 16px;
     }

@@ -1,6 +1,6 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 $sidebar-w: 264px;
 $sidebar-w-collapsed: 76px;
@@ -15,7 +15,7 @@ $sidebar-w-collapsed: 76px;
   display: grid;
   grid-template-columns: $sidebar-w 1fr;
   min-height: 100vh;
-  transition: grid-template-columns $t-base;
+  transition: grid-template-columns variables.$t-base;
 
   &.collapsed { grid-template-columns: $sidebar-w-collapsed 1fr; }
 }
@@ -24,15 +24,15 @@ $sidebar-w-collapsed: 76px;
 //  SIDEBAR — claire, accueillante, profil voyageur en haut
 // ======================================================================
 .shell-sidebar {
-  background: $white;
-  color: $mobili-blue-deep;
+  background: variables.$white;
+  color: variables.$mobili-blue-deep;
   display: flex;
   flex-direction: column;
   padding: 22px 14px;
   position: sticky;
   top: 0;
   height: 100vh;
-  border-right: 1px solid $gray-200;
+  border-right: 1px solid variables.$gray-200;
 }
 
 .sidebar-brand {
@@ -46,7 +46,7 @@ $sidebar-w-collapsed: 76px;
     display: flex;
     align-items: center;
     gap: 10px;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 900;
     font-size: 1.05rem;
     letter-spacing: 2.5px;
@@ -56,8 +56,8 @@ $sidebar-w-collapsed: 76px;
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: $mobili-yellow;
-      box-shadow: 0 0 0 4px rgba($mobili-yellow, 0.18);
+      background: variables.$mobili-yellow;
+      box-shadow: 0 0 0 4px rgba(variables.$mobili-yellow, 0.18);
     }
   }
 
@@ -65,15 +65,15 @@ $sidebar-w-collapsed: 76px;
     width: 28px;
     height: 28px;
     border-radius: 7px;
-    background: $gray-100;
-    color: $gray-500;
-    border: 1px solid $gray-200;
+    background: variables.$gray-100;
+    color: variables.$gray-500;
+    border: 1px solid variables.$gray-200;
     font-size: 1rem;
     font-weight: 900;
     cursor: pointer;
-    transition: all $t-base;
+    transition: all variables.$t-base;
 
-    &:hover { background: $mobili-blue; color: $white; border-color: $mobili-blue; }
+    &:hover { background: variables.$mobili-blue; color: variables.$white; border-color: variables.$mobili-blue; }
   }
 }
 
@@ -83,15 +83,15 @@ $sidebar-w-collapsed: 76px;
   gap: 12px;
   padding: 12px 12px 14px;
   margin-bottom: 14px;
-  border-bottom: 1px solid $gray-100;
+  border-bottom: 1px solid variables.$gray-100;
 
   .su-avatar {
     width: 44px;
     height: 44px;
     border-radius: 50%;
     overflow: hidden;
-    background: $gradient-gold;
-    color: $mobili-blue-deep;
+    background: variables.$gradient-gold;
+    color: variables.$mobili-blue-deep;
     display: grid;
     place-items: center;
     font-weight: 900;
@@ -108,7 +108,7 @@ $sidebar-w-collapsed: 76px;
     min-width: 0;
 
     strong {
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
       font-weight: 800;
       font-size: 0.92rem;
       white-space: nowrap;
@@ -120,13 +120,13 @@ $sidebar-w-collapsed: 76px;
       margin-top: 3px;
       font-family: 'Fira Code', 'Consolas', monospace;
       font-size: 0.74rem;
-      color: $gray-500;
+      color: variables.$gray-500;
     }
 
     .su-email {
       margin-top: 2px;
       font-size: 0.72rem;
-      color: $gray-400;
+      color: variables.$gray-400;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -141,9 +141,9 @@ $sidebar-w-collapsed: 76px;
 
     .su-role-pill {
       padding: 2px 8px;
-      background: $mobili-yellow;
-      color: $mobili-blue-deep;
-      border-radius: $radius-pill;
+      background: variables.$mobili-yellow;
+      color: variables.$mobili-blue-deep;
+      border-radius: variables.$radius-pill;
       font-size: 0.6rem;
       font-weight: 800;
       letter-spacing: 0.6px;
@@ -164,8 +164,8 @@ $sidebar-w-collapsed: 76px;
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  border-radius: $radius-sm;
-  color: $gray-600;
+  border-radius: variables.$radius-sm;
+  color: variables.$gray-600;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.92rem;
@@ -175,47 +175,47 @@ $sidebar-w-collapsed: 76px;
   text-align: left;
   width: 100%;
   font-family: inherit;
-  transition: all $t-base;
+  transition: all variables.$t-base;
 
   .nav-icon { font-size: 1.05rem; width: 22px; display: grid; place-items: center; flex-shrink: 0; }
 
-  &:hover:not(.active) { background: $gray-100; color: $mobili-blue-deep; }
+  &:hover:not(.active) { background: variables.$gray-100; color: variables.$mobili-blue-deep; }
 
   &.active {
-    background: $mobili-blue;
-    color: $white;
+    background: variables.$mobili-blue;
+    color: variables.$white;
     font-weight: 800;
-    box-shadow: 0 10px 20px rgba($mobili-blue, 0.25);
+    box-shadow: 0 10px 20px rgba(variables.$mobili-blue, 0.25);
   }
 
   &.soft {
-    color: $gray-400;
+    color: variables.$gray-400;
     font-size: 0.85rem;
-    &:hover { color: $mobili-blue-deep; }
+    &:hover { color: variables.$mobili-blue-deep; }
   }
 
   &.soft.logout:hover {
-    color: $danger;
-    background: $danger-soft;
+    color: variables.$danger;
+    background: variables.$danger-soft;
   }
 
   &.cta-compact {
     justify-content: center;
-    background: $mobili-yellow;
-    color: $mobili-blue-deep;
+    background: variables.$mobili-yellow;
+    color: variables.$mobili-blue-deep;
     font-weight: 900;
     padding: 11px 0;
     margin-bottom: 14px;
-    &:hover { background: $mobili-yellow-dark; color: $mobili-blue-deep; }
+    &:hover { background: variables.$mobili-yellow-dark; color: variables.$mobili-blue-deep; }
   }
 }
 
 .cta-card {
   margin: 4px 4px 16px;
   padding: 18px 16px;
-  background: $gradient-hero;
-  color: $white;
-  border-radius: $radius-md;
+  background: variables.$gradient-hero;
+  color: variables.$white;
+  border-radius: variables.$radius-md;
   position: relative;
   overflow: hidden;
 
@@ -226,14 +226,14 @@ $sidebar-w-collapsed: 76px;
     top: -20px;
     width: 100px;
     height: 100px;
-    background: radial-gradient(circle, rgba($mobili-yellow, 0.4), transparent 70%);
+    background: radial-gradient(circle, rgba(variables.$mobili-yellow, 0.4), transparent 70%);
     filter: blur(4px);
   }
 
   > * { position: relative; }
 
   .cta-title { margin: 0 0 4px; font-weight: 900; font-size: 0.95rem; }
-  .cta-desc { margin: 0 0 12px; font-size: 0.78rem; color: rgba($white, 0.72); line-height: 1.45; }
+  .cta-desc { margin: 0 0 12px; font-size: 0.78rem; color: rgba(variables.$white, 0.72); line-height: 1.45; }
 
   .cta-btn {
     display: inline-flex;
@@ -242,27 +242,27 @@ $sidebar-w-collapsed: 76px;
     gap: 6px;
     width: 100%;
     padding: 10px 12px;
-    background: $mobili-yellow;
-    color: $mobili-blue-deep;
-    border-radius: $radius-sm;
+    background: variables.$mobili-yellow;
+    color: variables.$mobili-blue-deep;
+    border-radius: variables.$radius-sm;
     font-weight: 800;
     font-size: 0.82rem;
     text-decoration: none;
-    transition: transform $t-base, box-shadow $t-base;
+    transition: transform variables.$t-base, box-shadow variables.$t-base;
 
-    &:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba($mobili-yellow, 0.45); }
+    &:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(variables.$mobili-yellow, 0.45); }
   }
 }
 
 .sidebar-footer {
   margin-top: auto;
   padding-top: 10px;
-  border-top: 1px solid $gray-100;
+  border-top: 1px solid variables.$gray-100;
 }
 
 .user-shell.collapsed {
   .sidebar-brand { justify-content: center; }
-  .collapse-btn { position: absolute; top: 22px; right: -14px; z-index: 2; background: $white; box-shadow: $shadow-sm; }
+  .collapse-btn { position: absolute; top: 22px; right: -14px; z-index: 2; background: variables.$white; box-shadow: variables.$shadow-sm; }
   .nav-link { justify-content: center; padding: 11px 0; }
 
   .sidebar-user {
@@ -270,7 +270,7 @@ $sidebar-w-collapsed: 76px;
     align-items: center;
     gap: 0;
     padding-bottom: 10px;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid variables.$gray-100;
 
     .su-meta { display: none; }
     .su-avatar { width: 40px; height: 40px; }
@@ -288,8 +288,8 @@ $sidebar-w-collapsed: 76px;
   align-items: flex-start;
   gap: 20px;
   padding: 22px 32px 18px;
-  background: $white;
-  border-bottom: 1px solid $gray-200;
+  background: variables.$white;
+  border-bottom: 1px solid variables.$gray-200;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -302,26 +302,26 @@ $sidebar-w-collapsed: 76px;
     gap: 8px;
     font-size: 0.78rem;
     font-weight: 700;
-    color: $gray-500;
+    color: variables.$gray-500;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     margin-bottom: 6px;
 
-    .crumb-root { color: $mobili-blue; }
-    .crumb-sep { color: $gray-300; }
-    .crumb-current { color: $mobili-blue-deep; }
+    .crumb-root { color: variables.$mobili-blue; }
+    .crumb-sep { color: variables.$gray-300; }
+    .crumb-current { color: variables.$mobili-blue-deep; }
   }
 
   .page-title {
-    font-family: $font-display;
+    font-family: variables.$font-display;
     font-size: clamp(1.3rem, 2.2vw, 1.7rem);
     font-weight: 900;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     margin: 0;
     letter-spacing: -0.3px;
   }
 
-  .page-desc { margin: 4px 0 0; color: $gray-500; font-size: 0.92rem; }
+  .page-desc { margin: 4px 0 0; color: variables.$gray-500; font-size: 0.92rem; }
 
   .topbar-right { display: flex; align-items: center; flex-shrink: 0; }
 }
@@ -333,14 +333,14 @@ $sidebar-w-collapsed: 76px;
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: $radius-sm;
-  background: $gray-100;
-  border: 1px solid $gray-200;
+  border-radius: variables.$radius-sm;
+  background: variables.$gray-100;
+  border: 1px solid variables.$gray-200;
   text-decoration: none;
   font-size: 1rem;
-  color: $gray-700;
-  transition: all $t-base;
-  &:hover { background: $mobili-blue-fog; color: $mobili-blue; border-color: rgba($mobili-blue, 0.2); }
+  color: variables.$gray-700;
+  transition: all variables.$t-base;
+  &:hover { background: variables.$mobili-blue-fog; color: variables.$mobili-blue; border-color: rgba(variables.$mobili-blue, 0.2); }
   .bell-ico { line-height: 1; }
   .bell-badge {
     position: absolute;
@@ -375,7 +375,7 @@ $sidebar-w-collapsed: 76px;
     padding: 6px 12px 6px 6px;
     margin-bottom: 0;
     border-bottom: none;
-    border-right: 1px solid $gray-200;
+    border-right: 1px solid variables.$gray-200;
 
     .su-avatar { width: 40px; height: 40px; }
     .su-meta strong { max-width: 120px; }
@@ -385,7 +385,7 @@ $sidebar-w-collapsed: 76px;
 
   .sidebar-brand { margin-bottom: 0; margin-right: 10px; }
   .sidebar-nav { flex-direction: row; margin-bottom: 0; gap: 6px; }
-  .sidebar-footer { margin-top: 0; padding: 0; border: none; border-left: 1px solid $gray-200; margin-left: 8px; padding-left: 10px; display: flex; gap: 4px; }
+  .sidebar-footer { margin-top: 0; padding: 0; border: none; border-left: 1px solid variables.$gray-200; margin-left: 8px; padding-left: 10px; display: flex; gap: 4px; }
   .shell-topbar { flex-wrap: wrap; padding: 18px 20px; }
   .shell-content { padding: 22px 20px 40px; }
 }

@@ -1,4 +1,6 @@
-@import '../admin-dashboard/admin-dashboard';
+@use '../admin-dashboard/admin-dashboard';
+@use "../../../styles/variables";
+
 
 .page {
   max-width: 1100px;
@@ -12,7 +14,7 @@
     margin: 0 0 10px;
     font-size: 1.35rem;
     font-weight: 900;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     letter-spacing: -0.3px;
   }
 
@@ -20,35 +22,35 @@
     margin: 0;
     font-size: 0.92rem;
     line-height: 1.55;
-    color: $gray-600;
+    color: variables.$gray-600;
   }
 }
 
 .doc-block {
   margin-bottom: 22px;
   padding: 18px 20px;
-  background: $gray-50;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
 
   h2 {
     margin: 0 0 10px;
     font-size: 0.95rem;
     font-weight: 800;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 
   p, .doc-list {
     margin: 0;
     font-size: 0.86rem;
     line-height: 1.55;
-    color: $gray-600;
+    color: variables.$gray-600;
   }
 
   .doc-list {
     padding-left: 1.1rem;
     li { margin-bottom: 8px; }
-    code { font-size: 0.78rem; background: $white; padding: 1px 6px; border-radius: 4px; }
+    code { font-size: 0.78rem; background: variables.$white; padding: 1px 6px; border-radius: 4px; }
   }
 }
 
@@ -60,20 +62,20 @@
 }
 
 .chip {
-  border: 1px solid $gray-200;
-  background: $white;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
   padding: 8px 14px;
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  color: $gray-600;
+  color: variables.$gray-600;
   transition: background 0.2s, border-color 0.2s;
-  &:hover { border-color: rgba($mobili-blue, 0.4); color: $mobili-blue-deep; }
+  &:hover { border-color: rgba(variables.$mobili-blue, 0.4); color: variables.$mobili-blue-deep; }
   &.active {
-    background: rgba($mobili-blue, 0.1);
-    border-color: rgba($mobili-blue, 0.35);
-    color: $mobili-blue-deep;
+    background: rgba(variables.$mobili-blue, 0.1);
+    border-color: rgba(variables.$mobili-blue, 0.35);
+    color: variables.$mobili-blue-deep;
   }
 }
 
@@ -82,7 +84,7 @@
   margin-top: 28px;
   font-size: 0.88rem;
   font-weight: 700;
-  color: $mobili-blue;
+  color: variables.$mobili-blue;
   text-decoration: none;
   &:hover { text-decoration: underline; }
 }

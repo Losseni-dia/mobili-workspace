@@ -1,13 +1,13 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 // ---------------------------------------------------------------------------
 //  Page
 // ---------------------------------------------------------------------------
 .driver-page {
   min-height: 100%;
-  background: $gradient-mesh;
+  background: variables.$gradient-mesh;
   padding-bottom: 2.5rem;
 
   &--home {
@@ -27,10 +27,10 @@
   align-items: center;
   gap: 0.75rem 1rem;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, $mobili-blue-deep 0%, color.adjust($mobili-blue, $lightness: -5%) 100%);
-  color: $white;
-  border-bottom: 1px solid rgba($white, 0.08);
-  box-shadow: $shadow-md;
+  background: linear-gradient(135deg, variables.$mobili-blue-deep 0%, color.adjust(variables.$mobili-blue, $lightness: -5%) 100%);
+  color: variables.$white;
+  border-bottom: 1px solid rgba(variables.$white, 0.08);
+  box-shadow: variables.$shadow-md;
 
   &--trip {
     position: sticky;
@@ -45,40 +45,40 @@
   align-items: baseline;
   gap: 0.45rem 0.6rem;
   padding: 0.35rem 0.85rem;
-  background: rgba($white, 0.1);
-  border: 1px solid rgba($white, 0.12);
-  border-radius: $radius-sm;
+  background: rgba(variables.$white, 0.1);
+  border: 1px solid rgba(variables.$white, 0.12);
+  border-radius: variables.$radius-sm;
 
   &__label {
     font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba($white, 0.65);
+    color: rgba(variables.$white, 0.65);
   }
 
   &__id {
     font-size: 1.1rem;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
-    color: $mobili-yellow;
+    color: variables.$mobili-yellow;
   }
 }
 
 .btn-outline-light {
   padding: 0.45rem 1rem;
-  border-radius: $radius-pill;
-  background: rgba($white, 0.08);
-  border: 1px solid rgba($white, 0.2);
-  color: rgba($white, 0.95);
+  border-radius: variables.$radius-pill;
+  background: rgba(variables.$white, 0.08);
+  border: 1px solid rgba(variables.$white, 0.2);
+  color: rgba(variables.$white, 0.95);
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background $t-base, border-color $t-base;
+  transition: background variables.$t-base, border-color variables.$t-base;
 
   &:hover {
-    background: rgba($white, 0.16);
-    border-color: rgba($white, 0.35);
+    background: rgba(variables.$white, 0.16);
+    border-color: rgba(variables.$white, 0.35);
   }
 }
 
@@ -100,17 +100,17 @@
 }
 
 .dashboard-hero__title {
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: clamp(1.35rem, 2.2vw, 1.6rem);
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   letter-spacing: -0.03em;
   margin: 0 0 0.5rem;
 }
 
 .dashboard-hero__text {
   margin: 0;
-  color: $gray-600;
+  color: variables.$gray-600;
   font-size: 0.95rem;
   line-height: 1.5;
   max-width: 52ch;
@@ -118,11 +118,11 @@
 
 .state-block {
   padding: 1.5rem 1.25rem;
-  border-radius: $radius-md;
+  border-radius: variables.$radius-md;
   text-align: center;
-  background: $white;
-  border: 1px dashed $gray-200;
-  color: $gray-600;
+  background: variables.$white;
+  border: 1px dashed variables.$gray-200;
+  color: variables.$gray-600;
   font-size: 0.9rem;
 
   &--load {
@@ -139,15 +139,15 @@
   &__spinner {
     width: 1.5rem;
     height: 1.5rem;
-    border: 2px solid $gray-200;
-    border-top-color: $mobili-blue;
+    border: 2px solid variables.$gray-200;
+    border-top-color: variables.$mobili-blue;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
 
   &__title {
     font-weight: 800;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     margin: 0 0 0.35rem;
   }
 
@@ -165,14 +165,14 @@
 
 .inline-alert {
   padding: 0.85rem 1rem;
-  border-radius: $radius-sm;
+  border-radius: variables.$radius-sm;
   font-size: 0.9rem;
   font-weight: 600;
 
   &--err {
-    background: $danger-soft;
-    color: color.adjust($danger, $lightness: -5%);
-    border: 1px solid rgba($danger, 0.2);
+    background: variables.$danger-soft;
+    color: color.adjust(variables.$danger, $lightness: -5%);
+    border: 1px solid rgba(variables.$danger, 0.2);
   }
 }
 
@@ -192,24 +192,24 @@
   gap: 1rem 1.25rem;
   align-items: center;
   padding: 1.1rem 1.25rem;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
-  transition: box-shadow $t-base, border-color $t-base;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-lg;
+  box-shadow: variables.$shadow-sm;
+  transition: box-shadow variables.$t-base, border-color variables.$t-base;
 
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 
   &:hover {
-    box-shadow: $shadow-md;
-    border-color: rgba($mobili-blue, 0.12);
+    box-shadow: variables.$shadow-md;
+    border-color: rgba(variables.$mobili-blue, 0.12);
   }
 
   &--active {
-    border-color: rgba($station-green, 0.4);
-    box-shadow: 0 0 0 1px rgba($station-green, 0.2), $shadow-sm;
+    border-color: rgba(variables.$station-green, 0.4);
+    box-shadow: 0 0 0 1px rgba(variables.$station-green, 0.2), variables.$shadow-sm;
   }
 }
 
@@ -224,33 +224,33 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.6rem;
-  border-radius: $radius-pill;
+  border-radius: variables.$radius-pill;
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 
   &--type {
-    background: $mobili-blue-fog;
-    color: $mobili-blue;
-    border: 1px solid rgba($mobili-blue, 0.12);
+    background: variables.$mobili-blue-fog;
+    color: variables.$mobili-blue;
+    border: 1px solid rgba(variables.$mobili-blue, 0.12);
 
     &.chip--line {
-      background: $station-green-soft;
-      color: $station-green;
-      border-color: rgba($station-green, 0.3);
+      background: variables.$station-green-soft;
+      color: variables.$station-green;
+      border-color: rgba(variables.$station-green, 0.3);
     }
   }
 
   &--status {
-    background: $gray-100;
-    color: $gray-600;
-    border: 1px solid $gray-200;
+    background: variables.$gray-100;
+    color: variables.$gray-600;
+    border: 1px solid variables.$gray-200;
 
     &.chip--live {
-      background: rgba($station-green, 0.12);
-      color: $station-green;
-      border-color: rgba($station-green, 0.25);
+      background: rgba(variables.$station-green, 0.12);
+      color: variables.$station-green;
+      border-color: rgba(variables.$station-green, 0.25);
     }
   }
 
@@ -264,12 +264,12 @@
   margin: 0 0 0.6rem;
   font-size: 1.2rem;
   font-weight: 800;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   letter-spacing: -0.02em;
 
   .arrow {
     margin: 0 0.4rem;
-    color: $gray-400;
+    color: variables.$gray-400;
     font-weight: 400;
   }
 
@@ -284,7 +284,7 @@
   align-items: center;
   gap: 0.75rem 1.25rem;
   font-size: 0.82rem;
-  color: $gray-600;
+  color: variables.$gray-600;
 }
 
 .time-block {
@@ -295,13 +295,13 @@
 
   &__d {
     text-transform: capitalize;
-    color: $gray-500;
+    color: variables.$gray-500;
   }
 
   &__h {
     font-weight: 800;
     font-size: 1rem;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 }
 
@@ -318,7 +318,7 @@
 }
 
 .btn-cta {
-  @include btn-primary;
+  @include mixins.btn-primary;
   min-width: 8.5rem;
   padding: 0.75rem 1.35rem;
   font-size: 0.88rem;
@@ -328,7 +328,7 @@
 .history-panel {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid $gray-200;
+  border-top: 1px solid variables.$gray-200;
 }
 
 .history-panel__title {
@@ -336,22 +336,22 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: $gray-500;
+  color: variables.$gray-500;
   margin: 0 0 0.9rem;
 }
 
 .history-panel__empty {
   margin: 0;
-  color: $gray-500;
+  color: variables.$gray-500;
   font-size: 0.9rem;
 }
 
 .history-table-wrap {
   overflow-x: auto;
-  border-radius: $radius-md;
-  border: 1px solid $gray-200;
-  background: $white;
-  box-shadow: $shadow-xs;
+  border-radius: variables.$radius-md;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  box-shadow: variables.$shadow-xs;
 }
 
 .history-table {
@@ -363,12 +363,12 @@
   th,
   td {
     padding: 0.65rem 0.9rem;
-    border-bottom: 1px solid $gray-100;
+    border-bottom: 1px solid variables.$gray-100;
   }
 
   th {
-    background: $gray-50;
-    color: $gray-500;
+    background: variables.$gray-50;
+    color: variables.$gray-500;
     font-weight: 800;
     font-size: 0.68rem;
     text-transform: uppercase;
@@ -380,7 +380,7 @@
   }
 
   tr:hover td {
-    background: rgba($mobili-blue-fog, 0.4);
+    background: rgba(variables.$mobili-blue-fog, 0.4);
   }
 
   .mono {
@@ -392,10 +392,10 @@
 .access-code-panel {
   margin-top: 1.75rem;
   padding: 0;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-lg;
+  box-shadow: variables.$shadow-sm;
 
   &__summary {
     list-style: none;
@@ -403,7 +403,7 @@
     padding: 0.9rem 1.15rem;
     font-size: 0.88rem;
     font-weight: 800;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     user-select: none;
 
     &::-webkit-details-marker {
@@ -415,7 +415,7 @@
       display: inline-block;
       margin-right: 0.45rem;
       font-size: 0.7rem;
-      color: $gray-500;
+      color: variables.$gray-500;
       transition: transform 0.15s ease;
     }
   }
@@ -426,7 +426,7 @@
 
   &__text {
     margin: 0 1.15rem 0.9rem;
-    color: $gray-600;
+    color: variables.$gray-600;
     font-size: 0.86rem;
     line-height: 1.5;
   }
@@ -439,7 +439,7 @@
     padding: 0 1.15rem 1.15rem;
 
     input {
-      @include input;
+      @include mixins.input;
       flex: 1;
       min-width: 7rem;
       padding: 0.75rem 1rem;
@@ -448,7 +448,7 @@
     }
 
     .btn-secondary {
-      @include btn-secondary;
+      @include mixins.btn-secondary;
       padding: 0.75rem 1.25rem;
     }
   }
@@ -470,20 +470,20 @@
 .flash {
   margin: 1rem 0 0.5rem;
   padding: 0.75rem 1rem;
-  border-radius: $radius-sm;
+  border-radius: variables.$radius-sm;
   font-size: 0.9rem;
   font-weight: 600;
 
   &--ok {
-    background: rgba($success, 0.1);
-    color: color.adjust($success, $lightness: -8%);
-    border: 1px solid rgba($success, 0.25);
+    background: rgba(variables.$success, 0.1);
+    color: color.adjust(variables.$success, $lightness: -8%);
+    border: 1px solid rgba(variables.$success, 0.25);
   }
 
   &--err {
-    background: $danger-soft;
-    color: $danger;
-    border: 1px solid rgba($danger, 0.2);
+    background: variables.$danger-soft;
+    color: variables.$danger;
+    border: 1px solid rgba(variables.$danger, 0.2);
   }
 }
 
@@ -507,30 +507,30 @@
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: $gray-500;
+    color: variables.$gray-500;
     margin-bottom: 0.2rem;
   }
 
   &__sub {
     display: block;
     font-size: 0.75rem;
-    color: $gray-500;
+    color: variables.$gray-500;
     font-weight: 500;
   }
 }
 
 .card--elev {
-  box-shadow: $shadow-md;
-  border-color: rgba($mobili-blue, 0.08);
+  box-shadow: variables.$shadow-md;
+  border-color: rgba(variables.$mobili-blue, 0.08);
 }
 
 .card {
   margin: 1rem 0 0;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-lg;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-lg;
   padding: 1.25rem 1.35rem;
-  animation: cardIn 0.35s $t-base both;
+  animation: cardIn 0.35s variables.$t-base both;
 
   .card-head {
     display: flex;
@@ -543,17 +543,17 @@
       margin: 0 0 0.25rem;
       font-size: 1.05rem;
       font-weight: 900;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
     }
 
     p {
       margin: 0;
-      color: $gray-500;
+      color: variables.$gray-500;
       font-size: 0.86rem;
       line-height: 1.4;
 
       strong {
-        color: $mobili-blue;
+        color: variables.$mobili-blue;
         font-weight: 800;
       }
     }
@@ -566,18 +566,18 @@
   height: 2.4rem;
   display: grid;
   place-items: center;
-  border: 1px solid $gray-200;
-  border-radius: $radius-sm;
-  background: $gray-50;
-  color: $gray-600;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  background: variables.$gray-50;
+  color: variables.$gray-600;
   font-size: 1.1rem;
   cursor: pointer;
-  transition: background $t-base, color $t-base, border-color $t-base;
+  transition: background variables.$t-base, color variables.$t-base, border-color variables.$t-base;
 
   &:hover {
-    background: $mobili-blue-fog;
-    color: $mobili-blue;
-    border-color: rgba($mobili-blue, 0.2);
+    background: variables.$mobili-blue-fog;
+    color: variables.$mobili-blue;
+    border-color: rgba(variables.$mobili-blue, 0.2);
   }
 }
 
@@ -596,27 +596,27 @@
     flex: 1 0 12rem;
     padding: 0.9rem 0.85rem 0.75rem;
     cursor: pointer;
-    border-radius: $radius-sm;
-    transition: background $t-base;
+    border-radius: variables.$radius-sm;
+    transition: background variables.$t-base;
 
     &:hover {
-      background: $gray-50;
+      background: variables.$gray-50;
     }
 
     &.active {
-      background: rgba($mobili-yellow, 0.12);
+      background: rgba(variables.$mobili-yellow, 0.12);
 
       .stop-marker .dot {
-        background: $mobili-yellow;
-        box-shadow: 0 0 0 4px rgba($mobili-yellow, 0.28);
+        background: variables.$mobili-yellow;
+        box-shadow: 0 0 0 4px rgba(variables.$mobili-yellow, 0.28);
       }
       .stop-name {
-        color: $mobili-blue-deep;
+        color: variables.$mobili-blue-deep;
       }
     }
 
     &.passed .stop-marker .dot {
-      background: $success;
+      background: variables.$success;
     }
   }
 
@@ -629,7 +629,7 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      background: $gray-300;
+      background: variables.$gray-300;
       display: block;
       z-index: 2;
     }
@@ -640,7 +640,7 @@
       left: 12px;
       right: -12px;
       height: 2px;
-      background: $gray-200;
+      background: variables.$gray-200;
     }
   }
 
@@ -655,13 +655,13 @@
   }
 
   .stop-index {
-    color: $gray-400;
+    color: variables.$gray-400;
     font-weight: 800;
     font-size: 0.7rem;
   }
 
   .stop-name {
-    color: $mobili-blue;
+    color: variables.$mobili-blue;
     font-weight: 800;
     font-size: 0.92rem;
     text-transform: capitalize;
@@ -670,7 +670,7 @@
   .stop-time {
     display: block;
     margin-top: 0.2rem;
-    color: $gray-500;
+    color: variables.$gray-500;
     font-size: 0.75rem;
     text-transform: capitalize;
   }
@@ -702,9 +702,9 @@
   align-items: center;
   gap: 0.9rem;
   padding: 0.9rem 1rem;
-  background: $mobili-blue-fog;
-  border: 1px solid rgba($mobili-blue, 0.1);
-  border-radius: $radius-sm;
+  background: variables.$mobili-blue-fog;
+  border: 1px solid rgba(variables.$mobili-blue, 0.1);
+  border-radius: variables.$radius-sm;
 
   &__icon {
     font-size: 1.35rem;
@@ -712,13 +712,13 @@
 
   strong {
     display: block;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 900;
     text-transform: capitalize;
   }
 
   span {
-    color: $gray-500;
+    color: variables.$gray-500;
     font-size: 0.8rem;
   }
 }
@@ -729,7 +729,7 @@
   gap: 0.5rem;
 
   input {
-    @include input;
+    @include mixins.input;
     padding: 0.75rem 0.9rem;
   }
 }
@@ -753,20 +753,20 @@
   align-items: center;
   gap: 0.9rem;
   padding: 0.85rem 1rem;
-  background: $white;
-  border: 1px solid $gray-200;
-  border-radius: $radius-md;
-  transition: border-color $t-base;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  transition: border-color variables.$t-base;
 
   &:hover {
-    border-color: rgba($mobili-blue, 0.2);
+    border-color: rgba(variables.$mobili-blue, 0.2);
   }
 
   &.done {
-    background: rgba($success, 0.03);
-    border-color: rgba($success, 0.2);
+    background: rgba(variables.$success, 0.03);
+    border-color: rgba(variables.$success, 0.2);
     .pax-info strong {
-      color: $gray-500;
+      color: variables.$gray-500;
       text-decoration: line-through;
     }
   }
@@ -774,9 +774,9 @@
   .pax-seat {
     width: 3.5rem;
     padding: 0.5rem 0.25rem;
-    background: $gradient-gold;
-    color: $mobili-blue-deep;
-    border-radius: $radius-sm;
+    background: variables.$gradient-gold;
+    color: variables.$mobili-blue-deep;
+    border-radius: variables.$radius-sm;
     text-align: center;
     .seat-label {
       display: block;
@@ -797,11 +797,11 @@
     min-width: 0;
     strong {
       display: block;
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
       font-weight: 800;
     }
     .pax-meta {
-      color: $gray-500;
+      color: variables.$gray-500;
       font-size: 0.8rem;
     }
   }
@@ -810,17 +810,17 @@
 .status-pill {
   display: inline-flex;
   padding: 0.35rem 0.75rem;
-  border-radius: $radius-pill;
+  border-radius: variables.$radius-pill;
   font-weight: 800;
   font-size: 0.75rem;
-  background: rgba($success, 0.12);
-  color: $success;
+  background: rgba(variables.$success, 0.12);
+  color: variables.$success;
 }
 
 .empty {
   text-align: center;
   padding: 1.75rem 1rem;
-  color: $gray-500;
+  color: variables.$gray-500;
   font-size: 0.9rem;
   .empty-icon {
     font-size: 1.75rem;
@@ -828,13 +828,13 @@
   }
   strong {
     display: block;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     margin-bottom: 0.25rem;
   }
 }
 
 .primary-btn {
-  @include btn-primary;
+  @include mixins.btn-primary;
   font-size: 0.86rem;
   padding: 0.65rem 1.1rem;
   &.block {

@@ -1,6 +1,6 @@
 @use "sass:color";
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
 
 $sidebar-w: 260px;
 $sidebar-w-collapsed: 76px;
@@ -15,7 +15,7 @@ $sidebar-w-collapsed: 76px;
   display: grid;
   grid-template-columns: $sidebar-w 1fr;
   min-height: 100vh;
-  transition: grid-template-columns $t-base;
+  transition: grid-template-columns variables.$t-base;
 
   &.collapsed {
     grid-template-columns: $sidebar-w-collapsed 1fr;
@@ -23,8 +23,8 @@ $sidebar-w-collapsed: 76px;
 }
 
 .shell-sidebar {
-  background: $white;
-  color: $mobili-blue-deep;
+  background: variables.$white;
+  color: variables.$mobili-blue-deep;
   display: flex;
   flex-direction: column;
   padding: 20px 12px;
@@ -33,7 +33,7 @@ $sidebar-w-collapsed: 76px;
   height: 100vh;
   min-height: 0;
   overflow: hidden;
-  border-right: 1px solid rgba($station-green, 0.15);
+  border-right: 1px solid rgba(variables.$station-green, 0.15);
 }
 
 .sidebar-brand {
@@ -48,7 +48,7 @@ $sidebar-w-collapsed: 76px;
     display: flex;
     align-items: center;
     gap: 8px;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
     font-weight: 900;
     font-size: 1rem;
     letter-spacing: 2px;
@@ -58,8 +58,8 @@ $sidebar-w-collapsed: 76px;
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: $station-green;
-      box-shadow: 0 0 0 3px rgba($station-green, 0.2);
+      background: variables.$station-green;
+      box-shadow: 0 0 0 3px rgba(variables.$station-green, 0.2);
     }
   }
 
@@ -67,13 +67,13 @@ $sidebar-w-collapsed: 76px;
     width: 28px;
     height: 28px;
     border-radius: 7px;
-    background: $gray-100;
-    border: 1px solid $gray-200;
+    background: variables.$gray-100;
+    border: 1px solid variables.$gray-200;
     cursor: pointer;
     font-weight: 900;
     &:hover {
-      background: $station-green-soft;
-      border-color: rgba($station-green, 0.35);
+      background: variables.$station-green-soft;
+      border-color: rgba(variables.$station-green, 0.35);
     }
   }
 }
@@ -84,15 +84,15 @@ $sidebar-w-collapsed: 76px;
   gap: 10px;
   padding: 10px 8px 12px;
   margin-bottom: 10px;
-  border-bottom: 1px solid $gray-100;
+  border-bottom: 1px solid variables.$gray-100;
   flex-shrink: 0;
 
   .sg-avatar {
     width: 42px;
     height: 42px;
     border-radius: 10px;
-    background: linear-gradient(145deg, $station-green 0%, color.scale($station-green, $lightness: -8%) 100%);
-    color: $white;
+    background: linear-gradient(145deg, variables.$station-green 0%, color.scale(variables.$station-green, $lightness: -8%) 100%);
+    color: variables.$white;
     display: grid;
     place-items: center;
     font-weight: 900;
@@ -115,12 +115,12 @@ $sidebar-w-collapsed: 76px;
     .sg-station {
       font-size: 0.74rem;
       font-weight: 700;
-      color: $station-green;
+      color: variables.$station-green;
     }
 
     .sg-mono {
       font-size: 0.68rem;
-      color: $gray-500;
+      color: variables.$gray-500;
     }
   }
 }
@@ -140,7 +140,7 @@ $sidebar-w-collapsed: 76px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: $gray-400;
+  color: variables.$gray-400;
   flex-shrink: 0;
 
   &--hidden {
@@ -175,13 +175,13 @@ $sidebar-w-collapsed: 76px;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: $radius-sm;
-  color: $gray-600;
+  border-radius: variables.$radius-sm;
+  color: variables.$gray-600;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.88rem;
   border: 1px solid transparent;
-  transition: background $t-base, color $t-base;
+  transition: background variables.$t-base, color variables.$t-base;
 
   .nav-icon {
     width: 22px;
@@ -189,15 +189,15 @@ $sidebar-w-collapsed: 76px;
   }
 
   &:hover:not(.active) {
-    background: $gray-100;
-    color: $mobili-blue-deep;
+    background: variables.$gray-100;
+    color: variables.$mobili-blue-deep;
   }
 
   &.active {
-    background: rgba($station-green, 0.12);
-    color: color.scale($station-green, $lightness: -18%);
+    background: rgba(variables.$station-green, 0.12);
+    color: color.scale(variables.$station-green, $lightness: -18%);
     font-weight: 800;
-    border-color: rgba($station-green, 0.25);
+    border-color: rgba(variables.$station-green, 0.25);
   }
 
   &.soft {
@@ -207,22 +207,22 @@ $sidebar-w-collapsed: 76px;
     width: 100%;
     text-align: left;
     font-family: inherit;
-    color: $gray-500;
+    color: variables.$gray-500;
     font-size: 0.85rem;
     &:hover {
-      color: $mobili-blue-deep;
+      color: variables.$mobili-blue-deep;
     }
   }
 
   &.soft.logout:hover {
-    color: $danger;
-    background: $danger-soft;
+    color: variables.$danger;
+    background: variables.$danger-soft;
   }
 
   &.cta-compact {
     justify-content: center;
-    background: $station-green-soft;
-    color: color.scale($station-green, $lightness: -22%);
+    background: variables.$station-green-soft;
+    color: color.scale(variables.$station-green, $lightness: -22%);
     font-weight: 900;
     margin-bottom: 8px;
   }
@@ -232,9 +232,9 @@ $sidebar-w-collapsed: 76px;
   flex-shrink: 0;
   margin: 8px 4px 12px;
   padding: 14px 12px;
-  background: linear-gradient(160deg, $mobili-blue-deep 0%, $mobili-blue 100%);
-  color: $white;
-  border-radius: $radius-md;
+  background: linear-gradient(160deg, variables.$mobili-blue-deep 0%, variables.$mobili-blue 100%);
+  color: variables.$white;
+  border-radius: variables.$radius-md;
 
   .cta-title {
     margin: 0 0 4px;
@@ -245,7 +245,7 @@ $sidebar-w-collapsed: 76px;
   .cta-desc {
     margin: 0 0 10px;
     font-size: 0.74rem;
-    color: rgba($white, 0.75);
+    color: rgba(variables.$white, 0.75);
     line-height: 1.4;
   }
 
@@ -253,9 +253,9 @@ $sidebar-w-collapsed: 76px;
     display: block;
     text-align: center;
     padding: 9px 10px;
-    background: $mobili-yellow;
-    color: $mobili-blue-deep;
-    border-radius: $radius-sm;
+    background: variables.$mobili-yellow;
+    color: variables.$mobili-blue-deep;
+    border-radius: variables.$radius-sm;
     font-weight: 800;
     font-size: 0.8rem;
     text-decoration: none;
@@ -268,7 +268,7 @@ $sidebar-w-collapsed: 76px;
 .sidebar-footer {
   flex-shrink: 0;
   padding-top: 10px;
-  border-top: 1px solid $gray-100;
+  border-top: 1px solid variables.$gray-100;
 }
 
 .gare-shell.collapsed {
@@ -289,8 +289,8 @@ $sidebar-w-collapsed: 76px;
   align-items: flex-start;
   gap: 16px;
   padding: 20px 28px 16px;
-  background: $white;
-  border-bottom: 1px solid $gray-200;
+  background: variables.$white;
+  border-bottom: 1px solid variables.$gray-200;
   position: sticky;
   top: 0;
   z-index: 5;
@@ -306,13 +306,13 @@ $sidebar-w-collapsed: 76px;
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: $gray-100;
-  border: 1px solid $gray-200;
+  background: variables.$gray-100;
+  border: 1px solid variables.$gray-200;
   text-decoration: none;
   font-size: 1rem;
-  color: $gray-700;
+  color: variables.$gray-700;
   transition: all 0.2s;
-  &:hover { background: rgba($station-green, 0.1); color: $station-green; border-color: rgba($station-green, 0.3); }
+  &:hover { background: rgba(variables.$station-green, 0.1); color: variables.$station-green; border-color: rgba(variables.$station-green, 0.3); }
   .bell-ico { line-height: 1; }
   .bell-badge {
     position: absolute;
@@ -339,31 +339,31 @@ $sidebar-w-collapsed: 76px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: $gray-500;
+  color: variables.$gray-500;
   margin-bottom: 6px;
 
   .crumb-root {
-    color: $station-green;
+    color: variables.$station-green;
   }
   .crumb-sep {
-    color: $gray-300;
+    color: variables.$gray-300;
   }
   .crumb-current {
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
 }
 
 .page-title {
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: clamp(1.2rem, 2vw, 1.5rem);
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   margin: 0;
 }
 
 .page-desc {
   margin: 4px 0 0;
-  color: $gray-500;
+  color: variables.$gray-500;
   font-size: 0.9rem;
 }
 
@@ -375,10 +375,10 @@ $sidebar-w-collapsed: 76px;
 .gare-pending-strip {
   margin: -8px 0 20px;
   padding: 12px 16px;
-  border-radius: $radius-md;
-  background: rgba($station-green, 0.12);
-  border: 1px solid rgba($station-green, 0.25);
-  color: $mobili-blue-deep;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$station-green, 0.12);
+  border: 1px solid rgba(variables.$station-green, 0.25);
+  color: variables.$mobili-blue-deep;
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -398,8 +398,8 @@ $sidebar-w-collapsed: 76px;
   display: inline-block;
   padding: 10px 18px;
   border-radius: 999px;
-  background: $gray-200;
-  color: $gray-500;
+  background: variables.$gray-200;
+  color: variables.$gray-500;
   font-weight: 700;
   font-size: 0.85rem;
 }

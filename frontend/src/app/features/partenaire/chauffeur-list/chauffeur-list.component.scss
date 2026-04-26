@@ -1,6 +1,6 @@
-@import '../../../styles/variables';
-@import '../../../styles/mixins';
-@import '../../../styles/data-panel';
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 .chauff-page {
   max-width: 1280px;
@@ -15,10 +15,10 @@
   align-items: start;
   padding: 24px 26px;
   margin-bottom: 22px;
-  border-radius: $radius-lg;
-  border: 1px solid rgba($mobili-blue, 0.2);
-  background: linear-gradient(135deg, rgba($mobili-blue, 0.06) 0%, $white 100%);
-  box-shadow: $shadow-sm;
+  border-radius: variables.$radius-lg;
+  border: 1px solid rgba(variables.$mobili-blue, 0.2);
+  background: linear-gradient(135deg, rgba(variables.$mobili-blue, 0.06) 0%, variables.$white 100%);
+  box-shadow: variables.$shadow-sm;
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
   }
@@ -31,8 +31,8 @@
   place-items: center;
   font-size: 1.75rem;
   border-radius: 14px;
-  background: rgba($mobili-blue, 0.08);
-  border: 1px solid rgba($mobili-blue, 0.2);
+  background: rgba(variables.$mobili-blue, 0.08);
+  border: 1px solid rgba(variables.$mobili-blue, 0.2);
 }
 
 .chauff-eyebrow {
@@ -41,15 +41,15 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: $mobili-blue;
+  color: variables.$mobili-blue;
 }
 
 .chauff-title {
   margin: 0 0 10px;
-  font-family: $font-display;
+  font-family: variables.$font-display;
   font-size: clamp(1.35rem, 2.2vw, 1.6rem);
   font-weight: 900;
-  color: $mobili-blue-deep;
+  color: variables.$mobili-blue-deep;
   line-height: 1.15;
 }
 
@@ -57,16 +57,16 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.5;
-  color: $gray-500;
+  color: variables.$gray-500;
 }
 
 .chauff-alert {
   margin-bottom: 1rem;
   padding: 0.85rem 1rem;
-  border-radius: $radius-md;
-  background: rgba($danger, 0.08);
-  border: 1px solid rgba($danger, 0.2);
-  color: $mobili-blue-deep;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$danger, 0.08);
+  border: 1px solid rgba(variables.$danger, 0.2);
+  color: variables.$mobili-blue-deep;
   font-size: 0.9rem;
 }
 
@@ -83,7 +83,7 @@
 .chauff-form-card .panel-head {
   padding: 1rem 1.25rem;
   margin: 0;
-  border-bottom: 1px solid rgba($mobili-blue, 0.1);
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.1);
 }
 
 .chauff-form-grid {
@@ -106,12 +106,12 @@
   font-size: 0.88rem;
   span {
     font-weight: 600;
-    color: $mobili-blue-deep;
+    color: variables.$mobili-blue-deep;
   }
   input {
     padding: 0.5rem 0.6rem;
     border-radius: 8px;
-    border: 1px solid $gray-300;
+    border: 1px solid variables.$gray-300;
     font-size: 0.95rem;
   }
 }
@@ -120,7 +120,7 @@
   display: block;
   margin-top: 0.2rem;
   font-size: 0.75rem;
-  color: $gray-600;
+  color: variables.$gray-600;
   line-height: 1.3;
 }
 
@@ -128,14 +128,14 @@
   display: block;
   margin-top: 0.2rem;
   font-size: 0.8rem;
-  color: $danger;
+  color: variables.$danger;
 }
 
 .chauff-form-hint-form {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
   line-height: 1.4;
-  color: $gray-600;
+  color: variables.$gray-600;
   max-width: 36rem;
 }
 
@@ -147,8 +147,8 @@
   padding: 0.55rem 1.1rem;
   border-radius: 8px;
   border: none;
-  background: $mobili-blue;
-  color: $white;
+  background: variables.$mobili-blue;
+  color: variables.$white;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
@@ -157,7 +157,7 @@
     cursor: not-allowed;
   }
   &:not(:disabled):hover {
-    background: $mobili-blue-soft;
+    background: variables.$mobili-blue-soft;
   }
 }
 
@@ -173,13 +173,13 @@
 .chauff-list-card .panel-head {
   padding: 1rem 1.25rem;
   margin: 0;
-  border-bottom: 1px solid rgba($mobili-blue, 0.1);
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.1);
 }
 
 .chauff-placeholder {
   margin: 0;
   padding: 1.5rem 1.25rem;
-  color: $gray-500;
+  color: variables.$gray-500;
   font-size: 0.95rem;
 }
 
@@ -203,9 +203,9 @@
   max-width: 18rem;
   padding: 0.35rem 0.5rem;
   border-radius: 8px;
-  border: 1px solid $gray-300;
+  border: 1px solid variables.$gray-300;
   font-size: 0.88rem;
-  background: $white;
+  background: variables.$white;
 }
 
 .chauff-sr-only {
@@ -222,9 +222,9 @@
 .chauff-form select {
   padding: 0.5rem 0.6rem;
   border-radius: 8px;
-  border: 1px solid $gray-300;
+  border: 1px solid variables.$gray-300;
   font-size: 0.95rem;
-  background: $white;
+  background: variables.$white;
   max-width: 100%;
 }
 
@@ -232,17 +232,17 @@
 .chauff-table td {
   padding: 0.75rem 1.25rem;
   text-align: left;
-  border-bottom: 1px solid rgba($mobili-blue, 0.08);
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.08);
 }
 
 .chauff-table th {
   font-weight: 700;
-  color: $mobili-blue-deep;
-  background: rgba($mobili-blue, 0.04);
+  color: variables.$mobili-blue-deep;
+  background: rgba(variables.$mobili-blue, 0.04);
 }
 
 .chauff-name {
-  color: $gray-800;
+  color: variables.$gray-800;
 }
 
 .chauff-badge {
@@ -256,11 +256,11 @@
 }
 
 .chauff-badge--ok {
-  background: rgba($station-green, 0.12);
-  color: $station-green;
+  background: rgba(variables.$station-green, 0.12);
+  color: variables.$station-green;
 }
 
 .chauff-badge--off {
-  background: rgba($gray-500, 0.12);
-  color: $gray-600;
+  background: rgba(variables.$gray-500, 0.12);
+  color: variables.$gray-600;
 }

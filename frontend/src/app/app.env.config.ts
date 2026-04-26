@@ -1,6 +1,6 @@
 /**
  * Correspondance hostname (navigateur) → URL API.
- * Staging (recette) : int.mobili.com + api.int.mobili.com — override possible via index.html (meta / __MOBILI_API_URL__).
+ * Staging (recette) : int.mobili.ci + api.int.mobili.ci — override possible via index.html (meta / __MOBILI_API_URL__).
  */
 export const CONFIGURATION_DATA = {
   environments: [
@@ -17,13 +17,9 @@ export const CONFIGURATION_DATA = {
       domain: ['acc.mobili.example.com', 'mobili-acc.example.com'],
     },
     {
-      /** Déploiement de recette HTTPS (tests, Capacitor) — non prod */
+      /** Recette intégration (HTTPS, tests, Capacitor) — non prod */
       env: 'staging',
-      domain: [
-        'app-staging.example.com',
-        'www.app-staging.example.com',
-        'staging.mobili.example.com',
-      ],
+      domain: ['int.mobili.ci', 'www.int.mobili.ci'],
     },
     {
       env: 'prod',
@@ -41,7 +37,7 @@ export const CONFIGURATION_DATA = {
       apiUrl: 'https://api-acc.mobili.example.com/v1',
     },
     staging: {
-      apiUrl: 'https://api.int.mobili.com/v1',
+      apiUrl: 'https://api.int.mobili.ci/v1',
     },
     prod: {
       apiUrl: 'https://api.mobili.example.com/v1',
