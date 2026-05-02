@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Demande d’envoi d’une communication à l’inbox des comptes dirigeants (propriétaire partenaire).
+ * Demande d’envoi d’une communication à l’inbox des comptes dirigeants (propriétaire partenaire). gdgdgdg
  */
 @Data
 @NoArgsConstructor
