@@ -1,13 +1,17 @@
 {
   "name": "mobili",
   "private": true,
-  "description": "Script unique : compilation + tests backend + build + tests frontend",
+  "description": "Script unique : compile + tests backend + build (frontend voyageur + mobili-business) + tests front",
   "scripts": {
     "build:front:staging": "cd frontend && npx ng build --configuration staging",
+    "build:front:business:prod": "cd frontend && npx ng build mobili-business --configuration=production",
     "verify": "node scripts/run-verify.mjs",
-    "verify:backend": "cd backend && mvn -B test",
-    "verify:backend:compile": "cd backend && mvn -B compile -DskipTests",
+    "verify:backend": "node scripts/backend-mvnw.mjs -B test",
+    "verify:backend:compile": "node scripts/backend-mvnw.mjs -B compile -DskipTests",
     "verify:frontend": "cd frontend && npx ng build --configuration=development",
-    "verify:frontend:test": "cd frontend && npx ng test --watch=false"
+    "verify:frontend:business": "cd frontend && npx ng build mobili-business --configuration=development",
+    "verify:frontend:test": "cd frontend && npx ng test --watch=false",
+    "verify:e2e": "cd frontend && npm run e2e",
+    "verify:e2e:all": "cd frontend && npm run e2e:all"
   }
 }

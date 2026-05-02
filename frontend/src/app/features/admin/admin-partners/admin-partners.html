@@ -113,10 +113,11 @@
                             class="partner-avatar partner-avatar--driver partner-avatar--teal"
                             [class.partner-avatar--has-photo]="!!d.covoiturageDriverPhotoUrl"
                           >
-                            @if (d.covoiturageDriverPhotoUrl) {
-                              <img
-                                [src]="IMAGE_BASE_URL + d.covoiturageDriverPhotoUrl"
+                            @if (d.covoiturageDriverPhotoUrl; as photoRel) {
+                              <mobili-secure-upload-img
+                                [relativePath]="photoRel"
                                 [alt]="'Photo ' + d.firstname"
+                                loading="lazy"
                               />
                             } @else {
                               <span class="initial-placeholder" aria-hidden="true">{{

@@ -1,0 +1,121 @@
+@use 'sass:color';
+@use '../../../styles/variables';
+
+.brh {
+  min-height: calc(100vh - #{variables.$header-height});
+  padding: 42px 20px 72px;
+  background: linear-gradient(180deg, #eef3fb 0%, variables.$white 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+
+  &__head {
+    max-width: 720px;
+    text-align: center;
+
+    h1 {
+      margin: 10px 0 14px;
+      font-size: 1.9rem;
+      color: variables.$mobili-blue-deep;
+    }
+  }
+
+  &__back {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: variables.$mobili-blue;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__lede {
+    margin: 0;
+    color: variables.$gray-600;
+    line-height: 1.55;
+    font-size: 1.02rem;
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  &__info {
+    max-width: 720px;
+    background: variables.$white;
+    border-radius: variables.$radius-lg;
+    padding: 22px 24px;
+    border: 1px solid rgba(variables.$mobili-blue, 0.1);
+    box-shadow: 0 8px 30px rgba(variables.$mobili-blue-deep, 0.06);
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+      color: variables.$mobili-blue;
+    }
+
+    p {
+      margin: 0;
+      color: variables.$gray-600;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    a {
+      color: variables.$mobili-blue;
+      font-weight: 600;
+    }
+  }
+}
+
+.brh-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px 20px 24px;
+  border-radius: variables.$radius-xl;
+  background: variables.$white;
+  border: 1px solid rgba(variables.$mobili-blue, 0.1);
+  text-decoration: none;
+  color: inherit;
+  min-height: 190px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(variables.$mobili-blue-deep, 0.1);
+  }
+
+  &--carpool {
+    border-color: rgba(variables.$mobili-yellow-dark, 0.35);
+    background: linear-gradient(160deg, rgba(variables.$mobili-yellow, 0.12), variables.$white 55%);
+  }
+
+  &__k {
+    font-size: 1.8rem;
+  }
+
+  &__h {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: variables.$mobili-blue-deep;
+  }
+
+  &__d {
+    font-size: 0.9rem;
+    color: variables.$gray-600;
+    line-height: 1.45;
+  }
+}

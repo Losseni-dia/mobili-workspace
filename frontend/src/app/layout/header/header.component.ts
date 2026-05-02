@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { ConfigurationService } from '../../configurations/services/configuration.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { MobiliInboxService } from '../../core/services/inbox/mobili-inbox.service';
 
@@ -16,16 +17,10 @@ export class HeaderComponent {
   public authService = inject(AuthService);
   mobiliInbox = inject(MobiliInboxService);
   private router = inject(Router);
-
-  // URL pointant vers ton dossier .uploads via Spring Boot
-  private readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
+  private configuration = inject(ConfigurationService);
 
   getAvatarUrl(avatarPath: string | undefined): string | null {
-    if (!avatarPath || avatarPath === '' || avatarPath.includes('null')) {
-      return null;
-    }
-    if (avatarPath.startsWith('http')) return avatarPath;
-    return `${this.IMAGE_BASE_URL}${avatarPath}`;
+    return this.configuration.resolveUploadMediaUrl(avatarPath ?? null);
   }
 
   constructor() {

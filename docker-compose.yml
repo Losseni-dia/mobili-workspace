@@ -4,8 +4,12 @@
 # 2) Remplir JWT_SECRET, FedaPay, etc.
 # 3) docker compose up --build
 #
-# L'API : http://localhost:8080/v1
+# API Docker : http://localhost:8081/v1 (hôte 8081 → conteneur 8080). Dev local Maven/IDE : 8080.
 # - DB_URL pointe sur le service postgres (pas localhost — voir README).
+# - Redis optionnel (profil Compose « redis ») : voir service redis — SPRING_PROFILES_ACTIVE=dev,redis-rate-limit et SPRING_DATA_REDIS_HOST=redis sur l'API.
+# Observabilité locale : docker compose --profile metrics up -d
+#   → Prometheus :9090 — Grafana :3000 (Dashboards → Mobili). Datasource SQL : Postgres sur l’hôte (mobili_db via host.docker.internal), voir GRAFANA_POSTGRES_* dans .env.
+#   Postgres Docker : utilisateur grafana_ro créé au premier init du volume (optionnel ; voir deploy/postgres/manual-grafana-readonly.sql).
 
 services:
   postgres:
@@ -15,15 +19,26 @@ services:
       POSTGRES_DB: mobili
       POSTGRES_USER: mobili
       POSTGRES_PASSWORD: ${DB_PASSWORD:-mobili}
+      GRAFANA_RO_PASSWORD: ${GRAFANA_RO_PASSWORD:-grafana_ro_dev}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - mobili_pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mobili -d mobili"]
       interval: 5s
       timeout: 5s
       retries: 6
+
+  # Optionnel — quotas API distribués : SPRING_PROFILES_ACTIVE=dev,redis-rate-limit + SPRING_DATA_REDIS_HOST=redis
+  redis:
+    image: redis:7-alpine
+    container_name: mobili-redis
+    profiles:
+      - redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
 
   api:
     build:
@@ -35,18 +50,62 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      # URL interne au réseau Docker (override tout DB_URL d'un .env monétaire "localhost")
+      # URL interne au réseau Docker (remplace tout DB_URL JDBC localhost du .env Maven/local)
       DB_URL: jdbc:postgresql://postgres:5432/mobili
+      # Toujours l'utilisateur créé par l'image Postgres du compose (POSTGRES_USER=mobili), pas DB_USERNAME du .env (souvent « postgres » pour Maven local).
       DB_USERNAME: mobili
       DB_PASSWORD: ${DB_PASSWORD:-mobili}
       JWT_SECRET: ${JWT_SECRET}
       FEDAPAY_SECRET_KEY: ${FEDAPAY_SECRET_KEY}
       FEDAPAY_WEBHOOK_SECRET: ${FEDAPAY_WEBHOOK_SECRET}
     ports:
-      - "${API_PORT:-8080}:8080"
+      # Hôte:conteneur — défaut 8081 sur l’hôte pour laisser 8080 au Maven local (overridable via API_PORT).
+      - "${API_PORT:-8081}:8080"
     # Conserver les images uploadées entre redémarrages (même chemin relatif qu'en local)
     volumes:
       - mobili_uploads:/app/uploads
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: mobili-prometheus
+    profiles:
+      - metrics
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: mobili-grafana
+    profiles:
+      - metrics
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Variables lues par deploy/grafana/provisioning/datasources/postgres.yml (substitution au démarrage).
+      # Par défaut : même user/mot de passe que Maven (DB_*). Si Grafana tape Postgres Windows et pq refuse l’auth :
+      # définir GRAFANA_POSTGRES_USER / GRAFANA_POSTGRES_PASSWORD dans .env (sans changer DB_* si besoin).
+      GRAFANA_POSTGRES_URL: ${GRAFANA_POSTGRES_URL:-host.docker.internal:5432}
+      GRAFANA_POSTGRES_DB: ${GRAFANA_POSTGRES_DB:-mobili_db}
+      GRAFANA_POSTGRES_USER: ${GRAFANA_POSTGRES_USER:-${DB_USERNAME:-postgres}}
+      GRAFANA_POSTGRES_PASSWORD: ${GRAFANA_POSTGRES_PASSWORD:-${DB_PASSWORD:-mobili}}
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
 
 volumes:
   mobili_pgdata:

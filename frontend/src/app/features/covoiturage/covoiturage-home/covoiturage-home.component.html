@@ -231,7 +231,13 @@
 
       @if (user?.covoiturageDriverPhotoUrl; as dp) {
         <figure class="driver-preview">
-          <img [src]="imageUrl(dp)" alt="Photo du conducteur transmise à l’inscription" loading="lazy" width="200" height="200" />
+          <mobili-secure-upload-img
+            [relativePath]="dp"
+            alt="Photo du conducteur transmise à l’inscription"
+            loading="lazy"
+            [width]="200"
+            [height]="200"
+          />
         </figure>
       }
 
@@ -283,7 +289,13 @@
 
         <figure class="veh-preview">
 
-          <img [src]="imageUrl(p)" alt="Photo du véhicule déclaré" loading="lazy" width="400" height="200" />
+          <mobili-secure-upload-img
+            [relativePath]="p"
+            alt="Photo du véhicule déclaré"
+            loading="lazy"
+            [width]="400"
+            [height]="200"
+          />
 
         </figure>
 

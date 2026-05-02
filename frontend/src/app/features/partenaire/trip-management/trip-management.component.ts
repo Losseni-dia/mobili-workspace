@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
 import { getTripPublicListPrice } from '../../../core/utils/trip-public-list-price.util';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
@@ -19,6 +20,7 @@ export class TripManagementComponent implements OnInit {
   private tripService = inject(TripService);
   private bookingService = inject(BookingService);
   private notify = inject(NotificationService);
+  private configuration = inject(ConfigurationService);
 
   myTrips = signal<Trip[]>([]);
   isLoading = signal(false);
@@ -31,9 +33,11 @@ export class TripManagementComponent implements OnInit {
   occupiedSeatsForTrip = signal<string[]>([]);
   tempSelectedSeats = signal<string[]>([]);
 
-  readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
-
   listPrice = getTripPublicListPrice;
+
+  tripVehicleImageSrc(path: string | null | undefined): string {
+    return this.configuration.resolveUploadMediaUrl(path ?? null) ?? '';
+  }
 
   chauffeurLabel(t: Trip): string {
     if (t.assignedChauffeurId == null || t.assignedChauffeurId <= 0) {

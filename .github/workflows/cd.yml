@@ -10,6 +10,11 @@
 # Compte / région / dépôt ECR : alignés sur infra/aws (eu-west-3, mobili-backend-staging).
 # Le service ECS doit utiliser la même image :latest (ou la task force un nouveau pull).
 #
+# Front « Mobili Business » (2ᵉ appli Angular) : option — variables repo :
+#   S3_BUCKET_FRONT_BUSINESS   ex. mobili-staging-business-TONNOM
+#   CLOUDFRONT_DIST_ID_BUSINESS (option) — ID distribution CloudFront (invalidation)
+# L’IAM du user des secrets doit avoir s3:PutObject/* sur le bucket + cloudfront:CreateInvalidation
+#
 name: CD
 
 env:
@@ -74,3 +79,68 @@ jobs:
         if: ${{ vars.ECS_CLUSTER == '' || vars.ECS_SERVICE == '' }}
         run: |
           echo "::warning::Variables repo ECS_CLUSTER et/ou ECS_SERVICE vides : image poussée sur ECR, pas de update-service. Configure-les (Settings → Actions → Variables)."
+
+  # ——— Phase 1.2 : appli `mobili-business` (build → S3, CloudFront) ———
+  # Sans variable S3_BUCKET_FRONT_BUSINESS, ce job est omis (pas d’échec).
+  deploy-front-business:
+    name: Front Mobili Business (S3 + CloudFront)
+    runs-on: ubuntu-latest
+    if: ${{ vars.S3_BUCKET_FRONT_BUSINESS != '' }}
+    needs: []
+    env:
+      AWS_REGION: eu-west-3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build ng mobili-business (production)
+        working-directory: frontend
+        run: npx ng build mobili-business --configuration=production
+
+      - name: Résoudre le dossier de sortie (browser/ ou racine)
+        id: outdir
+        working-directory: frontend
+        run: |
+          if [ -f dist/mobili-business/browser/index.html ]; then
+            echo "path=dist/mobili-business/browser" >> "$GITHUB_OUTPUT"
+          elif [ -f dist/mobili-business/index.html ]; then
+            echo "path=dist/mobili-business" >> "$GITHUB_OUTPUT"
+          else
+            echo "Build mobili-business : index.html introuvable sous dist/mobili-business"
+            ls -laR dist/mobili-business 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync S3
+        working-directory: frontend
+        run: |
+          set -eux
+          aws s3 sync "${{ steps.outdir.outputs.path }}/" "s3://${{ vars.S3_BUCKET_FRONT_BUSINESS }}/" --delete
+          echo "✓ Sync s3://${{ vars.S3_BUCKET_FRONT_BUSINESS }}/"
+
+      - name: Invalidation CloudFront
+        if: ${{ vars.CLOUDFRONT_DIST_ID_BUSINESS != '' }}
+        run: |
+          set -eux
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DIST_ID_BUSINESS }}" \
+            --paths "/*"
+          echo "✓ Invalidation CloudFront ${{ vars.CLOUDFRONT_DIST_ID_BUSINESS }}"

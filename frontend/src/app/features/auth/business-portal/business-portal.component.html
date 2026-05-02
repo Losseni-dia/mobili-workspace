@@ -1,0 +1,34 @@
+<section class="bp">
+    <header class="bp__hero">
+        <p class="bp__badge">Mobili Business</p>
+        <h1>Espace professions du transport</h1>
+        <p class="bp__subtitle">
+            Gestion des trajets compagnie, coordination gares et chauffeurs. Les voyageurs utilisent une autre
+            application réservée aux billets.
+        </p>
+    </header>
+
+    <div class="bp__tiles">
+        <a routerLink="/auth/login" class="bp-card bp-card--accent">
+            <span class="bp-card__icon" aria-hidden="true">⇄</span>
+            <span class="bp-card__title">Connexion</span>
+            <span class="bp-card__desc">Identifiant et mot de passe du compte (dirigeant, gare ou rôle attribu).</span>
+        </a>
+        <a routerLink="/auth/inscription-business" class="bp-card">
+            <span class="bp-card__icon" aria-hidden="true">＋</span>
+            <span class="bp-card__title">Inscription</span>
+            <span class="bp-card__desc">Créer une société de transport ou un profil chauffeur covoiturage.</span>
+        </a>
+    </div>
+
+    <aside class="bp__traveler-link">
+        <span>Vous voyez voyager comme passager&nbsp;?</span>
+        <a [href]="travelerSiteUrl">Ouvrir l’appli Mobili voyageurs</a>
+    </aside>
+
+    <aside class="bp__traveler-link">
+        <strong>Responsable de gare</strong> (code communiqué par la compagnie)&nbsp;? L’inscription se fait sur l’appli
+        voyageurs, écran dédié&nbsp;:
+        <a [href]="travelerRegisterGareUrl">Inscription gare</a>
+    </aside>
+</section>

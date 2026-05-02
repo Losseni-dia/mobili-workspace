@@ -6,6 +6,22 @@ Plateforme de **mobilité interurbaine** (réservation, billetterie, partenaires
 Ce document sert de **mémoire projet** : vision, environnement, règles de qualité, backlog prioritaire et **suivi des fonctionnalités**.  
 **À jour** : chaque nouvelle fonctionnalité livrée doit compléter la [table de suivi](#suivi-des-fonctionnalités) et, si besoin, une sous-section dédiée.  
 **Prochaine étape & phasage** (CI/CD, produit, prod) : voir [ROADMAP.md](ROADMAP.md).  
+**Scission produit Mobili (voyageur) / Mobili Business (partenaires, etc.)** — guide pas à pas, validation des commandes : [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md).  
+<a id="phases-modularisation"></a>
+
+### État des phases voyageur / Mobili Business
+
+| Phase | Contenu | Statut (dépôt avril 2026) |
+|-------|---------|---------------------------|
+| **0** — Cadrage | Périmètre, routes, [CADRAGE-PHASE-0.md](docs/CADRAGE-PHASE-0.md) | Livré |
+| **1.0** — Deux façades Angular | Mobili voyageur (4200) + Mobili Business (4201), `mobili-shared`, redirection `/partenaire` et `/gare` hors app voyageur | Livré |
+| **1.1** — Auth / session | Refresh JWT + même chaîne interceptors sur les deux applis ; session **cookies / domaines** (*.mobili.ci*) quand infra prête | Code livré ; recette DNS / cookie ensuite |
+| **1.2** — Déploiement | URL recette ou prod pour chaque façade, `businessWebBase` aligné | Infra / pipeline (voir [infra/aws/](infra/aws/README.md), [.github/workflows/cd.yml](.github/workflows/cd.yml)) |
+| **2** — Backend modularisé | Couches `api.passenger`, `api.partner`, `api.admin` + Maven `mobili-core` dans le monolithe | Livré |
+| **3–4** — Deux JARs ou double ECS | Optionnel : uniquement si besoin métier (équipes, SLO, coûts) — [§6–7 Feuille de route](docs/FEUILLE-DE-ROUTE-MODULARISATION.md#6-phase-3--deux-exécutables-spring-seulement-si-le-besoin-est-validé) | Hors périmètre par défaut |
+
+**Validation locale minimale** : `npm run verify` depuis la racine. **Pour alignement CI Playwright** (voyageur + Business) : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`.
+
 **Dernière révision documentaire** : **avril 2026** (Docker, `.env` racine, build JAR / image, profil `staging`, guide AWS, CI GitHub, `ROADMAP`). Détails datés : [CHANGELOG](CHANGELOG.md).
 
 ### Résumé des évolutions récentes (code)
@@ -54,7 +70,7 @@ Mobili permet de **rechercher**, **réserver** et **payer** des trajets interurb
    - les offres couvrant explicitement ce segment ;
    - **et** les trajets **Abidjan → Issia** qui **passent par** Gagnoa (même véhicule / même course), tant que le segment demandé est couvert.
 
-2. **Descente en cours de route & siège libéré**  
+2. **Descente en cours de route & siège libéré** *(voir F31 — **PARTIEL** : recalcul par tronçon + `POST …/driver/tickets/…/alighted` côté API ; QA / e2e à consolider)*  
    Quand un client **descend avant la terminus**, le siège doit redevenir **réservable** pour un autre passager **à partir du point de descente** (segments suivants), sans surbooking ni incohérence d’inventaire.
 
 ---
@@ -64,7 +80,7 @@ Mobili permet de **rechercher**, **réserver** et **payer** des trajets interurb
 | Composant   | Détail habituel                          |
 |------------|-------------------------------------------|
 | Backend    | Spring Boot, YAML, **PostgreSQL** local, **Flyway** (migrations), **`flyway-database-postgresql`** recommandé |
-| Frontend   | Angular, `ng serve` → **http://localhost:4200** |
+| Frontend   | Angular : appli voyageur `ng serve` → **http://localhost:4200** ; portail partenaire (Phase modularisation) `npm run start:business` dans `frontend/` → **http://localhost:4201** — voir [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md) |
 | API        | **http://localhost:8080** (préfixe `/v1` côté client selon config) |
 | Paiement   | **FedaPay sandbox** ; webhooks via **ngrok** en dev |
 | CI         | **GitHub Actions** — workflow [`ci.yml`](.github/workflows/ci.yml) (tests `mvn` + `ng` sur `main` / `develop`) |
@@ -80,7 +96,7 @@ npm run build:front:staging
 
 # Backend (depuis ./backend)
 mvn test
-mvn clean package -DskipTests   # JAR exécutable : target/backend-0.0.1-SNAPSHOT.jar
+mvn clean package -DskipTests   # JAR exécutable (multi-module) : mobili-boot/target/application.jar
 
 # Image API (recette) — profil Spring *staging* par défaut dans le Dockerfile
 # À lancer depuis la racine du dépôt :
@@ -110,7 +126,7 @@ Fichiers : [`docker-compose.yml`](docker-compose.yml) à la racine, [`backend/Do
 
 ### Fichier **`.env`** à la racine (non versionné)
 
-`docker compose` charge automatiquement le fichier **`.env`** placé **à côté** de `docker-compose.yml` (**racine du dépôt** — pas seul `backend/.env` : le compose ne lit en général pas ce fichier-là). **Créer** ce fichier (secrets locaux) avec au minimum :
+`docker compose` charge automatiquement le fichier **`.env`** placé **à côté** de `docker-compose.yml` (**racine du dépôt** — pas seul `backend/.env` : le compose ne lit en général pas ce fichier-là). Modèle commité : [`.env.example`](.env.example) (`copy .env.example .env` puis remplir les secrets). **Créer** ce fichier (secrets locaux) avec au minimum :
 
 ```env
 SPRING_PROFILES_ACTIVE=dev
@@ -126,7 +142,7 @@ Optionnel : `API_PORT`, `POSTGRES_PORT` (voir le compose). Ne pas commiter (voir
 ### Prérequis
 
 - **Docker Engine** + **Docker Compose** (v2) installés.
-- JAR : optionnel en local — `mvn clean package -DskipTests` dans `backend/` produit `target/backend-0.0.1-SNAPSHOT.jar`. L’**image** Docker, elle, recompile le backend **pendant** `docker build` (pas besoin du JAR pour construire l’image).
+- JAR : optionnel en local — `mvn clean package -DskipTests` dans `backend/` produit `mobili-boot/target/application.jar`. L’**image** Docker, elle, recompile le backend **pendant** `docker build` (pas besoin du JAR pour construire l’image).
 
 ### Que fait `docker compose` ?
 
@@ -181,7 +197,7 @@ docker compose down -v           # tout supprimer y compris les données (destru
 Objectif : payer en **sandbox FedaPay** avec un backend sur `localhost`, alors que FedaPay doit appeler un **webhook** accessible publiquement (pas `localhost`).
 
 1. **Variables d’environnement** — pour un **`mvn` / `mvnw` sans Docker** : secrets dans **`.env` à la racine du dépôt** (recommandé, même fichier que le compose) ou export manuel. Min. **`DB_PASSWORD`** si Postgres local = défauts [`application.yml`](backend/src/main/resources/application.yml) (`postgres` + `mobili_db` sur `localhost:5432`) ; sinon `DB_URL` / `DB_USERNAME`. Ajouter **`JWT_SECRET`**, **`FEDAPAY_SECRET_KEY`**, **`FEDAPAY_WEBHOOK_SECRET`**. (Stack **Docker** : [§ Docker — `.env`](#docker-root-env).)
-2. **Démarrer l’API** : depuis `backend/`, `.\mvnw.cmd spring-boot:run` (ou `mvn spring-boot:run`) — **port 8080** par défaut.
+2. **Démarrer l’API** : depuis `backend/`, `.\mvnw.cmd -pl mobili-boot -am spring-boot:run` — **port 8080** par défaut (multi-module : `mobili-core` + `mobili-boot`).
 3. **Exposer 8080 avec ngrok** (ex. binaire installé dans `C:\ngrok` sous Windows) :
    - `C:\ngrok\ngrok.exe http 8080`  
    - Noter l’URL **HTTPS** fournie (ex. `https://abc123.ngrok-free.app`).
@@ -220,6 +236,7 @@ Feature : …
 Branche / commit : …
 Backend : mvn test → OK/KO
 Frontend : npm test + build → OK/KO
+Frontend e2e : npm run e2e (frontend/) → OK/KO / N/A
 Navigateur : Chrome + mobile (oui/non) — URLs : …
 Checklist : (1) … (2) … → OK/KO
 Limites connues : …
@@ -228,8 +245,9 @@ Suite : …
 
 ### CI / pipeline
 
-- **CI GitHub (actif)** : sur chaque push / PR vers `main` ou `develop`, exécution des tests backend (PostgreSQL de service) et du build + tests frontend. Sur le dépôt, un run **rouge** signale l’échec ; tu peux configurer les **branch protection rules** pour **exiger** les checks verts avant merge.
-- **Avant de pousser** : garder l’habitude d’exécuter **localement** `mvn test` (ou `./mvnw test`) et `npm run test` + `ng build` dans `frontend/` — gain de temps et logs plus lisibles.
+- **CI GitHub (actif)** : sur chaque push / PR vers `main` ou `develop`, exécution des tests backend (PostgreSQL de service), du build + tests unitaires frontend, et des **tests E2E smoke Playwright** (Chromium, job dédié). Sur le dépôt, un run **rouge** signale l’échec ; tu peux configurer les **branch protection rules** pour **exiger** les checks verts avant merge.
+- **Recette / E2E** : voir [docs/recette-e2e.md](docs/recette-e2e.md).
+- **Avant de pousser** : garder l’habitude d’exécuter **localement** `mvn test` (ou `./mvnw test`) et `npm run test` + `ng build` dans `frontend/` — gain de temps et logs plus lisibles. Optionnel : `npm run e2e` dans `frontend/` pour aligner avec la CI.
 - **Suite (CD, staging, prod)** : [ROADMAP.md](ROADMAP.md) ; le workflow **CD** ne fait aujourd’hui que vérifier le **build Docker** de l’API (pas d’hébergement automatisé).
 
 ---
@@ -256,20 +274,21 @@ Suite : …
 7. **Tests** : Android Studio / Xcode ; signing pour bêta (TestFlight, Play interne) avant public.
 8. **Store** : fiches Play / App Store, politique de confidentialité, compte légide (côté Côte d’Ivoire / UE selon cible).
 
-**Ordre par rapport au déploiement** : voir [§ Sécurité, robustesse et ordre de déploiement](#sécurité-robustesse-et-ordre-de-déploiement).
+**Ordre par rapport au déploiement** : voir [§ Sécurité, robustesse et ordre de déploiement](#sécurité-robustesse-et-ordre-de-déploiement) et le détail thématique [`docs/securite/README.md`](docs/securite/README.md).
 
 ---
 
 ## Sécurité, robustesse et ordre de déploiement
 
+La documentation sécurité est **rangée par thèmes** dans [`docs/securite/README.md`](docs/securite/README.md) (auth, uploads / médias sensibles, rate limit, CORS, validation, checklist QA). **Redis** (quotas multi-instance, extensions futures) : [`docs/redis/README.md`](docs/redis/README.md).
+
 ### Synthèse d’audit (expert)
 
-- **Points solides** : mots de passe **BCrypt** ; API **stateless JWT** ; `BookingController` force `userId` depuis le **Principal** (pas d’emprunt d’identité via le corps JSON) ; webhook FedaPay avec **comparaison secrète** ; règles `SecurityConfig` / `@PreAuthorize` assez granulaires sur les chemins sensibles.
+- **Points solides** : mots de passe **BCrypt** ; API **stateless JWT** ; `BookingController` force `userId` depuis le **Principal** (pas d’emprunt d’identité via le corps JSON) ; webhook FedaPay avec **comparaison secrète** ; règles `SecurityConfig` / `@PreAuthorize` assez granulaires sur les chemins sensibles ; **fichiers statiques** limités aux préfixes publics (`/uploads/users`, `partners`, `vehicles`) — pièces **KYC / PDF sensibles** via **`GET /v1/media/private`** (JWT).
 - **À traiter avant une mise en production publique** (non exhaustif) :
-  - **CORS** : aujourd’hui limité à `localhost:4200` — **insuffisant** pour un domaine de prod et pour **Capacitor** ; externaliser `allowed-origins` (profil `prod` + liste configurable).
-  - **Fichiers statiques** `/uploads/**` en `permitAll` : toute personne connaissant une URL peut tenter d’y accéder — en prod, **signer** les URLs, **rôles** de lecture, ou **proxy** authentifié.
+  - **CORS** : limiter aux origines réelles par environnement (prod + staging + Capacitor si besoin) — détail [§ Transport & CORS](docs/securite/04-transport-cors-et-en-tetes.md).
   - **CSRF** désactivé (normal pour API JWT) : s’assurer qu’**aucun cookie de session** ne porte d’actes sensibles sans protection équivalente.
-  - **Validation & limites** : rate limiting (login, `POST /bookings`, paiement), en-têtes de sécurité HTTP (`SecurityHeaders`), dépendances à suivre (`mvn dependency:check` / `npm audit`).
+  - **Validation & limites** : rate limiting (voir [§ Rate limit](docs/securite/03-rate-limiting-et-abus.md) et [Redis](docs/redis/README.md)), en-têtes HTTP, dépendances (`mvn dependency:check` / `npm audit`).
   - **Secrets** : le fichier **`.env`** ne doit **jamais** être versionné (déjà dans `backend/.gitignore`) — utiliser le gestionnaire de secrets de l’hébergeur en prod.
 - **Cohérence** : règles bagages côté **service** (plafond, prix) alignées sur le front de réservation ; conduire des **tests** sur parcours paiement + wallet.
 
@@ -430,7 +449,7 @@ Les URLs ci-dessous sont le suffixe après la base configurée (ex. `http://loca
 | F23 | Réservation | Confirmation paiement interne (wallet) | *(partenaire / back-office)* | `PATCH /bookings/{id}/confirm` | PARTIEL | Partiel | À documenter parcours | Distinct de FedaPay |
 | F24 | Admin | Analyse app / métier (extra) | `/admin/analyse-app`, `/admin/metier` | *selon impl.* | PARTIEL | — | `adminGuard` | Routes présentes dans `app.routes.ts` |
 | **F30** | **Métier** | **Recherche multi-arrêts (segment sur ligne longue)** | `/`, `/search-results` | `GET /trips`, `GET /trips/search` + chaîne villes (`moreInfo`) | **PARTIEL** | BE : `TripServiceSearchTest` ; FE : `trip.service.spec.ts` | **OK** (local 2026-04-23) | Livré et validé en local (segment sur `moreInfo`) ; reste : e2e, mobile-first systématique, jeux de données réalistes — [doc](./docs/recherche-segments.md) |
-| **F31** | **Métier** | **Libération siège après descente anticipée** | *(à définir)* | `Booking` / `Ticket` + nouveaux endpoints | **PLANIFIE** | — | — | Idem |
+| **F31** | **Métier** | **Libération siège après descente anticipée** | `/chauffeur`, scan / console | `POST /v1/trips/{id}/driver/tickets/{ticketNumber}/alighted` ; `TripRunService.seatsOccupiedOnLeg` + `Ticket.alightedAtStopIndex` | **PARTIEL** | — | À systématiser | Logique sièges **par tronçon** déjà présente ; recalcul `availableSeats` après descente. Reste QA / e2e / éventuel parcours « qui déclenche » hors chauffeur. |
 | **F32** | **Métier** | **Tarifs par tronçons** (`legFares` / `TripSegmentFare`) | Création/édit trajet, `GET /trips/{id}` | `PUT/POST /trips` avec `legFares` ; `TripPricingService` | **PARTIEL** | À renforcer | À systématiser | Somme tronçons vs prorata ; prévisualisation côté service |
 | **F33** | **Chauffeur** | **Console terrain** (départs, passagers à descendre) | `/chauffeur` | `TripDriverController` : `/v1/trips/{tripId}/driver/...` | **PARTIEL** | Minimal | `chauffeurGuard` | ID trajet (souvent aligné sur « code » partenaire) ; ngrok possible pour test mobile |
 | **F34** | **UX** | **Design system & navigation directe** | Toute l’app | — | **PARTIEL** | — | **OK** (local 2026-04) | Tokens Sass, `data-panel`, pas de dropdown principal vers sous-menus |

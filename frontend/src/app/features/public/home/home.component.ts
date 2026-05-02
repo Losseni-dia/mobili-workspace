@@ -6,6 +6,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
 import { getTripPublicListPrice } from '../../../core/utils/trip-public-list-price.util';
 import { AuthService } from '../../../core/services/auth/auth.service';
@@ -25,11 +26,15 @@ export class HomeComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
+  private configuration = inject(ConfigurationService);
 
   filteredTrips: Trip[] = [];
   loadingTrips = false;
 
-  readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
+  /** URL finale photo véhicule — alignée sur l’origine de l’API (pas `localhost` en dur). */
+  tripVehicleImageSrc(tripVehiclePath: string | null | undefined): string {
+    return this.configuration.resolveUploadMediaUrl(tripVehiclePath ?? null) ?? '';
+  }
 
   /** Prix catalogue départ → arrivée (saisi à la création, pas somme des tronçons). */
   listPrice = getTripPublicListPrice;

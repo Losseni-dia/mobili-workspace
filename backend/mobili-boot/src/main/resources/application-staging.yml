@@ -1,0 +1,68 @@
+# =============================================================================
+# Profil recette (staging) — AUCUN secret en dur dans ce fichier (Git).
+# Les valeurs viennent des variables d'environnement (ECS, Docker, local…).
+# Checklist / gabarit : infra/aws/staging.env (non versionné).
+#
+# Variables à fournir au runtime :
+#   DB_URL                 JDBC complet vers la base (ex. RDS). Si elle est définie,
+#                          elle remplace entièrement le défaut local sur la ligne url: ci-dessous.
+#   DB_USERNAME
+#   DB_PASSWORD
+#   JWT_SECRET             (obligatoire — pas de défaut côté commun)
+#   FEDAPAY_SECRET_KEY
+#   FEDAPAY_WEBHOOK_SECRET
+#   SPRING_PROFILES_ACTIVE  optionnel : "staging" (défaut du Dockerfile)
+#
+# CORS (liste) surcharges optionnelles :
+#   MOBILI_CORS_ALLOWED_ORIGINS_0, _1, …
+# Front recette : https://int.mobili.ci (origines = pages, pas l’URL de l’API).
+# =============================================================================
+
+spring:
+  datasource:
+    # DB_URL = URL JDBC entière, dont le NOM DE BASE en fin d’URL (/ma_base) — sur int/AWS, tu le mets dans la variable, pas ici.
+    # La valeur par défaut après le « : » ne s’applique QUE si DB_URL n’est pas définie (dev local) ; l’hébergeur ne l’utilise pas.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.mobili.backend: INFO
+    org.hibernate.SQL: WARN
+
+# Aligné sur application.yml — rappel explicite pour le déploiement staging
+mobili:
+  cors:
+    # Origines = pages qui appellent l’API (front HTTPS, pas l’URL de l’API)
+    allowed-origins:
+      - https://int.mobili.ci
+      - https://www.int.mobili.ci
+      - https://business.int.mobili.ci
+      - https://www.business.int.mobili.ci
+      - http://localhost:4200
+      - http://127.0.0.1:4200
+      - http://localhost:4201
+      - http://127.0.0.1:4201
+      - capacitor://localhost
+      - http://localhost
+      - https://localhost
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+    refresh:
+      secure: true
+
+fedapay:
+  secret:
+    key: ${FEDAPAY_SECRET_KEY}
+  webhook:
+    secret: ${FEDAPAY_WEBHOOK_SECRET}

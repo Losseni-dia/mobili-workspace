@@ -2,6 +2,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
+import { postLoginNavigateUrl } from '../../../core/auth/post-login-redirect.util';
+import { MOBILI_APP_KIND, type MobiliAppKind } from '../../../core/config/mobili-app-kind.token';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -16,6 +19,8 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private configuration = inject(ConfigurationService);
+  private readonly appKind = inject<MobiliAppKind>(MOBILI_APP_KIND);
 
   credentials = { login: '', password: '' };
   errorMessage = signal<string | null>(null);
@@ -39,8 +44,17 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(this.credentials).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        void this.router.navigateByUrl(returnUrl);
+        const target = postLoginNavigateUrl({
+          kind: this.appKind,
+          auth: this.authService,
+          configuration: this.configuration,
+          returnUrlRaw: this.route.snapshot.queryParams['returnUrl'],
+        });
+        if (target.startsWith('http://') || target.startsWith('https://')) {
+          window.location.assign(target);
+        } else {
+          void this.router.navigateByUrl(target);
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);

@@ -6,6 +6,14 @@
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
+    "paths": {
+      "mobili-shared": [
+        "./projects/mobili-shared/src/public-api.ts"
+      ],
+      "@mobili-app/*": [
+        "./src/app/*"
+      ]
+    },
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
@@ -28,6 +36,18 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mobili-shared/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/mobili-shared/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/mobili-business/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/mobili-business/tsconfig.spec.json"
     }
   ]
 }
