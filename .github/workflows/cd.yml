@@ -8,5 +8,5 @@ jobs:
             run: |
                 echo clone du repo
                 echo "${{toJson(github)}}"
-                git clone https://github.com/${{github.repository}}.git Mes fichiers
-                cd Mes fichiers && ls
+                git clone https://github.com/${{github.repository}}.git MesFichiers
+                cd MesFichiers && ls
