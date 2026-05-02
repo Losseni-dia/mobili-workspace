@@ -13,7 +13,7 @@ describe('App', () => {
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
-    expect(app).not.toBeTruthy();
+    expect(app).toBeTruthy();
   });
 
   it('should render app shell', async () => {
