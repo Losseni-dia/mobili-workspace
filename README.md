@@ -5,7 +5,7 @@ Plateforme de **mobilité interurbaine** (réservation, billetterie, partenaires
 
 Ce document sert de **mémoire projet** : vision, environnement, règles de qualité, backlog prioritaire et **suivi des fonctionnalités**.  
 **À jour** : chaque nouvelle fonctionnalité livrée doit compléter la [table de suivi](#suivi-des-fonctionnalités) et, si besoin, une sous-section dédiée.  
-**Prochaine étape & phasage** (CI/CD, produit, prod) : voir [ROADMAP.md](ROADMAP.md).  
+**Prochaine étape & phasage** (produit, prod) : voir [ROADMAP.md](ROADMAP.md).  
 **Scission produit Mobili (voyageur) / Mobili Business (partenaires, etc.)** — guide pas à pas, validation des commandes : [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md).  
 <a id="phases-modularisation"></a>
 
@@ -16,18 +16,17 @@ Ce document sert de **mémoire projet** : vision, environnement, règles de qual
 | **0** — Cadrage | Périmètre, routes, [CADRAGE-PHASE-0.md](docs/CADRAGE-PHASE-0.md) | Livré |
 | **1.0** — Deux façades Angular | Mobili voyageur (4200) + Mobili Business (4201), `mobili-shared`, redirection `/partenaire` et `/gare` hors app voyageur | Livré |
 | **1.1** — Auth / session | Refresh JWT + même chaîne interceptors sur les deux applis ; session **cookies / domaines** (*.mobili.ci*) quand infra prête | Code livré ; recette DNS / cookie ensuite |
-| **1.2** — Déploiement | URL recette ou prod pour chaque façade, `businessWebBase` aligné | Infra / pipeline (voir [infra/aws/](infra/aws/README.md), [.github/workflows/cd.yml](.github/workflows/cd.yml)) |
+| **1.2** — Déploiement | URL recette ou prod pour chaque façade, `businessWebBase` aligné | Hors dépôt (infra / CI-CD à faire en cours) |
 | **2** — Backend modularisé | Couches `api.passenger`, `api.partner`, `api.admin` + Maven `mobili-core` dans le monolithe | Livré |
 | **3–4** — Deux JARs ou double ECS | Optionnel : uniquement si besoin métier (équipes, SLO, coûts) — [§6–7 Feuille de route](docs/FEUILLE-DE-ROUTE-MODULARISATION.md#6-phase-3--deux-exécutables-spring-seulement-si-le-besoin-est-validé) | Hors périmètre par défaut |
 
-**Validation locale minimale** : `npm run verify` depuis la racine. **Pour alignement CI Playwright** (voyageur + Business) : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`.
+**Validation locale minimale** : `npm run verify` depuis la racine. **E2E Playwright** (voyageur + Business) : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`.
 
-**Dernière révision documentaire** : **avril 2026** (Docker, `.env` racine, build JAR / image, profil `staging`, guide AWS, CI GitHub, `ROADMAP`). Détails datés : [CHANGELOG](CHANGELOG.md).
+**Dernière révision documentaire** : **mai 2026** — dépôt limité au code applicatif (backend + frontend) ; déploiement / Docker / CI hors périmètre. Détails : [CHANGELOG](CHANGELOG.md).
 
 ### Résumé des évolutions récentes (code)
 
-- **Recette (staging)** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) (CORS `int.mobili.ci`, `DB_*` via env / RDS) ; **Docker** image = profil `staging` par défaut ([`backend/Dockerfile`](backend/Dockerfile)). [**Guide AWS** (S3, CloudFront, ECR, RDS, DNS)](infra/aws/README.md).
-- **Docker** : [`docker-compose.yml`](docker-compose.yml) (PostgreSQL + build de l’API), [`backend/Dockerfile`](backend/Dockerfile) ; **`.env` obligatoire à la racine** pour le compose — [§ Docker](#docker) et [`application.yml`](backend/src/main/resources/application.yml).
+- **Recette (staging)** : [`application-staging.yml`](backend/mobili-boot/src/main/resources/application-staging.yml) (CORS, `DB_*` et secrets via variables d’environnement).
 - **Bagages** : politique par **voyage** (cabine / soute inclus, max soute en plus par passager, tarif supplément) ; **réservation** avec `extraHoldBags` et surtaxe ; **conducteur** : `GET /v1/trips/{id}/driver/luggage-summary` + carte UI sur la console. Migration **Flyway `V8`**.
 - **Espaces intégrés (shells)** : `/my-account/*`, `/partenaire/*`, `/admin/*` et **`/gare/*`** (responsable gare) passent par des *shells* (sidebar + barre sup.) ; le header public n’encombre pas les espaces connectés.
 - **Gare (responsable)** : espace dédié sous **`/gare`** (accueil, messages compagnie, scanner, profil, notifications, canal voyage d’un trajet) ; garde-fous **`gareOperationsGuard`** tant que le compte n’est pas validé / opérations autorisées par le partenaire.
@@ -83,24 +82,19 @@ Mobili permet de **rechercher**, **réserver** et **payer** des trajets interurb
 | Frontend   | Angular : appli voyageur `ng serve` → **http://localhost:4200** ; portail partenaire (Phase modularisation) `npm run start:business` dans `frontend/` → **http://localhost:4201** — voir [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md) |
 | API        | **http://localhost:8080** (préfixe `/v1` côté client selon config) |
 | Paiement   | **FedaPay sandbox** ; webhooks via **ngrok** en dev |
-| CI         | **GitHub Actions** — workflow [`ci.yml`](.github/workflows/ci.yml) (tests `mvn` + `ng` sur `main` / `develop`) |
-| CD         | [`.github/workflows/cd.yml`](.github/workflows/cd.yml) : build **image Docker** API ; **déploiement AWS** = placeholder (voir [ROADMAP](ROADMAP.md)) |
+| Vérification | **`npm run verify`** à la racine : tests Maven (reactor backend) + builds Angular + tests unitaires front |
 | Données    | **Dev uniquement** pour l’instant ; pas de données réelles / prod en local tant que la politique n’est pas formalisée |
 | Secrets    | Fichiers **`.env` hors dépôt** (ou gestionnaire de secrets) — à durcir avant prod |
 
 ### Commandes utiles (racine logique)
 
 ```bash
-# Monorepo — build front *recette* (S3 / CloudFront plus tard)
+# Monorepo — build front recette (exemple)
 npm run build:front:staging
 
 # Backend (depuis ./backend)
 mvn test
-mvn clean package -DskipTests   # JAR exécutable (multi-module) : mobili-boot/target/application.jar
-
-# Image API (recette) — profil Spring *staging* par défaut dans le Dockerfile
-# À lancer depuis la racine du dépôt :
-docker build -t mobili-backend-staging:latest ./backend
+mvn clean package -DskipTests   # JAR : mobili-boot/target/application.jar
 
 # Frontend (depuis ./frontend)
 npm run test -- --watch=false
@@ -108,85 +102,15 @@ npm run build
 ng serve
 ```
 
-<a id="recette-aws"></a>
+<a id="environnement-local"></a>
 
-### Recette & AWS (pousser l’image, RDS, front statique)
+### Fichier `.env` à la racine (non versionné)
 
-- **Backend** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) (CORS `https://int.mobili.ci` / `www`, BDD via `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` — jamais de secrets dans Git). Image : [`backend/Dockerfile`](backend/Dockerfile) (`SPRING_PROFILES_ACTIVE=staging` par défaut).
-- **Guide pas à pas** (ACM, S3, CloudFront, RDS, DNS, ECR, ALB) : [`infra/aws/README.md`](infra/aws/README.md) ; contexte projet : [`docs/gemini-mobili-aws-roadmap.md`](docs/gemini-mobili-aws-roadmap.md).
-- **Local ≠ cloud** : les identifiants du `.env` local ne sont pas ceux de RDS/ECS — mêmes **noms** de variables, **autres** valeurs côté AWS.
+Modèle : [`.env.example`](.env.example). Le backend charge les variables (dont `DB_PASSWORD`, `JWT_SECRET`, clés FedaPay) via `.env` à la racine ou l’environnement. Ne pas commiter `.env` (voir [`.gitignore`](.gitignore)).
 
-<a id="docker"></a>
+### Déploiement / Docker / CI-CD
 
-## Docker (PostgreSQL + API)
-
-Fichiers : [`docker-compose.yml`](docker-compose.yml) à la racine, [`backend/Dockerfile`](backend/Dockerfile). Les noms d’attributs côté Spring sont ceux de [`application.yml`](backend/src/main/resources/application.yml).
-
-<a id="docker-root-env"></a>
-
-### Fichier **`.env`** à la racine (non versionné)
-
-`docker compose` charge automatiquement le fichier **`.env`** placé **à côté** de `docker-compose.yml` (**racine du dépôt** — pas seul `backend/.env` : le compose ne lit en général pas ce fichier-là). Modèle commité : [`.env.example`](.env.example) (`copy .env.example .env` puis remplir les secrets). **Créer** ce fichier (secrets locaux) avec au minimum :
-
-```env
-SPRING_PROFILES_ACTIVE=dev
-JWT_SECRET=
-FEDAPAY_SECRET_KEY=
-FEDAPAY_WEBHOOK_SECRET=
-DB_PASSWORD=mobili
-```
-
-Optionnel : `API_PORT`, `POSTGRES_PORT` (voir le compose). Ne pas commiter (voir [`.gitignore`](.gitignore)).  
-**Important** : le mot de passe PostgreSQL du conteneur est **figé** au **premier** `docker compose up` dans le **volume** `mobili_pgdata`. Si tu changes `DB_PASSWORD` dans `.env` **après coup**, l’appli ne pourra plus s’authentifier : soit remettre l’**ancien** mot de passe, soit recréer les données (`docker compose down -v` puis `up` — **destructif**).
-
-### Prérequis
-
-- **Docker Engine** + **Docker Compose** (v2) installés.
-- JAR : optionnel en local — `mvn clean package -DskipTests` dans `backend/` produit `mobili-boot/target/application.jar`. L’**image** Docker, elle, recompile le backend **pendant** `docker build` (pas besoin du JAR pour construire l’image).
-
-### Que fait `docker compose` ?
-
-1. Démarrer **PostgreSQL 16** (base `mobili`, utilisateur `mobili`, mot de passe = `DB_PASSWORD` dans `.env` ou `mobili` par défaut).
-2. Construire et lancer l’**API** Spring Boot (port **8080**), avec :
-   - **`DB_URL`** = `jdbc:postgresql://postgres:5432/mobili` (nom du service Docker, **pas** `localhost` — c’est l’hôte du conteneur `postgres` sur le réseau interne).
-   - Variables **`SPRING_PROFILES_ACTIVE`**, **`JWT_SECRET`**, FedaPay, transmises au conteneur.
-3. **Volumes nommés** : données PG + dossier **`/app/uploads`** (images uploadées) pour ne pas les perdre au `docker compose down` (tant qu’on ne supprime pas les volumes).
-
-Le **frontend Angular** n’est **pas** dans ce compose (vous le lancez avec `ng serve` en local, ou un build Nginx / hébergeur statique en prod). L’app pointe l’API via [`app.env.config.ts`](frontend/src/app/app.env.config.ts) : en local navigateur, **`http://localhost:8080/v1`** reste valable.
-
-### Marche à suivre (première utilisation)
-
-1. À la **racine** du dépôt : **`.env`** présent, avec les variables indiquées au début de cette section **Docker** (encadré d’exemple).
-2. `docker compose up --build`  
-   (première exécution = build Maven + image, quelques minutes).
-3. Ouvrir `http://localhost:8080/v1/trips` pour vérifier l’API.
-4. Lancer le front : `cd frontend && npm i && ng serve` → `http://localhost:4200`.
-
-### Points d’attention (important)
-
-| Sujet | Détail |
-|--------|--------|
-| **`.env` local `backend/.env` vs racine** | `docker compose` lit le **`.env` à côté de `docker-compose.yml`**. Le compose **fixe** `DB_URL` et `DB_USERNAME` pour l’API (service `postgres`) ; seul **`DB_PASSWORD`** vient en général du **`.env` racine**. En dev **sans** Docker, `application.yml` a des **défauts** (user `postgres`, base `mobili_db` sur `localhost:5432`) : il suffit en principe de **`DB_PASSWORD`**. Sous **Docker**, les variables **injectées par le compose** (URL vers le service `postgres`, user `mobili`) priment. Un **`backend/.env` seul** ne pilote pas le compose : aligner les clés **à la racine** ou exporter les variables pour `java -jar`. |
-| **FedaPay / webhooks** | Même règle qu’en [§ Démo locale](#démo-locale) : l’extérieur doit atteindre `POST /v1/payments/callback` (ngrok, domaine, etc.). L’URL du callback est celle **visible depuis Internet**, pas celle interne Docker. |
-| **CORS** | `dev` : `localhost:4200` (voir [README backend](backend/README.md)). **Recette** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) inclut notamment `https://int.mobili.ci` et `https://www.int.mobili.ci`. |
-| **Profil Spring** | Avec **`docker compose`**, `SPRING_PROFILES_ACTIVE=dev` dans le `.env` racine (par défaut). L’**image** [`backend/Dockerfile`](backend/Dockerfile) utilise **`staging` par défaut** — adapté à ECR/ECS ; surcharger en prod si besoin. |
-| **Stop / données** | `docker compose down` : les **volumes** `mobili_pgdata` et `mobili_uploads` **restent** sauf si `docker compose down -v`. |
-
-### Commandes utiles
-
-```bash
-docker compose up -d --build     # lancer en arrière-plan
-docker compose logs -f api        # journal de l’API
-docker compose down              # arrêter (volumes conservés)
-docker compose down -v           # tout supprimer y compris les données (destructif)
-```
-
-### Évolution / prod
-
-- **ECR** : `docker build` + `docker tag` + `docker push` vers le dépôt (ex. `mobili-backend-staging`) ; l’**URI** s’affiche dans la console ECR. **RDS** : récupérer l’**endpoint** pour `DB_URL` (JDBC) en variable d’environnement sur ECS / Beanstalk, **jamais** en dur dans l’image.
-- Pousser les **mêmes images** sur un registry ; sur le serveur, **secrets** (Parameter Store, Secrets Manager, variables de tâche) — mêmes **noms** de variables qu’en local, **autres** valeurs.
-- **HTTPS** géré en général par un **ALB** ou reverse proxy (Traefik, Nginx) — voir [§ Recette & AWS](#recette-aws) et [`infra/aws/README.md`](infra/aws/README.md).
-- **Front** : S3 + CloudFront, build `npm run build:front:staging` ; pas d’embarquage obligatoire dans l’image API.
+**Hors dépôt** : ce cours de code se concentre sur le backend Spring et le frontend Angular. Tu peux ajouter plus tard compose, images, pipelines (GitHub Actions, etc.) sur une branche dédiée ou un autre dépôt.
 
 ---
 
@@ -196,13 +120,13 @@ docker compose down -v           # tout supprimer y compris les données (destru
 
 Objectif : payer en **sandbox FedaPay** avec un backend sur `localhost`, alors que FedaPay doit appeler un **webhook** accessible publiquement (pas `localhost`).
 
-1. **Variables d’environnement** — pour un **`mvn` / `mvnw` sans Docker** : secrets dans **`.env` à la racine du dépôt** (recommandé, même fichier que le compose) ou export manuel. Min. **`DB_PASSWORD`** si Postgres local = défauts [`application.yml`](backend/src/main/resources/application.yml) (`postgres` + `mobili_db` sur `localhost:5432`) ; sinon `DB_URL` / `DB_USERNAME`. Ajouter **`JWT_SECRET`**, **`FEDAPAY_SECRET_KEY`**, **`FEDAPAY_WEBHOOK_SECRET`**. (Stack **Docker** : [§ Docker — `.env`](#docker-root-env).)
+1. **Variables d’environnement** : secrets dans **`.env` à la racine du dépôt** (voir [`.env.example`](.env.example)) ou export manuel. Min. **`DB_PASSWORD`** si Postgres local = défauts [`application.yml`](backend/mobili-boot/src/main/resources/application.yml) ; sinon `DB_URL` / `DB_USERNAME`. Ajouter **`JWT_SECRET`**, **`FEDAPAY_SECRET_KEY`**, **`FEDAPAY_WEBHOOK_SECRET`**.
 2. **Démarrer l’API** : depuis `backend/`, `.\mvnw.cmd -pl mobili-boot -am spring-boot:run` — **port 8080** par défaut (multi-module : `mobili-core` + `mobili-boot`).
 3. **Exposer 8080 avec ngrok** (ex. binaire installé dans `C:\ngrok` sous Windows) :
    - `C:\ngrok\ngrok.exe http 8080`  
    - Noter l’URL **HTTPS** fournie (ex. `https://abc123.ngrok-free.app`).
 4. **URL de webhook à configurer** côté FedaPay (ou variables internes pointant vers l’URL publique) :  
-   **`{URL_NGROK}/v1/payments/callback`** — endpoint `POST` correspondant à [`PaymentController`](backend/src/main/java/com/mobili/backend/module/payment/fedaPay/controller/PaymentController.java) (`/callback`).
+   **`{URL_NGROK}/v1/payments/callback`** — endpoint `POST` : [`PaymentController`](backend/mobili-boot/src/main/java/com/mobili/backend/api/passenger/payment/PaymentController.java).
 5. **Frontend** : `ng serve` sur **http://localhost:4200** ; l’app pointe l’API vers **http://localhost:8080/v1** en local ([`app.env.config.ts`](frontend/src/app/app.env.config.ts)). Après le retour de paiement, l’écran **succès** peut appeler `POST /v1/payments/verify/{bookingId}` si le webhook n’a pas pu atteindre le PC (comportement déjà géré côté client).
 
 Côté **téléphone** (tester la **console chauffeur** ou un retour de paiement mobile), ngrok sur **8080** suffit pour le backend ; pour une SPA servie ailleurs que `localhost:4200`, on peut en plus exposer le port 4200 avec un second tunnel si besoin.
@@ -243,12 +167,10 @@ Limites connues : …
 Suite : …
 ```
 
-### CI / pipeline
+### Qualité / tests automatiques
 
-- **CI GitHub (actif)** : sur chaque push / PR vers `main` ou `develop`, exécution des tests backend (PostgreSQL de service), du build + tests unitaires frontend, et des **tests E2E smoke Playwright** (Chromium, job dédié). Sur le dépôt, un run **rouge** signale l’échec ; tu peux configurer les **branch protection rules** pour **exiger** les checks verts avant merge.
-- **Recette / E2E** : voir [docs/recette-e2e.md](docs/recette-e2e.md).
-- **Avant de pousser** : garder l’habitude d’exécuter **localement** `mvn test` (ou `./mvnw test`) et `npm run test` + `ng build` dans `frontend/` — gain de temps et logs plus lisibles. Optionnel : `npm run e2e` dans `frontend/` pour aligner avec la CI.
-- **Suite (CD, staging, prod)** : [ROADMAP.md](ROADMAP.md) ; le workflow **CD** ne fait aujourd’hui que vérifier le **build Docker** de l’API (pas d’hébergement automatisé).
+- Avant un merge ou une PR : exécuter **`npm run verify`** à la racine (ou au minimum `mvn test` dans `backend/` et build + tests dans `frontend/`).
+- **Recette / E2E** : [docs/recette-e2e.md](docs/recette-e2e.md).
 
 ---
 
@@ -317,7 +239,7 @@ La documentation sécurité est **rangée par thèmes** dans [`docs/securite/REA
 | **B** | Anti surbooking | Contraintes / verrous selon modèle de données |
 | **C** | Front recherche & détail | Résultats clairs (direct vs même bus / segment) |
 | **D** | Paiement & scanner | Cohérence FedaPay + validation ticket avec nouvelles règles |
-| **E** | Industrialisation | **CI** : fait — secrets + envs **staging/prod** ; **CD** cloud ; puis **Capacitor** si besoin store (détail [ROADMAP](ROADMAP.md)) |
+| **E** | Industrialisation | **CI/CD & déploiement** : à mettre en place en dehors de ce dépôt (cours) ; voir [ROADMAP](ROADMAP.md) pour le fil produit |
 
 **Décision produit à trancher** : la « descente » est-elle déclenchée par **chauffeur / partenaire / admin** uniquement, ou aussi par le **voyageur** dans l’app ? (impact UX + permissions.)
 
@@ -470,14 +392,11 @@ Les URLs ci-dessous sont le suffixe après la base configurée (ex. `http://loca
 
 ## Structure du dépôt
 
-- `backend/` — API Spring ([README backend](./backend/README.md)), **Dockerfile** pour l’image JAR
+- `backend/` — API Spring ([README backend](./backend/README.md)) : modules `mobili-core`, `mobili-boot`
 - `frontend/` — SPA Angular ([README frontend](./frontend/README.md))
-- [`.github/workflows/`](.github/workflows/) — **CI** (tests) et **CD** (Docker + placeholder déploiement)
-- [`docker-compose.yml`](docker-compose.yml) — PostgreSQL + API (voir [§ Docker](#docker))
-- **`.env` à la racine** (non versionné) — modèle d’en-tête [§ Docker — fichier `.env`](#docker-root-env)
-- `infra/aws/` — [guide de déploiement recette AWS](infra/aws/README.md) (`int.mobili.ci` / `api.int.mobili.ci`, DNS, certificats)
-- `docs/` — notes techniques (ex. [recherche multi-arrêts](./docs/recherche-segments.md)) ; [briefing complet AWS + contexte (Gemini, etc.)](docs/gemini-mobili-aws-roadmap.md)
-- [`ROADMAP.md`](ROADMAP.md) — **feuille de route** (prochaines phases : métier, déploiement, durcissement, mobile)
+- **`.env` à la racine** (non versionné) — modèle [`.env.example`](.env.example)
+- `docs/` — notes techniques (recherche, sécurité, Redis, recette e2e, etc.)
+- [`ROADMAP.md`](ROADMAP.md) — feuille de route produit
 - [`CHANGELOG.md`](CHANGELOG.md) — historique de documentation / livraisons par date
 
 ---

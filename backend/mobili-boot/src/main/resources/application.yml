@@ -3,7 +3,7 @@
 # Profil actif : SPRING_PROFILES_ACTIVE (dev | acc | prod), défaut = dev en local.
 # ---------------------------------------------------------------------------
 server:
-  # Aligné sur le front local (mobili-env `apiUrl` : http://localhost:8080/v1) et sur docker-compose (host:8080 → conteneur:8080).
+  # Aligné sur le front local (mobili-env `apiUrl` : http://localhost:8080/v1).
   port: 8080
 
 spring:
@@ -18,9 +18,6 @@ spring:
       enabled: false
   datasource:
     # Défaut local : jdbc:postgresql://localhost:5432/mobili_db — user postgres — mot de passe DB_PASSWORD (.env racine du dépôt).
-    # Grafana « métier » (compose --profile metrics) : même base ; depuis le conteneur l’hôte = host.docker.internal, port = celui du JDBC (ex. …:5432).
-    # Datasource Grafana : par défaut DB_USERNAME / DB_PASSWORD ; surcharge optionnelle GRAFANA_POSTGRES_USER/PASSWORD (voir docker-compose).
-    # Si Postgres Docker publie 5432 sur l’hôte, ce port est celui du conteneur, pas Postgres Windows : POSTGRES_PORT=5433 dans .env.
     url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili_db}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:}

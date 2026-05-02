@@ -2,7 +2,7 @@
 
 Document **orienté prochaine étape** : il complète le [README](README.md) (vision, backlog table Fxx, règles de qualité). **À mettre à jour** quand une phase est bouclée ou qu’on repriorise.
 
-**Dernière révision** : avril 2026.
+**Dernière révision** : mai 2026.
 
 ---
 
@@ -10,8 +10,7 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 
 | Domaine | État | Détail |
 |--------|------|--------|
-| **CI GitHub** | Fait | Workflow `CI` : tests backend (PostgreSQL de service) + build & tests frontend sur `main` / `develop`. `mvnw` exécutable + script shell sur le runner Linux. |
-| **CD** | Partiel | Build image Docker `backend` ; job « déploiement » = **placeholder** (messages dans le log) — **pas d’AWS branché** tant que les secrets / architecture ne sont pas figés. |
+| **CI/CD & cloud** | Hors dépôt | Pas de workflows GitHub ni Docker dans ce dépôt (cours — à ajouter toi-même si besoin). |
 | **Métier prioritaire** | En cours | Recherche multi-arrêts (F30) partiellement livré ; **descente & siège libéré** (F31), **résa segmentée** et **anti surbooking** restent le cœur du backlog (voir [README — backlog](README.md#backlog-global-ordre-logique-de-travail)). |
 | **Prod** | Non | Pas d’hébergement / domaine / secrets d’environnement finalisés ; durcissements restants listés dans [docs/securite/](docs/securite/README.md) (CORS prod, dépendances, observabilité). |
 
@@ -28,13 +27,12 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 
 *Réf. fonctionnelle* : F30, F31, F32, colonnes de la [table de suivi](README.md#suivi-des-fonctionnalités).
 
-### 2. Industrialisation & déploiement
+### 2. Industrialisation & déploiement (à faire en dehors du code cours)
 
 - **Environnements** : au minimum *staging* (API + front sur domaines dédiés), variables et secrets hors `.env` local.
-- **Profil Spring `staging`** : [`application-staging.yml`](backend/src/main/resources/application-staging.yml) — CORS front recette `https://int.mobili.ci` (+ `www`) + local + origines Capacitor ; `SPRING_PROFILES_ACTIVE=staging` sur l’API (pas la prod). API cible : `https://api.int.mobili.ci`.
-- **Front** : [`app.env.config.ts`](frontend/src/app/app.env.config.ts) — **`staging`** → `int.mobili.ci` / `api.int.mobili.ci/v1`. WebView : override via [`index.html`](frontend/src/index.html) (`meta mobili-api-base` ou `window.__MOBILI_API_URL__`).
-- **CD** : remplacer le placeholder dans [`.github/workflows/cd.yml`](.github/workflows/cd.yml) par une chaîne concrète (ex. ECR + ECS, ou autre) ; OIDC plutôt que clés longue durée si possible.
-- **Frontend** : pipeline de build (artefact `ng build`) et hébergement statique (S3 + CloudFront, Netlify, etc.) aligné sur l’URL API. **Guide AWS** : [`infra/aws/README.md`](infra/aws/README.md) — **briefing complet pour copilote (Gemini, etc.)** : [`docs/gemini-mobili-aws-roadmap.md`](docs/gemini-mobili-aws-roadmap.md).
+- **Profil Spring `staging`** : [`application-staging.yml`](backend/mobili-boot/src/main/resources/application-staging.yml) — CORS front recette, secrets via env.
+- **Front** : [`app.env.config.ts`](frontend/src/app/app.env.config.ts) — adapter domaines et URL d’API au déploiement ; WebView : override via [`index.html`](frontend/src/index.html) si besoin.
+- **Pipelines** : GitHub Actions, GitLab CI, ou autre — build `mvn`, `ng build`, publication d’artefacts ou images, selon ton cours.
 - **Observabilité** : logs structurés, healthcheck, alertes de base (même légères).
 
 ### 3. Durcissement avant ouverture large
@@ -48,11 +46,17 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 
 - Piste décrite dans le [README — Capacitor](README.md#mobile--capacitor-ionic-ou-natif-) : prérequis HTTPS, `ng build` stable, puis `cap add` / sync. Pas de calendrier figé ici : dépend de la **traction** et des contraintes store.
 
-### 5. Deux offres (Mobili voyageur / Mobili Business) — **guide dédié**
+---
+
+## Phases modularisation (rappel)
+
+Voir [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md) pour le détail **Mobili voyageur / Mobili Business** (deux façades, `mobili-core` + `mobili-boot`).
+
+### Deux offres — guide dédié
 
 - Feuille de route **détaillée** (phases 0–4, prérequis, risques, liens vers le code) : [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md).  
-- **Phases 0, 1.0 et 2 (code)** : considérées **clôturées dans le référentiel** — tableau synthétique dans le [README racine](README.md#phases-modularisation). **Phases 3–4** (deux JARs / double ECS) restent **optionnelles**.  
-- **État code (sans déployer)** : deux apps Angular (**4200** voyageur, **mobili-business** 4201), `mobili-core` Maven (`MobiliApiPaths`), `mobili-boot` ; vérif locale `npm run verify` utilise le Maven Wrapper (`scripts/backend-mvnw.mjs`) ; E2E voyageur + Business : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`. Le **déploiement** (S3, DNS, ECS) reste hors sprint tant que vous ne branchez pas l’infra.  
+- **Phases 0, 1.0 et 2 (code)** : considérées **clôturées dans le référentiel** — tableau synthétique dans le [README racine](README.md#phases-modularisation). **Phases 3–4** (deux JARs / double hébergement) restent **optionnelles**.  
+- **État code (sans déployer)** : deux apps Angular (**4200** voyageur, **mobili-business** 4201), `mobili-core` Maven (`MobiliApiPaths`), `mobili-boot` ; vérif locale `npm run verify` ; E2E voyageur + Business : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`. Le **déploiement** reste hors dépôt tant que tu ne branches pas ton infra (cours).  
 - Distincte des **priorités F30 / F31** (recherche, siège libéré) : pourra progresser en parallèle dès cadrage produit, sans supplanter le cœur métier court terme.
 
 ---
@@ -68,3 +72,7 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 ## Revue de la feuille de route (rituel léger)
 
 À chaque grosse livraison ou fin de trimestre : (1) cocher ce qui est fait dans ce document ; (2) ajuster l’ordre des phases ; (3) noter en une ligne la **prochaine** priorité #1 en équipe.
+
+---
+
+*Document à tenir à jour avec la réalité du dépôt et de ton cours (infra).*
