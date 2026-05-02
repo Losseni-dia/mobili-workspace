@@ -1,1 +1,16 @@
+name: Test Pipeline Mobili Echo
 
+# Se déclenche à chaque push sur la branche main
+on: push
+jobs:
+  mobili-ci-test:
+      runs-on: ubuntu-latest
+      steps:
+          - name: 👋 Initialisation
+            run: echo "Démarrage de la pipeline pour le projet Mobili"
+          - name: 📦 Simulation Build
+            run: echo "Phase de compilation simulée... OK"
+          - name: 🧪 Simulation Tests
+            run: echo "Phase de tests automatisés simulée... 0 erreur"
+          - name: 🚀 Simulation Déploiement
+            run: echo "Code prêt à être envoyé vers le serveur CI (13.36.243.168)"
