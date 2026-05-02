@@ -1,64 +1,46 @@
 name: Cd Pipeline Mobili
 on: [push, workflow_dispatch]
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: 👋 Clone Repository ubuntu vm
-        uses:
-          actions/checkout@v6
-          # run: |
-          #     echo clone du repo
-          #     echo "${{toJson(github)}}"
-          #     git clone https://github.com/${{github.repository}}.git MesFichiers
-          #     cd MesFichiers && ls
+      - uses: actions/checkout@v4 # v4 est la version stable actuelle
+      
       - name: setup node js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Cache dependencies
-        uses: actions/cache@v5
-        id: cache
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-            linux-node-2123534
+          cache: 'npm' # Active le cache AUTOMATIQUEMENT
+          cache-dependency-path: frontend/package-lock.json # Indique où est ton fichier
+
       - name: 📦 Install npm dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd frontend
-          npm install
+          npm ci # Utilise 'ci' pour les pipelines, c'est plus rapide
+
       - name: Run tests
         run: |
           cd frontend
           npm test -- --watch=false
+
   build:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: 👋 Clone Repository ubuntu vm
-        uses: actions/checkout@v6
-        # run: |
-        #     echo clone du repo
-        #     echo "${{toJson(github)}}"
-        #     git clone https://github.com/${{github.repository}}.git MesFichiers
-        #     cd MesFichiers && ls
+      - uses: actions/checkout@v4
       - name: setup node js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Cache dependencies
-        uses: actions/cache@v5
-        id: cache
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-            linux-node-2123534
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: 📦 Install npm dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd frontend
-          npm install
+          npm ci
+
       - name: Build application
         run: |
           cd frontend
