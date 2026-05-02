@@ -1,5 +1,5 @@
 name: Cd Pipeline Mobili
-on: push
+on: [push, workflow_dispatch]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,7 +16,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22"
+      - name: Cache dependencies
+        uses: actions/cache@v5
+        id: cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+            linux-node-2123534
       - name: 📦 Install npm dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd frontend
           npm install
@@ -39,7 +47,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22"
+      - name: Cache dependencies
+        uses: actions/cache@v5
+        id: cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+            linux-node-2123534
       - name: 📦 Install npm dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           cd frontend
           npm install
@@ -51,6 +67,5 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Deploy to server
-      run: echo "Déploiement de l'application sur le serveur de production OK"
-   
+      - name: Deploy to server
+        run: echo "Déploiement de l'application sur le serveur de production OK"
