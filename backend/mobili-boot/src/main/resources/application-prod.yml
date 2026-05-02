@@ -1,0 +1,34 @@
+# Production : pas de fuite SQL dans les logs, schéma contrôlé par Flyway uniquement.
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    root: WARN
+    com.mobili.backend: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+mobili:
+  security:
+    refresh:
+      secure: true
+  cors:
+    allowed-origins:
+      - https://CHANGE-ME.votredomaine.ci
+      - https://www.CHANGE-ME.votredomaine.ci

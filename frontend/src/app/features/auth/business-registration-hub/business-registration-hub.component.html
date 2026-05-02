@@ -1,0 +1,42 @@
+<section class="brh">
+    <header class="brh__head">
+        <a routerLink="/auth/portail" class="brh__back">Portail Mobili Business</a>
+        <h1>Inscription professionnelle</h1>
+        <p class="brh__lede">
+            Deux parcours ouverts ici : créer une <strong>société de transport</strong>, ou devenir
+            <strong>chauffeur covoiturage</strong> indépendant. Les gares et chauffeurs salariés sont créés par la
+            société depuis son tableau de bord.
+        </p>
+    </header>
+
+    <ul class="brh__list" role="list">
+        <li>
+            <a routerLink="/auth/register-partner" class="brh-card">
+                <span class="brh-card__k" aria-hidden="true">🏢</span>
+                <span class="brh-card__h">Société de transport</span>
+                <span class="brh-card__d"
+                    >Fiche entreprise + représentant légal (compte connexion dirigeant, fiche compagnie, logo).</span
+                >
+            </a>
+        </li>
+        <li>
+            <a [href]="travelerRegisterCarpoolUrl" class="brh-card brh-card--carpool">
+                <span class="brh-card__k" aria-hidden="true">🚗</span>
+                <span class="brh-card__h">Chauffeur covoiturage</span>
+                <span class="brh-card__d"
+                    >Formulaire étendu (pièces d’identité, véhicule). Vous poursuivez depuis l’appli voyageurs pour
+                    rester au même environnement légal Mobili.</span
+                >
+            </a>
+        </li>
+    </ul>
+
+    <div class="brh__info">
+        <h2>Gares — code fourni par la compagnie</h2>
+        <p>
+            Le responsable gare doit utiliser le <strong>code partenaire</strong> communiqué par la société. Ce
+            parcours n’est pas sur Mobili Business : uniquement sur l’<strong>appli Mobili voyageurs</strong> — ouvrir&nbsp;:
+            <a [href]="travelerSiteUrlAuthGare">inscription gare (code compagnie)</a>.
+        </p>
+    </div>
+</section>

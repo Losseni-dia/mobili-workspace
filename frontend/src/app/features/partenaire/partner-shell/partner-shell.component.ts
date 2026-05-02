@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import {
   isStationReadyForTrips,
@@ -27,6 +28,7 @@ export class PartnerShellComponent implements OnInit {
   private router = inject(Router);
   authService = inject(AuthService);
   private partenaireService = inject(PartenaireService);
+  private configuration = inject(ConfigurationService);
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
@@ -41,9 +43,7 @@ export class PartnerShellComponent implements OnInit {
   });
   companyLogoUrl = computed(() => {
     const path = this.companyInfo()?.logoUrl;
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
-    return `${this.authService.IMAGE_BASE_URL}${path}`;
+    return this.configuration.resolveUploadMediaUrl(path ?? null);
   });
 
   /** Inscription société : le compte existe mais l’admin doit activer la compagnie. */

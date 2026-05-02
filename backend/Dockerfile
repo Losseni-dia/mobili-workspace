@@ -1,5 +1,5 @@
 # Image exécutable Spring Boot, prête pour AWS ECR / ECS (ou tout registre OCI).
-# Build depuis la racine du module backend :
+# Build (multi-module : mobili-core + mobili-boot) depuis le dossier backend/ :
 #   docker build -t mobili-api:latest ./backend
 # Tag / push ECR (exemple) :
 #   aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
@@ -13,9 +13,12 @@
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /build
 COPY pom.xml .
-COPY src src
-RUN mvn -q -DskipTests package \
-    && mv /build/target/*.jar /build/application.jar
+COPY mobili-core/pom.xml mobili-core/
+COPY mobili-boot/pom.xml mobili-boot/
+COPY mobili-core/src mobili-core/src
+COPY mobili-boot/src mobili-boot/src
+RUN mvn -q -DskipTests -pl mobili-boot -am package \
+    && mv /build/mobili-boot/target/application.jar /build/application.jar
 
 FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S mobili && adduser -S -G mobili mobili

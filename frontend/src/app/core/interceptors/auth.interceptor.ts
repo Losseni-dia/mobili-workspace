@@ -1,8 +1,10 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth/auth.service';
-import { catchError, throwError } from 'rxjs';
+import { catchError, Observable, switchMap, throwError } from 'rxjs';
+
+import { skipAuthRefreshRetry } from '../http/auth-refresh.context';
 
 export interface AuthResponse {
   token: string;
@@ -18,26 +20,49 @@ export interface AuthResponse {
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const user = authService.currentUser();
 
-  // On ne modifie la requête QUE si on a un token en mémoire
-  if (user && user.token) {
+  const doAuth = (attempt: number): Observable<HttpEvent<unknown>> => {
+    const u = authService.currentUser();
+    if (!u?.token) {
+      return next(req);
+    }
     const authReq = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${user.token}`,
-      },
+      setHeaders: { Authorization: `Bearer ${u.token}` },
     });
     return next(authReq).pipe(
-      catchError((error) => {
-        if (user && (error.status === 401 || error.status === 403)) {
+      catchError((error: HttpErrorResponse) => {
+        if (
+          error.status === 401 &&
+          attempt === 0 &&
+          !req.context.get(skipAuthRefreshRetry)
+        ) {
+          return authService.refreshAccessTokenFromCookie().pipe(
+            switchMap((ok) => {
+              if (!ok) {
+                authService.logout();
+                router.navigate(['/auth/login']);
+                return throwError(() => error);
+              }
+              if (!authService.currentUser()?.token) {
+                authService.logout();
+                router.navigate(['/auth/login']);
+                return throwError(() => error);
+              }
+              return doAuth(1);
+            }),
+          );
+        }
+        if (u && (error.status === 401 || error.status === 403)) {
           authService.logout();
           router.navigate(['/auth/login']);
         }
         return throwError(() => error);
       }),
     );
-  }
+  };
 
-  // Si pas de token (ex: login, recherche publique), on laisse passer la requête telle quelle
+  if (authService.currentUser()?.token) {
+    return doAuth(0);
+  }
   return next(req);
 };

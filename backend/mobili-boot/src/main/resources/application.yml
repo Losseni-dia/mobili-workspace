@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# Configuration commune (tous les profils). Les surcharges : application-{profile}.yml
+# Profil actif : SPRING_PROFILES_ACTIVE (dev | acc | prod), défaut = dev en local.
+# ---------------------------------------------------------------------------
+server:
+  # Aligné sur le front local (mobili-env `apiUrl` : http://localhost:8080/v1) et sur docker-compose (host:8080 → conteneur:8080).
+  port: 8080
+
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 70MB
+  devtools:
+    restart:
+      enabled: false
+  datasource:
+    # Défaut local : jdbc:postgresql://localhost:5432/mobili_db — user postgres — mot de passe DB_PASSWORD (.env racine du dépôt).
+    # Grafana « métier » (compose --profile metrics) : même base ; depuis le conteneur l’hôte = host.docker.internal, port = celui du JDBC (ex. …:5432).
+    # Datasource Grafana : par défaut DB_USERNAME / DB_PASSWORD ; surcharge optionnelle GRAFANA_POSTGRES_USER/PASSWORD (voir docker-compose).
+    # Si Postgres Docker publie 5432 sur l’hôte, ce port est celui du conteneur, pas Postgres Windows : POSTGRES_PORT=5433 dans .env.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+  jpa:
+    open-in-view: false
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+logging:
+  level:
+    org.springframework.boot.devtools: warn
+
+mobili:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+      - http://127.0.0.1:4200
+  security:
+    rate-limit:
+      enabled: true
+      login-refresh-per-minute: 25
+      register-mutations-per-minute: 10
+      gare-preview-per-minute: 60
+      payment-webhook-per-minute: 120
+      purge-delay-ms: 300000
+      purge-older-than-minutes: 12
+      # Activer Redis : ajouter le profil spring « redis-rate-limit » + spring.data.redis.* (voir application-redis-rate-limit.yml).
+      redis:
+        enabled: false
+        key-prefix: mobili:rl
+        # Si erreur Redis : true = autoriser la requête ; false = retombée sur le compteur mémoire JVM (dégradé par instance).
+        allow-on-redis-failure: true
+    jwt:
+      secret-key: ${JWT_SECRET}
+    refresh:
+      cookie-name: MOBILI_REFRESH
+      max-age-seconds: 604800
+      path: /v1
+      secure: false
+      same-site: Lax
+  backend:
+    upload:
+      root-directory: uploads
+      users: users
+      partners: partners
+      vehicles: vehicles
+      max-bytes-per-file: 12582912
+      documents-folder: documents
+      max-bytes-per-document: 5242880
+
+fedapay:
+  secret:
+    key: ${FEDAPAY_SECRET_KEY}
+  webhook:
+    secret: ${FEDAPAY_WEBHOOK_SECRET}

@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 interface NavItem {
@@ -19,6 +20,7 @@ interface NavItem {
 export class UserShellComponent {
   private router = inject(Router);
   authService = inject(AuthService);
+  private configuration = inject(ConfigurationService);
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
@@ -53,10 +55,7 @@ export class UserShellComponent {
 
   avatarUrl = computed(() => {
     const u = this.authService.currentUser();
-    const path = u?.avatarUrl;
-    if (!path || path === '' || path.includes('null')) return null;
-    if (path.startsWith('http')) return path;
-    return `${this.authService.IMAGE_BASE_URL}${path}`;
+    return this.configuration.resolveUploadMediaUrl(u?.avatarUrl ?? null);
   });
 
   constructor() {

@@ -1,6 +1,6 @@
 <div class="home-page">
     <section class="hero">
-        <h1 class="hero-title">
+        <h1 class="hero-title" data-testid="home-hero-title">
             <span class="accent">Mobili</span><br>
             Voyagez seulement...
         </h1>
@@ -50,8 +50,8 @@
                         @if (trip.vehicleImageUrl) {
                         <img
                             class="trip-image__media"
-                            [src]="IMAGE_BASE_URL + trip.vehicleImageUrl"
-                            (error)="$any($event.target).src = 'assets/images/default-vehicle.png'"
+                            [src]="tripVehicleImageSrc(trip.vehicleImageUrl)"
+                            (error)="$any($event.target).src = 'assets/images/default-vehicle.svg'"
                             alt="Photo du véhicule"
                             loading="lazy" />
                         } @else {

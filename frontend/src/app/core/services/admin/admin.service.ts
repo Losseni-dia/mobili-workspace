@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { Partner } from '../partners/partenaire.service';
 
 export interface AdminStats {
@@ -131,7 +132,11 @@ export interface CovoiturageSoloDriverAdminItem {
 export class AdminService {
   private http = inject(HttpClient);
 
-  public readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
+  private readonly config = inject(ConfigurationService);
+
+  public get IMAGE_BASE_URL(): string {
+    return this.config.getUploadBaseUrl();
+  }
 
   /**
    * Récupère les compteurs globaux pour le Dashboard

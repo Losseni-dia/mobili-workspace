@@ -57,7 +57,7 @@
                             <td>
                                 <div class="trip-thumb">
                                     @if (trip.vehicleImageUrl) {
-                                        <img [src]="IMAGE_BASE_URL + trip.vehicleImageUrl" alt="Véhicule">
+                                        <img [src]="tripVehicleImageSrc(trip.vehicleImageUrl)" alt="Véhicule">
                                     } @else {
                                         <span>🚌</span>
                                     }

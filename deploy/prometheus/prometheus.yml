@@ -1,0 +1,19 @@
+# Deux jobs : un sera DOWN selon où tourne l’API (normal).
+# - mobili-api-host : Maven / IDE sur l’hôte → localhost:8080 (host.docker.internal:8080).
+# - mobili-api-docker : service « api » dans ce compose → api:8080 (interne Docker ; publié en 8081 sur l’hôte).
+# Pas besoin de port hôte 8081 ici : Prometheus joint « api » sur le réseau Compose.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: mobili-api-host
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - host.docker.internal:8080
+
+  - job_name: mobili-api-docker
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - api:8080

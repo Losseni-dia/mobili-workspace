@@ -1,6 +1,6 @@
-<div class="results-page">
+<div class="results-page" data-testid="search-results-page">
   <div class="search-info">
-    <h2>
+    <h2 data-testid="search-results-heading">
       @if (searchParams.departure || searchParams.arrival) {
       {{ searchParams.departure || '…' }} → {{ searchParams.arrival || '…' }}
       } @else {
@@ -36,7 +36,7 @@
     }
 
     @for (trip of trips; track trip.id) {
-    <div class="trip-card">
+    <div class="trip-card" data-testid="search-results-trip-card">
       <div class="trip-main">
         <div class="time-box">
           <span class="time">{{ trip.departureDateTime | date : 'HH:mm' }}</span>

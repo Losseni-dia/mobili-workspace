@@ -18,21 +18,12 @@ export class App {
   /** Le header (navbar) est toujours affiché ; le pied de page public est masqué sur les espaces “shell”. */
   showGlobalFooter = computed(() => {
     const url = this.currentUrl();
-    return !url.startsWith('/admin')
-      && !url.startsWith('/covoiturage')
-      && !url.startsWith('/chauffeur')
-      && !url.startsWith('/my-account')
-      && !url.startsWith('/partenaire/dashboard')
-      && !url.startsWith('/partenaire/trips')
-      && !url.startsWith('/partenaire/add-trip')
-      && !url.startsWith('/partenaire/edit-trip')
-      && !url.startsWith('/partenaire/bookings')
-      && !url.startsWith('/partenaire/settings')
-      && !url.startsWith('/partenaire/gares')
-      && !url.startsWith('/partenaire/notifications')
-      && !url.startsWith('/partenaire/trip-channel')
-      && !url.startsWith('/partenaire/company-messages')
-      && !url.startsWith('/gare');
+    return (
+      !url.startsWith('/admin') &&
+      !url.startsWith('/covoiturage') &&
+      !url.startsWith('/chauffeur') &&
+      !url.startsWith('/my-account')
+    );
   });
 
   constructor() {

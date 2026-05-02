@@ -3,6 +3,11 @@
 **/.env
 infra/aws/staging.env
 
+# Playwright (frontend/e2e)
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+
 # Divers
 *.log
 .DS_Store

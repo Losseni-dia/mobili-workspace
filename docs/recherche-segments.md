@@ -17,7 +17,7 @@ Ce document décrit la **recherche par segment** (une ligne longue avec étapes 
 |---------|----------------|
 | `backend/src/main/java/.../trip/repository/TripRepository.java` | Ancienne requête JPQL stricte départ/arrivée retirée au profit d’un chargement des candidats à venir (`findAllUpcomingTrips`) pour la recherche. |
 | `backend/src/main/java/.../trip/service/TripService.java` | `searchTrips` : construction de la **chaîne de villes** (`buildCityChain`), filtrage en mémoire sur segment `i < j`, préfixe insensible à la casse ; chaîne vide sur les deux critères → retour de **tous** les candidats. |
-| `backend/src/main/java/.../trip/controller/TripReadController.java` | `GET /trips/search` : paramètres `departure` et `arrival` **optionnels** avec défaut `""` pour laisser le service décider. |
+| `mobili-boot/.../api/passenger/trip/TripReadController.java` | `GET /trips/search` : paramètres `departure` et `arrival` **optionnels** avec défaut `""` pour laisser le service décider. |
 | `backend/src/main/java/.../trip/entity/Trip.java` | `moreInfo` = villes étapes (CSV), utilisée dans la chaîne de recherche. |
 | `backend/src/test/java/.../trip/service/TripServiceSearchTest.java` | Tests unitaires : ordre de chaîne, segment trouvé sur longue ligne, segment inverse exclu, terminus direct sans étapes, départ+arrivée blancs → tous les candidats. |
 

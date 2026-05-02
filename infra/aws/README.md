@@ -51,6 +51,15 @@ Guide **hors exécution automatique** : à suivre dans la [console AWS](https://
 
 Récupère le **domaine** CloudFront (ex. `d111111abcdef8.cloudfront.net`).
 
+### 4.1 Second site — Mobili Business (`mobili-business`)
+
+Même principe qu’au-dessus : **un bucket S3 dédié** + **une distribution CloudFront** (certificat ACM *us-east-1* sur le sous-domaine voulu, ex. `business.int.mobili.ci`).
+
+- Build : à la racine du monorepo, `npm run build:front:business:prod` (ou `cd frontend && npx ng build mobili-business --configuration=production`) puis synchroniser le contenu de `frontend/dist/mobili-business` (ou `.../browser/` selon la version d’Angular) vers le bucket.  
+- **CORS** côté API : origines `https://business.int.mobili.ci` déjà listées dans [`application-staging.yml`](../../backend/src/main/resources/application-staging.yml).  
+- **Front** : `businessWebBase` par environnement dans [`mobili-env.config.ts`](../../frontend/projects/mobili-shared/src/lib/mobili-env.config.ts) — doit coller à l’URL **HTTPS** publique du portail (pas de `/` final).  
+- **CI** : le workflow [`.github/workflows/cd.yml`](../../.github/workflows/cd.yml) inclut le job *Front Mobili Business* si la variable de dépôt `S3_BUCKET_FRONT_BUSINESS` est renseignée ; `CLOUDFRONT_DIST_ID_BUSINESS` déclenche l’invalidation. DNS : CNAME `business.int` (ou autre) → domaine CloudFront, comme pour `int.mobili.ci`.
+
 ---
 
 ## 5. DNS — enregistrements chez Safaricloud (zone `mobili.ci`)
@@ -105,8 +114,8 @@ L’URL publique d’**entrée** doit être **`https://api.int.mobili.ci`**.
 
 ## 8. Cohérence avec le code du dépôt
 
-- CORS : [`application-staging.yml`](../../backend/src/main/resources/application-staging.yml) (origines `https://int.mobili.ci`, etc.).
-- Front : [`app.env.config.ts`](../../frontend/src/app/app.env.config.ts) (`api.int.mobili.ci/v1`).
+- CORS : [`application-staging.yml`](../../backend/src/main/resources/application-staging.yml) (origines `https://int.mobili.ci`, `https://business.int.mobili.ci`, etc.).
+- Front : [`mobili-env.config.ts`](../../frontend/projects/mobili-shared/src/lib/mobili-env.config.ts) — `apiUrl` + `businessWebBase` (staging : `https://api.int.mobili.ci/v1` et `https://business.int.mobili.ci`).
 
 ---
 
@@ -116,6 +125,7 @@ Le workflow [`.github/workflows/cd.yml`](../../.github/workflows/cd.yml) se déc
 
 - **Build** l’image `backend/Dockerfile`, **tag** `:${{ github.sha }}` + `:latest`, **push** vers ECR `mobili-backend-staging` (`eu-west-3`).  
 - **ECS** : si les **variables** du dépôt `ECS_CLUSTER` et `ECS_SERVICE` sont renseignées (*Settings* → *Secrets and variables* → *Actions* → *Variables*), exécute `update-service` avec `--force-new-deployment` pour prendre la nouvelle image. Sinon, seul le push ECR est fait (avertissement dans les logs).  
+- **Front Mobili Business (optionnel)** : si `S3_BUCKET_FRONT_BUSINESS` est définie, le même workflow **build** `mobili-business` (prod) et exécute `aws s3 sync` + invalidation CloudFront si `CLOUDFRONT_DIST_ID_BUSINESS` est renseignée. Droits IAM : `s3:PutObject` / `DeleteObject` sur le bucket, `cloudfront:CreateInvalidation` sur la distribution.  
 - **Secrets** requis : `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (compte / utilisateur IAM avec droits ECR push + `ecs:UpdateService` sur le cluster cible).  
 - **OIDC** (recommandé à terme) : [doc GitHub – AWS](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services).
 

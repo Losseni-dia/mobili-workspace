@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { startWith } from 'rxjs';
 
 import { buildTripCityLabels, lastStopIndexFromLabels } from '../../../../core/utils/trip-city-labels.util';
+import { ConfigurationService } from '../../../../configurations/services/configuration.service';
 import { AuthService } from '../../../../core/services/auth/auth.service';
 import { PartenaireService, PartnerChauffeurItem } from '../../../../core/services/partners/partenaire.service';
 import { TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
@@ -26,6 +27,7 @@ export class TripEditComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private notification = inject(NotificationService);
+  private configuration = inject(ConfigurationService);
 
   tripId!: number;
   selectedFile: File | null = null;
@@ -204,7 +206,10 @@ export class TripEditComponent implements OnInit {
         );
 
         if (trip.vehicleImageUrl) {
-          this.imagePreview.set(`${this.authService.IMAGE_BASE_URL}${trip.vehicleImageUrl}`);
+          const url = this.configuration.resolveUploadMediaUrl(trip.vehicleImageUrl);
+          if (url) {
+            this.imagePreview.set(url);
+          }
         }
 
         this.syncLegPrices();
@@ -279,11 +284,34 @@ export class TripEditComponent implements OnInit {
 
     const sumLegs =
       last > 0 && legs.length === last ? legs.reduce((a, b) => a + b, 0) : Number(formValue.price ?? 0);
-    const mainTripPrice = last > 1 ? Number(formValue.originDestinationPrice) : sumLegs;
+    let mainTripPrice: number;
+    if (last > 1) {
+      const od = Number(formValue.originDestinationPrice);
+      if (!Number.isFinite(od) || od <= 0) {
+        this.notification.show('Indiquez le prix du trajet complet (départ → arrivée final), positif.', 'error');
+        this.isLoading.set(false);
+        return;
+      }
+      mainTripPrice = od;
+    } else {
+      mainTripPrice = last > 0 ? sumLegs : Number(formValue.price ?? 0);
+    }
+    if (!Number.isFinite(mainTripPrice) || mainTripPrice < 0) {
+      this.notification.show('Prix du trajet invalide.', 'error');
+      this.isLoading.set(false);
+      return;
+    }
+
+    const partnerId = currentUser?.partnerId ?? currentUser?.id;
+    if (partnerId == null || !Number.isFinite(Number(partnerId))) {
+      this.notification.show('Compte partenaire introuvable (partnerId). Reconnecte-toi.', 'error');
+      this.isLoading.set(false);
+      return;
+    }
 
     const tripPayload: Record<string, unknown> = {
       id: this.tripId,
-      partnerId: currentUser?.partnerId ?? currentUser?.id,
+      partnerId: Number(partnerId),
       departureCity: formValue.departureCity,
       arrivalCity: formValue.arrivalCity,
       boardingPoint: formValue.boardingPoint,
@@ -296,7 +324,7 @@ export class TripEditComponent implements OnInit {
       moreInfo: formValue.stops,
     };
     if (last > 1) {
-      tripPayload['originDestinationPrice'] = Number(formValue.originDestinationPrice);
+      tripPayload['originDestinationPrice'] = mainTripPrice;
     }
 
     if (last > 0 && legs.length === last) {
@@ -327,8 +355,19 @@ export class TripEditComponent implements OnInit {
 
     this.tripService.updateTrip(this.tripId, formData).subscribe({
       next: () => this.router.navigate(['/partenaire/trips']),
-      error: (err) => {
+      error: (err: unknown) => {
         this.isLoading.set(false);
+        const e = err as { error?: { message?: string; title?: string; errors?: { defaultMessage?: string }[] } };
+        const parts: string[] = [];
+        if (typeof e?.error?.message === 'string') parts.push(e.error.message);
+        if (typeof e?.error?.title === 'string') parts.push(e.error.title);
+        if (Array.isArray(e?.error?.errors)) {
+          for (const x of e.error.errors) {
+            if (typeof x?.defaultMessage === 'string') parts.push(x.defaultMessage);
+          }
+        }
+        const msg = parts.filter(Boolean).join(' ') || 'Mise à jour impossible. Vérifie les champs et réessaie.';
+        this.notification.show(msg, 'error');
         console.error('Erreur Update :', err);
       },
     });

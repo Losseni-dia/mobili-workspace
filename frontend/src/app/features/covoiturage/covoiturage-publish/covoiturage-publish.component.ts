@@ -6,11 +6,12 @@ import { TripService } from '../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { VEHICLE_TYPE_COVOITURAGE_SELECT, type VehicleTypeName } from '../../../core/constants/vehicle-types';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
 
 @Component({
   selector: 'app-covoiturage-publish',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MobiliSecureUploadImgComponent],
   templateUrl: './covoiturage-publish.component.html',
   styleUrl: './covoiturage-publish.component.scss',
 })
@@ -28,15 +29,6 @@ export class CovoituragePublishComponent implements OnInit, OnDestroy {
   /** Aperçu local (fichier choisi sur ce formulaire) */
   localPreview = signal<string | null>(null);
 
-  /** Profil + fichier local : ce qui s’affiche dans la zone photo */
-  displayPhoto = computed(() => {
-    const local = this.localPreview();
-    if (local) {
-      return local;
-    }
-    return this.toAbsolute(this.auth.currentUser()?.covoiturageVehiclePhotoUrl);
-  });
-
   isUsingNewFile = computed(() => this.localPreview() != null);
   hasVehicleHintFromProfile = computed(
     () => !this.localPreview() && !!this.auth.currentUser()?.covoiturageVehiclePhotoUrl,
@@ -53,16 +45,6 @@ export class CovoituragePublishComponent implements OnInit, OnDestroy {
     totalSeats: [3, [Validators.required, Validators.min(1)]],
     moreInfo: [''],
   });
-
-  private toAbsolute(path: string | null | undefined): string | null {
-    if (!path) {
-      return null;
-    }
-    if (path.startsWith('http')) {
-      return path;
-    }
-    return `${this.auth.IMAGE_BASE_URL}${path}`;
-  }
 
   ngOnInit(): void {
     this.auth.fetchUserProfile().subscribe({

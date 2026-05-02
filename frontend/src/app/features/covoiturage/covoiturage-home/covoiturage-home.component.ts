@@ -11,6 +11,7 @@ import { Trip, TripService } from '../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
 
 
 
@@ -20,7 +21,7 @@ import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
 
   standalone: true,
 
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, MobiliSecureUploadImgComponent],
 
   templateUrl: './covoiturage-home.component.html',
 
@@ -71,18 +72,6 @@ export class CovoiturageHomeComponent implements OnInit {
     return m[s] ?? s;
 
   }
-
-
-
-  imageUrl = (path: string | null | undefined) => {
-
-    if (!path) return null;
-
-    if (path.startsWith('http')) return path;
-
-    return `${this.auth.IMAGE_BASE_URL}${path}`;
-
-  };
 
 
 

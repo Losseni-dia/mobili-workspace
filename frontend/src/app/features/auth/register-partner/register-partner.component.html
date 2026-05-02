@@ -1,39 +1,85 @@
-<div class="register-container">
-    <div class="register-card">
-        <h2>Inscription compagnie</h2>
-        <p>Renseignez les informations de votre entreprise de transport (après création du compte utilisateur).</p>
+<div class="biz-auth">
+    <header class="biz-auth__masthead">
+        <a routerLink="/auth/portail" class="biz-auth__brand">Mobili Business</a>
+        <h1>Inscription entreprise transport</h1>
+        <p>
+            Déclarez la société et le représentant légal chargé du compte. La validation administrative peut prendre
+            quelques jours avant l’activation complète des lignes et des espaces opérationnels.
+        </p>
+    </header>
 
-        <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()">
-            <div class="field">
-                <label>Nom de la société</label>
-                <input type="text" formControlName="name" placeholder="Ex: Mobili Express">
+    <form class="biz-form" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+        <fieldset class="biz-form__fieldset">
+            <legend>Représentant (compte connexion)</legend>
+            <div class="biz-form__grid">
+                <label>
+                    <span>Prénom</span>
+                    <input type="text" formControlName="firstname" autocomplete="given-name" required />
+                </label>
+                <label>
+                    <span>Nom</span>
+                    <input type="text" formControlName="lastname" autocomplete="family-name" required />
+                </label>
+                <label>
+                    <span>Identifiant (login)</span>
+                    <input type="text" formControlName="login" autocomplete="username" required />
+                </label>
+                <label>
+                    <span>Email du dirigeant</span>
+                    <input type="email" formControlName="email" autocomplete="email" required />
+                </label>
+                <label>
+                    <span>Mot de passe</span>
+                    <input type="password" formControlName="password" autocomplete="new-password" required />
+                </label>
+                <label>
+                    <span>Confirmation</span>
+                    <input type="password" formControlName="confirmPassword" autocomplete="new-password" required />
+                </label>
             </div>
+        </fieldset>
 
-            <div class="field">
-                <label>Email professionnel</label>
-                <input type="email" formControlName="email" placeholder="contact@compagnie.com">
+        <fieldset class="biz-form__fieldset">
+            <legend>Société</legend>
+            <div class="biz-form__grid">
+                <label class="biz-form__full">
+                    <span>Raison sociale</span>
+                    <input type="text" formControlName="companyName" required />
+                </label>
+                <label>
+                    <span>Email entreprise</span>
+                    <input type="email" formControlName="companyEmail" required />
+                </label>
+                <label>
+                    <span>Téléphone entreprise</span>
+                    <input type="tel" formControlName="companyPhone" required />
+                </label>
+                <label class="biz-form__full">
+                    <span>RCC / numéro administratif (facultatif)</span>
+                    <input type="text" formControlName="businessNumber" />
+                </label>
+                <label class="biz-form__full">
+                    <span>Logo (facultatif)</span>
+                    <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+                </label>
+                @if (logoPreview()) {
+                    <div class="logo-preview biz-form__full">
+                        <img [src]="logoPreview()!" alt="Aperçu logo" />
+                    </div>
+                }
             </div>
+        </fieldset>
 
-            <div class="field">
-                <label>Téléphone</label>
-                <input type="text" formControlName="phone" placeholder="+221 77 ...">
-            </div>
+        <p class="biz-form__hint">
+            Les comptes « gare » et chauffeurs sont créés ensuite par vos équipes depuis l’espace société avec le code
+            partenaire communiqué après validation.
+        </p>
 
-            <div class="field">
-                <label>Numéro de Registre de Commerce</label>
-                <input type="text" formControlName="businessNumber" placeholder="RC-DAK-2026-...">
-            </div>
-
-            <div class="field">
-                <label>Logo de l'entreprise</label>
-                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="file-input">
-            </div>
-
-            <div class="actions">
-                <button type="submit" [disabled]="partnerForm.invalid || isLoading()" class="btn-primary">
-                    {{ isLoading() ? 'Traitement...' : 'Valider mon inscription' }}
-                </button>
-            </div>
-        </form>
-    </div>
+        <div class="biz-form__actions">
+            <button type="submit" [disabled]="signupForm.invalid || isLoading()" class="btn-primary">
+                {{ isLoading() ? 'Enregistrement…' : 'Créer ma société et ouvrir l’accès' }}
+            </button>
+            <a routerLink="/auth/login" class="biz-form__muted">Déjà un compte ? Connexion</a>
+        </div>
+    </form>
 </div>

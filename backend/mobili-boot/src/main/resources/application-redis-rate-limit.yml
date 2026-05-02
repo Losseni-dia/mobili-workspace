@@ -1,0 +1,24 @@
+# Profil optionnel : quotas API partagés via Redis (multi-instance derrière un load balancer).
+# Activer avec : SPRING_PROFILES_ACTIVE=dev,redis-rate-limit (ou prod,redis-rate-limit).
+#
+# Variables typiques :
+#   SPRING_DATA_REDIS_HOST (défaut localhost)
+#   SPRING_DATA_REDIS_PORT (défaut 6379)
+#   SPRING_DATA_REDIS_PASSWORD (vide si pas d’auth)
+spring:
+  config:
+    activate:
+      on-profile: redis-rate-limit
+  data:
+    redis:
+      repositories:
+        enabled: false
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+
+mobili:
+  security:
+    rate-limit:
+      redis:
+        enabled: true

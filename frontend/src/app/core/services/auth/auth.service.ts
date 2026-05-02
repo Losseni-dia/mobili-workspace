@@ -1,6 +1,9 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap, switchMap, map, of, throwError } from 'rxjs';
+import { HttpClient, HttpContext } from '@angular/common/http';
+import { Observable, tap, switchMap, map, of, throwError, catchError, finalize } from 'rxjs';
+
+import { skipAuthRefreshRetry } from '../../http/auth-refresh.context';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 
 export interface AuthResponse {
   token: string;
@@ -48,6 +51,19 @@ export interface UserAdmin {
 
 type RoleLike = string | { name?: string };
 
+/** Corps `company` pour `POST /auth/register-company` (aligné sur le DTO Java). */
+export interface RegisterCompanyPublicPayload {
+  firstname: string;
+  lastname: string;
+  login: string;
+  email: string;
+  password: string;
+  companyName: string;
+  companyEmail: string;
+  companyPhone: string;
+  businessNumber?: string;
+}
+
 export interface GarePreviewStation {
   id: number;
   name: string;
@@ -83,12 +99,64 @@ export type GareRegisterOutcome =
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
+  private config = inject(ConfigurationService);
 
-  // URL pour les images (ne passe pas par l'intercepteur car c'est du contenu statique)
-  public readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
+  /** URL pour les images (ne passe pas par l’intercepteur) — alignée sur `apiUrl`. */
+  public get IMAGE_BASE_URL(): string {
+    return this.config.getUploadBaseUrl();
+  }
 
   currentUser = signal<AuthResponse | null>(this.getUserFromStorage());
   isLoggedIn = computed(() => !!this.currentUser());
+
+  /**
+   * Après un login sur l’appli « voyageurs », l’ouverture de « business » (autre port)
+   * n’a pas de JWT en localStorage — on déduit la session via le cookie httpOnly sur l’API.
+   */
+  /**
+   * Appelé par l’intercepteur quand l’API répond 401 (JWT expiré) : renouvelle l’accès
+   * via le cookie httpOnly, sans se ré-enfiler dans la logique de retry.
+   */
+  refreshAccessTokenFromCookie(): Observable<boolean> {
+    return this.http
+      .post<BackendAuthResponse>('/auth/refresh', {}, { context: new HttpContext().set(skipAuthRefreshRetry, true) })
+      .pipe(
+        tap((r) => {
+          const cur = this.getUserFromStorage() || ({} as Partial<AuthResponse>);
+          this.saveUser({
+            ...cur,
+            token: r.token,
+            login: r.login,
+            id: r.userId,
+          } as AuthResponse);
+        }),
+        map(() => true),
+        catchError(() => of(false)),
+      );
+  }
+
+  hydrateFromRefresh(): Observable<void> {
+    if (this.getUserFromStorage()) {
+      this.currentUser.set(this.getUserFromStorage());
+      return of(void 0);
+    }
+    return this.http.post<BackendAuthResponse>('/auth/refresh', {}).pipe(
+      switchMap((r) => {
+        this.saveUser({
+          token: r.token,
+          login: r.login,
+          id: r.userId,
+          firstname: '',
+          lastname: '',
+          email: '',
+          avatarUrl: '',
+          roles: [],
+        } as AuthResponse);
+        return this.fetchUserProfile().pipe(map(() => void 0));
+      }),
+      catchError(() => of(void 0)),
+    );
+  }
 
   /**
    * Récupère les détails complets de l'utilisateur.
@@ -108,17 +176,34 @@ export class AuthService {
   }
 
   login(credentials: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/auth/login', credentials).pipe(
+    return this.http.post<BackendAuthResponse>('/auth/login', credentials).pipe(
       switchMap((authData) => {
-        this.saveUser(authData); // Stocke le token reçu
-        return this.fetchUserProfile(); // 💡 Appel sans argument
+        this.saveUser(this.mapLoginBodyToAuthResponse(authData));
+        return this.fetchUserProfile();
       }),
     );
   }
 
   logout() {
-    localStorage.removeItem('mobili_user');
-    this.currentUser.set(null);
+    this.http.post('/auth/logout', {}).pipe(
+      finalize(() => {
+        localStorage.removeItem('mobili_user');
+        this.currentUser.set(null);
+      }),
+    ).subscribe();
+  }
+
+  private mapLoginBodyToAuthResponse(r: BackendAuthResponse): AuthResponse {
+    return {
+      token: r.token,
+      login: r.login,
+      id: r.userId,
+      firstname: '',
+      lastname: '',
+      email: '',
+      avatarUrl: '',
+      roles: [],
+    } as AuthResponse;
   }
 
   private saveUser(user: AuthResponse) {
@@ -144,6 +229,23 @@ export class AuthService {
     if (avatar) formData.append('avatar', avatar);
 
     return this.http.post('/auth/register', formData);
+  }
+
+  /**
+   * Inscription compagnie (dirigeant) + fiche société, session ouverte comme après login.
+   */
+  registerCompany(payload: RegisterCompanyPublicPayload, logo?: File | null): Observable<AuthResponse> {
+    const formData = new FormData();
+    formData.append('company', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    if (logo) {
+      formData.append('logo', logo);
+    }
+    return this.http.post<BackendAuthResponse>('/auth/register-company', formData).pipe(
+      switchMap((authData) => {
+        this.saveUser(this.mapLoginBodyToAuthResponse(authData));
+        return this.fetchUserProfile();
+      }),
+    );
   }
 
   /**

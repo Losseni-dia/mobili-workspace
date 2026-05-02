@@ -46,10 +46,21 @@
           </label>
         </div>
 
-        <div class="veh-photo" [class.veh-photo--empty]="!displayPhoto()">
+        <div
+          class="veh-photo"
+          [class.veh-photo--empty]="!localPreview() && !auth.currentUser()?.covoiturageVehiclePhotoUrl"
+        >
           <div class="veh-photo__preview">
-            @if (displayPhoto(); as src) {
-              <img [src]="src" alt="Photo du véhicule pour ce trajet" width="400" height="240" />
+            @if (localPreview(); as localSrc) {
+              <img [src]="localSrc" alt="Photo du véhicule pour ce trajet" width="400" height="240" />
+            } @else if (auth.currentUser()?.covoiturageVehiclePhotoUrl; as profileRel) {
+              <mobili-secure-upload-img
+                [relativePath]="profileRel"
+                alt="Photo du véhicule pour ce trajet"
+                [width]="400"
+                [height]="240"
+                loading="lazy"
+              />
             } @else {
               <div class="veh-photo__placeholder" aria-hidden="true">
                 <span class="veh-photo__ico">🚗</span>

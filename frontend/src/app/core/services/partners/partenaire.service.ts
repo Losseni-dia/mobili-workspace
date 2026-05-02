@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
+
 export interface Partner {
   // 💡 N'oublie pas le "export" ici !
   id: number;
@@ -87,8 +89,11 @@ export function isStationReadyForTrips(s: Station): boolean {
 @Injectable({ providedIn: 'root' })
 export class PartenaireService {
   private http = inject(HttpClient);
+  private readonly config = inject(ConfigurationService);
 
-  public readonly IMAGE_BASE_URL = 'http://localhost:8080/uploads/';
+  public get IMAGE_BASE_URL(): string {
+    return this.config.getUploadBaseUrl();
+  }
 
   // Inscription du partenaire (Utilise /partners car l'intercepteur gère le /v1)
   registerPartner(formData: FormData): Observable<any> {

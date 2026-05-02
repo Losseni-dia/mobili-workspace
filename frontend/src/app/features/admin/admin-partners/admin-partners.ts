@@ -7,11 +7,12 @@ import {
   CovoiturageSoloDriverAdminItem,
 } from '../../../core/services/admin/admin.service';
 import { Partner } from '../../../core/services/partners/partenaire.service';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
 
 @Component({
   selector: 'app-admin-partners',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, MobiliSecureUploadImgComponent],
   templateUrl: './admin-partners.html',
   styleUrl: './admin-partners.scss',
 })

@@ -34,6 +34,8 @@ ng build
 ng test
 ```
 
+Tests **E2E (smoke)** avec [Playwright](https://playwright.dev/) : depuis `frontend/`, `npm run e2e` (voyageur, port 4200, `playwright.config.ts`) ; `npm run e2e:business` (Mobili Business, port 4201) ; `npm run e2e:all` pour les deux. Réutiliser un serveur déjà lancé : **`PLAYWRIGHT_SKIP_WEBSERVER=1`**. Détail : [docs/recette-e2e.md](../docs/recette-e2e.md).
+
 ---
 
 Projet généré avec [Angular CLI](https://github.com/angular/angular-cli). Référence complète : [Angular CLI](https://angular.dev/tools/cli).

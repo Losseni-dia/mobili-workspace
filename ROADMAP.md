@@ -13,7 +13,7 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 | **CI GitHub** | Fait | Workflow `CI` : tests backend (PostgreSQL de service) + build & tests frontend sur `main` / `develop`. `mvnw` exécutable + script shell sur le runner Linux. |
 | **CD** | Partiel | Build image Docker `backend` ; job « déploiement » = **placeholder** (messages dans le log) — **pas d’AWS branché** tant que les secrets / architecture ne sont pas figés. |
 | **Métier prioritaire** | En cours | Recherche multi-arrêts (F30) partiellement livré ; **descente & siège libéré** (F31), **résa segmentée** et **anti surbooking** restent le cœur du backlog (voir [README — backlog](README.md#backlog-global-ordre-logique-de-travail)). |
-| **Prod** | Non | Pas d’hébergement / domaine / secrets d’environnement finalisés ; durcissement sécurité (CORS, uploads, rate limit) listé dans le [README — sécurité](README.md#sécurité-robustesse-et-ordre-de-déploiement). |
+| **Prod** | Non | Pas d’hébergement / domaine / secrets d’environnement finalisés ; durcissements restants listés dans [docs/securite/](docs/securite/README.md) (CORS prod, dépendances, observabilité). |
 
 ---
 
@@ -39,13 +39,21 @@ Document **orienté prochaine étape** : il complète le [README](README.md) (vi
 
 ### 3. Durcissement avant ouverture large
 
-- CORS / origines par environnement, **uploads** (`/uploads/**`) moins permissifs.
-- **Rate limiting** sur login et endpoints sensibles.
+- CORS / origines par environnement ; suivre [docs/securite/04-transport-cors-et-en-tetes.md](docs/securite/04-transport-cors-et-en-tetes.md).
+- **Uploads** : périmètre public réduit + médias sensibles via API — [docs/securite/02-uploads-et-medias-sensibles.md](docs/securite/02-uploads-et-medias-sensibles.md).
+- **Rate limiting** : mémoire JVM OK mono-instance ; multi-instance → feuille de route [Redis — quotas](docs/redis/feuille-de-route-rate-limit.md) et guide [**importance / mesure d’impact**](docs/redis/importance-et-mesure-d-impact.md).
 - Suivi des **dépendances** (Maven, npm) et correctifs de sécurité.
 
 ### 4. Mobile (quand le web + API prod sont stables)
 
 - Piste décrite dans le [README — Capacitor](README.md#mobile--capacitor-ionic-ou-natif-) : prérequis HTTPS, `ng build` stable, puis `cap add` / sync. Pas de calendrier figé ici : dépend de la **traction** et des contraintes store.
+
+### 5. Deux offres (Mobili voyageur / Mobili Business) — **guide dédié**
+
+- Feuille de route **détaillée** (phases 0–4, prérequis, risques, liens vers le code) : [docs/FEUILLE-DE-ROUTE-MODULARISATION.md](docs/FEUILLE-DE-ROUTE-MODULARISATION.md).  
+- **Phases 0, 1.0 et 2 (code)** : considérées **clôturées dans le référentiel** — tableau synthétique dans le [README racine](README.md#phases-modularisation). **Phases 3–4** (deux JARs / double ECS) restent **optionnelles**.  
+- **État code (sans déployer)** : deux apps Angular (**4200** voyageur, **mobili-business** 4201), `mobili-core` Maven (`MobiliApiPaths`), `mobili-boot` ; vérif locale `npm run verify` utilise le Maven Wrapper (`scripts/backend-mvnw.mjs`) ; E2E voyageur + Business : `npm run verify:e2e:all` depuis la racine ou `npm run e2e:all` dans `frontend/`. Le **déploiement** (S3, DNS, ECS) reste hors sprint tant que vous ne branchez pas l’infra.  
+- Distincte des **priorités F30 / F31** (recherche, siège libéré) : pourra progresser en parallèle dès cadrage produit, sans supplanter le cœur métier court terme.
 
 ---
 
