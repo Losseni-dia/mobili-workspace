@@ -1,0 +1,12 @@
+name: Cd Pipeline Mobili 
+on: push
+jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+          - name: 👋 Initialisation
+            run: |
+                echo clone du repo
+                echo "${{toJson(github)}}"
+                git clone https://github.com/${{github.repository}}.git Mes fichiers
+                cd Mes fichiers && ls

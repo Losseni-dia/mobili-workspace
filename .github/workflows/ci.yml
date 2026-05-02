@@ -1,7 +1,6 @@
 name: Test Pipeline Mobili Echo
-
-# Se déclenche à chaque push sur la branche main
-on: push
+#on: push
+on: workflow_dispatch
 jobs:
   mobili-ci-test:
       runs-on: ubuntu-latest
