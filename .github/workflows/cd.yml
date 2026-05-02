@@ -4,9 +4,24 @@ jobs:
     test:
       runs-on: ubuntu-latest
       steps:
-          - name: 👋 Initialisation
+          - name: 👋 Clone Repository ubuntu vm
+            uses: actions/checkout@v6
+            # run: |
+            #     echo clone du repo
+            #     echo "${{toJson(github)}}"
+            #     git clone https://github.com/${{github.repository}}.git MesFichiers
+            #     cd MesFichiers && ls
+          - name: setup node js
+            uses: actions/setup-node@v6   
+            with:
+              node-version: '22'
+          - name: 📦 Install npm dependencies
             run: |
-                echo clone du repo
-                echo "${{toJson(github)}}"
-                git clone https://github.com/${{github.repository}}.git MesFichiers
-                cd MesFichiers && ls
+              cd frontend
+              npm install
+          - name: Run tests
+            run: |
+                cd frontend
+                npm test -- --watch=false
+          - name: 🚀 Completed job
+            run: echo "Pipeline de CD terminée avec succès pour le projet Mobili"

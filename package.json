@@ -10,7 +10,7 @@
     "verify:backend:compile": "node scripts/backend-mvnw.mjs -B compile -DskipTests",
     "verify:frontend": "cd frontend && npx ng build --configuration=development",
     "verify:frontend:business": "cd frontend && npx ng build mobili-business --configuration=development",
-    "test": "cd frontend && npx ng test",
+    "test": "cd frontend && npx ng test --watch=false",
     "verify:e2e": "cd frontend && npm run e2e",
     "verify:e2e:all": "cd frontend && npm run e2e:all"
   }
