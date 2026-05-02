@@ -1,13 +1,38 @@
-# Secrets (tout le monorepo)
+# --- SECRETS & SECURITE ---
 .env
 **/.env
+*.pem
+*.key
 
-# Playwright (frontend/e2e)
+# --- FRONTEND (Angular & Playwright) ---
+node_modules/
+**/node_modules/
+frontend/.angular/
+frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
 frontend/blob-report/
+frontend/playwright/.cache/
 
-# Divers
+# --- BACKEND (Java / Maven) ---
+target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+.mtj.tmp/
+
+# --- IDE & SYSTÈME ---
+.vscode/
+.idea/
+*.swp
 *.log
 .DS_Store
 Thumbs.db
+.cursor/
+
+# --- DIVERS ---
+dist/
+tmp/
+out/
