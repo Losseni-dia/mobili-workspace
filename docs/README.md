@@ -8,18 +8,12 @@ Point d’entrée pour la documentation **hors README racine**, organisée par *
 |----------|---------|
 | [CADRAGE-PHASE-0.md](CADRAGE-PHASE-0.md) | Cadrage phase 0 |
 | [FEUILLE-DE-ROUTE-MODULARISATION.md](FEUILLE-DE-ROUTE-MODULARISATION.md) | Modularisation monolithe / doubles apps |
-| [gemini-mobili-aws-roadmap.md](gemini-mobili-aws-roadmap.md) | Briefing infra AWS |
 
 ## Sécurité (par thèmes)
 
 → **[securite/README.md](securite/README.md)** — authentification, uploads & médias sensibles, rate limit, CORS, validation, checklist QA.
 
-## Métriques & observabilité
-
-| Document | Contenu |
-|----------|---------|
-| [metrics/README.md](metrics/README.md) | Index (Prometheus, Grafana, Actuator). |
-| [metrics/guide-utilisation.md](metrics/guide-utilisation.md) | **Manuel** : démarrage, ports, Actuator, PromQL, dépannage. |
+**Observabilité** (Prometheus / Grafana) : non versionnée ici ; en local, les endpoints Actuator sont décrits dans `application-dev.yml` (profil `dev`).
 
 ## Redis (documentation dédiée)
 

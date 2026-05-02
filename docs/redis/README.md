@@ -4,15 +4,15 @@ Ce dossier regroupe **tout ce qui concerne Redis** dans le projet (feuilles de r
 
 ## Activation (rate limit distribué)
 
-1. Démarrer Redis (ex. Docker avec profil `redis`, voir [`docker-compose.yml`](../../docker-compose.yml)).
+1. Démarrer une instance **Redis** (binaire local, conteneur perso, ou PaaS) sur `localhost:6379` ou l’hôte de ton choix.
 2. Activer le **profil Spring** `redis-rate-limit` (charge `application-redis-rate-limit.yml`) **en plus** du profil habituel, ex. :
    - `SPRING_PROFILES_ACTIVE=dev,redis-rate-limit`
 3. Pointer le client vers l’hôte Redis :
-   - `SPRING_DATA_REDIS_HOST` (ex. `localhost` ou `redis` dans Compose)
+   - `SPRING_DATA_REDIS_HOST` (ex. `localhost`)
    - `SPRING_DATA_REDIS_PORT` (défaut `6379`)
    - `SPRING_DATA_REDIS_PASSWORD` si besoin
 
-Exemple local après `docker compose --profile redis up -d redis` :
+Exemple local :
 
 ```bash
 export SPRING_PROFILES_ACTIVE=dev,redis-rate-limit

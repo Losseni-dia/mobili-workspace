@@ -1,7 +1,6 @@
 # Développement local : schéma tolérant, SQL visible, CORS localhost.
 #
-# Métriques pour Grafana/Prometheus (docker compose --profile metrics) :
-#   http://localhost:8080/actuator/prometheus
+# Métriques (Actuator) — ex. http://localhost:8080/actuator/prometheus
 management:
   endpoints:
     web:

@@ -1,7 +1,6 @@
 # Secrets (tout le monorepo)
 .env
 **/.env
-infra/aws/staging.env
 
 # Playwright (frontend/e2e)
 frontend/test-results/

@@ -60,7 +60,7 @@ Document **d’architecture & produit** : comment scinder l’offre **voyageur**
 - [x] **Routes** : [business.routes.ts](../frontend/projects/mobili-business/src/app/business.routes.ts) = auth (login, inscriptions) + `partenaire/*` + `gare/*` ; appli = `app.config` + mêmes interceptors HTTP.
 - [x] **Styles** : [styles.scss](../frontend/projects/mobili-business/src/styles.scss) réimporte les styles globaux ; `includePaths` SASS `src` sur le projet business ([angular.json](../frontend/angular.json)).
 - [x] **Bascule produit** : `partenaire/*` et `gare/*` **retirés** de l’[app.routes](../frontend/src/app/app.routes.ts) côté appli voyageur ; [redirect vers `businessWebBase`](../frontend/src/app/features/routing/redirect-to-business.component.ts) (voir [mobili-env.config](../frontend/projects/mobili-shared/src/lib/mobili-env.config.ts)). **Session** : origines différentes (ex. 4200 vs 4201) ⇒ **pas** de `localStorage` partagé — reconnexion sur le site Business ; futur : cookie domaine `.mobili.ci` ou SSO.
-- [x] **CI** : [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) exécute aussi `ng build mobili-business --configuration=production`. **Auth** : inchangé côté API (un seul `POST /v1/auth/login`).
+- [x] **Build** : `npm run verify` inclut `ng build mobili-business` (voir `package.json` racine). **Auth** : inchangé côté API (un seul `POST /v1/auth/login`).
 
 **Livrable (état actuel)** : `npm run verify` ; **port 4201** = portail partenaire + gare **fonctionnel** (mêmes écrans que 4200) ; 4200 redirige les routes pro vers `businessWebBase`.
 
@@ -72,7 +72,7 @@ Quand on dit « on termine la Phase 1 avant d’enchaîner », il faut distingue
 
 | Sous‑phase | Contenu | Statut (à l’équipe) | Bloque-t-il la Phase 2 back ? |
 |------------|---------|----------------------|---------------------------------|
-| **1.0 — Front scindé (code)** | Deux apps, `mobili-shared`, `businessWebBase`, redirection 4200→`businessWebBase`, CORS recette, CI double build, tests | **Fait** dans le dépôt | **Non** — le découpage packages Java (Phase 2) est indépendant. |
+| **1.0 — Front scindé (code)** | Deux apps, `mobili-shared`, `businessWebBase`, redirection 4200→`businessWebBase`, CORS recette, double build, tests | **Fait** dans le dépôt | **Non** — le découpage packages Java (Phase 2) est indépendant. |
 | **1.1 — Auth / session** | **Backend + front livrés** : refresh JWT + cookie **httpOnly** ; intercepteurs identiques voyageur **et** Mobili Business. **À caler ensuite sur domaines** (*.mobili.ci*, `credentials`, `SameSite`) **au moment du DNS** ; en local deux origines ⇒ double login encore normal. | **Code clos** · recette hors localhost = chantier infra + cookie domain quand vous déployez | **Ne bloque pas** la Phase 2 back. |
 | **1.2 — Déploiement** | S3 / CloudFront, secrets IAM — hors scope **code**. | Quand vous branchez l’infra | **Non** pour la suite code |
 
@@ -104,14 +104,13 @@ Quand on dit « on termine la Phase 1 avant d’enchaîner », il faut distingue
 - [ ] **Migrations** : *une* source de vérité Flyway — exécuter par **un** binaire désigné ou un **job** « migrator » ; éviter que les deux lancent `migrate` en concurrence.
 - [ ] **Tests d’intégration** : scénarios couvrant **les deux** apps ou contrats d’API si clients séparés.
 
-**Livrable** : deux JARs, CI `matrix` build / push, doc des ports locaux (ex. 8080 / 8081) et script `docker compose` de dev.
+**Livrable** : deux JARs, pipelines CI de ton choix (build / push), doc des ports locaux (ex. 8080 / 8081).
 
 ---
 
-## 7. Phase 4 — AWS (quand le split binaire est en prod)
+## 7. Phase 4 — Hébergement (quand le split binaire est retenu)
 
-- **Une API** : conserver le [task-definition / ECS actuel](../infra/aws/ecs/) tel quel jusqu’au besoin.
-- **Deux APIs** : second dépôt ECR, second service Fargate, **même** RDS, variables d’environnement alignées, budgets CPU/RAM ajustés ; adapter [workflows CD](../.github/workflows/cd.yml) en **deux** push d’images (voir [infra/aws/README.md](../infra/aws/README.md) pour le contexte).
+À planifier **en dehors de ce dépôt cours** : registry d’images, orchestrateur (ECS, K8s, etc.), secrets, budgets.
 
 **Risque coût** : deux tâches 24/7 ≠ un seul gros JAR — **chiffrer** avant de valider.
 
@@ -141,9 +140,9 @@ Quand on dit « on termine la Phase 1 avant d’enchaîner », il faut distingue
 | Phase | Statut (à mettre à jour) | Date / notes |
 |-------|-------------------------|--------------|
 | 0 Cadrage | ☑ | 2026-04-28 — [CADRAGE-PHASE-0.md](CADRAGE-PHASE-0.md) · ligne README « [État des phases](../README.md#phases-modularisation) » cochée. |
-| 1.0 Deux fronts + lib | **Clôturé (code)** · voir § 4.1 | 2026-04 — E2E Playwright : voyageur (`npm run e2e`) + Business (`npm run e2e:business`) ; CI [`e2e:all`](../frontend/package.json) |
+| 1.0 Deux fronts + lib | **Clôturé (code)** · voir § 4.1 | 2026-04 — E2E Playwright : voyageur (`npm run e2e`) + Business (`npm run e2e:business`) ; script [`e2e:all`](../frontend/package.json) |
 | 1.1 Auth / session | **OK (code)** — `POST /v1/auth/refresh` + cookie refresh **httpOnly** (API) ; même chaîne **`apiInterceptor`** + **`authInterceptor`** + **`hydrateFromRefresh()`** sur **voyageur** et **`mobili-business`**. Limitation locale : **4200 ≠ 4201** ⇒ pas de session partagée sans domaine commun (voir §4.1) — hors scope « double login localhost » jusqu’aux domaines *.mobili.ci. | Recette infra quand DNS prêt |
-| 1.2 Déploiement front business | **Infra hors dépôt** — pipeline dans [`.github/workflows/cd.yml`](../.github/workflows/cd.yml) ; **ne bloque pas** la clôture des phases « code » 0–2. | À brancher par équipe |
+| 1.2 Déploiement front business | **Infra hors dépôt** — à faire en cours (CI/CD, hébergement) ; **ne bloque pas** la clôture des phases « code » 0–2. | À brancher par équipe |
 | 2 Mono structuré / core Maven | **Clôturé** — **`mobili-core`** : `MobiliApiPaths` ; **`mobili-boot`** : `api.passenger` / `api.partner` / `api.admin` + `module.*` (domaine) ; une seule app Spring. | 2026-04 ~ |
 | 3 Deux JARs | **N/A par défaut** — ne lancer Phase 3 que si le besoin équipe/SLO/coûts est validé (§6). | |
 | 4 Double ECS + CI | **N/A par défaut** — suit la Phase 3 si un jour elle est retenue (§7). | |
@@ -154,7 +153,7 @@ Quand on dit « on termine la Phase 1 avant d’enchaîner », il faut distingue
 
 - Backend (`mobili-boot/`) : `api/passenger/{auth,user,trip,booking,ticket,payment,gare,inbox}`, `api/partner/*`, `api/admin/*` ; `module/**` (domaine) ; `infrastructure/security/SecurityConfig.java` ; (`mobili-core/`) `MobiliApiPaths.java`
 - Front : `frontend/src/app/app.routes.ts`, `core/guard/*.ts`
-- Infra : `docker-compose.yml`, `infra/aws/`, `.github/workflows/`
+- (Optionnel plus tard) Infra : compose, cloud, CI — **hors périmètre** du dépôt cours actuel
 
 ---
 

@@ -70,6 +70,6 @@ set MOBILI_BASE_URL=http://localhost:4200
 
 ---
 
-## CI
+## Tests E2E en pipeline (optionnel)
 
-Sur les PR/push GitHub (`main` / `develop`), le workflow **Frontend E2E smoke** installe Chromium et exécute `npm run e2e:all` dans `frontend/` (voyageur puis Business).
+Tu peux reproduire localement ce qu’une CI ferait plus tard : depuis `frontend/`, `npm run e2e:all` (voyageur puis Business, Chromium). Aucun workflow n’est versionné dans ce dépôt — à brancher dans ton cours (GitHub Actions, etc.) si besoin.
