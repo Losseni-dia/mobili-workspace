@@ -52,5 +52,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Deploy to server
-      run: echo "Déploiement de l'application sur le serveur de production OK
+      run: echo "Déploiement de l'application sur le serveur de production OK"
    
