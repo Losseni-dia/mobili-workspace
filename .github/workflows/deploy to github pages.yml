@@ -1,0 +1,93 @@
+name: Deploy mobili frontend to GitHub Pages
+on:
+  push:
+    branches:
+      - main
+      - "feature/**" # Déclenche le pipeline pour les branches de fonctionnalités
+      - "develop" # Déclenche le pipeline pour la branche de développement
+    paths-ignore:
+      - "README.md" # Ignore les changements sur le README
+      - "docs/**" # Ignore les changements dans le dossier docs
+      - ".github/workflows/**" # Ignore les changements dans les workflows GitHub Actions
+  workflow_dispatch: # Permet de déclencher manuellement le workflow depuis l'interface GitHub
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4 # v4 est la version stable actuelle
+
+      - name: setup node js ans install dependencies
+        uses: ./.github/actions/setupnode
+        with:
+          node-version: "20"
+      - name: Run tests
+        run: |
+          cd frontend
+          npm test -- --watch=false
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: setup node js and install dependencies
+        uses: ./.github/actions/setupnode
+
+      - name: Build both applications
+        run: |
+          cd frontend
+          # On build l'interface USER (sous-projet 'frontend')
+          npm run build -- frontend --base-href /mobili-workspace/user/
+          
+          # On build l'interface PRO (sous-projet 'mobili-business')
+          npm run build -- mobili-business --base-href /mobili-workspace/business/
+
+      - name: Create Final Deployment Folder
+        run: |
+          # 1. On crée un dossier racine pour le déploiement
+          mkdir -p deployment-folder/user
+          mkdir -p deployment-folder/business
+          
+          # 2. On copie l'app USER (depuis ton chemin image_fb82eb.png)
+          cp -r frontend/dist/frontend/browser/* deployment-folder/user/
+          
+          # 3. On copie l'app BUSINESS (depuis ton chemin image_fb82c9.png)
+          cp -r frontend/dist/mobili-business/browser/* deployment-folder/business/
+          
+          # 4. On crée un petit index pour ne pas avoir de page blanche à la racine
+          echo '<html><body style="font-family:sans-serif;text-align:center;padding:50px;">' > deployment-folder/index.html
+          echo '<h1>Mobili Workspace</h1>' >> deployment-folder/index.html
+          echo '<a href="user/" style="display:block;margin:10px;font-size:20px;">Accéder à l Interface USER</a>' >> deployment-folder/index.html
+          echo '<a href="business/" style="display:block;margin:10px;font-size:20px;">Accéder à l Interface BUSINESS</a>' >> deployment-folder/index.html
+          echo '</body></html>' >> deployment-folder/index.html
+
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # C'est ce dossier regroupé qu'on envoie à GitHub Pages
+          path: deployment-folder
+
+  # Deploy job
+  deploy:
+    runs-on: ubuntu-latest
+    # Add a dependency to the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment ste
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
+        with:
+          token: ${{ github.token }} # Automatically provided by GitHub Actions, no need to set as secret

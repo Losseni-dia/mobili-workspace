@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "version": "0.0.0",
+  "homepage": "https://Losseni-dia.github.io/mobili-workspace",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

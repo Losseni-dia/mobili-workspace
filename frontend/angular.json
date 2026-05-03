@@ -150,11 +150,10 @@
           "options": {
             "browser": "projects/mobili-business/src/main.ts",
             "tsConfig": "projects/mobili-business/tsconfig.app.json",
+            "baseHref": "/mobili-workspace/",
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {
-              "includePaths": [
-                "src"
-              ]
+              "includePaths": ["src"]
             },
             "assets": [
               {
@@ -167,9 +166,7 @@
                 "output": "/"
               }
             ],
-            "styles": [
-              "projects/mobili-business/src/styles.scss"
-            ]
+            "styles": ["projects/mobili-business/src/styles.scss"]
           },
           "configurations": {
             "production": {
