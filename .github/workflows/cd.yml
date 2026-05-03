@@ -45,9 +45,20 @@ jobs:
         run: |
           cd frontend
           npm run build
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
+          path: frontend/dist # Assure-toi que c'est le bon chemin vers tes fichiers buildés
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: frontend/dist
       - name: Deploy to server
         run: echo "Déploiement de l'application sur le serveur de production OK"
