@@ -16,18 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4 # v4 est la version stable actuelle
       
-      - name: setup node js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: 'npm' # Active le cache AUTOMATIQUEMENT
-          cache-dependency-path: frontend/package-lock.json # Indique où est ton fichier
-
-      - name: 📦 Install npm dependencies
-        run: |
-          cd frontend
-          npm ci # Utilise 'ci' pour les pipelines, c'est plus rapide
-
+      - name: setup node js ans install dependencies
+        uses: ./.github/actions/setupnode
       - name: Run tests
         run: |
           cd frontend
@@ -38,17 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: setup node js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: 📦 Install npm dependencies
-        run: |
-          cd frontend
-          npm ci
+      - name: setup node js ans install dependencies
+        uses: ./.github/actions/setupnode
 
       - name: Build application
         run: |

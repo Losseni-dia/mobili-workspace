@@ -1,0 +1,17 @@
+name: "Setup node and install dependencies"
+description: "Sets up Node.js and install dependencies for frontend, caches npm dependencies, installs them"
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install npm dependencies
+      shell: bash
+      run: |
+        cd frontend
+        npm ci
