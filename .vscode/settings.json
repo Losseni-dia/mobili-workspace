@@ -2,5 +2,13 @@
     "java.debug.settings.onBuildFailureProceed": true,
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.maven.enabled": true,
-    "java.import.exclusions": ["**/frontend/**", "**/node_modules/**", "**/dist/**"]
+    "java.import.exclusions": [
+        "**/frontend/**",
+        "**/node_modules/**",
+        "**/dist/**"
+    ],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "losseni-dia",
+        "projectKey": "Losseni-dia_mobili-workspace"
+    }
 }
