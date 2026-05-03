@@ -48,7 +48,7 @@ public class AdminController {
 
 
 
-    // 💡 AJOUT : Récupérer tous les utilisateurs pour le tableau Angular
+    // 💡 AJOUT : Récupérer tous les utilisateurs pour le tableau Angular gogogo
     @GetMapping("/users")
     public ResponseEntity<List<UserAdminResponse>> getAllUsers() {
         List<User> users = userService.findAllUsers();
