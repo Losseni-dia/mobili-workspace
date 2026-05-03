@@ -1,6 +1,15 @@
 name: Cd Pipeline Mobili
-on: [push, workflow_dispatch]
-
+on: 
+  push:
+    branches:
+      - main
+      - 'feature/**' # Déclenche le pipeline pour les branches de fonctionnalités
+      - 'develop' # Déclenche le pipeline pour la branche de développement
+    paths-ignore:
+      - 'README.md' # Ignore les changements sur le README
+      - 'docs/**' # Ignore les changements dans le dossier docs  
+      - '.github/workflows/**' # Ignore les changements dans les workflows GitHub Actions
+  workflow_dispatch: # Permet de déclencher manuellement le workflow depuis l'interface GitHub
 jobs:
   test:
     runs-on: ubuntu-latest
