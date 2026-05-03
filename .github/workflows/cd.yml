@@ -30,6 +30,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: setup node js ans install dependencies
         uses: ./.github/actions/setupnode
+        with:
+          node-version: '20' # Spécifie la version de Node.js à utiliser pour le build
 
       - name: Build application
         run: |

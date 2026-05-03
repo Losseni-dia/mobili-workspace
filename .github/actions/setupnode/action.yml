@@ -1,12 +1,17 @@
 name: "Setup node and install dependencies"
 description: "Sets up Node.js and install dependencies for frontend, caches npm dependencies, installs them"
+inputs:
+  node-version:
+    description: "Version of Node.js to use (e.g., '14', '16', '18', '22')"
+    required: true
+    default: "22"
 runs:
   using: composite
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: "22"
+        node-version: ${{ inputs.node-version }}
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
