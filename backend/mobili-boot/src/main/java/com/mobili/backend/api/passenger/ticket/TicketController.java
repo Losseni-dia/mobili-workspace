@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/v1/tickets")
+@RequestMapping("/tickets")
 @RequiredArgsConstructor
 public class TicketController {
 

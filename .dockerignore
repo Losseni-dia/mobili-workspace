@@ -1,0 +1,9 @@
+# Ne jamais inclure les secrets dans l'image elle-même
+.env
+*.env
+docker-compose.yml
+
+# Ne pas envoyer les dossiers lourds (déjà gérés dans le Dockerfile)
+node_modules/
+target/
+.git/

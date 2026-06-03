@@ -20,6 +20,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
+                        "JOIN FETCH b.customer " +
+                        "LEFT JOIN FETCH b.passengerNames " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "WHERE t.id = :tripId " +
+                        "ORDER BY b.bookingDate DESC")
+        List<Booking> findAllByTripIdWithDetails(@Param("tripId") Long tripId);
+
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.station " +
                         "JOIN FETCH b.customer " +
                         "LEFT JOIN FETCH b.passengerNames " +

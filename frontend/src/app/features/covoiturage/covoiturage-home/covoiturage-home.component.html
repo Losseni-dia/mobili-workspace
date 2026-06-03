@@ -2,119 +2,73 @@
 
   @let user = u();
 
-
-
   <header class="cov-welcome">
-
     <div class="cov-welcome__text">
-
       <h1 class="cov-welcome__title">
-
         Espace covoiturage
-
         @if (user?.firstname) {
-
           <span class="cov-welcome__name">{{ user!.firstname }}</span>
-
         }
-
       </h1>
-
       <p class="cov-welcome__sub">Gérez vos offres, votre dossier et le pilotage de vos trajets.</p>
-
     </div>
-
     <div class="cov-welcome__actions">
       <a routerLink="/covoiturage/publier" class="btn-pub" title="Nouveau trajet visible dans la recherche">
         <span class="btn-pub__icon" aria-hidden="true">＋</span>
         Publier un trajet
+      </a>
+      <a routerLink="/covoiturage/profil" class="btn-profil" title="Modifier mon profil covoiturage">
+        <span aria-hidden="true">👤</span>
+        Mon profil
       </a>
       <a routerLink="/covoiturage/scan" class="btn-scan" title="Valider un QR code à l’embarquement (vos trajets)">
         <span class="btn-scan__icon" aria-hidden="true">📷</span>
         Scanner
       </a>
     </div>
-
   </header>
 
-
-
   @if (user?.covoiturageKycExpiringWithin30Days) {
-
     <div class="banner banner--warn" role="status">
-
       <span class="banner__ico" aria-hidden="true">⏱</span>
-
       <div class="banner__body">
-
         <strong>Pièce d’identité</strong>
-
         <p>Expiration proche ou dans les 30 prochains jours. Pensez à faire renouveler votre CNI auprès d’un
-
           administrateur Mobili.</p>
-
       </div>
-
     </div>
-
   }
 
   @if (user?.covoiturageKycIsDocumentExpired) {
-
     <div class="banner banner--danger" role="alert">
-
       <span class="banner__ico" aria-hidden="true">!</span>
-
       <div class="banner__body">
-
         <strong>Pièce d’identité expirée</strong>
-
         <p>Votre profil covoiturage n’est plus conforme. Contactez l’administration pour mettre à jour votre dossier.</p>
-
       </div>
-
     </div>
-
   }
 
-
-
   <section class="panel panel--trips" aria-labelledby="heading-trips">
-
     <div class="panel__head">
-
       <h2 id="heading-trips" class="panel__title">Mes trajets publiés</h2>
-
       @if (myTrips(); as list) {
         @if (list.length > 0) {
           <span class="panel__count">{{ list.length }} voyage{{ list.length > 1 ? 's' : '' }}</span>
         }
       }
-
     </div>
 
-
-
     @if (loadingTrips()) {
-
       <div class="state state--load">
-
         <div class="skeleton" aria-hidden="true"></div>
-
         <div class="skeleton skeleton--short" aria-hidden="true"></div>
-
         <p class="state__text">Chargement de vos offres…</p>
-
       </div>
-
     } @else if (myTrips()?.length === 0) {
-
       <div class="state state--empty">
-
         <div class="state__illus" aria-hidden="true">🚗</div>
-
         <p class="state__title">Aucun trajet pour l’instant</p>
-
         <p class="state__text">Publiez un trajet — il apparaîtra ici et dans la recherche Mobili.</p>
 
         <a routerLink="/covoiturage/publier" class="btn-pub btn-pub--inline">Publier un trajet</a>
@@ -129,51 +83,85 @@
 
           <li class="trip-card">
 
-            <div class="trip-card__route">
+            <!-- Route + chips + prix -->
+            <div class="trip-card__main">
 
-              <span class="trip-card__from">{{ t.departureCity }}</span>
+              <div class="trip-card__route">
+                <span class="trip-card__from">{{ t.departureCity }}</span>
+                <span class="trip-card__arrow" aria-hidden="true">→</span>
+                <span class="trip-card__to">{{ t.arrivalCity }}</span>
+              </div>
 
-              <span class="trip-card__arrow" aria-hidden="true">→</span>
+              <div class="trip-card__chips">
+                <span class="chip chip--id">#{{ t.id }}</span>
+                <span class="chip">{{ t.departureDateTime | date: 'dd/MM/yy HH:mm' }}</span>
+                <span class="chip">{{ formatVehicleType(t.vehicleType) }}</span>
+                <span class="chip">{{ t.availableSeats }} / {{ t.totalSeats }} places</span>
+              </div>
 
-              <span class="trip-card__to">{{ t.arrivalCity }}</span>
-
-            </div>
-
-            <div class="trip-card__chips">
-
-              <span class="chip chip--id">#{{ t.id }}</span>
-
-              <span class="chip">{{ t.departureDateTime | date: 'short' }}</span>
-
-              <span class="chip chip--type">{{ formatVehicleType(t.vehicleType) }}</span>
-
-            </div>
-
-            <div class="trip-card__price">
-
-              <span class="price-val">{{ t.price | number }} <small>FCFA / place</small></span>
+              <div class="trip-card__price">
+                <span class="price-val">{{ t.price | number }}<small>FCFA / place</small></span>
+              </div>
 
             </div>
 
+            <!-- Actions -->
             <div class="trip-card__actions">
-
-              <a
-
-                class="btn btn--primary"
-
-                routerLink="/covoiturage/piloter"
-
-                [queryParams]="{ trip: t.id }"
-
-                title="Ouvrir la console de ce voyage"
-
-                >Piloter</a
-
+              <a class="btn btn--primary" routerLink="/covoiturage/piloter" [queryParams]="{ trip: t.id }">Piloter</a>
+              <a class="btn btn--secondary" [routerLink]="['/covoiturage/modifier', t.id]">Modifier</a>
+              <button
+                type="button"
+                class="btn btn--outline"
+                (click)="toggleBookings(t.id)"
+                [attr.aria-expanded]="tripBookings(t.id) !== null"
               >
-
+                @if (isLoadingBookings(t.id)) { Chargement… }
+                @else if (tripBookings(t.id) !== null) { Masquer réservations }
+                @else { Réservations }
+              </button>
               <button type="button" class="btn btn--ghost" (click)="removeTrip(t.id)">Supprimer</button>
-
             </div>
+
+            <!-- Tableau réservations (toggle) -->
+            @if (tripBookings(t.id); as bookings) {
+              <div class="trip-bookings">
+                <p class="trip-bookings__title">Réservations ({{ bookings.length }})</p>
+                @if (bookings.length === 0) {
+                  <p class="trip-bookings__empty">Aucune réservation pour ce trajet.</p>
+                } @else {
+                  <table class="bookings-table">
+                    <thead>
+                      <tr>
+                        <th>Référence</th>
+                        <th>Voyageur(s)</th>
+                        <th>Places</th>
+                        <th>Embarquement</th>
+                        <th>Descente</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (b of bookings; track b.id) {
+                        <tr>
+                          <td class="ref">{{ b.reference }}</td>
+                          <td>{{ (b.passengerNames?.length ? b.passengerNames!.join(', ') : b.customerName) || '—' }}</td>
+                          <td class="center">{{ b.numberOfSeats }}</td>
+                          <td>{{ b.boardingCity || '—' }}</td>
+                          <td>{{ b.alightingCity || '—' }}</td>
+                          <td class="price">{{ b.totalPrice | number }} FCFA</td>
+                          <td>
+                            <span class="booking-status booking-status--{{ b.status?.toLowerCase() }}">
+                              {{ bookingStatusLabel(b.status) }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            }
 
           </li>
 

@@ -171,6 +171,59 @@ public class TripService {
         tripRepository.delete(t);
     }
 
+    @Transactional
+    public Trip updateCovoiturageSoloTrip(
+            Long id, CovoiturageSoloTripRequestDTO dto, MultipartFile vehicleImage, UserPrincipal principal) {
+        Trip t = findById(id);
+        if (t.getCovoiturageOrganizer() == null) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Ce n'est pas une offre covoiturage particulier.");
+        }
+        boolean admin = principal.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        if (!admin && !t.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Vous n'êtes pas l'organisateur de ce voyage.");
+        }
+        t.setDepartureCity(dto.getDepartureCity().trim());
+        t.setArrivalCity(dto.getArrivalCity().trim());
+        t.setBoardingPoint(dto.getBoardingPoint().trim());
+        if (dto.getVehiculePlateNumber() != null && !dto.getVehiculePlateNumber().isBlank()) {
+            t.setVehiculePlateNumber(dto.getVehiculePlateNumber().trim().toUpperCase(Locale.ROOT));
+        }
+        t.setVehicleType(dto.getVehicleType());
+        t.setDepartureDateTime(dto.getDepartureDateTime());
+        t.setPrice(dto.getPrice());
+        if (dto.getTotalSeats() < (t.getTotalSeats() - t.getAvailableSeats())) {
+            throw new MobiliException(
+                    MobiliErrorCode.VALIDATION_ERROR,
+                    "Impossible de réduire les places en dessous du nombre déjà réservé.");
+        }
+        int delta = dto.getTotalSeats() - t.getTotalSeats();
+        t.setTotalSeats(dto.getTotalSeats());
+        t.setAvailableSeats(Math.max(0, t.getAvailableSeats() + delta));
+        t.setMoreInfo(dto.getMoreInfo() != null && !dto.getMoreInfo().isBlank() ? dto.getMoreInfo().trim() : null);
+        if (vehicleImage != null && !vehicleImage.isEmpty()) {
+            t.setVehicleImageUrl(uploadService.saveImage(vehicleImage, "vehicles"));
+        }
+        tripStopSyncService.syncStopsForTrip(t);
+        tripRepository.save(t);
+        return findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.booking.booking.entity.Booking> findBookingsForCovoiturageSoloTrip(
+            Long tripId, UserPrincipal principal) {
+        Trip t = findById(tripId);
+        if (t.getCovoiturageOrganizer() == null) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Ce n'est pas une offre covoiturage particulier.");
+        }
+        boolean admin = principal.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        if (!admin && !t.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Vous n'êtes pas l'organisateur de ce voyage.");
+        }
+        return bookingRepository.findAllByTripIdWithDetails(tripId);
+    }
+
     // --- RECHERCHE (terminus + étapes dans moreInfo, ordre : départ → étapes CSV → arrivée) ---
     @Transactional(readOnly = true)
     public List<Trip> searchTrips(String departure, String arrival, LocalDate date) {

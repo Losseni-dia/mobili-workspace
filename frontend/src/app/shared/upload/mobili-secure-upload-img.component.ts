@@ -23,13 +23,9 @@ interface ResolvedMedia {
   imports: [CommonModule],
   template: `
     @if (displayKind() === 'pdf' && src(); as u) {
-      <a
-        [href]="u"
-        target="_blank"
-        rel="noopener noreferrer"
-        [attr.class]="hostClass() || null"
-        >{{ pdfLinkLabel() }}</a
-      >
+      <a [href]="u" target="_blank" rel="noopener noreferrer" [attr.class]="hostClass() || null">{{
+        pdfLinkLabel()
+      }}</a>
     } @else if (displayKind() === 'image' && src(); as u) {
       <img
         [src]="u"
@@ -110,4 +106,14 @@ export class MobiliSecureUploadImgComponent {
     this.src.set(res.url);
     this.displayKind.set(res.kind);
   }
+
+  uploadAvatar(file: File) {
+    // On récupère l'API URL via ton service (qui gère host.docker.internal)
+    const apiUrl = this.config.getEnvironmentVariable('apiUrl');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post(`${apiUrl}/images/upload-avatar`, formData);
+  }
 }
+

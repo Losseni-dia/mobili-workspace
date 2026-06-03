@@ -22,13 +22,17 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never
+      show-details: never # Sécurité : ne pas exposer les détails de la DB en public
 
 mobili:
   security:
     refresh:
-      secure: true
+      secure: ${JWT_COOKIE_SECURE:true} # true en prod HTTPS, false en local HTTP
   cors:
     allowed-origins:
-      - https://CHANGE-ME.votredomaine.ci
-      - https://www.CHANGE-ME.votredomaine.ci
+      - http://localhost
+      - http://localhost:81
+      - http://127.0.0.1
+      - http://127.0.0.1:81
+      - https://mobili.ci
+      - https://www.mobili.ci

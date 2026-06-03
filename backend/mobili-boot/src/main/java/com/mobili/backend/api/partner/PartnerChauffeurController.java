@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/partenaire/chauffeurs")
+@RequestMapping("/partenaire/chauffeurs")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyAuthority('ROLE_PARTNER','ROLE_GARE','ROLE_ADMIN')")
 public class PartnerChauffeurController {

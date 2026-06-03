@@ -30,7 +30,7 @@ import com.mobili.backend.module.user.service.UserService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/bookings")
+@RequestMapping("/bookings")
 public class BookingController {
 
     private final BookingService bookingService;

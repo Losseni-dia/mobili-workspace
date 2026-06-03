@@ -348,11 +348,22 @@ export class AuthService {
    * Met à jour le profil de l'utilisateur (Infos + Avatar)
    */
   updateProfile(userId: number, formData: FormData): Observable<AuthResponse> {
-    // 💡 L'intercepteur ajoutera /v1/users/${userId}
     return this.http.put<AuthResponse>(`/users/${userId}`, formData).pipe(
       tap(() => {
-        // Une fois mis à jour, on rafraîchit les signaux globaux
         this.fetchUserProfile().subscribe();
+      }),
+    );
+  }
+
+  /**
+   * Met à jour le profil covoiturage du conducteur (véhicule + photos).
+   * Rafraîchit le signal currentUser après succès.
+   */
+  updateCovoiturageProfile(formData: FormData): Observable<AuthResponse> {
+    return this.http.put<AuthResponse>('/covoiturage/profile', formData).pipe(
+      tap((updated) => {
+        const cur = this.getUserFromStorage();
+        this.saveUser({ ...cur, ...updated, token: cur?.token ?? '' } as AuthResponse);
       }),
     );
   }

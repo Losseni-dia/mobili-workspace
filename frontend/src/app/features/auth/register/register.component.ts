@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ImagePanDirective } from '../../../shared/directives/image-pan.directive';
@@ -109,9 +110,18 @@ export class RegisterComponent implements OnInit {
           },
         });
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
-        this.errorMessage.set('Erreur : Ce login ou cet email est déjà utilisé.');
+        const apiMsg = err.error && typeof err.error.message === 'string' ? err.error.message.trim() : '';
+        if (apiMsg) {
+          this.errorMessage.set(apiMsg);
+          return;
+        }
+        if (err.status === 409 || err.status === 400) {
+          this.errorMessage.set('Erreur : Ce login ou cet email est déjà utilisé.');
+          return;
+        }
+        this.errorMessage.set(`Erreur (${err.status}). Réessayez ou contactez le support.`);
       },
     });
   }

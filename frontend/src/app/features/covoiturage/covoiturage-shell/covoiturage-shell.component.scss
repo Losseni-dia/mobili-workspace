@@ -1,117 +1,195 @@
-$sidebar: 220px;
-$bg: #f4f6fb;
+// ─── Tokens ───────────────────────────────────────────────────────────────────
+$sidebar-w: 230px;
+$sidebar-w-collapsed: 68px;
+$navy: #0f172a;
+$navy-mid: #1e293b;
+$teal: #0d9488;
+$teal-light: #14b8a6;
+$amber: #f59e0b;
+$text-dim: #94a3b8;
+$text-soft: #cbd5e1;
+$divider: rgba(255,255,255,0.07);
+$bg-page: #f0f4f8;
 
+// ─── Host ─────────────────────────────────────────────────────────────────────
 :host {
   display: block;
   min-height: 100vh;
-  background: $bg;
+  background: $bg-page;
+  font-family: inherit;
 }
 
+// ─── Shell grid ───────────────────────────────────────────────────────────────
 .cov-shell {
   display: grid;
-  grid-template-columns: $sidebar 1fr;
+  grid-template-columns: $sidebar-w 1fr;
   min-height: 100vh;
+  transition: grid-template-columns 0.22s ease;
+
   &.collapsed {
-    grid-template-columns: 72px 1fr;
+    grid-template-columns: $sidebar-w-collapsed 1fr;
+
+    .cov-badge,
+    .cov-link span:last-child { display: none; }
+    .cov-link { justify-content: center; padding: 0.7rem; }
+    .cov-brand .cov-logo span:last-child { display: none; }
+    .cov-footer .cov-link span { display: none; }
   }
 }
 
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 .cov-sidebar {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: $navy;
   display: flex;
   flex-direction: column;
-  padding: 1rem 0.75rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+
+  // subtle left-edge accent line
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, $teal 0%, $teal-light 50%, transparent 100%);
+    border-radius: 0 3px 3px 0;
+  }
 }
 
+// Brand
 .cov-brand {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 0.35rem 0.75rem;
+  padding: 1.25rem 1rem 0.75rem 1.2rem;
   gap: 0.5rem;
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #f59e0b;
-    display: inline-block;
-  }
+  border-bottom: 1px solid $divider;
+
   .cov-logo {
     color: #fff;
     text-decoration: none;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    font-size: 0.92rem;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: $amber;
+    box-shadow: 0 0 8px rgba($amber, 0.6);
+    flex-shrink: 0;
   }
 }
 
 .cov-collapse {
-  background: rgba(255, 255, 255, 0.08);
-  border: 0;
-  color: #cbd5e1;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: $text-soft;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover { background: rgba(255,255,255,0.12); color: #fff; }
+}
+
+// Badge label
+.cov-badge {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: $text-dim;
+  padding: 0.75rem 1.2rem 0.4rem;
   font-weight: 700;
 }
 
-.cov-badge {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: #94a3b8;
-  margin: 0 0.5rem 0.75rem;
-}
-
+// Nav
 .cov-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
   flex: 1;
+  padding: 0.25rem 0.65rem;
+  overflow-y: auto;
 }
 
 .cov-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.65rem;
-  border-radius: 8px;
-  color: #cbd5e1;
+  gap: 0.65rem;
+  padding: 0.62rem 0.75rem;
+  border-radius: 10px;
+  color: $text-dim;
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   border: 0;
   background: transparent;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
+  transition: background 0.13s, color 0.13s;
+  position: relative;
+
+  // icon
+  span:first-child {
+    font-size: 1.05rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+  }
+
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background: rgba(255,255,255,0.06);
+    color: $text-soft;
   }
+
   &.active {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fbbf24;
+    background: rgba($teal, 0.15);
+    color: $teal-light;
+    font-weight: 700;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -0.65rem;
+      top: 20%; bottom: 20%;
+      width: 3px;
+      background: $teal-light;
+      border-radius: 0 3px 3px 0;
+    }
   }
-  &.soft {
-    opacity: 0.85;
-  }
+
+  &.soft { opacity: 0.7; }
 }
 
+// Footer
 .cov-footer {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  padding: 0.65rem;
+  border-top: 1px solid $divider;
   margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+// ─── Main content ─────────────────────────────────────────────────────────────
 .cov-main {
   min-width: 0;
   display: flex;
@@ -120,22 +198,32 @@ $bg: #f4f6fb;
 
 .cov-top {
   background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.1rem 2rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
   h1 {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 800;
     color: #0f172a;
+    letter-spacing: -0.02em;
   }
+
   p {
-    margin: 0.35rem 0 0;
+    margin: 0;
     color: #64748b;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
   }
 }
 
 .cov-outlet {
   flex: 1;
-  padding: 1.25rem 1.5rem 2.5rem;
+  padding: 1.75rem 2rem 3rem;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem 1rem 2rem;
+  }
 }

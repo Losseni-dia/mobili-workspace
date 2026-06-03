@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/v1/admin")
+@RequestMapping("/admin")
 @RequiredArgsConstructor
 public class AdminController {
 

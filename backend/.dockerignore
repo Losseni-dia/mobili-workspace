@@ -1,0 +1,34 @@
+# Maven — builds locaux (on rebuild dans l’image)
+**/target/
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+.project
+.classpath
+.settings
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / tmp locaux
+*.log
+logs/
+
+# Environnement local — à ne pas mettre dans l’image Docker (secrets)
+.env
+.env.*
+!.env.example
+
+# Tests / rapports (optionnel si tu veux alléger le contexte)
+**/surefire-reports/
+**/failsafe-reports/
+
+# Documentation (inutile pour compiler le JAR)
+*.md,ö.ä-

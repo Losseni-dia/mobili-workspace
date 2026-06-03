@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/v1/partners")
+@RequestMapping("/partners")
 @RequiredArgsConstructor
 public class PartenerReadController {
 

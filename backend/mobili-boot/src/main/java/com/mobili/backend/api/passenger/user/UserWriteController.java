@@ -23,7 +23,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserWriteController {
 

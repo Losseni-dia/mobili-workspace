@@ -247,6 +247,13 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        path: 'modifier/:id',
+        loadComponent: () =>
+          import('@mobili-app/features/covoiturage/covoiturage-edit/covoiturage-edit.component').then(
+            (m) => m.CovoiturageEditComponent,
+          ),
+      },
+      {
         path: 'piloter',
         loadComponent: () =>
           import('@mobili-app/features/chauffeur/driver-console/driver-console.component').then(
@@ -257,6 +264,13 @@ export const businessRoutes: Routes = [
         path: 'scan',
         loadComponent: () =>
           import('@mobili-app/features/gare/scanner/scanner.component').then((m) => m.TicketScannerComponent),
+      },
+      {
+        path: 'profil',
+        loadComponent: () =>
+          import('@mobili-app/features/covoiturage/covoiturage-profil/covoiturage-profil.component').then(
+            (m) => m.CovoiturageProfilComponent,
+          ),
       },
       {
         path: 'notifications',

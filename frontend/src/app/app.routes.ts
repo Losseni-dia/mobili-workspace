@@ -8,6 +8,7 @@ import { AdminUsers } from './features/admin/admin-users/admin-users';
 
 export const routes: Routes = [
   // ============ ROUTES PUBLIQUES ============
+
   {
     path: '',
     loadComponent: () =>
@@ -87,7 +88,9 @@ export const routes: Routes = [
       {
         path: 'notifications',
         loadComponent: () =>
-          import('./features/notifications/inbox-page/inbox-page.component').then((m) => m.InboxPageComponent),
+          import('./features/notifications/inbox-page/inbox-page.component').then(
+            (m) => m.InboxPageComponent,
+          ),
       },
       {
         path: 'trip-channel/:tripId',

@@ -1,0 +1,93 @@
+name: "mobili-prod"
+
+services:
+  frontend-user:
+    container_name: "frontend-user-prod"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod.user 
+    image: mobili-frontend-user:prod
+    ports:
+      - "80:80" # Accessible sur http://localhost
+    restart: always
+    networks:
+      - frontend-network
+    depends_on:
+      backend: { condition: service_healthy }
+
+  frontend-business:
+    container_name: "frontend-business-prod"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod.business # Nginx + baseHref
+    image: mobili-frontend-business:prod
+    ports:
+      - "81:80" # Accessible sur http://localhost
+    restart: always
+    networks:
+      - frontend-network
+    depends_on:
+      backend: { condition: service_healthy }
+
+  backend:
+    container_name: "backend-prod"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod  # Utilise le build multi-module sécurisé
+    image: mobili-backend:prod
+    restart: always                # Redémarre automatiquement en cas de crash
+    ports:
+      - "8080:8080"
+    environment:
+      # Tests Docker en HTTP : sans cela le cookie refresh Secure=true est ignoré par le navigateur.
+      # Déploiement HTTPS : JWT_COOKIE_SECURE=true dans docker.env ou les variables CI.
+      JWT_COOKIE_SECURE: ${JWT_COOKIE_SECURE:-false}
+    volumes:
+      - ./backend/uploads:/app/uploads # Persistance des images/fichiers téléchargés
+    env_file:
+      - docker.env                 # Chargement des secrets (DB_URL, JWT, etc.)
+    networks:
+      - frontend-network           # Accessible par les frontends
+      - backend-network            # Accès privé à la DB et Redis
+    depends_on:
+      #db:
+        #condition: service_healthy # Attend que Postgres soit prêt à répondre
+      redis:
+        condition: service_healthy # Attend que Redis soit opérationnel
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/v1/actuator/health || exit 1"]
+      interval: 15s                # Vérifie l'état toutes les 15 secondes
+      timeout: 10s                 # Temps max pour répondre
+      retries: 5                   # Nombre d'échecs avant de marquer "Unhealthy"
+      start_period: 90s            # Laisse le temps à Spring Boot + Flyway de démarrer
+
+#-- --- CACHE (Redis) ---
+  redis:
+    image: redis:7-alpine
+    container_name: "mobili-redis-container"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+
+  # db:
+  #   image: postgres:16-alpine
+  #   restart: always
+  #   env_file:
+  #     - docker.env
+  #   networks:
+  #     - backend-network
+  #   volumes:
+  #     - mobili-db-prod-data:/var/lib/postgresql/data
+  #   # Pour DBeaver / psql depuis la machine hôte (localhost). Sur un serveur public, retirer ou protéger par firewall.
+  #   ports:
+  #     - "${MOBILI_DB_PORT:-5432}:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+networks:
+  frontend-network:
+  backend-network:
+
+#volumes:
+ # mobili-db-prod-data:

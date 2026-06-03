@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth/auth.service';
 import { NotificationService } from '../../../../core/services/notification/notification.service';
+import { ConfigurationService } from '../../../../configurations/services/configuration.service';
 
 @Component({
   selector: 'app-user-edit',
@@ -18,6 +19,7 @@ export class UserEditComponent implements OnInit {
   private router = inject(Router);
   private location = inject(Location);
   private notificationService = inject(NotificationService);
+  private configuration = inject(ConfigurationService);
 
   isLoading = signal(false);
   avatarPreview = signal<string | null>(null);
@@ -42,10 +44,10 @@ export class UserEditComponent implements OnInit {
       });
 
       if (this.user.avatarUrl) {
-        // 💡 CORRECTION : On n'ajoute plus "users/" manuellement car il est déjà
-        // dans la chaîne retournée par ton API (vu dans ta console)
-        const url = `${this.authService.IMAGE_BASE_URL}${this.user.avatarUrl}`;
-        this.avatarPreview.set(url);
+        const url = this.configuration.resolveUploadMediaUrl(this.user.avatarUrl);
+        if (url) {
+          this.avatarPreview.set(url);
+        }
       }
     }
   }

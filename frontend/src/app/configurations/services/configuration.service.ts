@@ -41,7 +41,7 @@ export class ConfigurationService {
             return normalizeApiBase(w.__MOBILI_API_URL__);
         }
         const meta = document.querySelector('meta[name="mobili-api-base"]')?.getAttribute('content');
-        if (meta && meta.trim().length > 0) {
+        if (meta && meta.trim().length > 0 && !meta.includes('__')) {
             return normalizeApiBase(meta);
         }
         return null;
@@ -58,8 +58,8 @@ export class ConfigurationService {
    */
   getUploadBaseUrl(): string {
     const api = this.getEnvironmentVariable('apiUrl') ?? CONFIGURATION_DATA.variables.local.apiUrl;
-    const withoutV1 = api.replace(/\/?v1\/?$/, '').replace(/\/$/, '');
-    return `${withoutV1}/uploads/`;
+    const base = api.replace(/\/?$/, '');
+    return `${base}/uploads/`;
   }
 
   /**
@@ -153,4 +153,6 @@ export class ConfigurationService {
     }
     return 'http://localhost:4200';
   }
+
+  
 }

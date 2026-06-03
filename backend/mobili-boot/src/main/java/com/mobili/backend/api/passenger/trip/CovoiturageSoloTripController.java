@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.booking.booking.dto.BookingResponseDTO;
+import com.mobili.backend.module.booking.booking.dto.mapper.BookingMapper;
 import com.mobili.backend.module.trip.dto.CovoiturageSoloTripRequestDTO;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
@@ -30,13 +33,14 @@ import lombok.RequiredArgsConstructor;
  * rattachement à un partenaire technique côté serveur.
  */
 @RestController
-@RequestMapping("/v1/covoiturage/trips")
+@RequestMapping("/covoiturage/trips")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('CHAUFFEUR', 'ADMIN')")
 public class CovoiturageSoloTripController {
 
     private final TripService tripService;
     private final TripMapper tripMapper;
+    private final BookingMapper bookingMapper;
 
     /**
      * Liste des trajets covoiturage du conducteur. La racine {@code GET /v1/covoiturage/trips} est un alias
@@ -62,6 +66,24 @@ public class CovoiturageSoloTripController {
             @AuthenticationPrincipal UserPrincipal principal) {
         Trip saved = tripService.createCovoiturageSoloTrip(dto, vehicleImage, principal);
         return toDtoWithLegFares(saved);
+    }
+
+    @PutMapping("/{id}")
+    public TripResponseDTO update(
+            @PathVariable Long id,
+            @RequestPart("trip") @Valid CovoiturageSoloTripRequestDTO dto,
+            @RequestPart(value = "vehicleImage", required = false) MultipartFile vehicleImage,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        Trip saved = tripService.updateCovoiturageSoloTrip(id, dto, vehicleImage, principal);
+        return toDtoWithLegFares(saved);
+    }
+
+    @GetMapping("/{id}/bookings")
+    public List<BookingResponseDTO> tripBookings(
+            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
+        return tripService.findBookingsForCovoiturageSoloTrip(id, principal).stream()
+                .map(bookingMapper::toDto)
+                .toList();
     }
 
     @DeleteMapping("/{id}")
