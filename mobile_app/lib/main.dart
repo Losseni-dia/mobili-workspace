@@ -15,6 +15,9 @@ Future<void> main() async {
   // Les boîtes Hive sont ouvertes dans leurs repositories respectifs
   // via ref.watch() au premier accès — pas d'ouverture globale ici.
 
+  // ── Initialisation du Client API (Nouveau) ──────────────────
+  await ApiClient.init();
+
   runApp(
     const ProviderScope(
       child: MobiliApp(),
