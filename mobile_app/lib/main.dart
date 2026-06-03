@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'core/network/api_client.dart'; 
 import 'core/router/go_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -12,10 +13,8 @@ Future<void> main() async {
   // ── Hive (cache offline) ──────────────────────────────────
   final appDocDir = await getApplicationDocumentsDirectory();
   await Hive.initFlutter(appDocDir.path);
-  // Les boîtes Hive sont ouvertes dans leurs repositories respectifs
-  // via ref.watch() au premier accès — pas d'ouverture globale ici.
 
-  // ── Initialisation du Client API (Nouveau) ──────────────────
+  // ── Initialisation du Client API ──────────────────────────
   await ApiClient.init();
 
   runApp(
@@ -35,8 +34,8 @@ class MobiliApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Mobili',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light,      
+      darkTheme: AppTheme.dark,     
       themeMode: ThemeMode.system,
       routerConfig: router,
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../shared/widgets/mobili_error_widget.dart';
 import '../../temp_pages.dart';
 
 // import '../../features/auth/presentation/pages/login_page.dart';
@@ -285,10 +286,13 @@ GoRouter goRouter(GoRouterRef ref) {
       ),
     ],
 
-    // ── Page 404 ─────────────────────────────────────────────
+    // ── Page 404 Native branchée sur MobiliErrorWidget ────────
     errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Page introuvable : ${state.uri}'),
+      body: MobiliErrorWidget(
+        error: MobiliErrorData(
+          errorCode: 'MOB-002',
+          message: 'La page ${state.uri} est introuvable.',
+        ),
       ),
     ),
   );
