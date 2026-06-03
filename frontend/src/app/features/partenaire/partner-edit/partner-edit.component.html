@@ -29,6 +29,11 @@
 
             <div class="logo-upload-section">
                 <div class="preview-container" (click)="fileInput.click()">
+                    @if (logoPreview()) {
+                        <img [src]="logoPreview()" alt="Logo aperçu" class="logo-preview-img">
+                    } @else {
+                        <span class="logo-placeholder">Aucun logo</span>
+                    }
                     <div class="overlay"><span>Changer le logo</span></div>
                 </div>
                 <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" hidden>

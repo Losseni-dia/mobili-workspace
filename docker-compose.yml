@@ -1,0 +1,121 @@
+name: "mobili-dev"
+
+services:
+  # --- FRONTEND CLIENT (Application Utilisateur) ---
+  frontend-user:
+    container_name: "mobili-frontend-user"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # Utilise le Dockerfile Node.js (Dev)
+    image: mobili-frontend-user:dev
+    command: --host 0.0.0.0 --port 4200 --proxy-config proxy.conf.docker.json
+    ports:
+      - "4200:4200"
+    environment:
+      - NG_CLI_ANALYTICS=false
+    networks:
+      - frontend-network
+    develop:
+      watch:
+        - path: ./frontend/src # Surveille l'app principale
+          action: sync
+          target: /app/src
+        - path: ./frontend/projects/mobili-shared/src # Surveille le code partagé
+          action: sync
+          target: /app/projects/mobili-shared/src
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # --- FRONTEND BUSINESS (Application Partenaire / Pro) ---
+  frontend-business:
+    container_name: "mobili-frontend-business"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: mobili-frontend-business:dev
+    command: mobili-business --host 0.0.0.0 --port 4201 --proxy-config proxy.conf.docker.json
+    ports:
+      - "4201:4201"
+    environment:
+      - NG_CLI_ANALYTICS=false
+    networks:
+      - frontend-network
+    develop:
+      watch:
+        - path: ./frontend/projects/mobili-business/src # Surveille l'app Pro
+          action: sync
+          target: /app/projects/mobili-business/src
+        - path: ./frontend/projects/mobili-shared/src
+          action: sync
+          target: /app/projects/mobili-shared/src
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # --- BACKEND (Spring Boot) ---
+  backend:
+    container_name: "mobili-backend-container"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Ton Dockerfile JDK/JRE
+    image: mobili-backend:dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    stdin_open: true
+    tty: true
+    env_file:
+      - docker.env
+    networks:
+      - frontend-network
+      - backend-network
+    develop:
+      watch:
+        - path: ./backend/src # Surveille tout le code source Java
+          action: rebuild # En Dev sans DevTools, on rebuild le JAR
+        - path: ./backend/pom.xml
+          action: rebuild
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/v1/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # --- INFRASTRUCTURE (DB & REDIS) ---
+  redis:
+    image: redis:7-alpine
+    container_name: "mobili-redis-container"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+
+  db:
+    image: postgres:16-alpine
+    container_name: "mobili-db-container"
+    env_file:
+      - docker.env
+    networks:
+      - backend-network
+    volumes:
+      - mobili-db-data:/var/lib/postgresql/data
+    ports:
+      - "${MOBILI_DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
+
+volumes:
+  mobili-db-data:

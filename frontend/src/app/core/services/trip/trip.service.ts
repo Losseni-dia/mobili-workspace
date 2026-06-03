@@ -81,7 +81,7 @@ export interface Trip {
 
 @Injectable({ providedIn: 'root' })
 export class TripService {
-  private http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
 
   createTrip(formData: FormData): Observable<Trip> {
     // On envoie le formData directement sans préciser de headers
@@ -139,8 +139,18 @@ export class TripService {
     return this.http.post<Trip>('/covoiturage/trips', formData);
   }
 
+  updateCovoiturageSoloTrip(id: number, formData: FormData): Observable<Trip> {
+    return this.http.put<Trip>(`/covoiturage/trips/${id}`, formData);
+  }
+
   deleteCovoiturageSoloTrip(id: number): Observable<void> {
     return this.http.delete<void>(`/covoiturage/trips/${id}`);
+  }
+
+  getCovoiturageTripBookings(tripId: number): Observable<import('../booking/booking.service').BookingResponse[]> {
+    return this.http.get<import('../booking/booking.service').BookingResponse[]>(
+      `/covoiturage/trips/${tripId}/bookings`,
+    );
   }
 
   /**

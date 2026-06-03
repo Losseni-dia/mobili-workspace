@@ -17,7 +17,7 @@ import com.mobili.backend.shared.sharedService.PrivateMediaService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/media")
+@RequestMapping("/media")
 @RequiredArgsConstructor
 public class PrivateMediaController {
 

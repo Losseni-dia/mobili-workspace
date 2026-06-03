@@ -1,8 +1,17 @@
 {
+  "/v1": {
+    "target": "http://127.0.0.1:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "silent"
+  },
   "/uploads": {
     "target": "http://127.0.0.1:8080",
     "secure": false,
-    "changeOrigin": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/uploads": "/v1/uploads"
+    },
     "logLevel": "silent"
   }
 }

@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/trips")
+@RequestMapping("/trips")
 @RequiredArgsConstructor
 public class TripWriteController {
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/trips/{tripId}/channel")
+@RequestMapping("/trips/{tripId}/channel")
 @RequiredArgsConstructor
 public class TripChannelController {
 

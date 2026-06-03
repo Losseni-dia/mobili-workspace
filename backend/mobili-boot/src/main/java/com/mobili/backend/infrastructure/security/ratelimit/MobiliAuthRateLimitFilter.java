@@ -62,27 +62,28 @@ public class MobiliAuthRateLimitFilter extends OncePerRequestFilter {
         String path = normalizePath(request);
         String method = request.getMethod();
 
-        if ("POST".equalsIgnoreCase(method) && path.startsWith("/v1/payments/callback")) {
+        // Après {@code normalizePath} : préfixe context-path (/v1) retiré → /auth/…, /payments/…
+        if ("POST".equalsIgnoreCase(method) && path.startsWith("/payments/callback")) {
             return MobiliRateLimitStore.Tier.PAYMENT_WEBHOOK;
         }
-        if (!path.startsWith("/v1/auth")) {
+        if (!path.startsWith("/auth")) {
             return null;
         }
 
-        if ("GET".equalsIgnoreCase(method) && path.startsWith("/v1/auth/registration/gare/preview")) {
+        if ("GET".equalsIgnoreCase(method) && path.startsWith("/auth/registration/gare/preview")) {
             return MobiliRateLimitStore.Tier.PREVIEW;
         }
 
         if ("POST".equalsIgnoreCase(method)) {
-            if (path.equals("/v1/auth/login")
-                    || path.equals("/v1/auth/refresh")
-                    || path.equals("/v1/auth/logout")) {
+            if (path.equals("/auth/login")
+                    || path.equals("/auth/refresh")
+                    || path.equals("/auth/logout")) {
                 return MobiliRateLimitStore.Tier.LOGIN_REFRESH;
             }
-            if (path.equals("/v1/auth/register")
-                    || path.equals("/v1/auth/register-company")
-                    || path.equals("/v1/auth/register-carpool-chauffeur")
-                    || path.equals("/v1/auth/registration/gare")) {
+            if (path.equals("/auth/register")
+                    || path.equals("/auth/register-company")
+                    || path.equals("/auth/register-carpool-chauffeur")
+                    || path.equals("/auth/registration/gare")) {
                 return MobiliRateLimitStore.Tier.REGISTER;
             }
         }

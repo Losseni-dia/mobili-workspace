@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
-# Configuration commune (tous les profils). Les surcharges : application-{profile}.yml
-# Profil actif : SPRING_PROFILES_ACTIVE (dev | acc | prod), défaut = dev en local.
+# Configuration globale Mobili
 # ---------------------------------------------------------------------------
 server:
-  # Aligné sur le front local (mobili-env `apiUrl` : http://localhost:8080/v1).
   port: 8080
+  servlet:
+    context-path: /v1
 
 spring:
   profiles:
@@ -13,34 +13,50 @@ spring:
     multipart:
       max-file-size: 15MB
       max-request-size: 70MB
-  devtools:
-    restart:
-      enabled: false
+  
+  # Configuration Datasource (Les identifiants sont injectés via docker.env)
   datasource:
-    # Défaut local : jdbc:postgresql://localhost:5432/mobili_db — user postgres — mot de passe DB_PASSWORD (.env racine du dépôt).
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
+    # Note : Spring injecte automatiquement SPRING_DATASOURCE_URL/USERNAME/PASSWORD
+  
   flyway:
     baseline-on-migrate: true
     baseline-version: 0
+    
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: validate # Sécurité en prod : ne modifie pas le schéma
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   data:
     redis:
+      # Injecté via SPRING_DATA_REDIS_HOST dans docker.env
       repositories:
         enabled: false
 
-logging:
-  level:
-    org.springframework.boot.devtools: warn
-
+# ---------------------------------------------------------------------------
+# Configuration spécifique Mobili
+# ---------------------------------------------------------------------------
 mobili:
+  # Ajout des ports pour le Frontend User (4200/80) et Business (4201/81)
   cors:
     allowed-origins:
       - http://localhost:4200
+      - http://localhost:4201
+      - http://localhost
+      - http://localhost:81
       - http://127.0.0.1:4200
+      - http://127.0.0.1:4201
+      - http://127.0.0.1
+      - http://127.0.0.1:81
+
+  ui:
+    # Désactivation des messages de succès (ex: "connexion réussie")
+    show-success-messages: ${APP_SHOW_SUCCESS_MESSAGES:false}
+
   security:
     rate-limit:
       enabled: true
@@ -48,34 +64,44 @@ mobili:
       register-mutations-per-minute: 10
       gare-preview-per-minute: 60
       payment-webhook-per-minute: 120
-      purge-delay-ms: 300000
-      purge-older-than-minutes: 12
-      # Activer Redis : ajouter le profil spring « redis-rate-limit » + spring.data.redis.* (voir application-redis-rate-limit.yml).
+      # Toggle Redis pour le Rate Limit si le profil redis-rate-limit est actif
       redis:
-        enabled: false
+        enabled: ${REDIS_RATE_LIMIT_ENABLED:false}
         key-prefix: mobili:rl
-        # Si erreur Redis : true = autoriser la requête ; false = retombée sur le compteur mémoire JVM (dégradé par instance).
         allow-on-redis-failure: true
+
     jwt:
       secret-key: ${JWT_SECRET}
+      
     refresh:
       cookie-name: MOBILI_REFRESH
       max-age-seconds: 604800
       path: /v1
-      secure: false
+      secure: ${JWT_COOKIE_SECURE:false} # true en prod via docker.env
       same-site: Lax
+
   backend:
     upload:
-      root-directory: uploads
+      # Dossier racine (mappé en /app/uploads dans Docker)
+      root-directory: ${BACKEND_UPLOAD_DIR:uploads}
       users: users
       partners: partners
       vehicles: vehicles
-      max-bytes-per-file: 12582912
       documents-folder: documents
+      max-bytes-per-file: 12582912
       max-bytes-per-document: 5242880
 
+# ---------------------------------------------------------------------------
+# Services Externes
+# ---------------------------------------------------------------------------
 fedapay:
   secret:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:
     secret: ${FEDAPAY_WEBHOOK_SECRET}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO

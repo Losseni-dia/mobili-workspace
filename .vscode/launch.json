@@ -9,6 +9,16 @@
             "projectName": "backend",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-BackendApplication<mobili-boot>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.mobili.backend.BackendApplication",
+            "projectName": "mobili-boot",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

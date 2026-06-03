@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/auth/registration")
+@RequestMapping("/auth/registration")
 @RequiredArgsConstructor
 public class GareAuthController {
 

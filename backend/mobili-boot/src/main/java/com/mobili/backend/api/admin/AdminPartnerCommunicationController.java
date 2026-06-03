@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
  * un mapping HTTP explicite (évite la confusion “ressource statique” sur GET accidentel).
  */
 @RestController
-@RequestMapping("/v1/admin")
+@RequestMapping("/admin")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminPartnerCommunicationController {

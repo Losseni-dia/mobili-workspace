@@ -1,0 +1,147 @@
+<div class="profil">
+  @let user = u();
+
+  <div class="profil-card">
+    <div class="profil-card__header">
+      <a routerLink="/covoiturage/accueil" class="back-link">← Retour</a>
+      <h2 class="profil-card__title">Mon profil covoiturage</h2>
+    </div>
+
+    <!-- Section KYC (lecture seule) -->
+    <section class="info-section" aria-labelledby="kyc-heading">
+      <h3 class="info-section__title" id="kyc-heading">Identité &amp; KYC</h3>
+      <p class="info-section__note">Ces informations sont gérées par l'administration Mobili.</p>
+      <dl class="def">
+        <div class="def__row">
+          <dt>Statut KYC</dt>
+          <dd>
+            <span class="tag" [ngClass]="kycStatusClass(user?.covoiturageKycStatus)">
+              {{ kycStatusLabel(user?.covoiturageKycStatus) }}
+            </span>
+          </dd>
+        </div>
+        <div class="def__row">
+          <dt>Fin de validité CNI</dt>
+          <dd>{{ user?.covoiturageIdValidUntil || '—' }}</dd>
+        </div>
+        @if (user?.covoiturageKycDaysUntilExpiry != null) {
+          <div class="def__row">
+            <dt>Jours restants</dt>
+            <dd [class.negative]="(user?.covoiturageKycDaysUntilExpiry ?? 0) < 0">
+              {{ user?.covoiturageKycDaysUntilExpiry }}
+            </dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Formulaire modifiable -->
+    @if (err()) {
+      <p class="alert" role="alert">{{ err() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="profil-form">
+
+      <!-- Véhicule -->
+      <section class="form-section" aria-labelledby="veh-heading">
+        <h3 class="form-section__title" id="veh-heading">Véhicule déclaré</h3>
+        <div class="row two">
+          <label class="field">
+            <span>Marque</span>
+            <input type="text" formControlName="vehicleBrand" placeholder="ex. Toyota" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Immatriculation</span>
+            <input type="text" formControlName="vehiclePlate" placeholder="ex. AB-123-CD" autocomplete="off" />
+          </label>
+        </div>
+        <div class="row two">
+          <label class="field">
+            <span>Couleur</span>
+            <input type="text" formControlName="vehicleColor" placeholder="ex. Blanc" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>N° carte grise</span>
+            <input type="text" formControlName="greyCardNumber" placeholder="Numéro de la carte grise" autocomplete="off" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Photos -->
+      <section class="form-section" aria-labelledby="photos-heading">
+        <h3 class="form-section__title" id="photos-heading">Photos</h3>
+
+        <div class="photos-grid">
+          <!-- Photo conducteur -->
+          <div class="photo-block">
+            <p class="photo-block__label">Photo du conducteur</p>
+            <div class="photo-block__preview">
+              @if (driverPreview(); as src) {
+                <img [src]="src" alt="Nouvelle photo conducteur" />
+              } @else if (user?.covoiturageDriverPhotoUrl; as rel) {
+                <mobili-secure-upload-img
+                  [relativePath]="rel"
+                  alt="Photo actuelle du conducteur"
+                  [width]="200"
+                  [height]="200"
+                  loading="lazy"
+                />
+              } @else {
+                <div class="photo-block__placeholder" aria-hidden="true">
+                  <span>👤</span>
+                  <p>Aucune photo</p>
+                </div>
+              }
+            </div>
+            <label class="photo-drop">
+              <input #driverFile type="file" accept="image/*" (change)="onDriverPhoto($event)" />
+              <span class="photo-drop__label">Changer</span>
+            </label>
+            @if (driverPreview()) {
+              <button type="button" class="link-reset" (click)="clearDriverPhoto(driverFile)">Annuler</button>
+            }
+          </div>
+
+          <!-- Photo véhicule -->
+          <div class="photo-block">
+            <p class="photo-block__label">Photo du véhicule</p>
+            <div class="photo-block__preview">
+              @if (vehiclePreview(); as src) {
+                <img [src]="src" alt="Nouvelle photo véhicule" />
+              } @else if (user?.covoiturageVehiclePhotoUrl; as rel) {
+                <mobili-secure-upload-img
+                  [relativePath]="rel"
+                  alt="Photo actuelle du véhicule"
+                  [width]="300"
+                  [height]="180"
+                  loading="lazy"
+                />
+              } @else {
+                <div class="photo-block__placeholder" aria-hidden="true">
+                  <span>🚗</span>
+                  <p>Aucune photo</p>
+                </div>
+              }
+            </div>
+            <label class="photo-drop">
+              <input #vehicleFile type="file" accept="image/*" (change)="onVehiclePhoto($event)" />
+              <span class="photo-drop__label">Changer</span>
+            </label>
+            @if (vehiclePreview()) {
+              <button type="button" class="link-reset" (click)="clearVehiclePhoto(vehicleFile)">Annuler</button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <div class="form-footer">
+        <a routerLink="/covoiturage/accueil" class="btn-cancel">Annuler</a>
+        <button type="submit" class="btn-submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -20,7 +20,7 @@ export class CovoiturageShellComponent implements OnInit {
 
   pageTitle = computed((): { t: string; d: string; hideTop: boolean } => {
     const u = this.currentUrl();
-    if (u.includes('/publier')) {
+    if (u.includes('/publier') || u.includes('/modifier') || u.includes('/profil')) {
       return { t: '', d: '', hideTop: true };
     }
     if (u.includes('/piloter')) {

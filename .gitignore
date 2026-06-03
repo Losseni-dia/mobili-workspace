@@ -1,0 +1,25 @@
+# --- SECRETS & CONFIG ---
+.env
+.env.local
+*.env
+ECSnames.txt
+
+# --- DOCKER DATA ---
+# On ignore les données de la DB pour ne pas uploader des Go de données sur Git
+mobili-db-data/
+
+# --- BACKEND (Java/Spring) ---
+target/
+*.jar
+*.war
+.mvn/
+.idea/
+*.iml
+backend/uploads/
+
+# --- FRONTEND (Angular/Node) ---
+node_modules/
+dist/
+.angular/
+.vscode/
+npm-debug.log*

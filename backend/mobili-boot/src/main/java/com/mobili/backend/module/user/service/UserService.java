@@ -19,6 +19,7 @@ import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.user.dto.RegisterCompanyPublicDTO;
 import com.mobili.backend.module.user.dto.RegisterCarpoolChauffeurDTO;
+import com.mobili.backend.module.user.dto.UpdateCovoiturageProfileDTO;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.role.CovoiturageKycStatus;
@@ -219,6 +220,35 @@ public class UserService {
         }
 
         return userRepository.save(existingUser);
+    }
+
+    @Transactional
+    public User updateCovoiturageProfile(
+            Long userId, UpdateCovoiturageProfileDTO dto,
+            MultipartFile driverPhoto, MultipartFile vehiclePhoto) {
+        User user = findById(userId);
+        if (!Boolean.TRUE.equals(user.getCovoiturageSoloProfile())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Profil covoiturage particulier requis.");
+        }
+        if (dto.getVehicleBrand() != null && !dto.getVehicleBrand().isBlank()) {
+            user.setCovoiturageVehicleBrand(dto.getVehicleBrand().trim());
+        }
+        if (dto.getVehiclePlate() != null && !dto.getVehiclePlate().isBlank()) {
+            user.setCovoiturageVehiclePlate(dto.getVehiclePlate().trim().toUpperCase(Locale.ROOT));
+        }
+        if (dto.getVehicleColor() != null && !dto.getVehicleColor().isBlank()) {
+            user.setCovoiturageVehicleColor(dto.getVehicleColor().trim());
+        }
+        if (dto.getGreyCardNumber() != null && !dto.getGreyCardNumber().isBlank()) {
+            user.setCovoiturageGreyCardNumber(dto.getGreyCardNumber().trim());
+        }
+        if (driverPhoto != null && !driverPhoto.isEmpty()) {
+            user.setCovoiturageDriverPhotoUrl(uploadService.saveImage(driverPhoto, "covoiturage/drivers"));
+        }
+        if (vehiclePhoto != null && !vehiclePhoto.isEmpty()) {
+            user.setCovoiturageVehiclePhotoUrl(uploadService.saveImage(vehiclePhoto, "vehicles"));
+        }
+        return userRepository.save(user);
     }
 
     public void toggleUserStatus(Long id, boolean enabled) {

@@ -18,7 +18,7 @@ import java.security.MessageDigest;
 import java.util.Map;
 
 @RestController
-@RequestMapping("v1/payments")
+@RequestMapping("/payments")
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {

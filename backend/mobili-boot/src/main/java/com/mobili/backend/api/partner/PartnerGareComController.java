@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/v1/partner-gare-com")
+@RequestMapping("/partner-gare-com")
 @RequiredArgsConstructor
 public class PartnerGareComController {
 

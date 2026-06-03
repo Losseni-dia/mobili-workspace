@@ -14,7 +14,7 @@ import com.mobili.backend.module.trip.service.TripService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping(value = "/v1/trips/chauffeur", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/trips/chauffeur", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class ChauffeurTripController {
 

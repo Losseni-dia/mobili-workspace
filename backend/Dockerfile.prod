@@ -1,0 +1,42 @@
+# ---------- ÉTAPE 1 : Builder (JDK + Maven) ----------
+FROM eclipse-temurin:21-jdk-alpine AS builder
+RUN apk add --no-cache maven
+WORKDIR /build
+
+# 1. Mise en cache des dépendances
+COPY pom.xml .
+COPY mobili-core/pom.xml mobili-core/
+COPY mobili-boot/pom.xml mobili-boot/
+RUN mvn -B dependency:go-offline
+
+# 2. Compilation
+COPY mobili-core/src mobili-core/src
+COPY mobili-boot/src mobili-boot/src
+RUN mvn -B -f pom.xml -pl mobili-boot -am package -DskipTests
+
+# ---------- ÉTAPE 2 : Runtime (JRE uniquement) ----------
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+# Outils de diagnostic et utilisateur non-root pour la sécurité
+RUN apk add --no-cache wget \
+    && addgroup -g 1000 mobili \
+    && adduser -D -u 1000 -G mobili mobili
+
+WORKDIR /app
+
+# Gestion des permissions pour les uploads
+RUN mkdir -p /app/uploads && chown -R mobili:mobili /app
+
+# On récupère le binaire final
+COPY --from=builder /build/mobili-boot/target/application.jar /app/application.jar
+
+# Optimisation mémoire pour Docker
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+USER mobili
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:8080/v1/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/application.jar"]
