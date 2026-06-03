@@ -6,11 +6,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../shared/widgets/mobili_error_widget.dart';
 import '../../temp_pages.dart';
 
-// import '../../features/auth/presentation/pages/login_page.dart';
-// import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/auth/providers/auth_provider.dart';
 // import '../../features/auth/presentation/pages/register_company_page.dart';
-// import '../../features/auth/presentation/pages/register_chauffeur_page.dart';
-// import '../../features/auth/providers/auth_provider.dart';
+//import '../../features/auth/presentation/pages/register_chauffeur_page.dart';
 // import '../../features/trips/presentation/pages/trips_list_page.dart';
 // import '../../features/trips/presentation/pages/trip_detail_page.dart';
 // import '../../features/trips/presentation/pages/trip_stops_page.dart';
