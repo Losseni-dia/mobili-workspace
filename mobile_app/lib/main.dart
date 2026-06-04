@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';          // ← ajoute
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -9,6 +10,9 @@ import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Polices Google Fonts (bundlées, pas de fetch réseau) ──
+  GoogleFonts.config.allowRuntimeFetching = true;         // ← ajoute
 
   // ── Hive (cache offline) ──────────────────────────────────
   final appDocDir = await getApplicationDocumentsDirectory();

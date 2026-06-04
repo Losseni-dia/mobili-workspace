@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// Système typographique Mobili
+/// SystÃ¨me typographique Mobili
 ///
 /// Polices :
-///   - Plus Jakarta Sans : titres (weight 900) — caractère, autorité
-///   - Inter            : corps, labels, boutons — lisibilité mobile
+///   - Plus Jakarta Sans : titres (weight 900) â€” caractÃ¨re, autoritÃ©
+///   - fontFamily: GoogleFonts.inter().fontFamily,          : corps, labels, boutons â€” lisibilitÃ© mobile
 ///
-/// À déclarer dans pubspec.yaml :
+/// Ã€ dÃ©clarer dans pubspec.yaml :
 /// ```yaml
 /// fonts:
 ///   - family: PlusJakartaSans
@@ -29,11 +30,11 @@ import 'app_colors.dart';
 /// GoogleFonts.interTextTheme() + GoogleFonts.plusJakartaSans(...)
 /// ```
 abstract final class AppTextStyles {
-  // ── Familles ──────────────────────────────────────────────────────────
-  static const String _fontDisplay = 'PlusJakartaSans';
-  static const String _fontBody    = 'Inter';
+  // â”€â”€ Familles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  static final String _fontDisplay = GoogleFonts.plusJakartaSans().fontFamily!;
+  static final String _fontBody    = GoogleFonts.inter().fontFamily!;
 
-  // ── Tailles ───────────────────────────────────────────────────────────
+  // â”€â”€ Tailles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static const double _xs   = 11.0;
   static const double _sm   = 13.0;
   static const double _base = 16.0; // minimum mobile
@@ -44,18 +45,18 @@ abstract final class AppTextStyles {
   static const double _4xl  = 32.0;
   static const double _5xl  = 40.0;
 
-  // ── Line heights ──────────────────────────────────────────────────────
+  // â”€â”€ Line heights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   static const double _tight   = 1.15;
   static const double _snug    = 1.3;
   static const double _normal  = 1.5;
   static const double _relaxed = 1.65;
 
-  // ─────────────────────────────────────────────────────────────────────
-  // TITRES — Plus Jakarta Sans, weight 900, letter-spacing négatif
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // TITRES â€” Plus Jakarta Sans, weight 900, letter-spacing nÃ©gatif
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  /// Hero / splash — 40px
-  static const TextStyle hero = TextStyle(
+  /// Hero / splash â€” 40px
+  static TextStyle hero = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _5xl,
     fontWeight: FontWeight.w900,
@@ -64,8 +65,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  /// Section principale — 32px
-  static const TextStyle displayLarge = TextStyle(
+  /// Section principale â€” 32px
+  static TextStyle displayLarge = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _4xl,
     fontWeight: FontWeight.w900,
@@ -74,8 +75,10 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  /// Titre de page — 28px
-  static const TextStyle displayMedium = TextStyle(
+  static TextStyle get displaySmall => headlineLarge;
+
+  /// Titre de page â€” 28px
+  static TextStyle displayMedium = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _3xl,
     fontWeight: FontWeight.w900,
@@ -84,8 +87,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  /// Titre de section — 24px
-  static const TextStyle headlineLarge = TextStyle(
+  /// Titre de section â€” 24px
+  static TextStyle headlineLarge = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _2xl,
     fontWeight: FontWeight.w800,
@@ -94,8 +97,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  /// Sous-titre — 20px
-  static const TextStyle headlineMedium = TextStyle(
+  /// Sous-titre â€” 20px
+  static TextStyle headlineMedium = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _xl,
     fontWeight: FontWeight.w800,
@@ -104,8 +107,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  /// Heading compact — 18px
-  static const TextStyle headlineSmall = TextStyle(
+  /// Heading compact â€” 18px
+  static TextStyle headlineSmall = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _lg,
     fontWeight: FontWeight.w700,
@@ -113,11 +116,11 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
-  // TITRES DE CARD / LISTE — Inter semi-bold
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // TITRES DE CARD / LISTE â€” Inter semi-bold
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  static const TextStyle titleLarge = TextStyle(
+  static TextStyle titleLarge = TextStyle(
     fontFamily: _fontBody,
     fontSize: _lg,
     fontWeight: FontWeight.w700,
@@ -125,7 +128,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray900,
   );
 
-  static const TextStyle titleMedium = TextStyle(
+  static TextStyle titleMedium = TextStyle(
     fontFamily: _fontBody,
     fontSize: _base,
     fontWeight: FontWeight.w600,
@@ -134,7 +137,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray900,
   );
 
-  static const TextStyle titleSmall = TextStyle(
+  static TextStyle titleSmall = TextStyle(
     fontFamily: _fontBody,
     fontSize: _sm,
     fontWeight: FontWeight.w600,
@@ -143,11 +146,11 @@ abstract final class AppTextStyles {
     color: AppColors.gray700,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
-  // CORPS — Inter, 16px minimum
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // CORPS â€” Inter, 16px minimum
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  static const TextStyle bodyLarge = TextStyle(
+  static TextStyle bodyLarge = TextStyle(
     fontFamily: _fontBody,
     fontSize: _base,
     fontWeight: FontWeight.w400,
@@ -155,7 +158,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray800,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
+  static TextStyle bodyMedium = TextStyle(
     fontFamily: _fontBody,
     fontSize: _sm,
     fontWeight: FontWeight.w400,
@@ -163,7 +166,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray700,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static TextStyle bodySmall = TextStyle(
     fontFamily: _fontBody,
     fontSize: _xs,
     fontWeight: FontWeight.w400,
@@ -171,12 +174,12 @@ abstract final class AppTextStyles {
     color: AppColors.gray500,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
-  // LABELS — Inter uppercase, weight 800
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // LABELS â€” Inter uppercase, weight 800
   // Convention Mobili : tous les labels de status/badge en majuscule
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  static const TextStyle labelLarge = TextStyle(
+  static TextStyle labelLarge = TextStyle(
     fontFamily: _fontBody,
     fontSize: _base,
     fontWeight: FontWeight.w800,
@@ -185,7 +188,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray900,
   );
 
-  static const TextStyle labelMedium = TextStyle(
+  static TextStyle labelMedium = TextStyle(
     fontFamily: _fontBody,
     fontSize: _sm,
     fontWeight: FontWeight.w700,
@@ -194,7 +197,7 @@ abstract final class AppTextStyles {
     color: AppColors.gray700,
   );
 
-  static const TextStyle labelSmall = TextStyle(
+  static TextStyle labelSmall = TextStyle(
     fontFamily: _fontBody,
     fontSize: _xs,
     fontWeight: FontWeight.w700,
@@ -203,12 +206,12 @@ abstract final class AppTextStyles {
     color: AppColors.gray500,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // BOUTONS
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  /// Bouton principal — Inter Bold 16px
-  static const TextStyle buttonPrimary = TextStyle(
+  /// Bouton principal â€” Inter Bold 16px
+  static TextStyle buttonPrimary = TextStyle(
     fontFamily: _fontBody,
     fontSize: _base,
     fontWeight: FontWeight.w700,
@@ -217,8 +220,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlueDeep,  // texte bleu sur fond or
   );
 
-  /// Bouton secondaire — Inter Bold 16px (texte blanc)
-  static const TextStyle buttonSecondary = TextStyle(
+  /// Bouton secondaire â€” Inter Bold 16px (texte blanc)
+  static TextStyle buttonSecondary = TextStyle(
     fontFamily: _fontBody,
     fontSize: _base,
     fontWeight: FontWeight.w700,
@@ -227,7 +230,7 @@ abstract final class AppTextStyles {
     color: AppColors.white,
   );
 
-  static const TextStyle buttonSmall = TextStyle(
+  static TextStyle buttonSmall = TextStyle(
     fontFamily: _fontBody,
     fontSize: _sm,
     fontWeight: FontWeight.w700,
@@ -235,12 +238,12 @@ abstract final class AppTextStyles {
     letterSpacing: 0.2,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
-  // SPÉCIAUX
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // SPÃ‰CIAUX
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  /// Numéro de billet — monospace frappant
-  static const TextStyle ticketCode = TextStyle(
+  /// NumÃ©ro de billet â€” monospace frappant
+  static TextStyle ticketCode = const TextStyle(
     fontFamily: 'monospace',
     fontSize: _2xl,
     fontWeight: FontWeight.w900,
@@ -250,7 +253,7 @@ abstract final class AppTextStyles {
   );
 
   /// Prix / tarif
-  static const TextStyle price = TextStyle(
+  static TextStyle price = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _2xl,
     fontWeight: FontWeight.w900,
@@ -259,7 +262,7 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlue,
   );
 
-  static const TextStyle priceSmall = TextStyle(
+  static TextStyle priceSmall = TextStyle(
     fontFamily: _fontDisplay,
     fontSize: _lg,
     fontWeight: FontWeight.w800,
@@ -267,8 +270,8 @@ abstract final class AppTextStyles {
     color: AppColors.mobiliBlue,
   );
 
-  /// Libellé de champ de formulaire
-  static const TextStyle inputLabel = TextStyle(
+  /// LibellÃ© de champ de formulaire
+  static TextStyle inputLabel = TextStyle(
     fontFamily: _fontBody,
     fontSize: _sm,
     fontWeight: FontWeight.w600,
@@ -278,7 +281,7 @@ abstract final class AppTextStyles {
   );
 
   /// Code erreur (monospace discret)
-  static const TextStyle errorCode = TextStyle(
+  static TextStyle errorCode = const TextStyle(
     fontFamily: 'monospace',
     fontSize: _xs,
     fontWeight: FontWeight.w700,
@@ -287,9 +290,9 @@ abstract final class AppTextStyles {
     color: AppColors.danger,
   );
 
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // HELPERS
-  // ─────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static TextStyle withColor(TextStyle base, Color color) =>
       base.copyWith(color: color);

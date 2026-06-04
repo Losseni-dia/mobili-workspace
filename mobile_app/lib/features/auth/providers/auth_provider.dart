@@ -78,7 +78,8 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
   Future<bool> login({required String login, required String password}) async {
     state = AsyncData(state.requireValue.asLoading());
     try {
-      final authResponse = await _service.login(login: login, password: password);
+      final authResponse =
+          await _service.login(login: login, password: password);
       final profile = await _service.getMe();
       state = AsyncData(AuthState(
         status: AuthStatus.authenticated,
@@ -88,10 +89,7 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
-        state.requireValue.asError(
-          e.message, // CORRECTION : c'est .message dans MobiliException
-          fields: e.validationErrors, // CORRECTION : c'est .validationErrors
-        ),
+        state.requireValue.asError(e.message, fields: e.validationErrors),
       );
       return false;
     } catch (e) {
@@ -101,7 +99,6 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
       return false;
     }
   }
-
   Future<void> logout() async {
     state = AsyncData(state.requireValue.asLoading());
     await _service.logout();

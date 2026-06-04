@@ -221,7 +221,7 @@ class MobiliButton extends StatelessWidget {
         ),
 
       // ── Danger ────────────────────────────────────────────────────────
-      MobiliButtonVariant.danger => _BtnConfig(
+      MobiliButtonVariant.danger => const _BtnConfig(
           gradient: null,
           bgColor: AppColors.danger,
           fgColor: AppColors.white,
