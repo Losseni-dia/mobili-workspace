@@ -18,6 +18,7 @@ class AuthResponse {
   final String login;
 
   /// Backend user ID.
+  @JsonKey(name: 'userId')
   final int id;
 
   /// Null until the user has linked a partner company.

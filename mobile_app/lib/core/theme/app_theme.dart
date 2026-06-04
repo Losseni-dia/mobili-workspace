@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
@@ -28,7 +30,7 @@ abstract final class AppTheme {
         brightness: Brightness.light,
         colorScheme: _lightScheme,
         textTheme: _textTheme(Brightness.light),
-        fontFamily: 'Inter',
+        fontFamily: GoogleFonts.inter().fontFamily,
         scaffoldBackgroundColor: AppColors.gray50,
 
         // ── AppBar ────────────────────────────────────────────────────
@@ -161,17 +163,17 @@ abstract final class AppTheme {
         ),
 
         // ── BottomNavigationBar ───────────────────────────────────────
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
           backgroundColor: AppColors.white,
           selectedItemColor: AppColors.mobiliBlue,
           unselectedItemColor: AppColors.gray400,
           selectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+           fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w400,
           ),
@@ -194,15 +196,15 @@ abstract final class AppTheme {
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                fontFamily: 'Inter',
+              return TextStyle(
+                fontFamily: GoogleFonts.inter().fontFamily,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: AppColors.mobiliBlue,
               );
             }
-            return const TextStyle(
-              fontFamily: 'Inter',
+            return TextStyle(
+              fontFamily: GoogleFonts.inter().fontFamily,
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: AppColors.gray400,
@@ -261,15 +263,15 @@ abstract final class AppTheme {
         ),
 
         // ── BottomSheet ───────────────────────────────────────────────
-        bottomSheetTheme: BottomSheetThemeData(
+        bottomSheetTheme: const BottomSheetThemeData(
           backgroundColor: AppColors.white,
-          shape: const RoundedRectangleBorder(
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(_rXl),
             ),
           ),
           dragHandleColor: AppColors.gray300,
-          dragHandleSize: const Size(40, 4),
+          dragHandleSize: Size(40, 4),
           elevation: 8,
           surfaceTintColor: Colors.transparent,
           showDragHandle: true,
@@ -307,31 +309,31 @@ abstract final class AppTheme {
         ),
 
         // ── Badge ─────────────────────────────────────────────────────
-        badgeTheme: const BadgeThemeData(
+        badgeTheme: BadgeThemeData(
           backgroundColor: AppColors.danger,
           textColor: AppColors.white,
           smallSize: 8,
           largeSize: 18,
           textStyle: TextStyle(
-            fontFamily: 'Inter',
+           fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 10,
             fontWeight: FontWeight.w700,
           ),
         ),
 
         // ── Tab ───────────────────────────────────────────────────────
-        tabBarTheme: const TabBarThemeData(
+        tabBarTheme: TabBarThemeData(
           labelColor: AppColors.mobiliBlue,
           unselectedLabelColor: AppColors.gray400,
           indicatorColor: AppColors.mobiliBlue,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
@@ -376,7 +378,7 @@ abstract final class AppTheme {
         brightness: Brightness.dark,
         colorScheme: _darkScheme,
         textTheme: _textTheme(Brightness.dark),
-        fontFamily: 'Inter',
+        fontFamily: GoogleFonts.inter().fontFamily,
         scaffoldBackgroundColor: AppColors.darkBg,
 
         appBarTheme: AppBarTheme(
@@ -503,17 +505,17 @@ abstract final class AppTheme {
           suffixIconColor: AppColors.darkOnSurfaceVar,
         ),
 
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
           backgroundColor: AppColors.darkSurface,
           selectedItemColor: AppColors.mobiliYellow,
           unselectedItemColor: AppColors.darkOnSurfaceVar,
           selectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+           fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+           fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 11,
             fontWeight: FontWeight.w400,
           ),
@@ -536,15 +538,15 @@ abstract final class AppTheme {
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                fontFamily: 'Inter',
+              return TextStyle(
+                fontFamily: GoogleFonts.inter().fontFamily,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: AppColors.mobiliYellow,
               );
             }
-            return const TextStyle(
-              fontFamily: 'Inter',
+            return TextStyle(
+              fontFamily: GoogleFonts.inter().fontFamily,
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: AppColors.darkOnSurfaceVar,
@@ -598,14 +600,14 @@ abstract final class AppTheme {
           surfaceTintColor: Colors.transparent,
         ),
 
-        bottomSheetTheme: BottomSheetThemeData(
+        bottomSheetTheme: const BottomSheetThemeData(
           backgroundColor: AppColors.darkSurface,
-          shape: const RoundedRectangleBorder(
+          shape: RoundedRectangleBorder(
             borderRadius:
                 BorderRadius.vertical(top: Radius.circular(_rXl)),
           ),
           dragHandleColor: AppColors.darkOutline,
-          dragHandleSize: const Size(40, 4),
+          dragHandleSize: Size(40, 4),
           elevation: 8,
           surfaceTintColor: Colors.transparent,
           showDragHandle: true,
@@ -639,30 +641,30 @@ abstract final class AppTheme {
           circularTrackColor: Color(0xFF1A2E6B),
         ),
 
-        badgeTheme: const BadgeThemeData(
+        badgeTheme: BadgeThemeData(
           backgroundColor: AppColors.danger,
           textColor: AppColors.white,
           smallSize: 8,
           largeSize: 18,
           textStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 10,
             fontWeight: FontWeight.w700,
           ),
         ),
 
-        tabBarTheme: const TabBarThemeData(
+        tabBarTheme: TabBarThemeData(
           labelColor: AppColors.mobiliYellow,
           unselectedLabelColor: AppColors.darkOnSurfaceVar,
           indicatorColor: AppColors.mobiliYellow,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: GoogleFonts.inter().fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),

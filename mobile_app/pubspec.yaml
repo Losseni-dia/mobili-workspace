@@ -34,6 +34,10 @@ dependencies:
   path_provider: ^2.1.3          # chemin disque pour CookieJar / Hive
   connectivity_plus: ^6.0.3      # détection réseau (offline UX)
   intl: ^0.19.0                  # formatage dates ISO 8601
+   # ── UI / design ──────────────────────────────────────────────
+  google_fonts: ^6.2.1
+
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
