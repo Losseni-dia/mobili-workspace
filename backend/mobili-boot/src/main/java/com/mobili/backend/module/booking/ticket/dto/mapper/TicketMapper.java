@@ -20,5 +20,6 @@ public interface TicketMapper {
     @Mapping(source = "trip.departureDateTime", target = "departureDateTime")
     @Mapping(source = "trip.vehiculePlateNumber", target = "vehiculePlateNumber")
     @Mapping(source = "amountPaid", target = "price")
+    @Mapping(source = "trip.boardingPoint", target = "boardingPoint")
     TicketResponseDTO toDto(Ticket ticket);
 }

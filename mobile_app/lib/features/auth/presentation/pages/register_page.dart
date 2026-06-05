@@ -1,18 +1,14 @@
-// lib/features/auth/presentation/pages/register_page.dart
-//
-// Écran d'inscription voyageur standard Mobili.
-// Navigation : GoRouter — aucune route codée en dur.
-
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/mobili_button.dart';
 import '../../../../shared/widgets/mobili_error_widget.dart';
 import '../../providers/auth_provider.dart';
-// Permet de conserver une cohérence d'importation globale
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -23,16 +19,15 @@ class RegisterPage extends ConsumerStatefulWidget {
 
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _firstnameCtrl = TextEditingController();
   final _lastnameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _loginCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  File? _avatarFile;
 
   @override
   void dispose() {
@@ -45,7 +40,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.dispose();
   }
 
-  // ── Validations locales ────────────────────────────────────────────────────
+  Future<void> _pickAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (picked != null) {
+      setState(() => _avatarFile = File(picked.path));
+    }
+  }
 
   String? _required(String? v, String field) {
     if (v == null || v.trim().isEmpty) return '$field requis(e).';
@@ -74,343 +80,413 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? _validatePassword(String? v) {
     if (v == null || v.isEmpty) return 'Mot de passe requis.';
     if (v.length < 6) return 'Minimum 6 caractères.';
-    if (v.length > 255) return 'Maximum 255 caractères.';
     return null;
   }
 
   String? _validateConfirm(String? v) {
     if (v == null || v.isEmpty) return 'Confirmation requise.';
-    if (v != _passwordCtrl.text) return 'Les mots de passe ne correspondent pas.';
+    if (v != _passwordCtrl.text) {
+      return 'Les mots de passe ne correspondent pas.';
+    }
     return null;
   }
 
-  // ── Soumission ─────────────────────────────────────────────────────────────
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    final success = await ref.read(authProvider.notifier).register(
+    await ref.read(authProvider.notifier).register(
           firstname: _firstnameCtrl.text.trim(),
           lastname: _lastnameCtrl.text.trim(),
           email: _emailCtrl.text.trim(),
           login: _loginCtrl.text.trim(),
           password: _passwordCtrl.text,
+          avatarFile: _avatarFile,
         );
-
-    if (success && mounted) {
-      // Le redirect global du GoRouter prend automatiquement le relais vers l'accueil
-    }
   }
-
-  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final state = authState.valueOrNull;
     final isLoading = state?.isLoading ?? false;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: isDark ? AppColors.darkOnSurface : AppColors.mobiliBlueDeep,
-            size: 20,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Créer un compte',
-          style: AppTextStyles.titleLarge.copyWith(
-            color: isDark ? AppColors.darkOnSurface : AppColors.mobiliBlueDeep,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Sous-titre
-              Text(
-                'Voyageur standard — accès à la réservation de trajets.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.darkOnSurfaceVar : AppColors.gray600,
-                ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0D2280), AppColors.mobiliBlueDeep],
               ),
-              const SizedBox(height: 24),
-
-              // ── Carte formulaire ────────────────────────────────────
-              _FormCard(
-                isDark: isDark,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
+          ),
+          const Positioned.fill(child: _TransportPattern()),
+          Container(color: AppColors.mobiliBlueDeep.withValues(alpha: 0.4)),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                  child: Row(
                     children: [
-                      // Bandeau erreur API globale
-                      if (state?.hasError == true &&
-                          state?.errorMessage != null) ...[
-                        MobiliErrorBanner(
-                          message: state!.errorMessage!,
-                          onDismiss: () =>
-                              ref.read(authProvider.notifier).clearError(),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Erreurs de validation de champs (MOB-003)
-                      if (state?.fieldErrors?.isNotEmpty == true) ...[
-                        MobiliFieldErrors(errors: state!.fieldErrors!),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Séparateur section
-                      _SectionLabel(label: 'Identité', isDark: isDark),
-                      const SizedBox(height: 12),
-
-                      // Ligne prénom / nom
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: _MobiliLocalTextField(
-                              controller: _firstnameCtrl,
-                              label: 'Prénom',
-                              hint: 'Jean',
-                              icon: Icons.badge_outlined,
-                              validator: _validateFirstname,
-                              textInputAction: TextInputAction.next,
-                              enabled: !isLoading,
-                              isDark: isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _MobiliLocalTextField(
-                              controller: _lastnameCtrl,
-                              label: 'Nom',
-                              hint: 'Dupont',
-                              icon: Icons.badge_outlined,
-                              validator: _validateLastname,
-                              textInputAction: TextInputAction.next,
-                              enabled: !isLoading,
-                              isDark: isDark,
-                            ),
-                          ),
-                        ],
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.white, size: 20),
+                        onPressed: () => context.pop(),
                       ),
-                      const SizedBox(height: 16),
-
-                      _MobiliLocalTextField(
-                        controller: _emailCtrl,
-                        label: 'Email',
-                        hint: 'jean@exemple.com',
-                        icon: Icons.email_outlined,
-                        validator: _validateEmail,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        enabled: !isLoading,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 24),
-
-                      _SectionLabel(label: 'Connexion', isDark: isDark),
-                      const SizedBox(height: 12),
-
-                      _MobiliLocalTextField(
-                        controller: _loginCtrl,
-                        label: 'Identifiant',
-                        hint: 'jean_dupont',
-                        icon: Icons.person_outline_rounded,
-                        validator: _validateLogin,
-                        keyboardType: TextInputType.text,
-                        textInputAction: TextInputAction.next,
-                        enabled: !isLoading,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 16),
-
-                      _MobiliLocalTextField(
-                        controller: _passwordCtrl,
-                        label: 'Mot de passe',
-                        hint: '••••••••',
-                        icon: Icons.lock_outline_rounded,
-                        validator: _validatePassword,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.next,
-                        enabled: !isLoading,
-                        isDark: isDark,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 20,
-                          ),
-                          color: isDark
-                              ? AppColors.darkOnSurfaceVar
-                              : AppColors.gray500,
-                          onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      _MobiliLocalTextField(
-                        controller: _confirmCtrl,
-                        label: 'Confirmer le mot de passe',
-                        hint: '••••••••',
-                        icon: Icons.lock_outline_rounded,
-                        validator: _validateConfirm,
-                        obscureText: _obscureConfirm,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submit(),
-                        enabled: !isLoading,
-                        isDark: isDark,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirm
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 20,
-                          ),
-                          color: isDark
-                              ? AppColors.darkOnSurfaceVar
-                              : AppColors.gray500,
-                          onPressed: () => setState(
-                              () => _obscureConfirm = !_obscureConfirm),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // CTA principal
-                      MobiliButton(
-                        label: 'Créer mon compte',
-                        onPressed: isLoading ? null : _submit,
-                        isLoading: isLoading,
-                        fullWidth: true,
+                      Expanded(
+                        child: Text('Créer un compte',
+                            style: AppTextStyles.titleLarge.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w700,
+                            )),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Logo
+                        Center(
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: AppColors.mobiliYellow,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(Icons.directions_bus_rounded,
+                                color: AppColors.mobiliBlueDeep, size: 30),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Text('Rejoignez Mobili',
+                              style: AppTextStyles.headlineMedium.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w800,
+                              )),
+                        ),
+                        const SizedBox(height: 4),
+                        Center(
+                          child: Text('Voyagez partout en Afrique',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.white.withValues(alpha: 0.7),
+                              )),
+                        ),
+                        const SizedBox(height: 24),
 
-              // ── Liens bas ──────────────────────────────────────────
-              _FooterLinks(isDark: isDark),
-            ],
+                        // Carte formulaire
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x40000000),
+                                blurRadius: 30,
+                                offset: Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Erreurs API
+                                if (state?.hasError == true &&
+                                    state?.errorMessage != null) ...[
+                                  MobiliErrorBanner(
+                                    message: state!.errorMessage!,
+                                    onDismiss: () => ref
+                                        .read(authProvider.notifier)
+                                        .clearError(),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                                if (state?.fieldErrors?.isNotEmpty == true) ...[
+                                  MobiliFieldErrors(
+                                      errors: state!.fieldErrors!),
+                                  const SizedBox(height: 16),
+                                ],
+
+                                // ── Avatar ────────────────────────
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      Text('PHOTO DE PROFIL',
+                                          style: AppTextStyles.labelMedium
+                                              .copyWith(
+                                            color: AppColors.mobiliBlue,
+                                            letterSpacing: 1.2,
+                                            fontWeight: FontWeight.w700,
+                                          )),
+                                      const SizedBox(height: 12),
+                                      GestureDetector(
+                                        onTap: _pickAvatar,
+                                        child: Container(
+                                          width: 90,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.mobiliBlueDeep,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: AppColors.mobiliYellow,
+                                                width: 3),
+                                          ),
+                                          child: _avatarFile != null
+                                              ? ClipOval(
+                                                  child: Image.file(
+                                                      _avatarFile!,
+                                                      fit: BoxFit.cover),
+                                                )
+                                              : const Center(
+                                                  child: Icon(
+                                                      Icons.person_rounded,
+                                                      color: AppColors.white,
+                                                      size: 40),
+                                                ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: _pickAvatar,
+                                        icon: const Icon(
+                                            Icons.photo_library_outlined,
+                                            size: 16),
+                                        label: const Text('Choisir une photo'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.mobiliBlue,
+                                          side: const BorderSide(
+                                              color: AppColors.gray200),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8)),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // ── Identité ──────────────────────
+                                const _SectionLabel(label: 'Identité'),
+                                const SizedBox(height: 12),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _Field(
+                                        controller: _firstnameCtrl,
+                                        label: 'Prénom',
+                                        hint: 'Maya',
+                                        icon: Icons.person_outline_rounded,
+                                        validator: _validateFirstname,
+                                        textInputAction: TextInputAction.next,
+                                        enabled: !isLoading,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _Field(
+                                        controller: _lastnameCtrl,
+                                        label: 'Nom',
+                                        hint: 'Dia',
+                                        icon: Icons.person_outline_rounded,
+                                        validator: _validateLastname,
+                                        textInputAction: TextInputAction.next,
+                                        enabled: !isLoading,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                _Field(
+                                  controller: _emailCtrl,
+                                  label: 'Email',
+                                  hint: 'maya@exemple.com',
+                                  icon: Icons.email_outlined,
+                                  validator: _validateEmail,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  enabled: !isLoading,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // ── Connexion ─────────────────────
+                                const _SectionLabel(label: 'Connexion'),
+                                const SizedBox(height: 12),
+                                _Field(
+                                  controller: _loginCtrl,
+                                  label: 'Identifiant',
+                                  hint: 'maya123',
+                                  icon: Icons.badge_outlined,
+                                  validator: _validateLogin,
+                                  textInputAction: TextInputAction.next,
+                                  enabled: !isLoading,
+                                ),
+                                const SizedBox(height: 14),
+                                _Field(
+                                  controller: _passwordCtrl,
+                                  label: 'Mot de passe',
+                                  hint: '••••••••',
+                                  icon: Icons.lock_outline_rounded,
+                                  validator: _validatePassword,
+                                  obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.next,
+                                  enabled: !isLoading,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      size: 20,
+                                      color: AppColors.gray400,
+                                    ),
+                                    onPressed: () => setState(() =>
+                                        _obscurePassword = !_obscurePassword),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _Field(
+                                  controller: _confirmCtrl,
+                                  label: 'Confirmer le mot de passe',
+                                  hint: '••••••••',
+                                  icon: Icons.lock_outline_rounded,
+                                  validator: _validateConfirm,
+                                  obscureText: _obscureConfirm,
+                                  textInputAction: TextInputAction.done,
+                                  onFieldSubmitted: (_) => _submit(),
+                                  enabled: !isLoading,
+                                  autovalidate: true,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureConfirm
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      size: 20,
+                                      color: AppColors.gray400,
+                                    ),
+                                    onPressed: () => setState(() =>
+                                        _obscureConfirm = !_obscureConfirm),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                MobiliButton(
+                                  label: 'Créer mon compte',
+                                  onPressed: isLoading ? null : _submit,
+                                  isLoading: isLoading,
+                                  fullWidth: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('Déjà un compte ? ',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.white.withValues(alpha: 0.8),
+                                )),
+                            GestureDetector(
+                              onTap: () => context.pop(),
+                              child: Text('Se connecter',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.mobiliYellow,
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sous-widgets locaux (Privés à ce fichier)
-// ─────────────────────────────────────────────────────────────────────────────
+class _TransportPattern extends StatelessWidget {
+  const _TransportPattern();
 
-class _FormCard extends StatelessWidget {
-  const _FormCard({required this.isDark, required this.child});
-  final bool isDark;
-  final Widget child;
+  static const _icons = [
+    Icons.directions_bus_rounded,
+    Icons.airport_shuttle_rounded,
+    Icons.directions_car_rounded,
+    Icons.two_wheeler_rounded,
+    Icons.local_taxi_rounded,
+    Icons.train_rounded,
+    Icons.pedal_bike_rounded,
+    Icons.directions_walk_rounded,
+  ];
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isDark ? null : AppColors.shadowMd,
-        ),
-        child: child,
-      );
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final items = <Widget>[];
+    const cols = 5;
+    const rows = 12;
+    final cellW = size.width / cols;
+    final cellH = size.height / rows;
+
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        final icon = _icons[(r * cols + c) % _icons.length];
+        final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
+        items.add(Positioned(
+          left: c * cellW + offset - cellW * 0.1,
+          top: r * cellH,
+          child: Icon(icon,
+              size: 28, color: AppColors.white.withValues(alpha: 0.08)),
+        ));
+      }
+    }
+    return Stack(children: items);
+  }
 }
 
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label, required this.isDark});
+  const _SectionLabel({required this.label});
   final String label;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          Text(
-            label.toUpperCase(),
-            style: AppTextStyles.labelMedium.copyWith(
-              color: isDark ? AppColors.mobiliYellowSoft : AppColors.mobiliBlue,
-              letterSpacing: 1.2,
-            ),
-          ),
+          Text(label.toUpperCase(),
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.mobiliBlue,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w700,
+              )),
           const SizedBox(width: 10),
-          Expanded(
-            child: Divider(
-              thickness: 1,
-              color: isDark ? AppColors.darkOutline : AppColors.gray100,
-            ),
-          ),
+          const Expanded(
+              child: Divider(thickness: 1, color: AppColors.gray100)),
         ],
       );
 }
 
-class _FooterLinks extends StatelessWidget {
-  const _FooterLinks({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final subColor = isDark ? AppColors.darkOnSurfaceVar : AppColors.gray600;
-    final accentColor = isDark ? AppColors.mobiliYellowSoft : AppColors.mobiliBlue;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Déjà un compte ? ',
-              style: AppTextStyles.bodyMedium.copyWith(color: subColor),
-            ),
-            GestureDetector(
-              onTap: () => context.pop(),
-              child: Text(
-                'Se connecter',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: accentColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () => context.push('/register-company'),
-          child: Text(
-            'Inscrire une société de transport →',
-            style: AppTextStyles.bodySmall.copyWith(color: accentColor),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MobiliLocalTextField extends StatelessWidget {
-  const _MobiliLocalTextField({
+class _Field extends StatelessWidget {
+  const _Field({
     required this.controller,
     required this.label,
     required this.hint,
     required this.icon,
-    required this.isDark,
     this.validator,
     this.obscureText = false,
     this.keyboardType,
@@ -418,13 +494,13 @@ class _MobiliLocalTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.enabled = true,
     this.suffixIcon,
+    this.autovalidate = false,
   });
 
   final TextEditingController controller;
   final String label;
   final String hint;
   final IconData icon;
-  final bool isDark;
   final String? Function(String?)? validator;
   final bool obscureText;
   final TextInputType? keyboardType;
@@ -432,22 +508,19 @@ class _MobiliLocalTextField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final bool enabled;
   final Widget? suffixIcon;
+  final bool autovalidate;
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = isDark ? AppColors.darkOutline : AppColors.gray200;
-    final focusColor = isDark ? AppColors.mobiliYellow : AppColors.mobiliBlue;
-    final labelColor = isDark ? AppColors.darkOnSurfaceVar : AppColors.gray600;
-    final textColor = isDark ? AppColors.darkOnSurface : AppColors.mobiliBlueDeep;
-    final fillColor = isDark ? AppColors.darkSurfaceRaised : AppColors.gray50;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.labelMedium.copyWith(color: labelColor),
-        ),
+        Text(label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.gray600,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            )),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -457,28 +530,33 @@ class _MobiliLocalTextField extends StatelessWidget {
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
           enabled: enabled,
-          style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+          autovalidateMode: autovalidate
+              ? AutovalidateMode.onUserInteraction
+              : AutovalidateMode.disabled,
+          style: AppTextStyles.bodyMedium
+              .copyWith(color: AppColors.mobiliBlueDeep),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.darkOutline : AppColors.gray400,
-            ),
-            prefixIcon: Icon(icon, size: 20, color: labelColor),
+            hintStyle:
+                AppTextStyles.bodyMedium.copyWith(color: AppColors.gray300),
+            prefixIcon: Icon(icon, size: 20, color: AppColors.gray400),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: fillColor,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            fillColor: AppColors.gray50,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
+              borderSide: const BorderSide(color: AppColors.gray200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
+              borderSide: const BorderSide(color: AppColors.gray200),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: focusColor, width: 1.5),
+              borderSide:
+                  const BorderSide(color: AppColors.mobiliBlue, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

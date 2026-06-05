@@ -10,6 +10,8 @@ import '../../features/auth/providers/auth_provider.dart';
 import '../../features/trips/presentation/pages/trips_list_page.dart';
 import '../../features/trips/presentation/pages/trip_detail_page.dart';
 import '../../features/trips/presentation/pages/trip_search_page.dart';
+import '../../features/profile/presentation/profile_page.dart';
+import '../../features/bookings/presentation/pages/my_tickets_page.dart';
 
 part 'go_router.g.dart';
 
@@ -21,6 +23,7 @@ abstract class AppRoutes {
   static const myBookings = '/my-bookings';
   static const notifications = '/notifications';
   static const profile = '/profile';
+  static const tickets = '/tickets';
 }
 
 @riverpod
@@ -55,7 +58,7 @@ GoRouter goRouter(GoRouterRef ref) {
       return null;
     },
     routes: [
-      // ── Auth ─────────────────────────────────────────────
+      // ── Auth ──────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.login,
         name: 'login',
@@ -67,7 +70,14 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (_, __) => const RegisterPage(),
       ),
 
-      // ── Shell ─────────────────────────────────────────────
+      // ── Billets (hors shell, plein écran) ─────────────────
+      GoRoute(
+        path: AppRoutes.tickets,
+        name: 'myTickets',
+        builder: (_, __) => const MyTicketsPage(),
+      ),
+
+      // ── Shell ──────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             ShellPage(navigationShell: navigationShell),
@@ -125,13 +135,13 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Tab 4 — Profil (stub)
+          // Tab 4 — Profil
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.profile,
                 name: 'profile',
-                builder: (_, __) => const _StubPage(title: 'Profil'),
+                builder: (_, __) => const ProfilePage(),
               ),
             ],
           ),
@@ -149,7 +159,6 @@ GoRouter goRouter(GoRouterRef ref) {
   );
 }
 
-// Stub interne — remplacé au fur et à mesure
 class _StubPage extends StatelessWidget {
   final String title;
   const _StubPage({required this.title});
