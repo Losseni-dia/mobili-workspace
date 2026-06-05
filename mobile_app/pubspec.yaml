@@ -54,10 +54,28 @@ dev_dependencies:
   riverpod_generator: ^2.4.0
   hive_generator: ^2.0.1
 
+  # ── Icônes et Splash Screen ──────────────────────────────────
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+
+# ── Configuration des Packages ─────────────────────────────────
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 21
+ 
+
+flutter_native_splash:
+  color: "#FFFFFF" # Fond blanc (vous pouvez mettre la couleur de votre choix)
+  image: "assets/icons/app_icon.png"
+  fullscreen: true
+
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/icons/
+    - assets/icons/app_icon.png # On déclare explicitement votre nouvelle icône ici
   fonts: []
   # Ajouter les polices ici si nécessaire

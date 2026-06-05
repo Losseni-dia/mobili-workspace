@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,30 +21,20 @@ final _ticketsProvider =
 });
 
 class MyTicketsPage extends ConsumerWidget {
-  const MyTicketsPage({super.key});
+  const MyTicketsPage({super.key, this.filterTripId});
+  final int? filterTripId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authProvider).valueOrNull?.profile;
 
     if (profile == null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppColors.mobiliBlue,
-          foregroundColor: AppColors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppColors.white, size: 20),
-            onPressed: () => context.go('/profile'),
-          ),
-          title: Text('Mes billets',
-              style: AppTextStyles.titleLarge.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
-              )),
+      return const Scaffold(
+       appBar: MobiliAppBar(
+          title: 'Mes billets',
+          backRoute: '/profile',
         ),
-        body: const Center(child: Text('Non connecté')),
+        body: Center(child: Text('Non connecté')),
       );
     }
 
@@ -51,20 +42,9 @@ class MyTicketsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.white, size: 20),
-          onPressed: () => context.go('/profile'),
-        ),
-        title: Text('Mes billets',
-            style: AppTextStyles.titleLarge.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w700,
-            )),
+     appBar: const MobiliAppBar(
+        title: 'Mes billets',
+        backRoute: '/profile',
       ),
       body: ticketsAsync.when(
         loading: () => const Center(
@@ -116,7 +96,10 @@ class MyTicketsPage extends ConsumerWidget {
               ),
             );
           }
-          return _TicketsList(tickets: tickets);
+          final filtered = filterTripId != null
+              ? tickets.where((t) => t.tripId == filterTripId).toList()
+              : tickets;
+          return _TicketsList(tickets: filtered);
         },
       ),
     );

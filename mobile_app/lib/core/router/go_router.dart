@@ -12,6 +12,7 @@ import '../../features/trips/presentation/pages/trip_detail_page.dart';
 import '../../features/trips/presentation/pages/trip_search_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/bookings/presentation/pages/my_tickets_page.dart';
+import '../../features/bookings/presentation/pages/my_bookings_page.dart';
 
 part 'go_router.g.dart';
 
@@ -71,10 +72,12 @@ GoRouter goRouter(GoRouterRef ref) {
       ),
 
       // ── Billets (hors shell, plein écran) ─────────────────
-      GoRoute(
+    GoRoute(
         path: AppRoutes.tickets,
         name: 'myTickets',
-        builder: (_, __) => const MyTicketsPage(),
+        builder: (_, state) => MyTicketsPage(
+          filterTripId: int.tryParse(state.uri.queryParameters['tripId'] ?? ''),
+        ),
       ),
 
       // ── Shell ──────────────────────────────────────────────
@@ -119,7 +122,7 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(
                 path: AppRoutes.myBookings,
                 name: 'myBookings',
-                builder: (_, __) => const _StubPage(title: 'Mes réservations'),
+                builder: (_, __) => const MyBookingsPage(),
               ),
             ],
           ),

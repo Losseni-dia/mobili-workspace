@@ -10,6 +10,7 @@ import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 @Data
 public class BookingResponseDTO {
     private Long id;
+    private Long tripId;
     private String reference;
     private String customerName;
     private String tripRoute;
