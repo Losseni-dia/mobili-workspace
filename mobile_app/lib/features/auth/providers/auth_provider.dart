@@ -1,6 +1,7 @@
 // lib/features/auth/providers/auth_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 import '../../../core/models/mobili_error.dart'; // Pour choper MobiliException
 import '../data/auth_service.dart';
 import '../domain/models/profile_dto.dart';
@@ -105,12 +106,13 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
     state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
   }
 
-  Future<bool> register({
+Future<bool> register({
     required String firstname,
     required String lastname,
     required String email,
     required String login,
     required String password,
+    File? avatarFile,
   }) async {
     state = AsyncData(state.requireValue.asLoading());
     try {
@@ -120,6 +122,7 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
         email: email,
         login: login,
         password: password,
+        avatarFile: avatarFile,
       );
       state = AsyncData(AuthState(
         status: AuthStatus.authenticated,

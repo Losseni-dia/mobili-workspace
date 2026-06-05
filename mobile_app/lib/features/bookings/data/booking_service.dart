@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
 import '../domain/models/booking.dart';
+import '../domain/models/ticket.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BookingService
@@ -22,6 +23,14 @@ class BookingService {
       data: request.toJson(),
     );
     return Booking.fromJson(response.data!);
+  }
+
+ Future<List<Ticket>> getTicketsForUser(int userId) async {
+    final response = await _dio.get<List<dynamic>>('/tickets/user/$userId');
+    if (response.data == null) return [];
+    return (response.data as List<dynamic>)
+        .map((e) => Ticket.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   // ── Read bookings ──────────────────────────────────────────────────────────
