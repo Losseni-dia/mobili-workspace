@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:mobili/features/bookings/domain/models/booking_detail.dart';
 
 import '../../../core/network/api_client.dart';
 import '../domain/models/booking.dart';
@@ -30,6 +31,14 @@ class BookingService {
     if (response.data == null) return [];
     return (response.data as List<dynamic>)
         .map((e) => Ticket.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<BookingDetail>> getBookingDetailsForUser(int userId) async {
+    final response = await _dio.get<List<dynamic>>('/bookings/user/$userId');
+    if (response.data == null) return [];
+    return (response.data as List<dynamic>)
+        .map((e) => BookingDetail.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

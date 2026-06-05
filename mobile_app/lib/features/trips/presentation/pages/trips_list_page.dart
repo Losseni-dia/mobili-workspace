@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
+import '../../../../shared/widgets/mobili_app_bar.dart';
 import '../../../../shared/widgets/mobili_error_widget.dart';
 import '../../../../shared/widgets/mobili_loader.dart';
 import '../../providers/trip_provider.dart';
@@ -23,6 +24,27 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
   final _arrivalCtrl = TextEditingController();
   DateTime? _selectedDate;
   String? _selectedType;
+  bool _paramsInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final uri = GoRouterState.of(context).uri;
+    final dep = uri.queryParameters['departure'];
+    final arr = uri.queryParameters['arrival'];
+    if (dep != null && dep.isNotEmpty) {
+      _departureCtrl.text = dep;
+      _paramsInitialized = true;
+    }
+    if (arr != null && arr.isNotEmpty) {
+      _arrivalCtrl.text = arr;
+      _paramsInitialized = true;
+    }
+    if (_paramsInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateParams());
+      _paramsInitialized = false;
+    }
+  }
 
   @override
   void dispose() {
@@ -74,7 +96,23 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: _buildAppBar(context),
+      appBar: MobiliAppBar(
+        title: 'Mobili',
+        actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.white),
+                tooltip: 'Notifications',
+                onPressed: () => context.go('/notifications'),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -125,49 +163,6 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
       ),
     );
   }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    const int unreadCount = 0;
-    return AppBar(
-      backgroundColor: AppColors.mobiliBlue,
-      elevation: 0,
-      title: Text(
-        'Mobili',
-        style: AppTextStyles.titleLarge.copyWith(
-          color: AppColors.white,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.5,
-        ),
-      ),
-      actions: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined,
-                  color: AppColors.white),
-              tooltip: 'Notifications',
-              onPressed: () => context.go('/notifications'),
-            ),
-            if (unreadCount > 0)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.mobiliYellow,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,7 +202,6 @@ class _FilterSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Row 1 — Départ + Arrivée
                 Row(
                   children: [
                     Expanded(
@@ -230,8 +224,6 @@ class _FilterSection extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-
-                // Row 2 — Date + Dropdown transport
                 Row(
                   children: [
                     Expanded(
@@ -357,11 +349,9 @@ class _DateField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 18,
-              color: hasDate ? AppColors.mobiliBlue : AppColors.gray400,
-            ),
+            Icon(Icons.calendar_today_rounded,
+                size: 18,
+                color: hasDate ? AppColors.mobiliBlue : AppColors.gray400),
             const SizedBox(width: 8),
             Expanded(
               child: Text(

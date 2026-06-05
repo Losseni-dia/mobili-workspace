@@ -15,6 +15,7 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
 
+    @Mapping(source = "trip.id", target = "tripId")
     @Mapping(source = "trip.departureCity", target = "departureCity")
     @Mapping(source = "trip.arrivalCity", target = "arrivalCity")
     @Mapping(source = "trip.moreInfo", target = "moreInfo")
