@@ -43,9 +43,9 @@ SPRING_PROFILES_ACTIVE=dev
 DB_URL=jdbc:postgresql://localhost:5432/mobili_db
 DB_USERNAME=postgres
 DB_PASSWORD=root
-JWT_SECRET=8XrFlAxnLp1AWIDQEjVoLLxKshCF96Di8iGR8VluLVw=
-FEDAPAY_SECRET_KEY=sk_sandbox_FnpLiL2_76PO2bm1rrjC2Y2L
-FEDAPAY_WEBHOOK_SECRET=lodi_maya_nana_mobili_2050
+JWT_SECRET=<générer avec: openssl rand -base64 32>
+FEDAPAY_SECRET_KEY=<clé sandbox depuis dashboard.fedapay.com>
+FEDAPAY_WEBHOOK_SECRET=<secret webhook depuis dashboard.fedapay.com>
 ```
 
 > Spring ne charge pas `.env` automatiquement. Les variables doivent être exportées dans le terminal ou configurées dans l'IDE (Run Configuration → Environment variables).

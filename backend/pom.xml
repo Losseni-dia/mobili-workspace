@@ -21,8 +21,6 @@
 	</modules>
 	<properties>
 		<java.version>21</java.version>
-		<!-- Lombok version updated for JDK 25 compatibility -->
-		<lombok.version>1.18.36</lombok.version>
 	</properties>
 	<repositories>
 		<repository>
