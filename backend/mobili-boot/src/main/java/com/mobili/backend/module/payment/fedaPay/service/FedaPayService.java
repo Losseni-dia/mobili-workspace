@@ -44,7 +44,7 @@ public class FedaPayService {
             params.put("description", "Ticket Mobili #" + bookingId);
             params.put("amount", (int) amount);
             params.put("currency", Map.of("iso", "XOF"));
-            params.put("callback_url", "http://localhost:4200/payment/success?id=" + bookingId);
+            params.put("callback_url", "mobili://payment/success?bookingId=" + bookingId);
 
             // Le SDK attend souvent les métadonnées ainsi :
             Map<String, Object> metadata = new HashMap<>();
