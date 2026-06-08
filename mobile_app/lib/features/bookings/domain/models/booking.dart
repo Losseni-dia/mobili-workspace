@@ -59,8 +59,10 @@ class PaymentResult {
   final bool success;
   final String status;
 
-  factory PaymentResult.fromJson(Map<String, dynamic> json) => PaymentResult(
-        success: json['success'] as bool? ?? false,
+ factory PaymentResult.fromJson(Map<String, dynamic> json) => PaymentResult(
+        success: (json['success'] == true) ||
+            json['status'] == 'CONFIRMED' ||
+            json['status'] == 'COMPLETED',
         status: json['status'] as String? ?? 'PENDING',
       );
 }

@@ -17,6 +17,8 @@ class Trip {
     this.moreInfo,
     this.boardingPoint,
     this.vehicleType,
+    this.extraHoldBagPrice,
+    this.maxExtraHoldBagsPerPassenger = 1,
   });
 
   final int id;
@@ -34,6 +36,8 @@ class Trip {
   final String? moreInfo;
   final String? boardingPoint;
   final String? vehicleType;
+  final double? extraHoldBagPrice;
+  final int maxExtraHoldBagsPerPassenger;
 
   String get formattedDepartureTime =>
       DateFormat('dd/MM HH:mm').format(departureTime);
@@ -117,6 +121,9 @@ class Trip {
         moreInfo: json['moreInfo'] as String?,
         boardingPoint: json['boardingPoint'] as String?,
         vehicleType: json['vehicleType'] as String?,
+        extraHoldBagPrice: (json['extraHoldBagPrice'] as num?)?.toDouble(),
+        maxExtraHoldBagsPerPassenger:
+            json['maxExtraHoldBagsPerPassenger'] as int? ?? 1,
       );
 
   static DateTime? _parseDate(dynamic value) {
