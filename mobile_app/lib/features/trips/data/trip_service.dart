@@ -123,7 +123,10 @@ class TripService {
         if (alightingStopIndex != null) 'alightingStopIndex': alightingStopIndex,
       },
     );
-    return (response.data as List<dynamic>).cast<int>();
+   return (response.data as List<dynamic>)
+        .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+        .where((e) => e > 0)
+        .toList();
   }
 
   // ── Cache helpers ──────────────────────────────────────────────────────────

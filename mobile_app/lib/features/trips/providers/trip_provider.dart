@@ -225,25 +225,39 @@ class BookingNotifier extends StateNotifier<BookingState> {
     }
   }
 
-  Future<void> verifyAfterReturn() async {
+Future<void> verifyAfterReturn() async {
     final bookingId = state.booking?.id;
     if (bookingId == null) return;
 
     state = state.copyWith(step: BookingStep.verifying);
     try {
-      final result = await _service.pollUntilConfirmed(bookingId);
+      final result = await _service.verifyPayment(bookingId);
+      print('🔍 verifyPayment result: ${result.success} / ${result.status}');
+      if (result.success) {
+        state = state.copyWith(step: BookingStep.done, result: result);
+        return;
+      }
+      final polled = await _service.pollUntilConfirmed(
+        bookingId,
+        maxAttempts: 5,
+        interval: const Duration(seconds: 2),
+      );
+      print(
+          '🔍 pollUntilConfirmed result: ${polled.success} / ${polled.status}');
       state = state.copyWith(
-        step: BookingStep.done,
-        result: result,
+        step: polled.success ? BookingStep.done : BookingStep.error,
+        result: polled,
+        errorMessage: polled.success ? null : 'Paiement non confirmé.',
       );
     } catch (e) {
+      print('🔍 verifyAfterReturn error: $e');
       state = state.copyWith(
         step: BookingStep.error,
         errorMessage: _extractMessage(e),
       );
     }
   }
-
+  
   void reset() => state = const BookingState();
 
   String _extractMessage(Object e) {

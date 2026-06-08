@@ -7,16 +7,10 @@ import '../../../core/network/api_client.dart';
 import '../domain/models/booking.dart';
 import '../domain/models/ticket.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BookingService
-// ─────────────────────────────────────────────────────────────────────────────
-
 class BookingService {
   BookingService({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
   final Dio _dio;
-
-  // ── Create booking ─────────────────────────────────────────────────────────
 
   Future<Booking> createBooking(CreateBookingRequest request) async {
     final response = await _dio.post<Map<String, dynamic>>(
@@ -26,7 +20,7 @@ class BookingService {
     return Booking.fromJson(response.data!);
   }
 
- Future<List<Ticket>> getTicketsForUser(int userId) async {
+  Future<List<Ticket>> getTicketsForUser(int userId) async {
     final response = await _dio.get<List<dynamic>>('/tickets/user/$userId');
     if (response.data == null) return [];
     return (response.data as List<dynamic>)
@@ -42,22 +36,16 @@ class BookingService {
         .toList();
   }
 
-  // ── Read bookings ──────────────────────────────────────────────────────────
-
   Future<Booking> getBookingById(int id) async {
     final response = await _dio.get<Map<String, dynamic>>('/bookings/$id');
     return Booking.fromJson(response.data!);
   }
 
   Future<List<Booking>> getBookingsForUser(int userId) async {
-    final response =
-        await _dio.get<List<dynamic>>('/bookings/user/$userId');
+    final response = await _dio.get<List<dynamic>>('/bookings/user/$userId');
     return _parseList(response.data);
   }
 
-  // ── Payment flow ───────────────────────────────────────────────────────────
-
-  /// Step 1 — creates a FedaPay session and returns the redirect URL.
   Future<String> checkout(int bookingId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/checkout/$bookingId',
@@ -69,10 +57,6 @@ class BookingService {
     return url;
   }
 
-  /// Step 2 — verify payment status after user returns from FedaPay.
-  ///
-  /// If [success] is false and [status] is PENDING, callers should poll
-  /// via [pollUntilConfirmed].
   Future<PaymentResult> verifyPayment(int bookingId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/verify/$bookingId',
@@ -80,22 +64,18 @@ class BookingService {
     return PaymentResult.fromJson(response.data!);
   }
 
-  /// Polls verify every [interval] until success or [maxAttempts] reached.
   Future<PaymentResult> pollUntilConfirmed(
     int bookingId, {
-    int maxAttempts = 10,
-    Duration interval = const Duration(seconds: 3),
+    int maxAttempts = 5,
+    Duration interval = const Duration(seconds: 2),
   }) async {
     for (var i = 0; i < maxAttempts; i++) {
       final result = await verifyPayment(bookingId);
       if (result.success) return result;
       if (i < maxAttempts - 1) await Future<void>.delayed(interval);
     }
-    // Return the last known result (PENDING / failed)
     return verifyPayment(bookingId);
   }
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
 
   List<Booking> _parseList(dynamic data) {
     if (data == null) return [];
@@ -106,26 +86,53 @@ class BookingService {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SeatSelection
+// ─────────────────────────────────────────────────────────────────────────────
+
+class SeatSelection {
+  const SeatSelection({
+    required this.seatNumber,
+    required this.passengerName,
+  });
+  final String seatNumber;
+  final String passengerName;
+
+  Map<String, dynamic> toJson() => {
+        'seatNumber': seatNumber,
+        'passengerName': passengerName,
+      };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CreateBookingRequest
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CreateBookingRequest {
   const CreateBookingRequest({
     required this.tripId,
-    required this.seatNumber,
+    required this.userId,
+    required this.numberOfSeats,
+    required this.selections,
     required this.boardingStopIndex,
     required this.alightingStopIndex,
+    this.extraHoldBags = 0,
   });
 
   final int tripId;
-  final int seatNumber;
+  final int userId;
+  final int numberOfSeats;
+  final List<SeatSelection> selections;
   final int boardingStopIndex;
   final int alightingStopIndex;
+  final int extraHoldBags;
 
   Map<String, dynamic> toJson() => {
         'tripId': tripId,
-        'seatNumber': seatNumber,
+        'userId': userId,
+        'numberOfSeats': numberOfSeats,
+        'selections': selections.map((s) => s.toJson()).toList(),
         'boardingStopIndex': boardingStopIndex,
         'alightingStopIndex': alightingStopIndex,
+        'extraHoldBags': extraHoldBags,
       };
 }

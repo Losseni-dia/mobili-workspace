@@ -1,10 +1,8 @@
-import 'dart:async';
-
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:mobili/features/auth/providers/auth_provider.dart';
+import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -32,26 +30,16 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _extraBags = 0;
   late List<String> _stopLabels;
 
-  late final AppLinks _appLinks;
-  StreamSubscription<Uri>? _linkSub;
-
+// AJOUTE après les déclarations de champs
   @override
   void initState() {
     super.initState();
     _stopLabels = _buildStopLabels();
     _alightingIndex = _stopLabels.length - 1;
-
-    _appLinks = AppLinks();
-    _linkSub = _appLinks.uriLinkStream.listen((uri) {
-      if (uri.host == 'payment' && uri.path == '/success') {
-        ref.read(bookingNotifierProvider.notifier).verifyAfterReturn();
-      }
-    });
   }
 
   @override
   void dispose() {
-    _linkSub?.cancel();
     for (final c in _passengerCtrls) {
       c.dispose();
     }
@@ -143,7 +131,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: MobiliAppBar(
+      appBar: const MobiliAppBar(
         title: 'Réservation',
         backRoute: '/',
       ),
@@ -161,7 +149,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                   // ── Segment embarquement/descente ──────
                   if (_stopLabels.length > 2) ...[
-                    _SectionTitle(
+                    const _SectionTitle(
                         icon: Icons.route_rounded, label: 'Votre tronçon'),
                     const SizedBox(height: 10),
                     _SegmentSelector(
@@ -180,7 +168,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   ],
 
                   // ── Sièges ─────────────────────────────
-                  _SectionTitle(
+                  const _SectionTitle(
                       icon: Icons.event_seat_rounded,
                       label: 'Choisissez vos sièges'),
                   const SizedBox(height: 10),
@@ -200,7 +188,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
                   // ── Noms passagers ─────────────────────
                   if (_selectedSeats.isNotEmpty) ...[
-                    _SectionTitle(
+                    const _SectionTitle(
                         icon: Icons.people_outline_rounded,
                         label: 'Noms des passagers'),
                     const SizedBox(height: 10),
@@ -221,7 +209,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   // ── Bagages ────────────────────────────
                   if ((widget.trip.extraHoldBagPrice ?? 0) > 0 &&
                       _selectedSeats.isNotEmpty) ...[
-                    _SectionTitle(
+                    const _SectionTitle(
                         icon: Icons.luggage_rounded,
                         label: 'Bagages supplémentaires'),
                     const SizedBox(height: 10),
@@ -249,22 +237,45 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             isLoading: bookingState.isLoading,
             isValid: _isValid,
             onPay: () async {
+              final profile = ref.read(authProvider).valueOrNull?.profile;
+              if (profile == null) return;
+
               await ref.read(bookingNotifierProvider.notifier).createAndPay(
                     CreateBookingRequest(
                       tripId: widget.trip.id,
-                      seatNumber: int.parse(_selectedSeats.first),
+                      userId: profile.id,
+                      numberOfSeats: _selectedSeats.length,
+                      selections: _selectedSeats
+                          .asMap()
+                          .entries
+                          .map(
+                            (e) => SeatSelection(
+                              seatNumber: e.value,
+                              passengerName: _passengerCtrls[e.key].text.trim(),
+                            ),
+                          )
+                          .toList(),
                       boardingStopIndex: _boardingIndex,
                       alightingStopIndex: _alightingIndex,
+                      extraHoldBags: _extraBags,
                     ),
                   );
               final state = ref.read(bookingNotifierProvider);
               if (state.paymentUrl != null && mounted) {
-                final uri = Uri.parse(state.paymentUrl!);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  // verifyAfterReturn() déclenché via deep link
-                  // mobili://payment/success?bookingId=X
-                }
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PaymentWebViewPage(
+                      paymentUrl: state.paymentUrl!,
+                      onSuccess: () {
+                        ref
+                            .read(bookingNotifierProvider.notifier)
+                            .verifyAfterReturn();
+                      },
+                      onCancel: () {},
+                    ),
+                  ),
+                );
               }
             },
           ),
@@ -277,33 +288,33 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(Icons.check_circle_rounded,
                 color: AppColors.stationGreen, size: 28),
-            const SizedBox(width: 10),
-            const Expanded(
+            SizedBox(width: 10),
+            Expanded(
               child: Text('Réservation confirmée !',
                   style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
         content:
-            const Text('Votre réservation Mobili est validée. Bon voyage !'),
+            const Text('Votre réservation est validée. Bon voyage !'),
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              context.go('/my-bookings');
+              Navigator.of(dialogContext).pop();
+              context.go('/tickets');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.mobiliBlue,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Voir mes réservations',
+            child: const Text('Voir mes billets',
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -759,9 +770,9 @@ class _PriceBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.white,
-        boxShadow:  [
+        boxShadow: const [
           BoxShadow(
             color: Color(0x15000000),
             blurRadius: 12,
