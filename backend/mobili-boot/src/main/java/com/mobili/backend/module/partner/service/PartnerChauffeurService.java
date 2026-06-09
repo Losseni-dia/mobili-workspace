@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.partner.dto.PartnerChauffeurAffiliationRequest;
@@ -30,14 +31,6 @@ public class PartnerChauffeurService {
     private final PartnerService partnerService;
     private final UserService userService;
     private final StationRepository stationRepository;
-
-    @Transactional
-    public PartnerChauffeurListItem registerCompanyChauffeur(
-            UserPrincipal principal, PartnerChauffeurCreateRequest dto) {
-        partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
-        Partner comp = partnerService.getCurrentPartnerForOperations();
-        return toItem(userService.registerCompanyChauffeur(comp, dto));
-    }
 
     @Transactional
     public PartnerChauffeurListItem updateChauffeurAffiliation(
@@ -100,4 +93,11 @@ public class PartnerChauffeurService {
                 aff != null ? aff.getId() : null,
                 aff != null ? aff.getName() : null);
     }
+
+    public PartnerChauffeurListItem registerCompanyChauffeur(
+    UserPrincipal principal, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
+    partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
+    Partner comp = partnerService.getCurrentPartnerForOperations();
+    return toItem(userService.registerCompanyChauffeur(comp, dto, avatar));
+}
 }

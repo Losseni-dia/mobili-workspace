@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobilipro/features/auth/presentation/pages/profile_page.dart';
-import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_gare_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/dashboard/presentation/pages/dashboard_gare_page.dart';
+import '../../features/trips/presentation/pages/trips_gare_page.dart';
+import '../../features/trips/presentation/pages/create_trip_page.dart';
+import '../../features/bookings/presentation/pages/bookings_gare_page.dart';
+import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
 import '../../shared/shell/shell_gare.dart';
 import '../../shared/shell/shell_chauffeur.dart';
 import '../../shared/shell/shell_partner.dart';
@@ -30,10 +34,9 @@ GoRouter goRouter(GoRouterRef ref) {
       if (isLoggedIn && isOnLogin) {
         final profile = authState.value?.profile;
         if (profile == null) return '/login';
-        // Ordre important : du plus spécifique au plus général
         if (profile.isChauffeur) return '/chauffeur/trips';
         if (profile.isGare) return '/gare/dashboard';
-        if (profile.isPartner) return '/partner/dashboard';
+        if (profile.isPartner || profile.isAdmin) return '/partner/dashboard';
         return '/gare/dashboard';
       }
       return null;
@@ -41,10 +44,11 @@ GoRouter goRouter(GoRouterRef ref) {
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
 
-      // ── Shell GARE ────────────────────────────────────────────────
+      // ── Shell GARE ─────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellGare(navigationShell: shell),
         branches: [
+          // Dashboard
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -53,39 +57,40 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
+          // Trajets
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/gare/trips',
-                builder: (_, __) => const _StubPage(
-                  title: 'Trajets',
-                  icon: Icons.directions_bus_rounded,
-                ),
+                builder: (_, __) => const TripsGarePage(),
+                routes: [
+                  GoRoute(
+                    path: 'create',
+                    builder: (_, __) => const CreateTripPage(),
+                  ),
+                ],
               ),
             ],
           ),
+          // Réservations
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/gare/bookings',
-                builder: (_, __) => const _StubPage(
-                  title: 'Réservations',
-                  icon: Icons.bookmark_rounded,
-                ),
+                builder: (_, __) => const BookingsGarePage(),
               ),
             ],
           ),
+          // Chauffeurs
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/gare/canal',
-                builder: (_, __) => const _StubPage(
-                  title: 'Canal',
-                  icon: Icons.campaign_rounded,
-                ),
+                path: '/gare/chauffeurs',
+                builder: (_, __) => const ChauffeursGarePage(),
               ),
             ],
           ),
+          // Profil
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -97,7 +102,7 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // ── Shell CHAUFFEUR ───────────────────────────────────────────
+      // ── Shell CHAUFFEUR ────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellChauffeur(navigationShell: shell),
         branches: [
@@ -137,7 +142,7 @@ GoRouter goRouter(GoRouterRef ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/gare/profile',
+                path: '/chauffeur/profile',
                 builder: (_, __) => const ProfilePage(),
               ),
             ],
@@ -145,7 +150,7 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // ── Shell PARTNER ─────────────────────────────────────────────
+      // ── Shell PARTNER ──────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellPartner(navigationShell: shell),
         branches: [
@@ -183,7 +188,7 @@ GoRouter goRouter(GoRouterRef ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/gare/profile',
+                path: '/partner/profile',
                 builder: (_, __) => const ProfilePage(),
               ),
             ],
@@ -191,7 +196,7 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // ── Shell COVOIT ──────────────────────────────────────────────
+      // ── Shell COVOIT ───────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellCovoit(navigationShell: shell),
         branches: [
