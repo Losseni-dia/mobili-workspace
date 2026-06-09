@@ -3,6 +3,7 @@ package com.mobili.backend.module.partner.service;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,6 +12,7 @@ import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.partner.dto.PartnerChauffeurAffiliationRequest;
 import com.mobili.backend.module.partner.dto.PartnerChauffeurCreateRequest;
 import com.mobili.backend.module.partner.dto.PartnerChauffeurListItem;
+import com.mobili.backend.module.partner.dto.PartnerChauffeurUpdateRequest;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.station.entity.Station;
 import com.mobili.backend.module.station.repository.StationRepository;
@@ -20,6 +22,7 @@ import com.mobili.backend.module.user.role.UserRole;
 import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.sharedService.UploadService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +34,78 @@ public class PartnerChauffeurService {
     private final PartnerService partnerService;
     private final UserService userService;
     private final StationRepository stationRepository;
+    private final UploadService uploadService;
+    private final PasswordEncoder passwordEncoder;
+
+
+    @Transactional
+    public PartnerChauffeurListItem reactivateChauffeur(
+            UserPrincipal principal, Long chauffeurUserId) {
+        partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
+        Partner comp = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(chauffeurUserId)
+                .orElseThrow(() -> new MobiliException(
+                        MobiliErrorCode.RESOURCE_NOT_FOUND, "Chauffeur introuvable."));
+        if (u.getEmployerPartner() == null ||
+                !u.getEmployerPartner().getId().equals(comp.getId())) {
+            throw new MobiliException(
+                    MobiliErrorCode.RESOURCE_NOT_FOUND,
+                    "Chauffeur introuvable pour cette compagnie.");
+        }
+        u.setEnabled(true);
+        return toItem(userRepository.save(u));
+    }
+
+    
+    @Transactional
+    public PartnerChauffeurListItem updateChauffeur(
+    UserPrincipal principal, Long chauffeurUserId,
+    PartnerChauffeurUpdateRequest dto, MultipartFile avatar)  {
+        partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
+        Partner comp = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(chauffeurUserId)
+                .orElseThrow(() -> new MobiliException(
+                        MobiliErrorCode.RESOURCE_NOT_FOUND, "Chauffeur introuvable."));
+        if (u.getEmployerPartner() == null ||
+                !u.getEmployerPartner().getId().equals(comp.getId())) {
+            throw new MobiliException(
+                    MobiliErrorCode.RESOURCE_NOT_FOUND,
+                    "Chauffeur introuvable pour cette compagnie.");
+        }
+        if (dto.firstname() != null)
+            u.setFirstname(dto.firstname().trim());
+        if (dto.lastname() != null)
+            u.setLastname(dto.lastname().trim());
+        if (dto.phone() != null)
+            u.setPhone(dto.phone().trim());
+        if (dto.email() != null)
+            u.setEmail(dto.email().trim().toLowerCase());
+        if (dto.password() != null && !dto.password().isBlank()) {
+            u.setPassword(passwordEncoder.encode(dto.password()));
+        }
+        if (avatar != null && !avatar.isEmpty()) {
+            String path = uploadService.saveImage(avatar, "users");
+            u.setAvatarUrl(path);
+        }
+        return toItem(userRepository.save(u));
+    }
+
+    @Transactional
+    public void deleteChauffeur(UserPrincipal principal, Long chauffeurUserId) {
+        partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
+        Partner comp = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(chauffeurUserId)
+                .orElseThrow(() -> new MobiliException(
+                        MobiliErrorCode.RESOURCE_NOT_FOUND, "Chauffeur introuvable."));
+        if (u.getEmployerPartner() == null ||
+                !u.getEmployerPartner().getId().equals(comp.getId())) {
+            throw new MobiliException(
+                    MobiliErrorCode.RESOURCE_NOT_FOUND,
+                    "Chauffeur introuvable pour cette compagnie.");
+        }
+        u.setEnabled(false);
+        userRepository.save(u);
+    }
 
     @Transactional
     public PartnerChauffeurListItem updateChauffeurAffiliation(

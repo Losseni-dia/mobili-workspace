@@ -282,6 +282,7 @@ public class UserService {
         u.setFirstname(dto.firstname().trim());
         u.setLastname(dto.lastname().trim());
         u.setEmail(email);
+        u.setPhone(dto.phone() != null ? dto.phone().trim() : null);
         u.setLogin(login);
         u.setPassword(passwordEncoder.encode(dto.password()));
         u.setEnabled(true);

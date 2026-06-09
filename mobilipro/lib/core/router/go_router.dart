@@ -10,6 +10,7 @@ import '../../features/trips/presentation/pages/trips_gare_page.dart';
 import '../../features/trips/presentation/pages/create_trip_page.dart';
 import '../../features/bookings/presentation/pages/bookings_gare_page.dart';
 import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
+import '../../features/canal/presentation/pages/canal_trip_page.dart';
 import '../../shared/shell/shell_gare.dart';
 import '../../shared/shell/shell_chauffeur.dart';
 import '../../shared/shell/shell_partner.dart';
@@ -67,6 +68,18 @@ GoRouter goRouter(GoRouterRef ref) {
                   GoRoute(
                     path: 'create',
                     builder: (_, __) => const CreateTripPage(),
+                  ),
+                  GoRoute(
+                    path: 'canal/:tripId',
+                    builder: (_, state) {
+                      final tripId = int.parse(state.pathParameters['tripId']!);
+                      final tripLabel =
+                          state.uri.queryParameters['label'] ?? '';
+                      return CanalTripPage(
+                        tripId: tripId,
+                        tripLabel: tripLabel,
+                      );
+                    },
                   ),
                 ],
               ),
