@@ -629,10 +629,12 @@ class _TripCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.people_rounded, size: 14),
+                     onPressed: () => context.push(
+                        '/gare/trips/canal/${trip.id}?label=${Uri.encodeComponent('${trip.departureCity} → ${trip.arrivalCity}')}',
+                      ),
+                      icon: const Icon(Icons.chat_bubble_rounded, size: 14),
                       label: const Text(
-                        'Passagers',
+                        'Canal',
                         style: TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
