@@ -10,7 +10,6 @@ public class PartnerRegisterDTO {
     private String name;
 
     @Email(message = "Format d'email invalide")
-    @NotBlank(message = "L'email est obligatoire")
     private String email;
 
     @NotBlank(message = "Le numéro de téléphone est obligatoire")

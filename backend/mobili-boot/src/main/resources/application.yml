@@ -30,13 +30,18 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+        
 
   data:
     redis:
       # Injecté via SPRING_DATA_REDIS_HOST dans docker.env
       repositories:
         enabled: false
-
+  
+  jackson:
+    time-zone: UTC
 # ---------------------------------------------------------------------------
 # Configuration spécifique Mobili
 # ---------------------------------------------------------------------------

@@ -14,7 +14,8 @@ public class ProfileDTO {
     private String firstname;
     private String lastname;
     private String login;
-    private String email;
+    private String email; // devient nullable
+    private String phone; // ← nouveau
     private String avatarUrl;
     private boolean enabled;
     private Double balance;

@@ -20,10 +20,12 @@ public class RegisterCarpoolChauffeurDTO {
 
     @NotBlank(message = "Le login est obligatoire")
     private String login;
-
     @Email(message = "Format d'email invalide")
-    @NotBlank(message = "L'email est obligatoire")
-    private String email;
+    private String email; // ← retire @NotBlank
+
+    @NotBlank(message = "Le numéro de téléphone est obligatoire")
+    @Size(max = 20)
+    private String phone; // ← nouveau
 
     @NotBlank(message = "Le mot de passe est obligatoire")
     @Size(min = 6, message = "Le mot de passe doit faire au moins 6 caractères")

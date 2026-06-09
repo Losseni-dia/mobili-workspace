@@ -293,4 +293,19 @@ public class InboxNotificationService {
         String c = nullToEmpty(u.getLastname());
         return (a + " " + c).trim();
     }
+
+    @Transactional
+    public void delete(Long id, UserPrincipal principal) {
+        MobiliInboxNotification n = inboxRepository.findById(id)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Notification introuvable"));
+        if (!n.getUser().getId().equals(principal.getUser().getId())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+        }
+        inboxRepository.delete(n);
+    }
+
+    @Transactional
+    public void deleteAll(UserPrincipal principal) {
+        inboxRepository.deleteAllByUserId(principal.getUser().getId());
+    }
 }

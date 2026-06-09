@@ -118,7 +118,7 @@ class ProfilePage extends ConsumerWidget {
                   Container(
                       color: AppColors.mobiliBlueDeep.withValues(alpha: 0.3)),
                   // Contenu
-                 SafeArea(
+                  SafeArea(
                     child: SizedBox(
                       width: double.infinity,
                       child: Column(
@@ -153,7 +153,7 @@ class ProfilePage extends ConsumerWidget {
                                 fontWeight: FontWeight.w800,
                               )),
                           const SizedBox(height: 4),
-                          Text(profile.email,
+                          Text(profile.email ?? profile.phone ?? '',
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.white.withValues(alpha: 0.7),
                               )),
@@ -201,8 +201,13 @@ class ProfilePage extends ConsumerWidget {
                         _InfoRow(
                             icon: Icons.email_outlined,
                             label: 'Email',
-                            value: profile.email),
+                            value: profile.email ?? 'Non renseigné'),
                         const Divider(height: 1, color: AppColors.gray100),
+                        const Divider(height: 1, color: AppColors.gray100),
+                        _InfoRow(
+                            icon: Icons.phone_outlined,
+                            label: 'Téléphone',
+                            value: profile.phone ?? 'Non renseigné'),
                         _InfoRow(
                           icon: Icons.verified_outlined,
                           label: 'Statut',

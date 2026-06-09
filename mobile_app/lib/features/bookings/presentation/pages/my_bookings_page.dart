@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../auth/providers/auth_provider.dart';
@@ -24,6 +25,7 @@ class MyBookingsPage extends ConsumerStatefulWidget {
 class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Set<int> _ratedTripIds = {};
 
   @override
   void initState() {
@@ -43,7 +45,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
 
     if (profile == null) {
       return Scaffold(
-       appBar: const MobiliAppBar(
+        appBar: const MobiliAppBar(
           title: 'Mes réservations',
           backRoute: '/profile',
         ),
@@ -60,7 +62,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-    appBar: MobiliAppBar(
+      appBar: MobiliAppBar(
         title: 'Mes réservations',
         backRoute: '/profile',
         bottom: TabBar(
@@ -114,11 +116,15 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
                 bookings: upcoming,
                 emptyMessage: 'Aucun voyage à venir',
                 emptyIcon: Icons.flight_takeoff_rounded,
+                ratedTripIds: _ratedTripIds,
+                onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
               ),
               _BookingList(
                 bookings: past,
                 emptyMessage: 'Aucun voyage passé',
                 emptyIcon: Icons.history_rounded,
+                ratedTripIds: _ratedTripIds,
+                onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
               ),
             ],
           );
@@ -133,11 +139,15 @@ class _BookingList extends StatelessWidget {
     required this.bookings,
     required this.emptyMessage,
     required this.emptyIcon,
+    required this.ratedTripIds,
+    required this.onRated,
   });
 
   final List<BookingDetail> bookings;
   final String emptyMessage;
   final IconData emptyIcon;
+  final Set<int> ratedTripIds;
+  final ValueChanged<int> onRated;
 
   @override
   Widget build(BuildContext context) {
@@ -169,15 +179,26 @@ class _BookingList extends StatelessWidget {
       itemCount: bookings.length,
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.only(bottom: 14),
-        child: _BookingCard(booking: bookings[index]),
+        child: _BookingCard(
+          booking: bookings[index],
+          ratedTripIds: ratedTripIds,
+          onRated: onRated,
+        ),
       ),
     );
   }
 }
 
 class _BookingCard extends StatelessWidget {
-  const _BookingCard({required this.booking});
+  const _BookingCard({
+    required this.booking,
+    required this.ratedTripIds,
+    required this.onRated,
+  });
+
   final BookingDetail booking;
+  final Set<int> ratedTripIds;
+  final ValueChanged<int> onRated;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +222,7 @@ class _BookingCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // ── Header avec pattern ──────────────────────
+            // ── Header ───────────────────────────────────
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -217,7 +238,6 @@ class _BookingCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  // Pattern derrière
                   Positioned.fill(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
@@ -227,7 +247,6 @@ class _BookingCard extends StatelessWidget {
                       child: _BookingPattern(),
                     ),
                   ),
-                  // Contenu devant
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     child: Row(
@@ -513,6 +532,55 @@ class _BookingCard extends StatelessWidget {
                         ),
                       ),
 
+                    // Noter — masqué si déjà noté
+                    if (!booking.isUpcoming &&
+                        booking.status == 'CONFIRMED' &&
+                        booking.tripId != null &&
+                        !ratedTripIds.contains(booking.tripId))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                _showRatingDialog(context, booking.tripId),
+                            icon: const Icon(Icons.star_outline_rounded,
+                                size: 16),
+                            label: const Text('Noter ce trajet'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.mobiliYellow,
+                              side: const BorderSide(
+                                  color: AppColors.mobiliYellow),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Déjà noté
+                    if (!booking.isUpcoming &&
+                        booking.status == 'CONFIRMED' &&
+                        booking.tripId != null &&
+                        ratedTripIds.contains(booking.tripId))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check_circle_rounded,
+                                color: AppColors.stationGreen, size: 16),
+                            const SizedBox(width: 6),
+                            Text('Trajet noté — merci !',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.stationGreen,
+                                  fontWeight: FontWeight.w600,
+                                )),
+                          ],
+                        ),
+                      ),
+
                     // Annuler
                     if (booking.canCancel)
                       SizedBox(
@@ -538,6 +606,184 @@ class _BookingCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showRatingDialog(BuildContext context, int? tripId) async {
+    if (tripId == null) return;
+    int selectedNote = 0;
+    final commentCtrl = TextEditingController();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+                24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Noter ce trajet',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: AppColors.mobiliBlueDeep,
+                      fontWeight: FontWeight.w700,
+                    )),
+                const SizedBox(height: 4),
+                Text('${booking.departureCity} → ${booking.arrivalCity}',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.gray500)),
+                const SizedBox(height: 20),
+
+                // Étoiles
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (i) {
+                    final star = i + 1;
+                    return GestureDetector(
+                      onTap: () => setModalState(() => selectedNote = star),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Icon(
+                          star <= selectedNote
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: AppColors.mobiliYellow,
+                          size: 40,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                if (selectedNote > 0) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      _noteLabel(selectedNote),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.mobiliBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                TextField(
+                  controller: commentCtrl,
+                  maxLines: 3,
+                  maxLength: 500,
+                  decoration: InputDecoration(
+                    hintText: 'Votre commentaire (optionnel)',
+                    hintStyle: AppTextStyles.bodyMedium
+                        .copyWith(color: AppColors.gray300),
+                    filled: true,
+                    fillColor: AppColors.gray50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.gray200),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.gray200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                          color: AppColors.mobiliBlue, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: selectedNote == 0
+                        ? null
+                        : () async {
+                            try {
+                              await _submitRating(
+                                  tripId, selectedNote, commentCtrl.text);
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (context.mounted) {
+                                onRated(tripId);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Merci pour votre avis ! ⭐'),
+                                    backgroundColor: AppColors.stationGreen,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        e.toString().contains('déjà noté')
+                                            ? 'Vous avez déjà noté ce trajet'
+                                            : 'Erreur lors de l\'envoi'),
+                                    backgroundColor: AppColors.danger,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mobiliBlue,
+                      foregroundColor: AppColors.white,
+                      disabledBackgroundColor: AppColors.gray200,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Envoyer mon avis',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _noteLabel(int note) {
+    switch (note) {
+      case 1:
+        return 'Très mauvais';
+      case 2:
+        return 'Mauvais';
+      case 3:
+        return 'Correct';
+      case 4:
+        return 'Bien';
+      case 5:
+        return 'Excellent !';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _submitRating(int tripId, int note, String comment) async {
+    final dio = ApiClient.instance.dio;
+    await dio.post<void>(
+      '/trips/$tripId/ratings',
+      data: {
+        'note': note,
+        'comment': comment.trim().isEmpty ? null : comment.trim(),
+      },
     );
   }
 

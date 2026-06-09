@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/mobili_button.dart';
@@ -8,6 +10,19 @@ import '../../../../shared/widgets/mobili_loader.dart';
 import '../../providers/trip_provider.dart';
 import '../../domain/models/trip.dart';
 import '../../../bookings/presentation/pages/booking_page.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider note moyenne
+// ─────────────────────────────────────────────────────────────────────────────
+
+final _tripRatingProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, int>((ref, tripId) async {
+  final dio = ApiClient.instance.dio;
+  final response = await dio.get<Map<String, dynamic>>(
+    '/trips/$tripId/ratings/average',
+  );
+  return response.data ?? {'average': 0.0, 'count': 0};
+});
 
 class TripDetailPage extends ConsumerWidget {
   const TripDetailPage({super.key, required this.tripId});
@@ -17,6 +32,7 @@ class TripDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripDetailProvider(tripId));
     final stopsAsync = ref.watch(tripStopsProvider(tripId));
+    final ratingAsync = ref.watch(_tripRatingProvider(tripId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -32,6 +48,7 @@ class TripDetailPage extends ConsumerWidget {
         data: (trip) => _TripDetailContent(
           trip: trip,
           stopsAsync: stopsAsync,
+          ratingAsync: ratingAsync,
           isDark: isDark,
           tripId: tripId,
         ),
@@ -44,12 +61,14 @@ class _TripDetailContent extends StatelessWidget {
   const _TripDetailContent({
     required this.trip,
     required this.stopsAsync,
+    required this.ratingAsync,
     required this.isDark,
     required this.tripId,
   });
 
   final Trip trip;
   final AsyncValue stopsAsync;
+  final AsyncValue<Map<String, dynamic>> ratingAsync;
   final bool isDark;
   final int tripId;
 
@@ -57,8 +76,6 @@ class _TripDetailContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.gray50,
-
-      // ── AppBar avec image véhicule en fond ──────────────────────────
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -80,7 +97,6 @@ class _TripDetailContent extends StatelessWidget {
                                 color: AppColors.white, size: 64),
                           ),
                         ),
-                        // Dégradé pour lisibilité du titre
                         Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
@@ -102,7 +118,7 @@ class _TripDetailContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Carte infos principales ──────────────────────────
+                // ── Carte infos principales ──────────────
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
@@ -146,6 +162,21 @@ class _TripDetailContent extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
+
+                      // Note moyenne
+                      ratingAsync.when(
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (rating) {
+                          final avg = (rating['average'] as num).toDouble();
+                          final count = (rating['count'] as num).toInt();
+                          if (count == 0) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _RatingBar(average: avg, count: count),
+                          );
+                        },
+                      ),
 
                       // Date départ
                       Row(
@@ -258,7 +289,7 @@ class _TripDetailContent extends StatelessWidget {
                   ),
                 ),
 
-                // ── Escales ──────────────────────────────────────────
+                // ── Escales ──────────────────────────────
                 if (trip.moreInfo != null && trip.moreInfo!.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -299,7 +330,7 @@ class _TripDetailContent extends StatelessWidget {
                     ),
                   ),
 
-                // ── Arrêts et horaires ────────────────────────────────
+                // ── Arrêts et horaires ────────────────────
                 Container(
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                   padding: const EdgeInsets.all(16),
@@ -339,7 +370,6 @@ class _TripDetailContent extends StatelessWidget {
                                     const EdgeInsets.symmetric(vertical: 10),
                                 child: Row(
                                   children: [
-                                    // Icône arrêt
                                     Container(
                                       width: 32,
                                       height: 32,
@@ -399,8 +429,6 @@ class _TripDetailContent extends StatelessWidget {
           ),
         ],
       ),
-
-      // ── Bouton Réserver fixe en bas ──────────────────────────────────
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         decoration: BoxDecoration(
@@ -421,6 +449,65 @@ class _TripDetailContent extends StatelessWidget {
             MaterialPageRoute<void>(builder: (_) => BookingPage(trip: trip)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget barre de note
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RatingBar extends StatelessWidget {
+  const _RatingBar({required this.average, required this.count});
+  final double average;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.mobiliYellow.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border:
+            Border.all(color: AppColors.mobiliYellow.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Étoiles
+          ...List.generate(5, (i) {
+            final star = i + 1;
+            if (star <= average.floor()) {
+              return const Icon(Icons.star_rounded,
+                  color: AppColors.mobiliYellow, size: 18);
+            } else if (star - 1 < average && average < star) {
+              return const Icon(Icons.star_half_rounded,
+                  color: AppColors.mobiliYellow, size: 18);
+            } else {
+              return Icon(Icons.star_outline_rounded,
+                  color: AppColors.mobiliYellow.withValues(alpha: 0.4),
+                  size: 18);
+            }
+          }),
+          const SizedBox(width: 8),
+          Text(
+            average.toStringAsFixed(1),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.mobiliBlueDeep,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '($count avis)',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.gray500,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
