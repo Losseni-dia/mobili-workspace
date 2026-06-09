@@ -46,13 +46,17 @@ public class User extends AbstractEntity {
     @Column(unique = true, nullable = false)
     private String login; // Nom d'utilisateur unique
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
     private String avatarUrl;
+
+    @Column(unique = true)
+    private String phone;
+
     private boolean enabled = true;
 
     @ManyToMany(fetch = FetchType.EAGER)

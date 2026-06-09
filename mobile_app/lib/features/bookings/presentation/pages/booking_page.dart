@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/features/auth/providers/auth_provider.dart';
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
+import 'package:mobili/features/notifications/providers/notification_provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -89,7 +90,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
   void _onSeatTap(int seatNumber, List<int> occupied) {
     if (occupied.contains(seatNumber) ||
-        occupied.contains(seatNumber.toString())) return;
+        occupied.contains(seatNumber.toString())) {
+      return;
+    }
     final seat = '$seatNumber';
     setState(() {
       if (_selectedSeats.contains(seat)) {
@@ -307,6 +310,8 @@ class _BookingPageState extends ConsumerState<BookingPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
+              ref.invalidate(unreadCountProvider);
+              ref.invalidate(notificationsProvider);
               context.go('/tickets');
             },
             style: ElevatedButton.styleFrom(
@@ -770,9 +775,9 @@ class _PriceBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.white,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
             color: Color(0x15000000),
             blurRadius: 12,

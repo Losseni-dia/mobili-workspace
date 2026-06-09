@@ -98,17 +98,11 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
       backgroundColor: AppColors.gray50,
       appBar: MobiliAppBar(
         title: 'Mobili',
-        actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined,
-                    color: AppColors.white),
-                tooltip: 'Notifications',
-                onPressed: () => context.go('/notifications'),
-              ),
-            ],
+       actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined,
+                color: AppColors.white),
+            onPressed: () => context.go('/notifications'),
           ),
           const SizedBox(width: 4),
         ],

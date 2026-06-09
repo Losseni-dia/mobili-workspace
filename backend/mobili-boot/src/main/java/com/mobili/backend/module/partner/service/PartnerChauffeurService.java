@@ -95,6 +95,7 @@ public class PartnerChauffeurService {
                 u.getFirstname(),
                 u.getLastname(),
                 u.getEmail(),
+                u.getPhone(),
                 u.isEnabled(),
                 aff != null ? aff.getId() : null,
                 aff != null ? aff.getName() : null);

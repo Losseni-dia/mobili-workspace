@@ -364,7 +364,7 @@ class _Legend extends StatelessWidget {
         ),
         SizedBox(width: 12),
        _LegendItem(
-          color: const Color(0xFFFFEEEE),
+          color: Color(0xFFFFEEEE),
           label: 'Occupé',
           icon: Icons.cancel_rounded,
           iconColor: AppColors.danger,
@@ -381,8 +381,7 @@ class _LegendItem extends StatelessWidget {
     this.hasBorder = false,
     this.icon,
     this.iconColor,
-    this.crossOut = false,
-  });
+  }) : crossOut = false;
 
   final Color color;
   final String label;

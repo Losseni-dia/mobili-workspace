@@ -18,6 +18,8 @@ public interface MobiliInboxNotificationRepository extends JpaRepository<MobiliI
 
     long countByUserIdAndReadAtIsNull(Long userId);
 
+    void deleteAllByUserId(Long userId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE MobiliInboxNotification n SET n.readAt = :now WHERE n.user.id = :userId AND n.readAt IS NULL")
     int markAllReadForUser(@Param("userId") Long userId, @Param("now") LocalDateTime now);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/notifications/presentation/notifications_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../shared/widgets/mobili_error_widget.dart';
@@ -133,7 +134,7 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(
                 path: AppRoutes.notifications,
                 name: 'notifications',
-                builder: (_, __) => const _StubPage(title: 'Notifications'),
+                builder: (_, __) => const NotificationsPage(),
               ),
             ],
           ),
