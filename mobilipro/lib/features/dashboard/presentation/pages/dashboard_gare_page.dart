@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobilipro/features/auth/providers/auth_provider.dart';
 
@@ -89,8 +90,17 @@ class DashboardGarePage extends ConsumerWidget {
     final dashAsync = ref.watch(_dashboardProvider);
     final profile = ref.watch(authProvider).valueOrNull?.profile;
 
-    return Scaffold(
+   return Scaffold(
       backgroundColor: AppColors.gray50,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/gare/trips/create'),
+        backgroundColor: AppColors.mobiliBlue,
+        icon: const Icon(Icons.add_rounded, color: AppColors.white),
+        label: const Text(
+          'Nouveau trajet',
+          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
+        ),
+      ),
       body: RefreshIndicator(
         color: AppColors.mobiliBlue,
         onRefresh: () async => ref.invalidate(_dashboardProvider),

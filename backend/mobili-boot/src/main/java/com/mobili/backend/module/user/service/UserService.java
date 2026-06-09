@@ -264,15 +264,15 @@ public class UserService {
      * Chauffeur société créé par le dirigeant ou un compte gare (espace partenaire).
      */
     @Transactional
-    public User registerCompanyChauffeur(Partner employer, PartnerChauffeurCreateRequest dto) {
+    public User registerCompanyChauffeur(Partner employer, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
         if (employer.isCovoiturageSoloPool()) {
             throw new MobiliException(
                     MobiliErrorCode.VALIDATION_ERROR,
                     "Opération interdite pour le partenaire piscine covoiturage.");
         }
-        String email = dto.email().trim().toLowerCase();
+        String email = dto.email() != null ? dto.email().trim().toLowerCase() : null;
         String login = dto.login().trim();
-        if (userRepository.existsByEmail(email)) {
+        if (email != null && userRepository.existsByEmail(email)) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
         }
         if (userRepository.existsByLogin(login)) {
@@ -297,6 +297,11 @@ public class UserService {
                             MobiliErrorCode.RESOURCE_NOT_FOUND,
                             "Gare inconnue ou ne dépend pas de cette compagnie."));
             u.setChauffeurAffiliationStation(st);
+
+        }
+        if (avatar != null && !avatar.isEmpty()) {
+            String path = uploadService.saveImage(avatar, "users");
+            u.setAvatarUrl(path);
         }
         return userRepository.save(u);
     }

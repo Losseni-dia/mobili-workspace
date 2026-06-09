@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobilipro/core/theme/app_colors.dart';
+import '../../core/theme/app_colors.dart';
 
 class ShellGare extends StatelessWidget {
   const ShellGare({super.key, required this.navigationShell});
@@ -20,6 +20,11 @@ class ShellGare extends StatelessWidget {
         unselectedItemColor: AppColors.gray400,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+        unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_rounded),
@@ -34,8 +39,8 @@ class ShellGare extends StatelessWidget {
             label: 'Réservations',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.campaign_rounded),
-            label: 'Canal',
+            icon: Icon(Icons.people_rounded),
+            label: 'Chauffeurs',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_rounded),
