@@ -19,12 +19,12 @@ class TripStop {
   factory TripStop.fromJson(Map<String, dynamic> json) => TripStop(
         id: json['id'] as int? ?? json['stopIndex'] as int? ?? 0,
         cityName: json['cityName'] as String? ??
-            json['cityLabel'] as String? ?? // ← ajoute
+            json['cityLabel'] as String? ??
             json['city'] as String? ??
             '',
         scheduledTime: json['scheduledTime'] != null
             ? DateTime.tryParse(json['scheduledTime'] as String)
-            : json['plannedDepartureAt'] != null // ← ajoute
+            : json['plannedDepartureAt'] != null
                 ? DateTime.tryParse(json['plannedDepartureAt'] as String)
                 : null,
         stopIndex: json['stopIndex'] as int?,

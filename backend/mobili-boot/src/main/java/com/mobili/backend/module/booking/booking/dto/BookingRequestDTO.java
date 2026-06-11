@@ -16,7 +16,6 @@ public class BookingRequestDTO {
     @NotNull(message = "L'ID du voyage est obligatoire")
     private Long tripId;
 
-    @NotNull(message = "L'ID de l'utilisateur est obligatoire")
     private Long userId;
 
     @NotEmpty(message = "La sélection des sièges est obligatoire")

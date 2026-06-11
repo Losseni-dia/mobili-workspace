@@ -56,6 +56,19 @@ public class BookingService {
     private final AnalyticsEventService analyticsEventService;
     private final InboxNotificationService inboxNotificationService;
 
+
+    public List<Booking> findConfirmedByTripId(Long tripId) {
+        return bookingRepository.findConfirmedByTripIdWithDetails(tripId);
+    }
+
+    @Transactional
+    public Booking createOfflineSale(BookingRequestDTO dto) {
+        Booking booking = create(dto);
+        booking.setStatus(BookingStatus.OFFLINE_SALE);
+        return bookingRepository.save(booking);
+    }
+
+    
     @Transactional
     public Booking create(BookingRequestDTO request) {
         Trip trip = tripService.findById(request.getTripId());

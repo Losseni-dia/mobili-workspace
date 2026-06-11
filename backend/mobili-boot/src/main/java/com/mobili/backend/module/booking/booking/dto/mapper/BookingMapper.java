@@ -62,6 +62,16 @@ public interface BookingMapper {
         } else {
             dto.setLuggageFee(0.0);
         }
+
+        // Noms passagers
+        if (booking.getPassengerNames() != null) {
+            dto.setPassengerNames(booking.getPassengerNames());
+        }
+
+        // Numéros de sièges
+        if (booking.getSeatNumbers() != null) {
+            dto.setSeatNumbers(booking.getSeatNumbers());
+        }
     }
 
     /**

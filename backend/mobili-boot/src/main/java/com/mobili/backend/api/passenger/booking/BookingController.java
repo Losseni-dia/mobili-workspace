@@ -108,4 +108,23 @@ public class BookingController {
         bookingService.deactivateSeatsManually(request);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/trips/{tripId}/passengers")
+    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+    public List<BookingResponseDTO> getConfirmedPassengers(@PathVariable Long tripId) {
+        return bookingService.findConfirmedByTripId(tripId).stream()
+                .map(bookingMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @PostMapping("/partner/offline-sale")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+    public BookingResponseDTO offlineSale(
+            @RequestBody @Valid BookingRequestDTO dto,
+            Principal principal) {
+        User user = userService.findByLogin(principal.getName());
+        dto.setUserId(user.getId());
+        return bookingMapper.toDto(bookingService.createOfflineSale(dto));
+    }
 }

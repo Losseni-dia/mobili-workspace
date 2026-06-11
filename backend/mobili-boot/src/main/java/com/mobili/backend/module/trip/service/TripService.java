@@ -85,7 +85,8 @@ public class TripService {
                 .findById(principal.getUser().getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Utilisateur introuvable"));
         if (!Boolean.TRUE.equals(u.getCovoiturageSoloProfile())) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Liste réservée aux comptes covoiturage particulier.");
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
+                    "Liste réservée aux comptes covoiturage particulier.");
         }
         return tripRepository.findAllByCovoiturageOrganizerId(u.getId());
     }
@@ -97,7 +98,8 @@ public class TripService {
                 .findByIdWithEverything(principal.getUser().getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Utilisateur introuvable"));
         if (!Boolean.TRUE.equals(user.getCovoiturageSoloProfile())) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Publication réservée aux comptes covoiturage particulier.");
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
+                    "Publication réservée aux comptes covoiturage particulier.");
         }
         if (!user.isEnabled()) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Compte inactif.");
@@ -224,7 +226,8 @@ public class TripService {
         return bookingRepository.findAllByTripIdWithDetails(tripId);
     }
 
-    // --- RECHERCHE (terminus + étapes dans moreInfo, ordre : départ → étapes CSV → arrivée) ---
+    // --- RECHERCHE (terminus + étapes dans moreInfo, ordre : départ → étapes CSV →
+    // arrivée) ---
     @Transactional(readOnly = true)
     public List<Trip> searchTrips(String departure, String arrival, LocalDate date) {
         return searchTrips(departure, arrival, date, null);
@@ -294,7 +297,10 @@ public class TripService {
         return chain.stream().anyMatch(city -> partialCityMatch(city, arrQuery));
     }
 
-    /** Il existe i &lt; j avec départ et arrivée recherchés sur ces positions (préfixe insensible à la casse). */
+    /**
+     * Il existe i &lt; j avec départ et arrivée recherchés sur ces positions
+     * (préfixe insensible à la casse).
+     */
     private boolean hasValidSegment(List<String> chain, String depQuery, String arrQuery) {
         for (int i = 0; i < chain.size(); i++) {
             if (!partialCityMatch(chain.get(i), depQuery)) {
@@ -430,19 +436,15 @@ public class TripService {
         tripStopSyncService.syncStopsForTrip(trip);
 
         if (legFares != null && !legFares.isEmpty()) {
-            double sum = tripPricingService.validateConsecutiveLegFaresAndSum(trip, legFares);
             tripRunService.ensureStops(trip);
             int lastIdx = tripRunService.lastStopIndex(trip);
             if (lastIdx > 1) {
                 if (trip.getOriginDestinationPrice() == null || trip.getOriginDestinationPrice() <= 0) {
                     throw new MobiliException(
                             MobiliErrorCode.VALIDATION_ERROR,
-                            "Indiquez le prix du trajet complet (départ → arrivée) : il peut différer de la somme des tronçons.");
+                            "Indiquez le prix du trajet complet (départ → arrivée).");
                 }
                 trip.setPrice(trip.getOriginDestinationPrice());
-            } else {
-                trip.setPrice(sum);
-                trip.setOriginDestinationPrice(null);
             }
         } else {
             trip.setOriginDestinationPrice(null);
@@ -461,7 +463,7 @@ public class TripService {
             if (legFares.isEmpty()) {
                 tripPricingService.clearSegmentFaresForTrip(saved.getId());
             } else {
-                tripPricingService.replaceConsecutiveLegFares(saved, legFares);
+                tripPricingService.replaceLegFares(saved, legFares);
             }
         }
 
@@ -565,7 +567,8 @@ public class TripService {
     }
 
     /**
-     * Affectation chauffeur (dispatch gare de préférence ; le partenaire peut aussi). Mise à jour : {@code null}
+     * Affectation chauffeur (dispatch gare de préférence ; le partenaire peut
+     * aussi). Mise à jour : {@code null}
      * = conserver ; {@code 0} = retirer.
      */
     private void applyAssignedChauffeur(Trip trip, TripRequestDTO dto, Trip existingTrip) {
@@ -611,9 +614,8 @@ public class TripService {
                     MobiliErrorCode.VALIDATION_ERROR,
                     "Le chauffeur n'appartient pas à la compagnie de ce trajet.");
         }
-        if (trip.getStation() != null) {
-            if (u.getChauffeurAffiliationStation() == null
-                    || !u.getChauffeurAffiliationStation().getId().equals(trip.getStation().getId())) {
+        if (trip.getStation() != null && u.getChauffeurAffiliationStation() != null) {
+            if (!u.getChauffeurAffiliationStation().getId().equals(trip.getStation().getId())) {
                 throw new MobiliException(
                         MobiliErrorCode.VALIDATION_ERROR,
                         "Choisissez un chauffeur affecté à la gare de ce trajet.");
@@ -631,8 +633,10 @@ public class TripService {
     }
 
     /**
-     * Console conducteur : covoiturage « solo » = organisateur seulement ; sinon logique
-     * partenaire / gare ; les chauffeurs compagnies conservent l’accès aux trajets sans
+     * Console conducteur : covoiturage « solo » = organisateur seulement ; sinon
+     * logique
+     * partenaire / gare ; les chauffeurs compagnies conservent l’accès aux trajets
+     * sans
      * organisateur.
      */
     @Transactional(readOnly = true)
@@ -667,7 +671,8 @@ public class TripService {
     }
 
     /**
-     * Trajet ligne (hors covoiturage organisateur) : conducteur affecté, ou salarié de la compagnie si pas encore
+     * Trajet ligne (hors covoiturage organisateur) : conducteur affecté, ou salarié
+     * de la compagnie si pas encore
      * d’affectation sur le voyage.
      */
     private void assertChauffeurLineTripOrThrow(Trip t, UserPrincipal principal) {
@@ -717,8 +722,7 @@ public class TripService {
         LocalDateTime fromWindow = now.minusDays(1L);
 
         List<Trip> assignedUp = tripRepository.findAssignedChauffeurUpcoming(uid, fromWindow);
-        List<Trip> assignedHist =
-                tripRepository.findAssignedChauffeurHistory(uid, now, PageRequest.of(0, 40));
+        List<Trip> assignedHist = tripRepository.findAssignedChauffeurHistory(uid, now, PageRequest.of(0, 40));
 
         List<Trip> covoitAll = tripRepository.findAllByCovoiturageOrganizerId(uid);
         List<Trip> covoitUp = covoitAll.stream()
@@ -726,7 +730,8 @@ public class TripService {
                 .filter(t -> t.getStatus() == TripStatus.EN_COURS
                         || t.getDepartureDateTime() == null
                         || !t.getDepartureDateTime().isBefore(fromWindow))
-                .sorted(Comparator.comparing(Trip::getDepartureDateTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                .sorted(Comparator.comparing(Trip::getDepartureDateTime,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
         List<Trip> covoitHi = covoitAll.stream()
                 .filter(t -> t.getStatus() == TripStatus.TERMINÉ
@@ -734,20 +739,23 @@ public class TripService {
                         || (t.getStatus() == TripStatus.PROGRAMMÉ
                                 && t.getDepartureDateTime() != null
                                 && t.getDepartureDateTime().isBefore(now)))
-                .sorted(Comparator.comparing(Trip::getDepartureDateTime, Comparator.nullsLast(Comparator.reverseOrder())))
+                .sorted(Comparator.comparing(Trip::getDepartureDateTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(40)
                 .toList();
 
         List<ChauffeurTripListItem> upcoming = Stream.concat(
-                        assignedUp.stream().map(t -> toChauffeurItem(t, "ASSIGNED")),
-                        covoitUp.stream().map(t -> toChauffeurItem(t, "COVOITURAGE")))
-                .sorted(Comparator.comparing(ChauffeurTripListItem::getDepartureDateTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                assignedUp.stream().map(t -> toChauffeurItem(t, "ASSIGNED")),
+                covoitUp.stream().map(t -> toChauffeurItem(t, "COVOITURAGE")))
+                .sorted(Comparator.comparing(ChauffeurTripListItem::getDepartureDateTime,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
 
         List<ChauffeurTripListItem> history = Stream.concat(
-                        assignedHist.stream().map(t -> toChauffeurItem(t, "ASSIGNED")),
-                        covoitHi.stream().map(t -> toChauffeurItem(t, "COVOITURAGE")))
-                .sorted(Comparator.comparing(ChauffeurTripListItem::getDepartureDateTime, Comparator.nullsLast(Comparator.reverseOrder())))
+                assignedHist.stream().map(t -> toChauffeurItem(t, "ASSIGNED")),
+                covoitHi.stream().map(t -> toChauffeurItem(t, "COVOITURAGE")))
+                .sorted(Comparator.comparing(ChauffeurTripListItem::getDepartureDateTime,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(50)
                 .toList();
 
@@ -794,7 +802,8 @@ public class TripService {
     }
 
     /**
-     * Prévisualisation tarif segment : même chaîne que la réservation (arrêts + prorata), sans persistance.
+     * Prévisualisation tarif segment : même chaîne que la réservation (arrêts +
+     * prorata), sans persistance.
      */
     @Transactional(readOnly = true)
     public TripPricePreviewResponse previewSegmentPrice(TripPricePreviewRequest req) {

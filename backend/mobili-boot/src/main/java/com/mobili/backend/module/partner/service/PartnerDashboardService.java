@@ -34,20 +34,29 @@ public class PartnerDashboardService {
             bookings = bookingRepository.findRecentBookingsByPartner(partnerId);
         }
 
-        double revenue = 0;
+        double revenueOnline = 0;
+        double revenueOffline = 0;
+        
         if (bookings != null) {
-            revenue = bookings.stream()
-                    .filter(b -> b.getStatus() != null && b.getStatus() == BookingStatus.CONFIRMED)
-                    .mapToDouble(Booking::getTotalPrice)
-                    .sum();
+            revenueOnline = bookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                    .mapToDouble(Booking::getTotalPrice).sum();
+            revenueOffline = bookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.OFFLINE_SALE)
+                    .mapToDouble(Booking::getTotalPrice).sum();
         }
+        long confirmedCount = bookings != null ? bookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED
+                        || b.getStatus() == BookingStatus.OFFLINE_SALE)
+                .count() : 0L;
 
         Map<String, Object> data = new HashMap<>();
         data.put("activeTrips", tripsCount);
-        data.put("totalBookings", bookings != null ? (long) bookings.size() : 0L);
-        data.put("totalRevenue", revenue);
+        data.put("totalBookings", confirmedCount);
+        data.put("totalRevenue", revenueOnline + revenueOffline);
+        data.put("revenueOnline", revenueOnline);
+        data.put("revenueOffline", revenueOffline);
         data.put("bookingsList", bookings != null ? bookings : new ArrayList<>());
-
         return data;
     }
 }

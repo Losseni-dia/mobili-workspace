@@ -23,6 +23,32 @@ public class TripPricingService {
     private final TripRunService tripRunService;
     private final TripSegmentFareRepository tripSegmentFareRepository;
 
+
+    @Transactional
+    public void replaceLegFares(Trip trip, List<TripLegFareRequest> items) {
+        if (trip.getId() == null) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Voyage non persisté.");
+        }
+        tripSegmentFareRepository.deleteByTrip_Id(trip.getId());
+        if (items == null || items.isEmpty())
+            return;
+        for (TripLegFareRequest it : items) {
+            if (it.getFromStopIndex() == null || it.getToStopIndex() == null)
+                continue;
+            if (it.getFromStopIndex() >= it.getToStopIndex())
+                continue;
+            if (it.getPrice() == null || it.getPrice() < 0)
+                continue;
+            TripSegmentFare row = new TripSegmentFare();
+            row.setTrip(trip);
+            row.setFromStopIndex(it.getFromStopIndex());
+            row.setToStopIndex(it.getToStopIndex());
+            row.setPrice(it.getPrice());
+            tripSegmentFareRepository.save(row);
+        }
+    }
+
     /**
      * Si des tarifs existent en base pour chaque tronçon consécutif du segment demandé, retourne leur somme.
      * Sinon prorata du prix global du voyage sur les indices d'arrêt.
@@ -40,20 +66,27 @@ public class TripPricingService {
             return trip.getOriginDestinationPrice();
         }
         if (trip.getId() != null) {
+            // 1. Prix direct from→to
+            Optional<TripSegmentFare> direct = tripSegmentFareRepository
+                    .findByTrip_IdAndFromStopIndexAndToStopIndex(
+                            trip.getId(), boardingStopIndex, alightingStopIndex);
+            if (direct.isPresent())
+                return direct.get().getPrice();
+
+            // 2. Somme tronçons consécutifs
             double sum = 0.0;
             boolean allPresent = true;
             for (int leg = boardingStopIndex; leg < alightingStopIndex; leg++) {
-                Optional<TripSegmentFare> row = tripSegmentFareRepository.findByTrip_IdAndFromStopIndexAndToStopIndex(
-                        trip.getId(), leg, leg + 1);
+                Optional<TripSegmentFare> row = tripSegmentFareRepository
+                        .findByTrip_IdAndFromStopIndexAndToStopIndex(trip.getId(), leg, leg + 1);
                 if (row.isEmpty()) {
                     allPresent = false;
                     break;
                 }
                 sum += row.get().getPrice();
             }
-            if (allPresent && alightingStopIndex > boardingStopIndex) {
+            if (allPresent && alightingStopIndex > boardingStopIndex)
                 return sum;
-            }
         }
         double base = trip.getPrice() != null ? trip.getPrice() : 0.0;
         return base * (alightingStopIndex - boardingStopIndex) / last;

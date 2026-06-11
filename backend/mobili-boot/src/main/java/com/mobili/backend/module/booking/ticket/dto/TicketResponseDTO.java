@@ -18,4 +18,8 @@ public class TicketResponseDTO {
     private String partnerName;
     private String seatNumber;
     private String boardingPoint;
+    private String boardingCity;
+    private String alightingCity;
+    private Integer boardingStopIndex;
+    private Integer alightingStopIndex;
 }
