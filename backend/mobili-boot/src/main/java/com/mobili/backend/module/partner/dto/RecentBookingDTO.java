@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,4 +18,6 @@ public class RecentBookingDTO {
     private LocalDateTime date; // Mappé depuis createdAt
     private double amount; // Mappé depuis totalPrice
     private String status; // Mappé depuis l'Enum status
+    private List<String> passengerNames; // Noms des passagers
+    private List<String> seatNumbers; // Numéros de sièges
 }

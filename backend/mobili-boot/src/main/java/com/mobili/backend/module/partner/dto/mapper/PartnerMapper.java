@@ -27,11 +27,14 @@ public interface PartnerMapper {
     @Mapping(target = "ownerName", expression = "java(partner.getOwner() != null ? partner.getOwner().getFirstname() + \" \" + partner.getOwner().getLastname() : \"Sans propriétaire\")")
     PartnerAdminResponse toAdminDto(Partner partner);
 
+    // APRÈS
     @Mapping(target = "customerName", expression = "java(booking.getCustomer().getFirstname() + \" \" + booking.getCustomer().getLastname())")
     @Mapping(target = "tripRoute", expression = "java(booking.getTrip().getDepartureCity() + \" -> \" + booking.getTrip().getArrivalCity())")
     @Mapping(target = "date", source = "createdAt")
     @Mapping(target = "amount", source = "totalPrice")
     @Mapping(target = "status", expression = "java(booking.getStatus().name())")
+    @Mapping(target = "passengerNames", expression = "java(booking.getPassengerNames() != null ? new java.util.ArrayList<>(booking.getPassengerNames()) : java.util.Collections.emptyList())")
+    @Mapping(target = "seatNumbers", expression = "java(booking.getSeatNumbers() != null ? new java.util.ArrayList<>(booking.getSeatNumbers()) : java.util.Collections.emptyList())")
     RecentBookingDTO toRecentBookingDto(Booking booking);
 
     List<RecentBookingDTO> toRecentBookingDtoList(List<Booking> bookings);

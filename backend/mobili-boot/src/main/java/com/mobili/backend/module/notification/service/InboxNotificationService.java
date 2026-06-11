@@ -195,6 +195,12 @@ public class InboxNotificationService {
         }
     }
 
+    
+    @Transactional
+    public void notifyUser(User user, String title, String body, MobiliNotificationType type) {
+        saveOne(user, type, title, body, null, null);
+    }
+
     /**
      * Messages d’information Mobili (admin) vers l’inbox des dirigeants partenaire.
      * @return nombre de comptes notifiés

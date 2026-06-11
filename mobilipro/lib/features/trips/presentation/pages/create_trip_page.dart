@@ -38,6 +38,8 @@ class LegFare {
   final String fromCity;
   final String toCity;
   double? price;
+
+  String get key => '$fromIndex-$toIndex';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,7 +91,7 @@ const _vehicleTypeLabels = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Page principale — 5 étapes
+// Page principale
 // ─────────────────────────────────────────────────────────────────────────────
 
 class CreateTripPage extends ConsumerStatefulWidget {
@@ -106,31 +108,32 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Étape 1 — Trajet
+  // Étape 1
   final _departureCityCtrl = TextEditingController();
   final _arrivalCityCtrl = TextEditingController();
   final _boardingPointCtrl = TextEditingController();
   DateTime? _departureDateTime;
 
-  // Étape 2 — Véhicule
+  // Étape 2
   String? _selectedVehicleType;
   final _plateCtrl = TextEditingController();
   final _totalSeatsCtrl = TextEditingController();
   File? _vehicleImage;
 
-  // Étape 3 — Bagages
+  // Étape 3
+  bool _manageBagages = false;
   int _includedCabinBags = 1;
   int _includedHoldBags = 1;
   int _maxExtraHoldBags = 2;
   final _extraHoldBagPriceCtrl = TextEditingController(text: '2000');
 
-  // Étape 4 — Prix & tronçons
+  // Étape 4 — Map key = 'fromIndex-toIndex'
   final _mainPriceCtrl = TextEditingController();
   final List<String> _stopCities = [];
-  final List<TextEditingController> _legPriceCtrlrs = [];
+  final Map<String, TextEditingController> _legPriceCtrlrs = {};
   List<LegFare> _legFares = [];
 
-  // Étape 5 — Chauffeur
+  // Étape 5
   int? _selectedChauffeurId;
 
   final _step1Key = GlobalKey<FormState>();
@@ -147,7 +150,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
     _totalSeatsCtrl.dispose();
     _extraHoldBagPriceCtrl.dispose();
     _mainPriceCtrl.dispose();
-    for (final c in _legPriceCtrlrs) {
+    for (final c in _legPriceCtrlrs.values) {
       c.dispose();
     }
     super.dispose();
@@ -159,21 +162,26 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
       ..._stopCities,
       _arrivalCityCtrl.text.trim(),
     ];
-    for (final c in _legPriceCtrlrs) {
+
+    // Dispose anciens controllers
+    for (final c in _legPriceCtrlrs.values) {
       c.dispose();
     }
     _legPriceCtrlrs.clear();
     _legFares = [];
+
+    // Génère TOUTES les combinaisons from→to (non-consécutives incluses)
     for (int i = 0; i < allCities.length - 1; i++) {
-      _legFares.add(
-        LegFare(
+      for (int j = i + 1; j < allCities.length; j++) {
+        final leg = LegFare(
           fromIndex: i,
-          toIndex: i + 1,
+          toIndex: j,
           fromCity: allCities[i],
-          toCity: allCities[i + 1],
-        ),
-      );
-      _legPriceCtrlrs.add(TextEditingController());
+          toCity: allCities[j],
+        );
+        _legFares.add(leg);
+        _legPriceCtrlrs[leg.key] = TextEditingController();
+      }
     }
   }
 
@@ -292,15 +300,16 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
       final extraBagPrice =
           double.tryParse(_extraHoldBagPriceCtrl.text.trim()) ?? 0;
 
+      // Construit legFares depuis toutes les combinaisons saisies
       final legFaresJson = <Map<String, dynamic>>[];
-      for (int i = 0; i < _legFares.length; i++) {
-        final priceText = _legPriceCtrlrs[i].text.trim();
+      for (final leg in _legFares) {
+        final priceText = _legPriceCtrlrs[leg.key]?.text.trim() ?? '';
         if (priceText.isNotEmpty) {
           final price = double.tryParse(priceText);
-          if (price != null) {
+          if (price != null && price >= 0) {
             legFaresJson.add({
-              'fromStopIndex': _legFares[i].fromIndex,
-              'toStopIndex': _legFares[i].toIndex,
+              'fromStopIndex': leg.fromIndex,
+              'toStopIndex': leg.toIndex,
               'price': price,
             });
           }
@@ -325,10 +334,12 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
         'originDestinationPrice': mainPrice,
         'totalSeats': totalSeats,
         'availableSeats': totalSeats,
-        'includedCabinBagsPerPassenger': _includedCabinBags,
-        'includedHoldBagsPerPassenger': _includedHoldBags,
-        'maxExtraHoldBagsPerPassenger': _maxExtraHoldBags,
-        'extraHoldBagPrice': extraBagPrice,
+        'includedCabinBagsPerPassenger': _manageBagages
+            ? _includedCabinBags
+            : 0,
+        'includedHoldBagsPerPassenger': _manageBagages ? _includedHoldBags : 0,
+        'maxExtraHoldBagsPerPassenger': _manageBagages ? _maxExtraHoldBags : 0,
+        'extraHoldBagPrice': _manageBagages ? extraBagPrice : 0,
         if (moreInfo.isNotEmpty) 'moreInfo': moreInfo,
         if (legFaresJson.isNotEmpty) 'legFares': legFaresJson,
         if (_selectedChauffeurId != null)
@@ -406,7 +417,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
       ),
       body: Column(
         children: [
-          // Stepper
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
@@ -464,7 +474,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
               controller: _pageCtrl,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                // Étape 1 — Trajet
                 _Step1(
                   formKey: _step1Key,
                   departureCityCtrl: _departureCityCtrl,
@@ -473,7 +482,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
                   departureDateTime: _departureDateTime,
                   onPickDateTime: _pickDateTime,
                 ),
-                // Étape 2 — Véhicule
                 _Step2(
                   formKey: _step2Key,
                   plateCtrl: _plateCtrl,
@@ -484,8 +492,10 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
                       setState(() => _selectedVehicleType = v),
                   onPickImage: _pickVehicleImage,
                 ),
-                // Étape 3 — Bagages
                 _Step3Bagages(
+                  manageBagages: _manageBagages,
+                  onManageBagagesChanged: (v) =>
+                      setState(() => _manageBagages = v),
                   includedCabinBags: _includedCabinBags,
                   includedHoldBags: _includedHoldBags,
                   maxExtraHoldBags: _maxExtraHoldBags,
@@ -495,7 +505,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
                   onMaxExtraChanged: (v) =>
                       setState(() => _maxExtraHoldBags = v),
                 ),
-                // Étape 4 — Prix & tronçons
                 _Step4Prix(
                   formKey: _step4Key,
                   mainPriceCtrl: _mainPriceCtrl,
@@ -513,7 +522,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
                     });
                   },
                 ),
-                // Étape 5 — Chauffeur
                 _Step5Chauffeur(
                   selectedChauffeurId: _selectedChauffeurId,
                   onChauffeurSelected: (id) =>
@@ -567,7 +575,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Étape 1 — Trajet
+// Étape 1
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Step1 extends StatelessWidget {
@@ -672,7 +680,7 @@ class _Step1 extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Étape 2 — Véhicule
+// Étape 2
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Step2 extends StatelessWidget {
@@ -823,6 +831,8 @@ class _Step2 extends StatelessWidget {
 
 class _Step3Bagages extends StatelessWidget {
   const _Step3Bagages({
+    required this.manageBagages,
+    required this.onManageBagagesChanged,
     required this.includedCabinBags,
     required this.includedHoldBags,
     required this.maxExtraHoldBags,
@@ -832,6 +842,8 @@ class _Step3Bagages extends StatelessWidget {
     required this.onMaxExtraChanged,
   });
 
+  final bool manageBagages;
+  final ValueChanged<bool> onManageBagagesChanged;
   final int includedCabinBags;
   final int includedHoldBags;
   final int maxExtraHoldBags;
@@ -846,130 +858,184 @@ class _Step3Bagages extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionLabel(label: 'Politique bagages'),
-        const SizedBox(height: 4),
-        const Text(
-          'Définissez ce qui est inclus dans le prix du billet',
-          style: TextStyle(color: AppColors.gray500, fontSize: 13),
-        ),
-        const SizedBox(height: 20),
-
-        // Bagages cabine inclus
-        _BagageCounter(
-          icon: Icons.backpack_rounded,
-          iconColor: AppColors.mobiliBlue,
-          title: 'Bagages cabine inclus',
-          subtitle: 'Sac à main, bagage à main',
-          value: includedCabinBags,
-          min: 0,
-          max: 3,
-          onChanged: onCabinChanged,
-        ),
+        const _SectionLabel(label: 'Gestion des bagages'),
         const SizedBox(height: 12),
-
-        // Valises soute incluses
-        _BagageCounter(
-          icon: Icons.luggage_rounded,
-          iconColor: AppColors.stationGreen,
-          title: 'Valises soute incluses',
-          subtitle: 'Bagages en soute, sans supplément',
-          value: includedHoldBags,
-          min: 0,
-          max: 3,
-          onChanged: onHoldChanged,
-        ),
-        const SizedBox(height: 20),
-
-        const Divider(color: AppColors.gray100),
-        const SizedBox(height: 16),
-
-        const _SectionLabel(label: 'Bagages supplémentaires'),
-        const SizedBox(height: 4),
-        const Text(
-          'Valises soute en supplément payant',
-          style: TextStyle(color: AppColors.gray500, fontSize: 13),
-        ),
-        const SizedBox(height: 16),
-
-        // Max valises extra
-        _BagageCounter(
-          icon: Icons.add_box_rounded,
-          iconColor: AppColors.proGold,
-          title: 'Max valises extra autorisées',
-          subtitle: 'Par passager, en supplément',
-          value: maxExtraHoldBags,
-          min: 0,
-          max: 5,
-          onChanged: onMaxExtraChanged,
-        ),
-        const SizedBox(height: 16),
-
-        // Prix valise extra
-        if (maxExtraHoldBags > 0) ...[
-          const _SectionLabel(label: 'Prix par valise supplémentaire'),
-          const SizedBox(height: 8),
-          _Field(
-            controller: extraHoldBagPriceCtrl,
-            label: 'Prix (FCFA)',
-            icon: Icons.payments_rounded,
-            keyboardType: TextInputType.number,
-          ),
-        ],
-
-        const SizedBox(height: 20),
-
-        // Résumé
         Container(
-          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.mobiliBlueFog,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.mobiliBlue.withValues(alpha: 0.2),
+              color: manageBagages ? AppColors.mobiliBlue : AppColors.gray200,
+              width: manageBagages ? 2 : 1,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: AppColors.mobiliBlue,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Résumé politique bagages',
-                    style: TextStyle(
-                      color: AppColors.mobiliBlue,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+          child: SwitchListTile(
+            value: manageBagages,
+            onChanged: onManageBagagesChanged,
+            activeColor: AppColors.mobiliBlue,
+            title: const Text(
+              'Gérer les bagages en ligne',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.mobiliBlueDeep,
+                fontSize: 14,
               ),
-              const SizedBox(height: 8),
-              Text(
-                '✅ $includedCabinBags bagage(s) cabine inclus\n'
-                '✅ $includedHoldBags valise(s) soute incluse(s)\n'
-                '${maxExtraHoldBags > 0 ? '➕ Jusqu\'à $maxExtraHoldBags valise(s) extra à ${extraHoldBagPriceCtrl.text.isEmpty ? '?' : extraHoldBagPriceCtrl.text} FCFA/valise' : '❌ Aucun bagage extra autorisé'}',
-                style: const TextStyle(
-                  color: AppColors.mobiliBlueDeep,
-                  fontSize: 13,
-                  height: 1.6,
-                ),
-              ),
-            ],
+            ),
+            subtitle: Text(
+              manageBagages
+                  ? 'Les passagers verront la politique bagages'
+                  : 'Les bagages ne seront pas affichés',
+              style: const TextStyle(fontSize: 12, color: AppColors.gray400),
+            ),
           ),
         ),
+        if (manageBagages) ...[
+          const SizedBox(height: 20),
+          const _SectionLabel(label: 'Bagages inclus dans le billet'),
+          const SizedBox(height: 16),
+          _BagageCounter(
+            icon: Icons.backpack_rounded,
+            iconColor: AppColors.mobiliBlue,
+            title: 'Bagages cabine inclus',
+            subtitle: 'Sac à main, bagage à main',
+            value: includedCabinBags,
+            min: 0,
+            max: 3,
+            onChanged: onCabinChanged,
+          ),
+          const SizedBox(height: 12),
+          _BagageCounter(
+            icon: Icons.luggage_rounded,
+            iconColor: AppColors.stationGreen,
+            title: 'Valises soute incluses',
+            subtitle: 'Bagages en soute, sans supplément',
+            value: includedHoldBags,
+            min: 0,
+            max: 3,
+            onChanged: onHoldChanged,
+          ),
+          const SizedBox(height: 20),
+          const Divider(color: AppColors.gray100),
+          const SizedBox(height: 16),
+          const _SectionLabel(label: 'Bagages supplémentaires'),
+          const SizedBox(height: 16),
+          _BagageCounter(
+            icon: Icons.add_box_rounded,
+            iconColor: AppColors.proGold,
+            title: 'Max valises extra autorisées',
+            subtitle: 'Par passager, en supplément',
+            value: maxExtraHoldBags,
+            min: 0,
+            max: 5,
+            onChanged: onMaxExtraChanged,
+          ),
+          if (maxExtraHoldBags > 0) ...[
+            const SizedBox(height: 16),
+            const _SectionLabel(label: 'Prix par valise supplémentaire'),
+            const SizedBox(height: 8),
+            _Field(
+              controller: extraHoldBagPriceCtrl,
+              label: 'Prix (FCFA)',
+              icon: Icons.payments_rounded,
+              keyboardType: TextInputType.number,
+            ),
+          ],
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.mobiliBlueFog,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.mobiliBlue.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.mobiliBlue,
+                      size: 16,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Résumé politique bagages',
+                      style: TextStyle(
+                        color: AppColors.mobiliBlue,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '✅ $includedCabinBags bagage(s) cabine inclus\n'
+                  '✅ $includedHoldBags valise(s) soute incluse(s)\n'
+                  '${maxExtraHoldBags > 0 ? '➕ Jusqu\'à $maxExtraHoldBags valise(s) extra à ${extraHoldBagPriceCtrl.text.isEmpty ? '?' : extraHoldBagPriceCtrl.text} FCFA/valise' : '❌ Aucun bagage extra autorisé'}',
+                  style: const TextStyle(
+                    color: AppColors.mobiliBlueDeep,
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.gray100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.gray200),
+            ),
+            child: Row(
+              children: const [
+                Icon(
+                  Icons.luggage_outlined,
+                  color: AppColors.gray400,
+                  size: 32,
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bagages non gérés en ligne',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Les passagers ne verront pas d\'information sur les bagages.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.gray400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     ),
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Étape 4 — Prix & tronçons
+// Étape 4 — Prix & tronçons (toutes combinaisons)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Step4Prix extends StatefulWidget {
@@ -990,7 +1056,7 @@ class _Step4Prix extends StatefulWidget {
   final TextEditingController mainPriceCtrl;
   final List<String> stopCities;
   final List<LegFare> legFares;
-  final List<TextEditingController> legPriceCtrlrs;
+  final Map<String, TextEditingController> legPriceCtrlrs;
   final String departureCity;
   final String arrivalCity;
   final VoidCallback onAddStop;
@@ -1100,85 +1166,157 @@ class _Step4PrixState extends State<_Step4Prix> {
             isFixed: true,
             isLast: true,
           ),
+
           if (widget.legFares.isNotEmpty) ...[
             const SizedBox(height: 20),
             const _SectionLabel(label: 'Prix par tronçon (optionnel)'),
             const SizedBox(height: 4),
-            const Text(
-              'Laissez vide pour calculer au prorata',
-              style: TextStyle(color: AppColors.gray400, fontSize: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.warningSoft,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.warning,
+                    size: 14,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Définissez un prix pour chaque combinaison. Laissez vide pour le prorata.',
+                      style: TextStyle(color: AppColors.warning, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-            ...List.generate(widget.legFares.length, (i) {
-              final leg = widget.legFares[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.mobiliBlueFog,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${leg.fromCity.isEmpty ? 'Stop ${leg.fromIndex}' : leg.fromCity} → ${leg.toCity.isEmpty ? 'Stop ${leg.toIndex}' : leg.toCity}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.mobiliBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: TextFormField(
-                        controller: i < widget.legPriceCtrlrs.length
-                            ? widget.legPriceCtrlrs[i]
-                            : null,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          hintText: 'Prix',
-                          suffixText: 'F',
-                          filled: true,
-                          fillColor: AppColors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: AppColors.gray200,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: AppColors.gray200,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
+
+            // Groupement par ville de départ
+            ...() {
+              final widgets = <Widget>[];
+              String? lastFrom;
+              for (final leg in widget.legFares) {
+                if (leg.fromCity != lastFrom) {
+                  lastFrom = leg.fromCity;
+                  widgets.add(
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 6),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
                               color: AppColors.mobiliBlue,
-                              width: 2,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Depuis ${leg.fromCity.isEmpty ? 'Stop ${leg.fromIndex}' : leg.fromCity}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.mobiliBlueDeep,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                widgets.add(
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.mobiliBlueFog,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 12,
+                                  color: AppColors.mobiliBlue,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    leg.toCity.isEmpty
+                                        ? 'Stop ${leg.toIndex}'
+                                        : leg.toCity,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.mobiliBlue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: widget.legPriceCtrlrs[leg.key],
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'Prix',
+                              suffixText: 'F',
+                              filled: true,
+                              fillColor: AppColors.white,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColors.gray200,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColors.mobiliBlue,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }),
+                  ),
+                );
+              }
+              return widgets;
+            }(),
           ],
         ],
       ),
@@ -1280,7 +1418,7 @@ class _Step5Chauffeur extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Widget compteur bagages
+// Widgets helper
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BagageCounter extends StatelessWidget {
@@ -1343,7 +1481,6 @@ class _BagageCounter extends StatelessWidget {
             ],
           ),
         ),
-        // Compteur
         Row(
           children: [
             _CounterBtn(
@@ -1396,10 +1533,6 @@ class _CounterBtn extends StatelessWidget {
     ),
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Widgets helper partagés
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _StopTile extends StatelessWidget {
   const _StopTile({

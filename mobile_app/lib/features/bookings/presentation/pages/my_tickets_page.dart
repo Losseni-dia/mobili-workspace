@@ -29,10 +29,7 @@ class MyTicketsPage extends ConsumerWidget {
 
     if (profile == null) {
       return const Scaffold(
-       appBar: MobiliAppBar(
-          title: 'Mes billets',
-          backRoute: '/profile',
-        ),
+        appBar: MobiliAppBar(title: 'Mes billets', backRoute: '/profile'),
         body: Center(child: Text('Non connecté')),
       );
     }
@@ -41,10 +38,7 @@ class MyTicketsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-     appBar: const MobiliAppBar(
-        title: 'Mes billets',
-        backRoute: '/profile',
-      ),
+      appBar: const MobiliAppBar(title: 'Mes billets', backRoute: '/profile'),
       body: ticketsAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.mobiliBlue),
@@ -106,7 +100,7 @@ class MyTicketsPage extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Liste avec suppression locale
+// Liste
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TicketsList extends StatefulWidget {
@@ -126,9 +120,7 @@ class _TicketsListState extends State<_TicketsList> {
     _tickets = List.from(widget.tickets);
   }
 
-  void _remove(int index) {
-    setState(() => _tickets.removeAt(index));
-  }
+  void _remove(int index) => setState(() => _tickets.removeAt(index));
 
   @override
   Widget build(BuildContext context) {
@@ -190,20 +182,17 @@ class _TicketCardState extends State<_TicketCard> {
       final boundary = _repaintKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) return;
-
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
-
       final tempDir = await getTemporaryDirectory();
       final file =
           File('${tempDir.path}/billet_${widget.ticket.ticketNumber}.png');
       await file.writeAsBytes(byteData.buffer.asUint8List());
-
       await Share.shareXFiles(
         [XFile(file.path)],
         text:
-            'Mon billet Mobili — ${widget.ticket.departureCity} → ${widget.ticket.arrivalCity}\n${widget.ticket.ticketNumber}',
+            'Mon billet Mobili — ${widget.ticket.effectiveBoardingCity} → ${widget.ticket.effectiveAlightingCity}\n${widget.ticket.ticketNumber}',
       );
     } finally {
       setState(() => _isSharing = false);
@@ -265,7 +254,7 @@ class _TicketCardState extends State<_TicketCard> {
             ),
             child: Column(
               children: [
-                // ── Header bleu ──────────────────────────
+                // ── Header bleu ─────────────────────────
                 Container(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   decoration: const BoxDecoration(
@@ -311,20 +300,23 @@ class _TicketCardState extends State<_TicketCard> {
                         ],
                       ),
                       const SizedBox(height: 14),
+
+                      // Villes embarquement → descente
                       Row(
                         children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(ticket.departureCity,
-                                    style:
-                                        AppTextStyles.headlineMedium.copyWith(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 22,
-                                    )),
-                                Text('Départ',
+                                Text(
+                                  ticket.effectiveBoardingCity,
+                                  style: AppTextStyles.headlineMedium.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                                Text('Embarquement',
                                     style: AppTextStyles.bodySmall.copyWith(
                                       color: AppColors.white
                                           .withValues(alpha: 0.6),
@@ -360,15 +352,16 @@ class _TicketCardState extends State<_TicketCard> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(ticket.arrivalCity,
-                                    style:
-                                        AppTextStyles.headlineMedium.copyWith(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 22,
-                                    ),
-                                    textAlign: TextAlign.right),
-                                Text('Arrivée',
+                                Text(
+                                  ticket.effectiveAlightingCity,
+                                  style: AppTextStyles.headlineMedium.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 22,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                                Text('Descente',
                                     style: AppTextStyles.bodySmall.copyWith(
                                       color: AppColors.white
                                           .withValues(alpha: 0.6),
@@ -379,6 +372,37 @@ class _TicketCardState extends State<_TicketCard> {
                           ),
                         ],
                       ),
+
+                      // Badge trajet complet si tronçon partiel
+                      if (ticket.isPartialSegment) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppColors.white.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.route_rounded,
+                                  color: AppColors.mobiliYellow, size: 12),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Trajet : ${ticket.departureCity} → ${ticket.arrivalCity}',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.white.withValues(alpha: 0.7),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       if (ticket.boardingPoint.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         Container(
@@ -534,9 +558,6 @@ class _TicketCardState extends State<_TicketCard> {
             ),
           ),
         ),
-
-        // ── Boutons icônes ronds avec overlay ─────────────
-        // ── Boutons icônes ronds avec overlay ─────────────
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
@@ -592,7 +613,7 @@ class _TicketCardState extends State<_TicketCard> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Notification suppression locale
+// Notification suppression
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DeleteNotification extends Notification {
@@ -601,7 +622,7 @@ class _DeleteNotification extends Notification {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bouton icône rond avec overlay ripple
+// Bouton icône rond
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _IconBtn extends StatelessWidget {

@@ -47,7 +47,6 @@ class Trip {
 
   String get formattedPrice => '${priceXof.toStringAsFixed(0)} FCFA';
 
-  /// Ex: "22 août à 12:05"
   String get formattedDepartureFull {
     final months = [
       '',
@@ -70,7 +69,6 @@ class Trip {
     return '${d.day} ${months[d.month]} à $h:$m';
   }
 
-  /// Libellé lisible du type de véhicule
   String get vehicleTypeLabel {
     switch (vehicleType?.toUpperCase()) {
       case 'BUS_CLIMATISE':
@@ -160,16 +158,24 @@ class Trip {
       };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LegFare
+// ─────────────────────────────────────────────────────────────────────────────
+
 class LegFare {
   const LegFare({
     required this.fromCity,
     required this.toCity,
     required this.priceXof,
+    this.fromStopIndex,
+    this.toStopIndex,
   });
 
   final String fromCity;
   final String toCity;
   final double priceXof;
+  final int? fromStopIndex;
+  final int? toStopIndex;
 
   String get formattedPrice => '${priceXof.toStringAsFixed(0)} FCFA';
 
@@ -177,11 +183,15 @@ class LegFare {
         fromCity: json['fromCity'] as String? ?? '',
         toCity: json['toCity'] as String? ?? '',
         priceXof: (json['price'] as num?)?.toDouble() ?? 0,
+        fromStopIndex: json['fromStopIndex'] as int?,
+        toStopIndex: json['toStopIndex'] as int?,
       );
 
   Map<String, dynamic> toJson() => {
         'fromCity': fromCity,
         'toCity': toCity,
         'price': priceXof,
+        if (fromStopIndex != null) 'fromStopIndex': fromStopIndex,
+        if (toStopIndex != null) 'toStopIndex': toStopIndex,
       };
 }

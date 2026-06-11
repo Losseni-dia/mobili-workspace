@@ -22,5 +22,8 @@ public enum MobiliNotificationType {
     /** CNI covoiturage : date de validité dépassée. */
     COV_KYC_EXPIRED,
     /** Annonce / information envoyée par l’équipe Mobili (espace admin) au dirigeant partenaire. */
-    MOBILI_ADMIN_INFO_PARTNER
+    MOBILI_ADMIN_INFO_PARTNER,
+            
+    /** Réservation annulée. */
+    BOOKING_CANCELLED
 }

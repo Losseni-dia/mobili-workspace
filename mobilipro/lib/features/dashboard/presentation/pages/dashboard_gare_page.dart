@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobilipro/features/auth/providers/auth_provider.dart';
 
-import '../../../../../../core/network/api_client.dart';
-import '../../../../../../core/theme/app_colors.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/theme/app_colors.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Modèle
+// Modèles
 // ─────────────────────────────────────────────────────────────────────────────
 
 class DashboardStats {
@@ -15,18 +16,24 @@ class DashboardStats {
     required this.activeTripsCount,
     required this.totalBookingsCount,
     required this.totalRevenue,
+    required this.revenueOnline,
+    required this.revenueOffline,
     required this.recentBookings,
   });
 
   final int activeTripsCount;
   final int totalBookingsCount;
   final double totalRevenue;
+  final double revenueOnline;
+  final double revenueOffline;
   final List<RecentBooking> recentBookings;
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) => DashboardStats(
     activeTripsCount: (json['activeTripsCount'] as num?)?.toInt() ?? 0,
     totalBookingsCount: (json['totalBookingsCount'] as num?)?.toInt() ?? 0,
     totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
+    revenueOnline: (json['revenueOnline'] as num?)?.toDouble() ?? 0.0,
+    revenueOffline: (json['revenueOffline'] as num?)?.toDouble() ?? 0.0,
     recentBookings: (json['recentBookings'] as List<dynamic>? ?? [])
         .map((e) => RecentBooking.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -41,6 +48,8 @@ class RecentBooking {
     required this.date,
     required this.amount,
     required this.status,
+    required this.passengerNames,
+    required this.seatNumbers,
   });
 
   final int id;
@@ -49,6 +58,22 @@ class RecentBooking {
   final DateTime date;
   final double amount;
   final String status;
+  final List<String> passengerNames;
+  final List<String> seatNumbers;
+
+  String get displayName =>
+      passengerNames.isNotEmpty ? passengerNames.join(', ') : customerName;
+
+  String get displayInitial {
+    final name = passengerNames.isNotEmpty
+        ? passengerNames.first
+        : customerName;
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  String get formattedAmount => NumberFormat('#,###').format(amount) + ' FCFA';
+
+  String get formattedDate => DateFormat('dd/MM/yyyy HH:mm').format(date);
 
   factory RecentBooking.fromJson(Map<String, dynamic> json) => RecentBooking(
     id: json['id'] as int,
@@ -57,11 +82,13 @@ class RecentBooking {
     date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
     amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
     status: json['status'] as String? ?? '',
+    passengerNames: (json['passengerNames'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
+    seatNumbers: (json['seatNumbers'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
   );
-
-  String get formattedAmount => NumberFormat('#,###').format(amount) + ' FCFA';
-
-  String get formattedDate => DateFormat('dd/MM/yyyy HH:mm').format(date);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,7 +117,7 @@ class DashboardGarePage extends ConsumerWidget {
     final dashAsync = ref.watch(_dashboardProvider);
     final profile = ref.watch(authProvider).valueOrNull?.profile;
 
-   return Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.gray50,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/gare/trips/create'),
@@ -106,7 +133,7 @@ class DashboardGarePage extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(_dashboardProvider),
         child: CustomScrollView(
           slivers: [
-            // ── AppBar ───────────────────────────────────────────
+            // AppBar
             SliverAppBar(
               expandedHeight: 140,
               pinned: true,
@@ -242,7 +269,7 @@ class DashboardGarePage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Stats cards ──────────────────────────
+                      // Stats trajets + réservations
                       Row(
                         children: [
                           Expanded(
@@ -273,49 +300,80 @@ class DashboardGarePage extends ConsumerWidget {
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [
-                              AppColors.mobiliBlue,
+                              Color(0xFF0A1F6E),
                               AppColors.mobiliBlueDeep,
                             ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppColors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.payments_rounded,
-                                color: AppColors.mobiliYellow,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
                               children: [
-                                const Text(
-                                  'Revenus totaux',
-                                  style: TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.payments_rounded,
+                                    color: AppColors.mobiliYellow,
+                                    size: 22,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                              Text(
-                                  NumberFormat(
-                                        '#,###',
-                                      ).format(stats.totalRevenue) +
-                                      ' FCFA',
-                                  style: const TextStyle(
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Revenus totaux',
+                                      style: TextStyle(
+                                        color: AppColors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      NumberFormat(
+                                            '#,###',
+                                          ).format(stats.totalRevenue) +
+                                          ' FCFA',
+                                      style: const TextStyle(
+                                        color: AppColors.mobiliYellow,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            const Divider(color: Colors.white12, height: 1),
+                            const SizedBox(height: 12),
+                            // Deux totaux
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _RevenueChip(
+                                    icon: Icons.wifi_rounded,
+                                    label: 'Via Mobili',
+                                    amount: stats.revenueOnline,
+                                    color: AppColors.stationGreen,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _RevenueChip(
+                                    icon: Icons.point_of_sale_rounded,
+                                    label: 'Au guichet',
+                                    amount: stats.revenueOffline,
                                     color: AppColors.mobiliYellow,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
                                   ),
                                 ),
                               ],
@@ -325,7 +383,7 @@ class DashboardGarePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── Réservations récentes ────────────────
+                      // Réservations récentes
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -385,6 +443,51 @@ class DashboardGarePage extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Widgets
 // ─────────────────────────────────────────────────────────────────────────────
+
+class _RevenueChip extends StatelessWidget {
+  const _RevenueChip({
+    required this.icon,
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+  final IconData icon;
+  final String label;
+  final double amount;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 10, color: color)),
+              Text(
+                NumberFormat('#,###').format(amount) + ' F',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
@@ -449,6 +552,7 @@ class _BookingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusConfig = _statusConfig(booking.status);
+    final isOffline = booking.status == 'OFFLINE_SALE';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -464,13 +568,22 @@ class _BookingItem extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.mobiliBlueFog,
-              borderRadius: BorderRadius.circular(10),
+              color: isOffline
+                  ? AppColors.mobiliBlueFog
+                  : const Color(0xFFD1FAE5),
+              shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppColors.mobiliBlue,
-              size: 20,
+            child: Center(
+              child: Text(
+                booking.displayInitial,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: isOffline
+                      ? AppColors.mobiliBlue
+                      : AppColors.stationGreen,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -479,12 +592,14 @@ class _BookingItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  booking.customerName,
+                  booking.displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                     color: AppColors.mobiliBlueDeep,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -494,6 +609,14 @@ class _BookingItem extends StatelessWidget {
                     color: AppColors.gray500,
                   ),
                 ),
+                if (booking.seatNumbers.isNotEmpty)
+                  Text(
+                    'Sièges : ${booking.seatNumbers.join(', ')}',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.mobiliBlue,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -517,7 +640,7 @@ class _BookingItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  booking.status,
+                  _statusLabel(booking.status),
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
@@ -530,6 +653,21 @@ class _BookingItem extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return 'Via Mobili';
+      case 'PENDING':
+        return 'En attente';
+      case 'CANCELLED':
+        return 'Annulé';
+      case 'OFFLINE_SALE':
+        return 'Au guichet';
+      default:
+        return status;
+    }
   }
 
   (Color, Color) _statusConfig(String status) {

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.mobili.backend.module.booking.booking.entity.Booking;
+import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 import com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa;
 import com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa;
 
@@ -17,6 +18,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         List<Booking> findByCustomerId(Long userId);
 
         List<Booking> findByTripId(Long tripId);
+
+        List<Booking> findByStatusAndCreatedAtBefore(BookingStatus status, LocalDateTime cutoff);
 
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
@@ -43,6 +46,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         List<Booking> findByTripIdWithSeats(@Param("tripId") Long tripId);
 
 
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames " +
+                        "WHERE b.trip.id = :tripId " +
+                        "AND b.status IN (" +
+                        "com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
+                        "com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE)")
+        List<Booking> findConfirmedByTripIdWithDetails(@Param("tripId") Long tripId);
+
+
         // Compter les réservations pour les trajets d'un partenaire
         @Query("SELECT COUNT(b) FROM Booking b WHERE b.trip.partner.id = :partnerId AND b.status = 'CONFIRMED'")
         long countBookingsByPartner(@Param("partnerId") Long partnerId);
@@ -56,7 +69,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "WHERE b.trip.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findTop5RecentBookingsByPartner(@Param("partnerId") Long partnerId);
 
-        @Query("SELECT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer " +
+        @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
                         "WHERE t.partner.id = :partnerId AND t.station.id = :stationId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartnerAndStation(
                         @Param("partnerId") Long partnerId,
@@ -68,7 +82,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.trip.partner.id = :partnerId AND b.trip.station.id = :stationId AND b.status = 'CONFIRMED'")
         Double calculateRevenueByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
-        @Query("SELECT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
+        @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
                         "WHERE t.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartner(@Param("partnerId") Long partnerId);
 

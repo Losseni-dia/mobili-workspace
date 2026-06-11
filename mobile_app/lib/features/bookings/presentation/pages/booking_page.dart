@@ -66,17 +66,37 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     return labels;
   }
 
-  double _pricePerSeat() {
+double _pricePerSeat() {
     final fares = widget.trip.legFares;
-    if (fares != null && fares.isNotEmpty) {
-      double total = 0;
-      for (var i = _boardingIndex;
-          i < _alightingIndex && i < fares.length;
-          i++) {
-        total += fares[i].priceXof;
-      }
-      if (total > 0) return total;
+    final lastIndex = _stopLabels.length - 1;
+
+    // Trajet complet → prix principal direct
+    if (_boardingIndex == 0 && _alightingIndex == lastIndex) {
+      return widget.trip.priceXof;
     }
+
+    if (fares != null && fares.isNotEmpty) {
+      // 1. Prix direct boarding→alighting
+      final direct = fares.where((f) =>
+          f.fromStopIndex == _boardingIndex &&
+          f.toStopIndex == _alightingIndex);
+      if (direct.isNotEmpty) return direct.first.priceXof;
+
+      // 2. Somme tronçons consécutifs
+      double total = 0;
+      bool allFound = true;
+      for (var i = _boardingIndex; i < _alightingIndex; i++) {
+        final leg =
+            fares.where((f) => f.fromStopIndex == i && f.toStopIndex == i + 1);
+        if (leg.isEmpty) {
+          allFound = false;
+          break;
+        }
+        total += leg.first.priceXof;
+      }
+      if (allFound && total > 0) return total;
+    }
+
     return widget.trip.priceXof;
   }
 
@@ -177,8 +197,16 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   const SizedBox(height: 10),
                   occupiedAsync.when(
                     loading: () => const MobiliLoader(),
-                    error: (_, __) =>
-                        const Text('Erreur de chargement des sièges'),
+                   error: (e, _) {
+                      final is403 = e.toString().contains('403');
+                      if (is403) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) context.go('/login');
+                        });
+                        return const SizedBox.shrink();
+                      }
+                      return const Text('Erreur de chargement des sièges');
+                    },
                     data: (occupied) => SeatMapWidget(
                       totalSeats: widget.trip.totalSeats,
                       occupied: occupied,
