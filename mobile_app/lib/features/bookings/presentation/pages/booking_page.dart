@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/core/services/analytics_service.dart';
 import 'package:mobili/features/auth/providers/auth_provider.dart';
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 import 'package:mobili/features/notifications/providers/notification_provider.dart';
@@ -267,9 +268,16 @@ double _pricePerSeat() {
             total: _totalPrice(),
             isLoading: bookingState.isLoading,
             isValid: _isValid,
-            onPay: () async {
+           onPay: () async {
               final profile = ref.read(authProvider).valueOrNull?.profile;
               if (profile == null) return;
+              AnalyticsService.logBeginBooking(
+                tripId: widget.trip.id,
+                route:
+                    '${widget.trip.departureCity} → ${widget.trip.arrivalCity}',
+                seats: _selectedSeats.length,
+                price: _totalPrice(),
+              );
 
               await ref.read(bookingNotifierProvider.notifier).createAndPay(
                     CreateBookingRequest(
@@ -316,6 +324,14 @@ double _pricePerSeat() {
   }
 
   void _showSuccess() {
+    // Analytics — conversion paiement réussi
+    AnalyticsService.logPaymentSuccess(
+      bookingId: 0, // bookingId non disponible ici directement
+      tripId: widget.trip.id,
+      route: '${widget.trip.departureCity} → ${widget.trip.arrivalCity}',
+      seats: _selectedSeats.length,
+      amount: _totalPrice(),
+    );
     showDialog<void>(
       context: context,
       barrierDismissible: false,

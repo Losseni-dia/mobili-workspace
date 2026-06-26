@@ -1,6 +1,8 @@
 // lib/features/auth/providers/auth_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobilipro/core/network/api_client.dart';
+import 'package:mobilipro/core/services/firebase_service.dart';
 import 'dart:io';
 import '../../../core/models/mobili_error.dart'; // Pour choper MobiliException
 import '../data/auth_service.dart';
@@ -87,6 +89,7 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
         profile: profile,
         authResponse: authResponse,
       ));
+      await FirebaseService.sendTokenToBackend(ApiClient.instance.dio);
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -140,6 +143,74 @@ Future<bool> register({
       );
       return false;
     }
+  }
+
+  /// Inscription "dirigeant société" — connecte automatiquement (le backend
+  /// renvoie un token), contrairement à la candidature covoiturage.
+  Future<bool> registerCompany({
+    required Map<String, dynamic> companyData,
+    File? logoFile,
+  }) async {
+    state = AsyncData(state.requireValue.asLoading());
+    try {
+      final authResponse = await _service.registerCompany(
+        companyData: companyData,
+        logoFile: logoFile,
+      );
+      final profile = await _service.getMe();
+      state = AsyncData(AuthState(
+        status: AuthStatus.authenticated,
+        profile: profile,
+        authResponse: authResponse,
+      ));
+      return true;
+    } on MobiliException catch (e) {
+      state = AsyncData(
+        state.requireValue.asError(e.message, fields: e.validationErrors),
+      );
+      return false;
+    } catch (e) {
+      state = AsyncData(
+        state.requireValue.asError('Une erreur inattendue est survenue.'),
+      );
+      return false;
+    }
+  }
+
+  /// Candidature conducteur covoiturage — le compte part désactivé (KYC
+  /// PENDING) : pas de token renvoyé, pas de connexion automatique.
+  /// Retourne `null` en cas de succès, ou un message d'erreur sinon.
+  Future<String?> registerCarpoolChauffeur({
+    required Map<String, dynamic> userData,
+    required File idFront,
+    required File idBack,
+    required File driverPhoto,
+    required File vehiclePhoto,
+  }) async {
+    try {
+      await _service.registerCarpoolChauffeur(
+        userData: userData,
+        idFront: idFront,
+        idBack: idBack,
+        driverPhoto: driverPhoto,
+        vehiclePhoto: vehiclePhoto,
+      );
+      return null;
+    } on MobiliException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Une erreur inattendue est survenue.';
+    }
+  }
+
+void setProfile(ProfileDto profile) {
+    if (!state.hasValue) return;
+    state = AsyncData(
+      state.requireValue.copyWith(
+        status: AuthStatus.authenticated,
+        profile: profile,
+      ),
+    );
   }
 
   void clearError() {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "908432245037",
+    "project_id": "mobili-30705",
+    "storage_bucket": "mobili-30705.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:908432245037:android:0b00c6f5d27550d72bd3a4",
+        "android_client_info": {
+          "package_name": "ci.mobili.mobilipro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXE1UuoBl5_2_FSz_xEgcnd4eDmA8a_as"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

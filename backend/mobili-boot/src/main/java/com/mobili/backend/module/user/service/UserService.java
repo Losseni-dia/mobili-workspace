@@ -3,6 +3,7 @@ package com.mobili.backend.module.user.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.module.partner.dto.PartnerRegisterDTO;
+import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.dto.PartnerChauffeurCreateRequest;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.repository.PartnerRepository;
@@ -18,6 +20,7 @@ import com.mobili.backend.module.station.entity.Station;
 import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.user.dto.RegisterCompanyPublicDTO;
+import com.mobili.backend.module.user.dto.ApplyCovoiturageDriverDTO;
 import com.mobili.backend.module.user.dto.RegisterCarpoolChauffeurDTO;
 import com.mobili.backend.module.user.dto.UpdateCovoiturageProfileDTO;
 import com.mobili.backend.module.user.entity.User;
@@ -31,10 +34,8 @@ import com.mobili.backend.shared.MobiliError.exception.MobiliException;
 import com.mobili.backend.shared.sharedService.UploadService;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService {
 
@@ -45,7 +46,63 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UploadService uploadService;
     private final PartnerService partnerService;
+    private final InboxNotificationService inboxNotificationService;
 
+    public UserService(
+            UserRepository userRepository,
+            PartnerRepository partnerRepository,
+            StationRepository stationRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder,
+            UploadService uploadService,
+            PartnerService partnerService,
+            @org.springframework.context.annotation.Lazy InboxNotificationService inboxNotificationService) {
+        this.userRepository = userRepository;
+        this.partnerRepository = partnerRepository;
+        this.stationRepository = stationRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.uploadService = uploadService;
+        this.partnerService = partnerService;
+        this.inboxNotificationService = inboxNotificationService;
+    }
+
+    public Optional<User> findFirstAdmin() {
+        return userRepository.findAdmins().stream().findFirst();
+    }
+
+    @Transactional
+    public void updateFcmToken(Long userId, String fcmToken) {
+        User user = findById(userId);
+        user.setFcmToken(fcmToken);
+        userRepository.save(user);
+    }
+
+    
+    @Transactional
+    public void updateCovoiturageKycStatus(Long id, String status) {
+        User user = findById(id);
+        CovoiturageKycStatus kycStatus = CovoiturageKycStatus.valueOf(status.toUpperCase());
+        user.setCovoiturageKycStatus(kycStatus);
+        if (kycStatus == CovoiturageKycStatus.APPROVED) {
+            user.setEnabled(true);
+            userRepository.save(user);
+            inboxNotificationService.notifyUser(
+                    user,
+                    "Dossier covoiturage approuvé ✅",
+                    "Votre dossier conducteur a été validé par l'équipe Mobili. Vous pouvez maintenant proposer des trajets covoiturage.",
+                    com.mobili.backend.module.notification.entity.MobiliNotificationType.COV_KYC_APPROVED);
+        } else if (kycStatus == CovoiturageKycStatus.REJECTED) {
+            userRepository.save(user);
+            inboxNotificationService.notifyUser(
+                    user,
+                    "Dossier covoiturage rejeté",
+                    "Votre dossier conducteur n'a pas pu être validé. Vérifiez vos documents et contactez le support Mobili.",
+                    com.mobili.backend.module.notification.entity.MobiliNotificationType.COV_KYC_REJECTED);
+        } else {
+            userRepository.save(user);
+        }
+    }
 
     public User findById(Long id) {
         // 💡 On utilise la méthode avec FETCH pour éviter la
@@ -249,6 +306,76 @@ public class UserService {
             user.setCovoiturageVehiclePhotoUrl(uploadService.saveImage(vehiclePhoto, "vehicles"));
         }
         return userRepository.save(user);
+    }
+
+    /**
+     * Un voyageur déjà inscrit (compte existant, actif) soumet un dossier
+     * conducteur covoiturage — contrairement à {@link #registerCarpoolChauffeur}
+     * qui crée un tout nouveau compte. Le compte reste actif et utilisable
+     * normalement pendant l'attente de validation ; seule la publication de
+     * trajets covoiturage est bloquée tant que le KYC n'est pas APPROVED
+     * (cf. {@code TripService#createCovoiturageSoloTrip}).
+     */
+    public User applyAsCovoiturageDriver(
+            Long userId,
+            ApplyCovoiturageDriverDTO dto,
+            MultipartFile idFront,
+            MultipartFile idBack,
+            MultipartFile driverPhoto,
+            MultipartFile vehiclePhoto) {
+        if (idFront == null || idFront.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le recto de la pièce d'identité est obligatoire.");
+        }
+        if (idBack == null || idBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le verso de la pièce d'identité est obligatoire.");
+        }
+        if (driverPhoto == null || driverPhoto.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du conducteur est obligatoire.");
+        }
+        if (vehiclePhoto == null || vehiclePhoto.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du véhicule est obligatoire.");
+        }
+
+        User user = findById(userId);
+        CovoiturageKycStatus current = user.getCovoiturageKycStatus();
+        if (current == CovoiturageKycStatus.PENDING || current == CovoiturageKycStatus.APPROVED) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Vous avez déjà un dossier conducteur covoiturage en cours ou validé.");
+        }
+
+        user.setCovoiturageIdValidUntil(dto.getIdValidUntil());
+        user.setCovoiturageKycStatus(CovoiturageKycStatus.PENDING);
+        user.setCovoiturageVehicleBrand(dto.getVehicleBrand().trim());
+        user.setCovoiturageVehiclePlate(dto.getVehiclePlate().trim().toUpperCase(Locale.ROOT));
+        user.setCovoiturageVehicleColor(dto.getVehicleColor().trim());
+        user.setCovoiturageGreyCardNumber(dto.getGreyCardNumber().trim());
+
+        user.setCovoiturageIdFrontUrl(saveCarpoolIdentityScan(idFront));
+        user.setCovoiturageIdBackUrl(saveCarpoolIdentityScan(idBack));
+        user.setCovoiturageDriverPhotoUrl(
+                uploadService.saveImage(driverPhoto, UploadService.FOLDER_SENSITIVE_COVOITURAGE_DRIVERS));
+        user.setCovoiturageVehiclePhotoUrl(
+                uploadService.saveImage(vehiclePhoto, UploadService.FOLDER_SENSITIVE_COVOITURAGE_VEHICLES));
+        user.setCovoiturageKycExpiringNotifiedFor(null);
+        user.setCovoiturageKycExpiredNotified(false);
+        user.setCovoiturageSoloProfile(true);
+
+        addChauffeurRoleIfMissing(user);
+
+        return userRepository.save(user);
+    }
+
+    /** Ajoute CHAUFFEUR sans retirer les rôles déjà détenus (PARTNER, GARE, ADMIN, etc.). */
+    private void addChauffeurRoleIfMissing(User user) {
+        boolean hasChauffeur = user.getRoles().stream().anyMatch(r -> r.getName() == UserRole.CHAUFFEUR);
+        if (hasChauffeur) {
+            return;
+        }
+        Role chauffeurRole = roleRepository.findByName(UserRole.CHAUFFEUR)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Rôle CHAUFFEUR inexistant"));
+        Set<Role> roles = new java.util.HashSet<>(user.getRoles());
+        roles.add(chauffeurRole);
+        user.setRoles(roles);
     }
 
     public void toggleUserStatus(Long id, boolean enabled) {

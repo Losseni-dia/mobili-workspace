@@ -71,6 +71,10 @@ class TripCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
 
+                        // Trajet déjà parti : "En cours" ou "En route vers X"
+                        if (trip.isInProgress) _InProgressBadge(trip: trip),
+                        if (trip.isInProgress) const SizedBox(height: 6),
+
                         // Point d'embarquement — pleine largeur
                         if (trip.boardingPoint != null &&
                             trip.boardingPoint!.isNotEmpty)
@@ -169,7 +173,7 @@ class _VehicleImage extends StatelessWidget {
               ? Container(
                   color: AppColors.gray100,
                   child: Image.network(
-                    'http://10.0.2.2:8080/v1/uploads/$url',
+                   'https://api.my-mobili.com/v1/uploads/$url',
                     fit: BoxFit.contain,
                     alignment: Alignment.center,
                     errorBuilder: (_, __, ___) => _placeholder(),
@@ -289,6 +293,57 @@ class _EscalesChips extends StatelessWidget {
         ),
         const SizedBox(height: 4),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge trajet déjà parti ("En cours" / "En route vers X")
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _InProgressBadge extends StatelessWidget {
+  const _InProgressBadge({required this.trip});
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = trip.nextStopCity != null
+        ? 'En route vers ${trip.nextStopCity}'
+        : 'En cours';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.stationGreenSoft,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.directions_bus_filled_rounded,
+              size: 12,
+              color: AppColors.stationGreen,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.stationGreen,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 2,
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
@@ -303,12 +304,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                       const SizedBox(height: 16),
 
-                      // Lien inscription covoit
+                      // Lien inscription
                       Center(
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => context.push('/register'),
                           child: const Text(
-                            'Vous êtes conducteur ? Inscrivez-vous',
+                            'Pas encore inscrit ? Créer un compte',
                             style: TextStyle(
                               color: AppColors.mobiliBlue,
                               fontSize: 13,

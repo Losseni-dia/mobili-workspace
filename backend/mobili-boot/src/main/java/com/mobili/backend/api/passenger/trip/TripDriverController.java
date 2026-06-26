@@ -2,6 +2,7 @@ package com.mobili.backend.api.passenger.trip;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,6 +50,19 @@ public class TripDriverController {
         tripRunService.recordDepartureFromStop(trip, body.getStopIndex(), LocalDateTime.now());
     }
 
+    /**
+     * Annule le dernier départ enregistré par erreur (le chauffeur revient sur
+     * sa décision avant de continuer). Toujours le dernier arrêt quitté.
+     */
+    @PostMapping("/departures/undo")
+    public Map<String, Integer> undoLastDeparture(
+            @PathVariable Long tripId, @AuthenticationPrincipal UserPrincipal principal) {
+        tripService.assertPartnerOrGareCanOperateDriverTrip(tripId, principal);
+        Trip trip = tripService.findById(tripId);
+        int currentStopIndex = tripRunService.undoLastDeparture(trip);
+        return Map.of("currentStopIndex", currentStopIndex);
+    }
+
     /** Demarrage du service (premier depart enregistre, statut EN_COURS). */
     @PostMapping("/start")
     public void startTrip(
@@ -72,6 +86,17 @@ public class TripDriverController {
         tripService.assertPartnerOrGareCanOperateDriverTrip(tripId, principal);
         Trip trip = tripService.findById(tripId);
         return tripRunService.listAlightingPassengers(trip, stopIndex);
+    }
+
+
+    @GetMapping("/stops/{stopIndex}/boardings")
+    public List<AlightingPassengerResponse> listBoardings(
+            @PathVariable Long tripId,
+            @PathVariable int stopIndex,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        tripService.assertPartnerOrGareCanOperateDriverTrip(tripId, principal);
+        Trip trip = tripService.findById(tripId);
+        return tripRunService.listBoardingPassengers(trip, stopIndex);
     }
 
     @PostMapping("/tickets/{ticketNumber}/alighted")

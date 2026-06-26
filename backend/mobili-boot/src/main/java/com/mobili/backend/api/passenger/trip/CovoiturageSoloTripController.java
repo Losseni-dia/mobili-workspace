@@ -19,6 +19,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.booking.booking.dto.BookingResponseDTO;
 import com.mobili.backend.module.booking.booking.dto.mapper.BookingMapper;
+import com.mobili.backend.module.partner.dto.PartnerDashboardResponse;
+import com.mobili.backend.module.partner.dto.RecentBookingDTO;
+import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
+import com.mobili.backend.module.partner.service.PartnerDashboardService;
+import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.trip.dto.CovoiturageSoloTripRequestDTO;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
@@ -27,6 +32,8 @@ import com.mobili.backend.module.trip.service.TripService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
 
 /**
  * Trajets covoiturage particulier (hors compagnie) : publication par le conducteur,
@@ -41,6 +48,8 @@ public class CovoiturageSoloTripController {
     private final TripService tripService;
     private final TripMapper tripMapper;
     private final BookingMapper bookingMapper;
+    private final PartnerDashboardService partnerDashboardService;
+    private final PartnerMapper partnerMapper;
 
     /**
      * Liste des trajets covoiturage du conducteur. La racine {@code GET /v1/covoiturage/trips} est un alias
@@ -91,6 +100,30 @@ public class CovoiturageSoloTripController {
     public void delete(
             @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         tripService.deleteCovoiturageSoloTrip(id, principal);
+    }
+
+    /**
+     * Synthèse "gare/partenaire" pour le conducteur covoiturage : trajets,
+     * réservations, revenus — scopée sur SES trajets uniquement (jamais le
+     * partenaire technique du pool, partagé par tous les conducteurs).
+     */
+    @GetMapping("/dashboard/stats")
+    public PartnerDashboardResponse dashboardStats(@AuthenticationPrincipal UserPrincipal principal) {
+        Map<String, Object> rawData =
+                partnerDashboardService.getDashboardDataForCovoiturageOrganizer(principal.getUser().getId());
+
+        @SuppressWarnings("unchecked")
+        List<RecentBookingDTO> recentBookings =
+                partnerMapper.toRecentBookingDtoList((List<Booking>) rawData.get("bookingsList"));
+
+        return PartnerDashboardResponse.builder()
+                .activeTripsCount((long) rawData.get("activeTrips"))
+                .totalBookingsCount((long) rawData.get("totalBookings"))
+                .totalRevenue((double) rawData.get("totalRevenue"))
+                .revenueOnline((double) rawData.get("revenueOnline"))
+                .revenueOffline((double) rawData.get("revenueOffline"))
+                .recentBookings(recentBookings)
+                .build();
     }
 
     private TripResponseDTO toDtoWithLegFares(Trip t) {

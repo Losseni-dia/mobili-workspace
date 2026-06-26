@@ -5,6 +5,7 @@ import com.mobili.backend.shared.abstractEntity.AbstractEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -33,10 +34,15 @@ public class Partner extends AbstractEntity {
 
     private String phone;
 
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "approval_status", nullable = false, length = 20)
+    private PartnerApprovalStatus approvalStatus = PartnerApprovalStatus.PENDING;
+
     private boolean enabled = true; // Permet à l'admin de bloquer la société
 
     /**
-     * Code public (généré) pour l’auto-inscription des comptes gare : affiché au dirigeant, saisi par
+     * Code public (généré) pour l’auto-inscription des comptes gare : affiché au
+     * dirigeant, saisi par
      * les responsables de gare. Unique (insensible à la casse côté recherche).
      */
     @Column(name = "registration_code", unique = true, length = 12)
@@ -47,7 +53,8 @@ public class Partner extends AbstractEntity {
     private User owner;
 
     /**
-     * {@code true} = partenaire technique Mobili (pool covoiturage particulier), distinct des
+     * {@code true} = partenaire technique Mobili (pool covoiturage particulier),
+     * distinct des
      * compagnies « transport / ligne » gérées par l’admin.
      */
     @Column(name = "covoiturage_solo_pool", nullable = false)

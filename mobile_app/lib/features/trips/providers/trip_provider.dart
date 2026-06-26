@@ -78,38 +78,24 @@ final tripsProvider = FutureProvider.autoDispose<List<Trip>>((ref) async {
   final service = ref.read(tripServiceProvider);
   final params = ref.watch(tripSearchParamsProvider);
 
-  List<Trip> trips;
+  final hasDeparture = params.departure != null && params.departure!.isNotEmpty;
+  final hasArrival = params.arrival != null && params.arrival!.isNotEmpty;
 
-  // Recherche backend seulement si départ ET arrivée sont remplis
-  if (params.departure != null &&
-      params.departure!.isNotEmpty &&
-      params.arrival != null &&
-      params.arrival!.isNotEmpty) {
-    trips = await service.searchTrips(
-      departure: params.departure!,
-      arrival: params.arrival!,
+  // Dès qu'un champ est rempli, on délègue au backend (comme le fait l'app
+  // Angular) : il matche par segment sur toute la chaîne de villes (départ +
+  // étapes de moreInfo + arrivée), pas seulement sur departureCity/arrivalCity
+  // au sens littéral. Un filtre local ici manquerait les trajets où la ville
+  // cherchée n'est qu'une étape intermédiaire.
+  if (hasDeparture || hasArrival) {
+    return service.searchTrips(
+      departure: params.departure ?? '',
+      arrival: params.arrival ?? '',
       date: params.date ?? '',
       transportType: params.transportType,
     );
-  } else {
-    // Sinon tous les trajets
-    trips = await service.getTrips(transportType: params.transportType);
   }
 
-  // Filtre local côté Flutter si un seul champ est rempli
-  if (params.departure != null && params.departure!.isNotEmpty) {
-    final dep = params.departure!.toLowerCase();
-    trips = trips
-        .where((t) => t.departureCity.toLowerCase().contains(dep))
-        .toList();
-  }
-  if (params.arrival != null && params.arrival!.isNotEmpty) {
-    final arr = params.arrival!.toLowerCase();
-    trips =
-        trips.where((t) => t.arrivalCity.toLowerCase().contains(arr)).toList();
-  }
-
-  return trips;
+  return service.getTrips(transportType: params.transportType);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

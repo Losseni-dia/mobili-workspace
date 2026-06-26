@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mobilipro/features/chauffeurs/presentation/pages/trip_detail_chauffeur_page.dart'
+    show ticketStatusConfig;
 import 'package:mobilipro/features/trips/presentation/pages/trips_gare_page.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -81,6 +83,24 @@ final _passengersLinesProvider = FutureProvider.autoDispose
       return lines;
     });
 
+// Statuts tickets réels (à bord / non présenté / arrivé), par siège — même
+// source que la vue chauffeur, pour une vue cohérente entre les rôles.
+final _ticketStatusBySeatProvider = FutureProvider.autoDispose
+    .family<Map<String, String>, int>((ref, tripId) async {
+      final dio = ApiClient.instance.dio;
+      final res = await dio.get<List<dynamic>>('/tickets/trip/$tripId');
+      final map = <String, String>{};
+      for (final e in res.data ?? []) {
+        final json = e as Map<String, dynamic>;
+        final seat = json['seatNumber'] as String?;
+        final status = json['status'] as String?;
+        if (seat != null && status != null) {
+          map[seat] = status;
+        }
+      }
+      return map;
+    });
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sheet passagers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +126,9 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
   @override
   Widget build(BuildContext context) {
     final linesAsync = ref.watch(_passengersLinesProvider(widget.trip.id));
+    final ticketStatusBySeat =
+        ref.watch(_ticketStatusBySeatProvider(widget.trip.id)).valueOrNull ??
+        const {};
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -324,6 +347,7 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
                         itemBuilder: (ctx, i) => _PassengerLineCard(
                           line: filtered[i],
                           search: _search,
+                          ticketStatus: ticketStatusBySeat[filtered[i].seatNumber],
                         ),
                       ),
                     ),
@@ -343,9 +367,14 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PassengerLineCard extends StatelessWidget {
-  const _PassengerLineCard({required this.line, required this.search});
+  const _PassengerLineCard({
+    required this.line,
+    required this.search,
+    this.ticketStatus,
+  });
   final PassengerLine line;
   final String search;
+  final String? ticketStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -473,9 +502,43 @@ class _PassengerLineCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (ticketStatus != null) ...[
+                const SizedBox(height: 6),
+                _TicketStatusPill(status: ticketStatus!),
+              ],
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge statut ticket (à bord / non présenté / arrivé)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TicketStatusPill extends StatelessWidget {
+  const _TicketStatusPill({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = ticketStatusConfig(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

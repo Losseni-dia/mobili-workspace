@@ -289,7 +289,7 @@ public class TripService {
     private boolean matchesRouteSearch(Trip trip, String depQuery, String arrQuery) {
         List<String> chain = buildCityChain(trip);
         if (depQuery != null && arrQuery != null) {
-            return hasValidSegment(chain, depQuery, arrQuery);
+            return hasValidSegment(trip, chain, depQuery, arrQuery);
         }
         if (depQuery != null) {
             return chain.stream().anyMatch(city -> partialCityMatch(city, depQuery));
@@ -299,11 +299,15 @@ public class TripService {
 
     /**
      * Il existe i &lt; j avec départ et arrivée recherchés sur ces positions
-     * (préfixe insensible à la casse).
+     * (préfixe insensible à la casse) ET le car n'a pas encore quitté l'arrêt
+     * i (sinon l'embarquement à cette ville n'est plus possible).
      */
-    private boolean hasValidSegment(List<String> chain, String depQuery, String arrQuery) {
+    private boolean hasValidSegment(Trip trip, List<String> chain, String depQuery, String arrQuery) {
         for (int i = 0; i < chain.size(); i++) {
             if (!partialCityMatch(chain.get(i), depQuery)) {
+                continue;
+            }
+            if (tripRunService.isBoardingClosedAtStop(trip.getId(), i)) {
                 continue;
             }
             for (int j = i + 1; j < chain.size(); j++) {
@@ -453,9 +457,10 @@ public class TripService {
         Trip saved = tripRepository.save(trip);
 
         if (isNew) {
+            Long userId = principal.getUser().getId();
             analyticsEventService.record(
                     AnalyticsEventType.TRIP_PUBLISHED,
-                    principal.getUser().getId(),
+                    userId,
                     String.format("{\"tripId\":%d,\"partnerId\":%d}", saved.getId(), partner.getId()));
         }
 
@@ -465,6 +470,18 @@ public class TripService {
             } else {
                 tripPricingService.replaceLegFares(saved, legFares);
             }
+        }
+
+        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de la
+        // transaction, car le mapping vers TripResponseDTO se fait hors session (dans le controller).
+        if (saved.getAssignedChauffeur() != null) {
+            saved.getAssignedChauffeur().getFirstname();
+        }
+        if (saved.getStation() != null) {
+            saved.getStation().getName();
+        }
+        if (saved.getPartner() != null) {
+            saved.getPartner().getName();
         }
 
         return saved;

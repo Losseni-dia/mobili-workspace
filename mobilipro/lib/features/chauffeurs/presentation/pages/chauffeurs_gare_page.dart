@@ -478,7 +478,7 @@ class _ChauffeurCard extends StatelessWidget {
                   child: chauffeur.avatarUrl != null
                       ? ClipOval(
                           child: Image.network(
-                            'http://10.0.2.2:8080/v1/uploads/${chauffeur.avatarUrl}',
+                           'https://api.my-mobili.com/v1/uploads/${chauffeur.avatarUrl}',
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Center(
                               child: Text(
@@ -942,7 +942,7 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
                         : widget.chauffeur?.avatarUrl != null
                         ? ClipOval(
                             child: Image.network(
-                              'http://10.0.2.2:8080/v1/uploads/${widget.chauffeur!.avatarUrl}',
+                              'https://api.my-mobili.com/v1/uploads/${widget.chauffeur!.avatarUrl}',
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.person_rounded,

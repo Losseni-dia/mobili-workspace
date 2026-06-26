@@ -1,6 +1,9 @@
 // lib/features/auth/providers/auth_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobili/core/network/api_client.dart';
+import 'package:mobili/core/services/analytics_service.dart';
+import 'package:mobili/core/services/firebase_service.dart';
 import 'dart:io';
 import '../../../core/models/mobili_error.dart'; // Pour choper MobiliException
 import '../data/auth_service.dart';
@@ -81,12 +84,17 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
     try {
       final authResponse =
           await _service.login(login: login, password: password);
-      final profile = await _service.getMe();
+     final profile = await _service.getMe();
       state = AsyncData(AuthState(
         status: AuthStatus.authenticated,
         profile: profile,
         authResponse: authResponse,
       ));
+// Envoyer token FCM au backend après login
+      await FirebaseService.sendTokenToBackend(ApiClient.instance.dio);
+      await AnalyticsService.logLogin();
+      await AnalyticsService.setUserId('${profile.id}');
+      await AnalyticsService.setUserRole(profile.roles.first);
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -102,7 +110,8 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
   }
   Future<void> logout() async {
     state = AsyncData(state.requireValue.asLoading());
-    await _service.logout();
+  await _service.logout();
+    await AnalyticsService.setUserId(null);
     state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
   }
 
@@ -112,6 +121,7 @@ Future<bool> register({
     required String email,
     required String login,
     required String password,
+    required String phone,
     File? avatarFile,
   }) async {
     state = AsyncData(state.requireValue.asLoading());
@@ -122,12 +132,16 @@ Future<bool> register({
         email: email,
         login: login,
         password: password,
+        phone: phone,
         avatarFile: avatarFile,
       );
-      state = AsyncData(AuthState(
+     state = AsyncData(AuthState(
         status: AuthStatus.authenticated,
         profile: profile,
       ));
+      await AnalyticsService.logRegister();
+      await AnalyticsService.setUserId('${profile.id}');
+      await AnalyticsService.setUserRole(profile.roles.first);
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -140,6 +154,18 @@ Future<bool> register({
       );
       return false;
     }
+  }
+
+  /// Remplace le profil en cache (ex: après une mise à jour partielle comme
+  /// `/covoiturage/profile`) sans repasser par `getMe()`.
+  void setProfile(ProfileDto profile) {
+    if (!state.hasValue) return;
+    state = AsyncData(
+      state.requireValue.copyWith(
+        status: AuthStatus.authenticated,
+        profile: profile,
+      ),
+    );
   }
 
   void clearError() {

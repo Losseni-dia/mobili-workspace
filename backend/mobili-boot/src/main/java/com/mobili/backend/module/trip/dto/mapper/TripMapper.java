@@ -31,6 +31,7 @@ public interface TripMapper {
     @Mapping(source = "assignedChauffeur.lastname", target = "assignedChauffeurLastname")
     @Mapping(target = "transportType", source = "transportType", qualifiedByName = "transportTypeName")
     @Mapping(target = "legFares", ignore = true)
+    @Mapping(target = "nextStopCity", ignore = true)
     TripResponseDTO toDto(Trip trip);
 
     @Named("transportTypeName")

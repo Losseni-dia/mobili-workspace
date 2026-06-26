@@ -17,6 +17,9 @@ public class GareUserCreateRequest {
     private String login;
 
     @NotBlank
+    @Size(max = 20)
+    private String phone;
+
     @Email
     private String email;
 

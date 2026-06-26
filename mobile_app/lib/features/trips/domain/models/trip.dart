@@ -19,6 +19,8 @@ class Trip {
     this.vehicleType,
     this.extraHoldBagPrice,
     this.maxExtraHoldBagsPerPassenger = 1,
+    this.status,
+    this.nextStopCity,
   });
 
   final int id;
@@ -38,6 +40,27 @@ class Trip {
   final String? vehicleType;
   final double? extraHoldBagPrice;
   final int maxExtraHoldBagsPerPassenger;
+  final String? status;
+  final String? nextStopCity;
+
+  bool get isInProgress => status == 'EN_COURS';
+  bool get isUpcoming => status == null || status == 'PROGRAMMÉ';
+  bool get isCompleted => status == 'TERMINÉ';
+  bool get isCancelled => status == 'ANNULÉ';
+
+  bool get isToday {
+    final now = DateTime.now();
+    return departureTime.year == now.year &&
+        departureTime.month == now.month &&
+        departureTime.day == now.day;
+  }
+
+  bool get isTomorrow {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    return departureTime.year == tomorrow.year &&
+        departureTime.month == tomorrow.month &&
+        departureTime.day == tomorrow.day;
+  }
 
   String get formattedDepartureTime =>
       DateFormat('dd/MM HH:mm').format(departureTime);
@@ -122,6 +145,8 @@ class Trip {
         extraHoldBagPrice: (json['extraHoldBagPrice'] as num?)?.toDouble(),
         maxExtraHoldBagsPerPassenger:
             json['maxExtraHoldBagsPerPassenger'] as int? ?? 1,
+        status: json['status'] as String?,
+        nextStopCity: json['nextStopCity'] as String?,
       );
 
   static DateTime? _parseDate(dynamic value) {
@@ -155,6 +180,8 @@ class Trip {
         if (moreInfo != null) 'moreInfo': moreInfo,
         if (boardingPoint != null) 'boardingPoint': boardingPoint,
         if (vehicleType != null) 'vehicleType': vehicleType,
+        if (status != null) 'status': status,
+        if (nextStopCity != null) 'nextStopCity': nextStopCity,
       };
 }
 

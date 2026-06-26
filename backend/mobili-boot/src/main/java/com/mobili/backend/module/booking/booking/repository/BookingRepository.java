@@ -87,6 +87,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "WHERE t.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartner(@Param("partnerId") Long partnerId);
 
+        /** Dashboard conducteur covoiturage : réservations sur SES trajets, jamais ceux du pool entier. */
+        @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
+                        "WHERE t.covoiturageOrganizer.id = :organizerId ORDER BY b.createdAt DESC")
+        List<Booking> findRecentBookingsByCovoiturageOrganizer(@Param("organizerId") Long organizerId);
+
 
         @Query("SELECT b FROM Booking b WHERE b.trip.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findAllByTripPartnerId(@Param("partnerId") Long partnerId);

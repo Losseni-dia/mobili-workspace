@@ -66,7 +66,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/uploads/users/**", "/uploads/partners/**", "/uploads/vehicles/**")
+                        .requestMatchers("/uploads/users/**", "/uploads/partners/**", "/uploads/vehicles/**",
+                                "/uploads/logos/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, MobiliApiPaths.MEDIA_PRIVATE).authenticated()
                         .requestMatchers(HttpMethod.POST,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobilipro/features/trips/presentation/pages/edit_trip_page.dart';
 import 'package:mobilipro/features/trips/presentation/widgets/offline_sale_sheet.dart';
 import 'package:mobilipro/features/trips/presentation/widgets/passengers_sheet.dart';
 
@@ -28,10 +29,16 @@ class TripItem {
     required this.vehiculePlateNumber,
     this.vehicleImageUrl,
     this.moreInfo,
+    this.assignedChauffeurId,
     this.assignedChauffeurFirstname,
     this.assignedChauffeurLastname,
     this.stationName,
     this.stationId,
+    this.originDestinationPrice,
+    this.includedCabinBagsPerPassenger,
+    this.includedHoldBagsPerPassenger,
+    this.maxExtraHoldBagsPerPassenger,
+    this.extraHoldBagPrice,
   });
 
   final int id;
@@ -47,10 +54,32 @@ class TripItem {
   final String vehiculePlateNumber;
   final String? vehicleImageUrl;
   final String? moreInfo;
+  final int? assignedChauffeurId;
   final String? assignedChauffeurFirstname;
   final String? assignedChauffeurLastname;
   final String? stationName;
   final int? stationId;
+  final double? originDestinationPrice;
+  final int? includedCabinBagsPerPassenger;
+  final int? includedHoldBagsPerPassenger;
+  final int? maxExtraHoldBagsPerPassenger;
+  final double? extraHoldBagPrice;
+
+  bool get isToday {
+    final now = DateTime.now();
+    return departureDateTime.year == now.year &&
+        departureDateTime.month == now.month &&
+        departureDateTime.day == now.day;
+  }
+
+  bool get isTomorrow {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    return departureDateTime.year == tomorrow.year &&
+        departureDateTime.month == tomorrow.month &&
+        departureDateTime.day == tomorrow.day;
+  }
+
+  bool get isInProgress => status == 'EN_COURS';
 
   String get chauffeurName {
     if (assignedChauffeurFirstname == null) return 'Non assigné';
@@ -78,10 +107,19 @@ class TripItem {
     vehiculePlateNumber: json['vehiculePlateNumber'] as String? ?? '',
     vehicleImageUrl: json['vehicleImageUrl'] as String?,
     moreInfo: json['moreInfo'] as String?,
+    assignedChauffeurId: json['assignedChauffeurId'] as int?,
     assignedChauffeurFirstname: json['assignedChauffeurFirstname'] as String?,
     assignedChauffeurLastname: json['assignedChauffeurLastname'] as String?,
     stationName: json['stationName'] as String?,
     stationId: json['stationId'] as int?,
+    originDestinationPrice: (json['originDestinationPrice'] as num?)
+        ?.toDouble(),
+    includedCabinBagsPerPassenger:
+        json['includedCabinBagsPerPassenger'] as int?,
+    includedHoldBagsPerPassenger: json['includedHoldBagsPerPassenger'] as int?,
+    maxExtraHoldBagsPerPassenger:
+        json['maxExtraHoldBagsPerPassenger'] as int?,
+    extraHoldBagPrice: (json['extraHoldBagPrice'] as num?)?.toDouble(),
   );
 }
 
@@ -158,7 +196,7 @@ final _passengersProvider = FutureProvider.autoDispose
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _tripFilterItems = [
-  FilterItem(value: 'TOUS', label: 'Tous'),
+  FilterItem(value: 'TOUS', label: 'Actifs'),
   FilterItem(value: 'PROGRAMMÉ', label: 'Programmé'),
   FilterItem(value: 'EN_COURS', label: 'En cours'),
   FilterItem(value: 'TERMINÉ', label: 'Terminé'),
@@ -274,6 +312,16 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                 var filtered = trips.where((t) {
                   if (_archivedIds.contains(t.id)) return _showArchived;
                   if (_filter != 'TOUS' && t.status != _filter) return false;
+                  // Vue par défaut ("Tous") : on ne montre que les trajets
+                  // actifs/proches (aujourd'hui, demain, en cours). Les trajets
+                  // terminés/annulés restent consultables via le filtre dédié.
+                  if (_filter == 'TOUS' &&
+                      !t.isInProgress &&
+                      !t.isToday &&
+                      !t.isTomorrow &&
+                      (t.status == 'TERMINÉ' || t.status == 'ANNULÉ')) {
+                    return false;
+                  }
                   if (_search.isNotEmpty) {
                     final q = _search.toLowerCase();
                     return t.departureCity.toLowerCase().contains(q) ||
@@ -370,6 +418,14 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                         onCanalTap: () => context.push(
                           '/gare/trips/canal/${trip.id}?label=${Uri.encodeComponent('${trip.departureCity} → ${trip.arrivalCity}')}',
                         ),
+                        onEdit: () async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => EditTripPage(trip: trip),
+                            ),
+                          );
+                          if (result == true) ref.invalidate(_myTripsProvider);
+                        },
                       );
                     },
                   ),
@@ -382,7 +438,7 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
     );
   }
 
-void _showPassengers(BuildContext context, TripItem trip) {
+  void _showPassengers(BuildContext context, TripItem trip) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -393,7 +449,7 @@ void _showPassengers(BuildContext context, TripItem trip) {
     );
   }
 
- void _showOfflineSale(BuildContext context, TripItem trip) {
+  void _showOfflineSale(BuildContext context, TripItem trip) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -429,6 +485,7 @@ class _TripCard extends StatelessWidget {
     required this.onShowPassengers,
     required this.onOfflineSale,
     required this.onCanalTap,
+    required this.onEdit,
   });
   final TripItem trip;
   final VoidCallback onArchive;
@@ -436,6 +493,7 @@ class _TripCard extends StatelessWidget {
   final VoidCallback onShowPassengers;
   final VoidCallback onOfflineSale;
   final VoidCallback onCanalTap;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -765,7 +823,7 @@ class _TripCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () {},
+                          onPressed: onEdit,
                           icon: const Icon(Icons.edit_rounded, size: 14),
                           label: const Text(
                             'Modifier',
@@ -1087,7 +1145,9 @@ class _PassengerCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                passenger.status == 'OFFLINE_SALE' ? 'Au guichet' : 'Via Mobili',
+                passenger.status == 'OFFLINE_SALE'
+                    ? 'Au guichet'
+                    : 'Via Mobili',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,

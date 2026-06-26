@@ -15,6 +15,7 @@ import com.mobili.backend.module.admin.dto.AdminTripStatsResponse;
 import com.mobili.backend.module.admin.dto.AnalyticsRecentEventResponse;
 import com.mobili.backend.module.admin.dto.AnalyticsSummaryResponse;
 import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse;
+import com.mobili.backend.module.admin.dto.DailyRegistrationStatsResponse;
 import com.mobili.backend.module.admin.model.TripStatsPeriod;
 import com.mobili.backend.module.admin.service.TripStatisticsService;
 import com.mobili.backend.module.admin.dto.CovoiturageSoloDriverAdminItem;
@@ -46,7 +47,17 @@ public class AdminController {
     private final UserMapper userMapper;
     private final PartnerMapper partnerMapper;
 
+    @PatchMapping("/partners/{id}/approve")
+    public ResponseEntity<Void> approvePartner(@PathVariable Long id) {
+        partnerService.approvePartner(id);
+        return ResponseEntity.ok().build();
+    }
 
+    @PatchMapping("/partners/{id}/reject")
+    public ResponseEntity<Void> rejectPartner(@PathVariable Long id) {
+        partnerService.rejectPartner(id);
+        return ResponseEntity.ok().build();
+    }
 
     // 💡 AJOUT : Récupérer tous les utilisateurs pour le tableau Angular gogogo
     @GetMapping("/users")
@@ -61,11 +72,10 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-  @GetMapping("/partners")
-  public ResponseEntity<List<PartnerAdminResponse>> getAllPartners() {
-         List<Partner> partners = partnerService.findAll();
+    @GetMapping("/partners")
+    public ResponseEntity<List<PartnerAdminResponse>> getAllPartners() {
+        List<Partner> partners = partnerService.findAll();
 
-        
         List<PartnerAdminResponse> response = partners.stream()
                 .map(partnerMapper::toAdminDto)
                 .toList();
@@ -74,7 +84,8 @@ public class AdminController {
     }
 
     /**
-     * Comptes créés par l’inscription chauffeur covoiturage (particuliers, rattachement technique au pool) :
+     * Comptes créés par l’inscription chauffeur covoiturage (particuliers,
+     * rattachement technique au pool) :
      * affichage admin à côté de la fiche partenaire « pool ».
      */
     @GetMapping("/covoiturage-solo-drivers")
@@ -99,7 +110,10 @@ public class AdminController {
         return ResponseEntity.ok().build();
     }
 
-    /** Rattacher un utilisateur (ex. chauffeur salarié) à une compagnie ; {@code partnerId} absent = retirer. */
+    /**
+     * Rattacher un utilisateur (ex. chauffeur salarié) à une compagnie ;
+     * {@code partnerId} absent = retirer.
+     */
     @PatchMapping("/users/{id}/employer-partner")
     public ResponseEntity<UserAdminResponse> setUserEmployerPartner(
             @PathVariable Long id, @RequestParam(required = false) Long partnerId) {
@@ -154,5 +168,19 @@ public class AdminController {
             @RequestParam(defaultValue = "WEEK") TripStatsPeriod period) {
         log.info("GET /v1/admin/stats/trip-analytics — period={}", period);
         return ResponseEntity.ok(tripStatisticsService.forPeriod(period));
+    }
+
+    @GetMapping("/stats/registrations")
+    public ResponseEntity<DailyRegistrationStatsResponse> getRegistrationStats(
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(adminService.getRegistrationStats(days));
+    }
+
+    @PatchMapping("/users/{id}/covoiturage-kyc")
+    public ResponseEntity<Void> updateCovoiturageKyc(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        userService.updateCovoiturageKycStatus(id, status);
+        return ResponseEntity.ok().build();
     }
 }

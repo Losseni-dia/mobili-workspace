@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/features/notifications/presentation/notifications_page.dart';
+import 'package:mobili/features/profile/presentation/edit_profile_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../shared/widgets/mobili_error_widget.dart';
@@ -14,6 +15,14 @@ import '../../features/trips/presentation/pages/trip_search_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/bookings/presentation/pages/my_tickets_page.dart';
 import '../../features/bookings/presentation/pages/my_bookings_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_entry_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_register_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_apply_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_profile_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_dashboard_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_trip_form_page.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_trip_detail_page.dart';
+import '../../features/trips/domain/models/trip.dart';
 
 part 'go_router.g.dart';
 
@@ -26,6 +35,7 @@ abstract class AppRoutes {
   static const notifications = '/notifications';
   static const profile = '/profile';
   static const tickets = '/tickets';
+  static const covoiturage = '/covoiturage';
 }
 
 @riverpod
@@ -47,6 +57,10 @@ GoRouter goRouter(GoRouterRef ref) {
         '/bookings',
         '/payments',
         '/tickets',
+        '/covoiturage/profile',
+        '/covoiturage/trips',
+        '/covoiturage/history',
+        '/covoiturage/apply',
       ];
       final needsAuth =
           protectedPrefixes.any((p) => state.matchedLocation.startsWith(p));
@@ -79,6 +93,63 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (_, state) => MyTicketsPage(
           filterTripId: int.tryParse(state.uri.queryParameters['tripId'] ?? ''),
         ),
+      ),
+
+      // ── Covoiturage (hors shell, plein écran) ─────────────
+      GoRoute(
+        path: AppRoutes.covoiturage,
+        name: 'covoiturage',
+        builder: (_, __) => const CovoiturageEntryPage(),
+        routes: [
+          GoRoute(
+            path: 'register',
+            name: 'covoiturageRegister',
+            builder: (_, __) => const CovoiturageRegisterPage(),
+          ),
+          GoRoute(
+            path: 'apply',
+            name: 'covoiturageApply',
+            builder: (_, __) => const CovoiturageApplyPage(),
+          ),
+          GoRoute(
+            path: 'profile',
+            name: 'covoiturageProfile',
+            builder: (_, __) => const CovoiturageProfilePage(),
+          ),
+          GoRoute(
+            path: 'trips',
+            name: 'covoiturageTrips',
+            builder: (_, __) => const CovoiturageDashboardPage(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'covoiturageTripNew',
+                builder: (_, __) => const CovoiturageTripFormPage(),
+              ),
+              GoRoute(
+                path: ':tripId/edit',
+                name: 'covoiturageTripEdit',
+                builder: (_, state) => CovoiturageTripFormPage(
+                  trip: state.extra as Trip?,
+                ),
+              ),
+              GoRoute(
+                path: ':tripId/detail',
+                name: 'covoiturageTripDetail',
+                builder: (_, state) => CovoiturageTripDetailPage(
+                  trip: state.extra as Trip,
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: 'history',
+            name: 'covoiturageHistory',
+            builder: (_, state) => CovoiturageHistoryPage(
+              trips: (state.extra as List<Trip>?) ?? const [],
+            ),
+          ),
+        ],
       ),
 
       // ── Shell ──────────────────────────────────────────────
@@ -146,6 +217,10 @@ GoRouter goRouter(GoRouterRef ref) {
                 path: AppRoutes.profile,
                 name: 'profile',
                 builder: (_, __) => const ProfilePage(),
+              ),
+              GoRoute(
+                path: '/edit-profile',
+                builder: (_, __) => const EditProfilePage(),
               ),
             ],
           ),

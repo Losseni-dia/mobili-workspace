@@ -14,6 +14,8 @@ class ProfileDto {
     required this.roles,
     required this.enabled,
     this.avatarUrl,
+    this.covoiturageSoloProfile,
+    this.covoiturageKycStatus,
   });
 
   final int id;
@@ -26,6 +28,13 @@ class ProfileDto {
   final List<String> roles;
   final bool enabled;
 
+  /// Conducteur covoiturage particulier (par opposition à un chauffeur
+  /// salarié assigné par une compagnie/gare) — distinct du rôle CHAUFFEUR :
+  /// un chauffeur compagnie a aussi ce rôle mais ne doit jamais avoir les
+  /// actions covoiturage (créer/modifier/supprimer ses trajets).
+  final bool? covoiturageSoloProfile;
+  final String? covoiturageKycStatus; // NONE | PENDING | APPROVED | REJECTED | EXPIRED
+
   // ---------------------------------------------------------------------------
   // Role helpers
   // ---------------------------------------------------------------------------
@@ -35,6 +44,11 @@ class ProfileDto {
   bool get isGare => roles.contains('GARE');
   bool get isChauffeur => roles.contains('CHAUFFEUR');
   bool get isAdmin => roles.contains('ADMIN');
+
+  /// Vrai uniquement pour un conducteur covoiturage avec KYC validé — c'est
+  /// la seule condition qui autorise à créer/modifier/supprimer un trajet.
+  bool get isCovoiturageDriver =>
+      covoiturageSoloProfile == true && covoiturageKycStatus == 'APPROVED';
 
   String get fullName => '$firstname $lastname';
 

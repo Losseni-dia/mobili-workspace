@@ -18,9 +18,9 @@ class ApiConstants {
    static const String baseUrlDev = 'http://10.0.2.2:8080/v1'; // Pour l'émulateur Android
   //static const String baseUrlDev = 'http://localhost:8080/v1';
   // Replace with real production domain before release
-  static const String baseUrlProd = 'https://<domaine-prod>/v1';
+static const String baseUrlProd = 'https://api.my-mobili.com/v1';
 
-  static const String baseUrl = baseUrlDev; // Toggle for build flavors
+  static const String baseUrl = baseUrlProd; // Toggle for build flavors
 
   /// Timeouts tuned for slow African mobile networks
   static const Duration connectTimeout = Duration(seconds: 15);

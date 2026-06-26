@@ -19,6 +19,7 @@ import com.mobili.backend.module.admin.dto.AnalyticsSummaryResponse;
 import com.mobili.backend.module.admin.dto.AnalyticsSummaryResponse.CountByType;
 import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse;
 import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse.DayEntry;
+import com.mobili.backend.module.admin.dto.DailyRegistrationStatsResponse;
 import com.mobili.backend.module.admin.repository.LoginEventRepository;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.entity.AppAnalyticsEvent;
@@ -36,7 +37,10 @@ public class AdminService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminService.class);
     private static final DateTimeFormatter ISO_LOCAL = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-    /** Instance locale : Spring Boot 4 n’expose pas toujours un bean {@code ObjectMapper}. */
+    /**
+     * Instance locale : Spring Boot 4 n’expose pas toujours un bean
+     * {@code ObjectMapper}.
+     */
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final UserRepository userRepository;
@@ -45,6 +49,36 @@ public class AdminService {
     private final TripRepository tripRepository;
     private final LoginEventRepository loginEventRepository;
     private final AppAnalyticsEventRepository appAnalyticsEventRepository;
+
+    @Transactional(readOnly = true)
+    public DailyRegistrationStatsResponse getRegistrationStats(int days) {
+        if (days < 1)
+            days = 1;
+        if (days > 365)
+            days = 365;
+        LocalDate today = LocalDate.now();
+        LocalDateTime from = today.minusDays(days - 1).atStartOfDay();
+
+        long todayCount = userRepository.countByCreatedAtDate(today);
+        long totalUsers = userRepository.count();
+
+        List<Object[]> raw = userRepository.dailyRegistrationsBetween(from);
+        List<DailyRegistrationStatsResponse.DayEntry> history = raw.stream()
+                .map(row -> {
+                    Object col0 = row[0];
+                    LocalDate date;
+                    if (col0 instanceof java.sql.Date sqlDate) {
+                        date = sqlDate.toLocalDate();
+                    } else if (col0 instanceof LocalDate ld) {
+                        date = ld;
+                    } else {
+                        date = LocalDate.parse(col0.toString());
+                    }
+                    return new DailyRegistrationStatsResponse.DayEntry(date, ((Number) row[1]).longValue());
+                })
+                .toList();
+        return new DailyRegistrationStatsResponse(todayCount, totalUsers, history);
+    }
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getGlobalStats() {
@@ -64,8 +98,7 @@ public class AdminService {
                 totalPartners,
                 totalTrips,
                 activeBookings,
-                totalRevenue
-        );
+                totalRevenue);
     }
 
     @Transactional(readOnly = true)

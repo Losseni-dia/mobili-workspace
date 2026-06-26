@@ -1,3 +1,13 @@
+
+# Démarrage des émulatteurs flutter
+flutter run -d emulator-5554 PIXEL_8
+flutter run -d emulator-5556   PIXEL_4
+
+
+reboost : cd ~/AppData/Local/Android/Sdk/emulator
+./emulator -avd Pixel_8 -no-snapshot-load -gpu swiftshader_indirect
+
+
 # Démarrage en local
 
 ## Prérequis

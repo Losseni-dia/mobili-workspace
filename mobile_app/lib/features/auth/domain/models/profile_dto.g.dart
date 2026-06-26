@@ -16,6 +16,21 @@ ProfileDto _$ProfileDtoFromJson(Map<String, dynamic> json) => ProfileDto(
       roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
       enabled: json['enabled'] as bool,
       avatarUrl: json['avatarUrl'] as String?,
+      covoiturageKycStatus: json['covoiturageKycStatus'] as String?,
+      covoiturageIdValidUntil: json['covoiturageIdValidUntil'] as String?,
+      covoiturageVehicleBrand: json['covoiturageVehicleBrand'] as String?,
+      covoiturageVehiclePlate: json['covoiturageVehiclePlate'] as String?,
+      covoiturageVehicleColor: json['covoiturageVehicleColor'] as String?,
+      covoiturageGreyCardNumber: json['covoiturageGreyCardNumber'] as String?,
+      covoiturageVehiclePhotoUrl: json['covoiturageVehiclePhotoUrl'] as String?,
+      covoiturageDriverPhotoUrl: json['covoiturageDriverPhotoUrl'] as String?,
+      covoiturageKycDaysUntilExpiry:
+          (json['covoiturageKycDaysUntilExpiry'] as num?)?.toInt(),
+      covoiturageKycExpiringWithin30Days:
+          json['covoiturageKycExpiringWithin30Days'] as bool?,
+      covoiturageKycIsDocumentExpired:
+          json['covoiturageKycIsDocumentExpired'] as bool?,
+      covoiturageSoloProfile: json['covoiturageSoloProfile'] as bool?,
     );
 
 Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
@@ -29,4 +44,18 @@ Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
       'avatarUrl': instance.avatarUrl,
       'roles': instance.roles,
       'enabled': instance.enabled,
+      'covoiturageKycStatus': instance.covoiturageKycStatus,
+      'covoiturageIdValidUntil': instance.covoiturageIdValidUntil,
+      'covoiturageVehicleBrand': instance.covoiturageVehicleBrand,
+      'covoiturageVehiclePlate': instance.covoiturageVehiclePlate,
+      'covoiturageVehicleColor': instance.covoiturageVehicleColor,
+      'covoiturageGreyCardNumber': instance.covoiturageGreyCardNumber,
+      'covoiturageVehiclePhotoUrl': instance.covoiturageVehiclePhotoUrl,
+      'covoiturageDriverPhotoUrl': instance.covoiturageDriverPhotoUrl,
+      'covoiturageKycDaysUntilExpiry': instance.covoiturageKycDaysUntilExpiry,
+      'covoiturageKycExpiringWithin30Days':
+          instance.covoiturageKycExpiringWithin30Days,
+      'covoiturageKycIsDocumentExpired':
+          instance.covoiturageKycIsDocumentExpired,
+      'covoiturageSoloProfile': instance.covoiturageSoloProfile,
     };

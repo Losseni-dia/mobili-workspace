@@ -16,6 +16,8 @@ ProfileDto _$ProfileDtoFromJson(Map<String, dynamic> json) => ProfileDto(
   roles: (json['roles'] as List<dynamic>).map((e) => e as String).toList(),
   enabled: json['enabled'] as bool,
   avatarUrl: json['avatarUrl'] as String?,
+  covoiturageSoloProfile: json['covoiturageSoloProfile'] as bool?,
+  covoiturageKycStatus: json['covoiturageKycStatus'] as String?,
 );
 
 Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
@@ -29,4 +31,6 @@ Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
       'avatarUrl': instance.avatarUrl,
       'roles': instance.roles,
       'enabled': instance.enabled,
+      'covoiturageSoloProfile': instance.covoiturageSoloProfile,
+      'covoiturageKycStatus': instance.covoiturageKycStatus,
     };
