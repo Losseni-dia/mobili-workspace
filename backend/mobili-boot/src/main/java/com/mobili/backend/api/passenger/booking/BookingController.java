@@ -110,7 +110,7 @@ public class BookingController {
     }
 
     @GetMapping("/trips/{tripId}/passengers")
-    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_CHAUFFEUR')")
     public List<BookingResponseDTO> getConfirmedPassengers(@PathVariable Long tripId) {
         return bookingService.findConfirmedByTripId(tripId).stream()
                 .map(bookingMapper::toDto)

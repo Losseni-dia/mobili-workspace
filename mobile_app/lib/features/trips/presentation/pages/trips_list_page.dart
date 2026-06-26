@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobili/features/support/presentation/pages/support_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -100,9 +101,15 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
         title: 'Mobili',
        actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined,
-                color: AppColors.white),
-            onPressed: () => context.go('/notifications'),
+            icon:
+                const Icon(Icons.support_agent_rounded, color: AppColors.white),
+            tooltip: 'Support',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const SupportPage(),
+              ),
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -134,7 +141,13 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
                 }
                 return RefreshIndicator(
                   color: AppColors.mobiliBlue,
-                  onRefresh: () async => ref.invalidate(tripsProvider),
+                  onRefresh: () async {
+                    // Le cache local (jusqu'à 45s) peut renvoyer une liste
+                    // périmée si on se contente d'invalider le provider :
+                    // on vide le cache pour forcer un vrai appel réseau.
+                    await ref.read(tripServiceProvider).invalidateCache();
+                    ref.invalidate(tripsProvider);
+                  },
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: trips.length,

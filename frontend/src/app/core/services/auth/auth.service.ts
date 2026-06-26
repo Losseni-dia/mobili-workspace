@@ -12,6 +12,7 @@ export interface AuthResponse {
   firstname: string; // Aligné avec ProfileDTO Java
   lastname: string; // Aligné avec ProfileDTO Java
   email: string;
+  phone: string; // Aligné avec ProfileDTO Java
   avatarUrl: string; // Aligné avec ProfileDTO Java
   roles: string[];
   partnerId?: number;
@@ -149,6 +150,7 @@ export class AuthService {
           firstname: '',
           lastname: '',
           email: '',
+          phone: '',
           avatarUrl: '',
           roles: [],
         } as AuthResponse);
@@ -203,6 +205,7 @@ export class AuthService {
       email: '',
       avatarUrl: '',
       roles: [],
+      phone: '',
     } as AuthResponse;
   }
 
@@ -258,6 +261,7 @@ export class AuthService {
       lastname: string;
       login: string;
       email: string;
+      phone: string;
       password: string;
       idValidUntil: string;
       vehicleBrand: string;
@@ -316,6 +320,7 @@ export class AuthService {
             firstname: '',
             lastname: '',
             email: '',
+            phone: '',
             avatarUrl: '',
             roles: [],
           };

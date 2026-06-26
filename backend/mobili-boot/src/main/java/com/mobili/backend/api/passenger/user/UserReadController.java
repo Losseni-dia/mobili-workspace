@@ -3,20 +3,25 @@ package com.mobili.backend.api.passenger.user;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.user.dto.ProfileDTO;
+import com.mobili.backend.module.user.dto.UserFcmTokenRequest;
 import com.mobili.backend.module.user.dto.mapper.UserMapper;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.CovoiturageProfileEnricher;
 import com.mobili.backend.module.user.service.GareProfileEnricher;
+import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.MobiliError.exception.MobiliException;
 
@@ -31,6 +36,16 @@ public class UserReadController {
     private final UserMapper userMapper; // Injection via constructeur (Lombok)
     private final GareProfileEnricher gareProfileEnricher;
     private final CovoiturageProfileEnricher covoiturageProfileEnricher;
+    private final UserService userService;
+
+    @PatchMapping("/me/fcm-token")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> updateFcmToken(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestBody UserFcmTokenRequest request) {
+        userService.updateFcmToken(principal.getUser().getId(), request.fcmToken());
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")

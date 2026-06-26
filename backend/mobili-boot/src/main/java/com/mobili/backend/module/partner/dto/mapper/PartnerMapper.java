@@ -25,6 +25,7 @@ public interface PartnerMapper {
     PartnerProfileDTO toProfileDto(Partner partner);
 
     @Mapping(target = "ownerName", expression = "java(partner.getOwner() != null ? partner.getOwner().getFirstname() + \" \" + partner.getOwner().getLastname() : \"Sans propriétaire\")")
+    @Mapping(target = "approvalStatus", expression = "java(partner.getApprovalStatus() != null ? partner.getApprovalStatus().name() : \"APPROVED\")")
     PartnerAdminResponse toAdminDto(Partner partner);
 
     // APRÈS

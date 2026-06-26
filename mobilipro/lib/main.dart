@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobilipro/core/services/firebase_service.dart';
 import 'package:mobilipro/core/theme/app_theme.dart';
 import 'core/network/api_client.dart';
 import 'core/router/go_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiClient.init();
+  await initializeDateFormatting('fr_FR', null);
+ await FirebaseService.initialize();
   runApp(const ProviderScope(child: MobiliProApp()));
 }
 

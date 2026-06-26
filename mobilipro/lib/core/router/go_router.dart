@@ -1,20 +1,33 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobilipro/features/auth/presentation/pages/profile_page.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mobilipro/features/admin/presentation/pages/admin_activity_logs_page.dart';
+import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page.dart';
+import 'package:mobilipro/features/admincom/presentation/pages/admin_com_page.dart';
+import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_admin_page.dart';
+import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_chauffeur_page.dart';
+import 'package:mobilipro/features/notifications/presentation/pages/notifications_pro_page.dart';
+import 'package:mobilipro/features/scanner/presentation/pages/scanner_page.dart';
+import 'package:mobilipro/shared/shell/shell_admin.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/register_choice_page.dart';
+import '../../features/auth/presentation/pages/register_company_page.dart';
+import '../../features/auth/presentation/pages/register_carpool_chauffeur_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/dashboard/presentation/pages/dashboard_gare_page.dart';
-import '../../features/trips/presentation/pages/trips_gare_page.dart';
-import '../../features/trips/presentation/pages/create_trip_page.dart';
 import '../../features/bookings/presentation/pages/bookings_gare_page.dart';
-import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
 import '../../features/canal/presentation/pages/canal_trip_page.dart';
-import '../../shared/shell/shell_gare.dart';
+import '../../features/covoiturage/presentation/pages/covoiturage_trip_form_page.dart';
+import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_gare_page.dart';
+import '../../features/trips/presentation/pages/create_trip_page.dart';
+import '../../features/trips/presentation/pages/trips_gare_page.dart';
+import 'package:mobilipro/features/auth/presentation/pages/profile_page.dart';
+import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_partner_page.dart';
+import 'package:mobilipro/features/stations/presentation/pages/partner_gare_managers_page.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../shared/shell/shell_chauffeur.dart';
+import '../../shared/shell/shell_gare.dart';
 import '../../shared/shell/shell_partner.dart';
-import '../../shared/shell/shell_covoit.dart';
+import '../../features/partnergarecom/presentation/pages/partner_gare_com_page.dart';
 
 part 'go_router.g.dart';
 
@@ -30,14 +43,17 @@ GoRouter goRouter(GoRouterRef ref) {
 
       final isLoggedIn = authState.value?.isAuthenticated ?? false;
       final isOnLogin = state.matchedLocation == '/login';
+      final isOnAuthPage =
+          isOnLogin || state.matchedLocation.startsWith('/register');
 
-      if (!isLoggedIn && !isOnLogin) return '/login';
+      if (!isLoggedIn && !isOnAuthPage) return '/login';
       if (isLoggedIn && isOnLogin) {
         final profile = authState.value?.profile;
         if (profile == null) return '/login';
         if (profile.isChauffeur) return '/chauffeur/trips';
+        if (profile.isAdmin) return '/admin/dashboard';
         if (profile.isGare) return '/gare/dashboard';
-        if (profile.isPartner || profile.isAdmin) return '/partner/dashboard';
+        if (profile.isPartner) return '/partner/dashboard';
         return '/gare/dashboard';
       }
       return null;
@@ -45,11 +61,41 @@ GoRouter goRouter(GoRouterRef ref) {
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
 
+      // ── Inscription (hors shell) ──────────────────────────────
+      GoRoute(
+        path: '/register',
+        builder: (_, __) => const RegisterChoicePage(),
+        routes: [
+          GoRoute(
+            path: 'company',
+            builder: (_, __) => const RegisterCompanyPage(),
+          ),
+          GoRoute(
+            path: 'covoiturage',
+            builder: (_, __) => const RegisterCarpoolChauffeurPage(),
+          ),
+        ],
+      ),
+
+      // ── Création/édition trajet covoiturage (hors shell, plein écran) ──
+      // Réservé aux conducteurs covoiturage (profile.isCovoiturageDriver) ;
+      // un chauffeur compagnie n'a jamais ce FAB côté dashboard.
+      GoRoute(
+        path: '/covoiturage/trips/new',
+        builder: (_, __) => const CovoiturageTripFormPage(),
+      ),
+      GoRoute(
+        path: '/covoiturage/trips/:tripId/edit',
+        builder: (_, state) => CovoiturageTripFormPage(
+          tripId: int.parse(state.pathParameters['tripId']!),
+        ),
+      ),
+
       // ── Shell GARE ─────────────────────────────────────────────
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellGare(navigationShell: shell),
         branches: [
-          // Dashboard
+          // 0 — Dashboard
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -58,7 +104,7 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          // Trajets
+          // 1 — Trajets
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -85,7 +131,7 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          // Réservations
+          // 2 — Réservations
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -94,7 +140,7 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          // Chauffeurs
+          // 3 — Chauffeurs
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -103,7 +149,16 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          // Profil
+          // 4 — Notifications
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/gare/notifications',
+                builder: (_, __) => const NotificationsProPage(),
+              ),
+            ],
+          ),
+          // 5 — Profil
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -115,43 +170,37 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // ── Shell CHAUFFEUR ────────────────────────────────────────
+      // ── Shell CHAUFFEUR — remplace l'ancienne section dans go_router.dart ──────
+      // 3 branches : Trajets (0) / Scanner (1) / Profil (2)
+      // La page détail trajet + passagers est accessible via Navigator.push
+      // depuis DashboardChauffeurPage (pas une branch shell)
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellChauffeur(navigationShell: shell),
         branches: [
+          // 0 — Trajets (dashboard chauffeur)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/chauffeur/trips',
-                builder: (_, __) => const _StubPage(
-                  title: 'Mes trajets',
-                  icon: Icons.directions_bus_rounded,
-                ),
+                builder: (_, __) => const DashboardChauffeurPage(),
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/chauffeur/passengers',
-                builder: (_, __) => const _StubPage(
-                  title: 'Passagers',
-                  icon: Icons.people_rounded,
-                ),
-              ),
-            ],
-          ),
+          // 1 — Scanner QR
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/chauffeur/scanner',
-                builder: (_, __) => const _StubPage(
-                  title: 'Scanner QR',
-                  icon: Icons.qr_code_scanner_rounded,
-                ),
+                builder: (_, state) {
+                  final tripId = state.uri.queryParameters['tripId'];
+                  return ScannerPage(
+                    tripId: tripId != null ? int.tryParse(tripId) : null,
+                  );
+                },
               ),
             ],
           ),
+          // 2 — Profil
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -167,37 +216,51 @@ GoRouter goRouter(GoRouterRef ref) {
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => ShellPartner(navigationShell: shell),
         branches: [
+          // 0 — Dashboard
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/partner/dashboard',
-                builder: (_, __) => const _StubPage(
-                  title: 'Dashboard',
-                  icon: Icons.dashboard_rounded,
-                ),
+                builder: (_, __) => const DashboardPartnerPage(),
+                routes: [
+                  GoRoute(
+                    path: 'trips/create',
+                    builder: (_, __) => const CreateTripPage(),
+                  ),
+                ],
               ),
             ],
           ),
+          // 1 — Gestion
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/partner/stations',
-                builder: (_, __) =>
-                    const _StubPage(title: 'Gares', icon: Icons.store_rounded),
+                path: '/partner/gestion',
+                builder: (_, __) => const PartnerGareManagersPage(),
               ),
             ],
           ),
+          // 2 — Canal société↔gares
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/partner/canal',
-                builder: (_, __) => const _StubPage(
-                  title: 'Canal',
-                  icon: Icons.campaign_rounded,
-                ),
+                builder: (_, __) => const PartnerGareComPage(),
               ),
             ],
           ),
+          // 3 — Notifications
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/partner/notifications',
+                builder: (_, __) => const NotificationsProPage(),
+              ),
+            ],
+          ),
+          // Dans le shell PARTNER — nouvelle branche Messages
+         
+          // 4 — Profil
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -209,47 +272,63 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
 
-      // ── Shell COVOIT ───────────────────────────────────────────
+      // ── Shell ADMIN — à ajouter dans go_router.dart ─────────────────────────
+      // 4 branches : Dashboard / Partenaires / Utilisateurs / Profil
+      // Le covoiturage est accessible via un onglet interne de AdminManagementPage,
+      // ou peut devenir sa propre branche plus tard quand l'espace admin grossira.
       StatefulShellRoute.indexedStack(
-        builder: (_, __, shell) => ShellCovoit(navigationShell: shell),
+        builder: (_, __, shell) => ShellAdmin(navigationShell: shell),
         branches: [
+          // 0 — Dashboard (stats globales — à créer)
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/covoit/trips',
-                builder: (_, __) => const _StubPage(
-                  title: 'Mes trajets',
-                  icon: Icons.directions_car_rounded,
-                ),
+                path: '/admin/dashboard',
+                builder: (_, __) => const AdminDashboardPage(),
               ),
             ],
           ),
+         // 1 — Gestion (partenaires + utilisateurs + covoiturage)
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/covoit/requests',
-                builder: (_, __) => const _StubPage(
-                  title: 'Demandes',
-                  icon: Icons.inbox_rounded,
-                ),
+                path: '/admin/gestion',
+                builder: (_, __) => const AdminGestionPage(),
               ),
             ],
           ),
+          // 3 — Profil
+         
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/covoit/revenue',
-                builder: (_, __) => const _StubPage(
-                  title: 'Revenus',
-                  icon: Icons.payments_rounded,
-                ),
+                path: '/admin/logs',
+                builder: (_, __) => const AdminActivityLogsPage(),
               ),
             ],
           ),
+          // Dans le shell ADMIN — nouvelle branche Messages
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/covoit/profile',
+                path: '/admin/communications',
+                builder: (_, __) => const AdminComPage(),
+              ),
+            ],
+          ),
+          // 4 — Notifications
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/notifications',
+                builder: (_, __) => const NotificationsProPage(),
+              ),
+            ],
+          ),
+           StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/profile',
                 builder: (_, __) => const ProfilePage(),
               ),
             ],
@@ -257,37 +336,5 @@ GoRouter goRouter(GoRouterRef ref) {
         ],
       ),
     ],
-  );
-}
-
-class _StubPage extends StatelessWidget {
-  const _StubPage({required this.title, required this.icon});
-  final String title;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: const Color(0xFF1B2A6B)),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1B2A6B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'En construction...',
-            style: TextStyle(color: Color(0xFF94A3B8)),
-          ),
-        ],
-      ),
-    ),
   );
 }

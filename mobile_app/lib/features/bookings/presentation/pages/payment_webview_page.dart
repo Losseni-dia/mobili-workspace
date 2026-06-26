@@ -65,7 +65,8 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   }
 
   bool _isSuccessUrl(String url) {
-    return url.contains('mobili.app/payment/success');
+    return url.contains('my-mobili.com') ||
+        url.contains('mobili.app/payment/success');
   }
 
   void _checkSuccessUrl(String url) {

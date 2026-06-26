@@ -15,9 +15,18 @@ import com.mobili.backend.module.trip.entity.Trip;
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
 
+    /**
+     * Catalogue voyageur : un trajet disparaît une fois son heure passée OU une
+     * fois {@code TERMINÉ} / {@code ANNULÉ} ; un trajet {@code EN_COURS} reste
+     * visible quelle que soit son heure de départ (le car a déjà décollé).
+     */
     @Query("SELECT DISTINCT t FROM Trip t JOIN FETCH t.partner LEFT JOIN FETCH t.station "
-            + "LEFT JOIN FETCH t.assignedChauffeur "
-            + "WHERE t.departureDateTime >= ?1 ORDER BY t.departureDateTime ASC")
+            + "LEFT JOIN FETCH t.assignedChauffeur LEFT JOIN FETCH t.stops "
+            + "WHERE t.status <> com.mobili.backend.module.trip.entity.TripStatus.ANNULÉ "
+            + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.TERMINÉ "
+            + "AND (t.status = com.mobili.backend.module.trip.entity.TripStatus.EN_COURS "
+            + "     OR t.departureDateTime >= ?1) "
+            + "ORDER BY t.departureDateTime ASC")
     List<Trip> findAllUpcomingTrips(LocalDateTime startDateTime);
 
     @Query("SELECT t FROM Trip t LEFT JOIN FETCH t.partner WHERE t.id = ?1")
@@ -36,6 +45,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     @Query("SELECT COUNT(t) FROM Trip t WHERE t.partner.id = :partnerId AND t.station.id = :stationId")
     long countTripsByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
+
+    /** Dashboard conducteur covoiturage : trajets de l'organisateur, jamais ceux du pool entier. */
+    @Query("SELECT COUNT(t) FROM Trip t WHERE t.covoiturageOrganizer.id = :organizerId")
+    long countTripsByCovoiturageOrganizer(@Param("organizerId") Long organizerId);
 
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
             + "LEFT JOIN FETCH t.assignedChauffeur "

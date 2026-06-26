@@ -15,7 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
+import com.mobili.backend.module.station.dto.GareUserAffiliationRequest;
 import com.mobili.backend.module.station.dto.GareUserCreateRequest;
+import com.mobili.backend.module.station.dto.GareUserListItem;
+import com.mobili.backend.module.station.dto.GareUserUpdateRequest;
 import com.mobili.backend.module.station.dto.StationChauffeurSummary;
 import com.mobili.backend.module.station.dto.StationRequestDTO;
 import com.mobili.backend.module.station.dto.StationResponseDTO;
@@ -45,8 +48,10 @@ public class StationService {
     private final TripRepository tripRepository;
 
     /**
-     * Statut visuel / métier. Le booléen {@code validated} a priorité s’il est renseigné.
-     * Sinon (migration) : déduction à partir d’ {@code approvalStatus} et des codes GAR-…
+     * Statut visuel / métier. Le booléen {@code validated} a priorité s’il est
+     * renseigné.
+     * Sinon (migration) : déduction à partir d’ {@code approvalStatus} et des codes
+     * GAR-…
      */
     public static StationApprovalStatus effectiveApproval(Station s) {
         if (Boolean.FALSE.equals(s.getValidated())) {
@@ -221,14 +226,119 @@ public class StationService {
         u.setEmail(dto.getEmail().trim());
         u.setFirstname(dto.getFirstname().trim());
         u.setLastname(dto.getLastname().trim());
+        if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
+            u.setPhone(dto.getPhone().trim());
+        }
         u.setPassword(passwordEncoder.encode(dto.getPassword()));
         u.setEnabled(isStationOperational(st));
         u.setStation(st);
         u.setBalance(0.0);
         Role gare = roleRepository.findByName(UserRole.GARE)
-                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Rôle GARE manquant (bootstrap)"));
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                        "Rôle GARE manquant (bootstrap)"));
         u.setRoles(Set.of(gare));
         userRepository.save(u);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GareUserListItem> listGareUsers(UserPrincipal principal) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        return userRepository.findGareUsersByPartnerId(partner.getId()).stream()
+                .map(this::toGareUserItem)
+                .toList();
+    }
+
+    @Transactional
+    public GareUserListItem updateGareUser(UserPrincipal principal, Long userId, GareUserUpdateRequest dto) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(userId)
+                .orElseThrow(
+                        () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Chef de gare introuvable."));
+        validateGareBelongsToPartner(u, partner);
+        u.setFirstname(dto.firstname().trim());
+        u.setLastname(dto.lastname().trim());
+        if (dto.email() != null && !dto.email().isBlank()) {
+            String newEmail = dto.email().trim().toLowerCase();
+            if (!newEmail.equalsIgnoreCase(u.getEmail()) && userRepository.existsByEmail(newEmail)) {
+                throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
+            }
+            u.setEmail(newEmail);
+        }
+        if (dto.phone() != null && !dto.phone().isBlank()) {
+            u.setPhone(dto.phone().trim());
+        }
+        if (dto.password() != null && !dto.password().isBlank()) {
+            u.setPassword(passwordEncoder.encode(dto.password()));
+        }
+        return toGareUserItem(userRepository.save(u));
+    }
+
+    @Transactional
+    public GareUserListItem updateGareUserAffiliation(UserPrincipal principal, Long userId,
+            GareUserAffiliationRequest body) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(userId)
+                .orElseThrow(
+                        () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Chef de gare introuvable."));
+        validateGareBelongsToPartner(u, partner);
+        Station s = stationRepository.findByIdAndPartnerId(body.stationId(), partner.getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable."));
+        u.setStation(s);
+        u.setEnabled(isStationOperational(s));
+        userRepository.save(u);
+        return toGareUserItem(userRepository.findByIdWithEverything(userId).orElseThrow());
+    }
+
+    @Transactional
+    public GareUserListItem reactivateGareUser(UserPrincipal principal, Long userId) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(userId)
+                .orElseThrow(
+                        () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Chef de gare introuvable."));
+        validateGareBelongsToPartner(u, partner);
+        u.setEnabled(true);
+        return toGareUserItem(userRepository.save(u));
+    }
+
+    @Transactional
+    public void archiveGareUser(UserPrincipal principal, Long userId) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        User u = userRepository.findByIdWithEverything(userId)
+                .orElseThrow(
+                        () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Chef de gare introuvable."));
+        validateGareBelongsToPartner(u, partner);
+        u.setEnabled(false);
+        userRepository.save(u);
+    }
+
+    private void validateGareBelongsToPartner(User u, Partner partner) {
+        if (u.getRoles().stream().noneMatch(r -> r.getName() == UserRole.GARE)) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Ce compte n'est pas un chef de gare.");
+        }
+        if (u.getStation() == null || u.getStation().getPartner() == null
+                || !u.getStation().getPartner().getId().equals(partner.getId())) {
+            throw new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                    "Chef de gare introuvable pour cette compagnie.");
+        }
+    }
+
+    private GareUserListItem toGareUserItem(User u) {
+        Station s = u.getStation();
+        return new GareUserListItem(
+                u.getId(),
+                u.getFirstname(),
+                u.getLastname(),
+                u.getEmail(),
+                u.getPhone(),
+                u.getLogin(),
+                u.isEnabled(),
+                s != null ? s.getId() : null,
+                s != null ? s.getName() : null);
     }
 
     public Station getStationForPartnerOrThrow(Long stationId, Long partnerId) {
@@ -263,10 +373,9 @@ public class StationService {
             return out;
         }
         List<User> users = userRepository.findChauffeursByAffiliationStationIds(stationIds);
-        Map<Long, List<User>> grouped =
-                users.stream()
-                        .filter(x -> x.getChauffeurAffiliationStation() != null)
-                        .collect(Collectors.groupingBy(x -> x.getChauffeurAffiliationStation().getId()));
+        Map<Long, List<User>> grouped = users.stream()
+                .filter(x -> x.getChauffeurAffiliationStation() != null)
+                .collect(Collectors.groupingBy(x -> x.getChauffeurAffiliationStation().getId()));
         for (Long sid : stationIds) {
             List<StationChauffeurSummary> rows = grouped.getOrDefault(sid, List.of()).stream()
                     .map(

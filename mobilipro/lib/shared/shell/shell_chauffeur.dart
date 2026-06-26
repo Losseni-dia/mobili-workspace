@@ -26,10 +26,6 @@ class ShellChauffeur extends StatelessWidget {
             label: 'Trajets',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people_rounded),
-            label: 'Passagers',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.qr_code_scanner_rounded),
             label: 'Scanner',
           ),

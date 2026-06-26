@@ -24,9 +24,10 @@ public class WebConfig implements WebMvcConfigurer {
 
         /* Avatars, logos, photos trajets — pas les dossiers sensibles (KYC sous sensitive/, anciens covoiturage-*). */
         registry.addResourceHandler("/uploads/users/**").addResourceLocations(location + "users/").setCachePeriod(0);
-        registry.addResourceHandler("/uploads/partners/**").addResourceLocations(location + "partners/").setCachePeriod(0);
-        registry.addResourceHandler("/uploads/vehicles/**").addResourceLocations(location + "vehicles/").setCachePeriod(0);
-
-        System.out.println("🚀 Fichiers publics servis depuis : " + location + "(physique=" + uploadRoot + ")");
+        registry.addResourceHandler("/uploads/partners/**").addResourceLocations(location + "partners/")
+                .setCachePeriod(0);
+        registry.addResourceHandler("/uploads/vehicles/**").addResourceLocations(location + "vehicles/")
+                .setCachePeriod(0);
+        registry.addResourceHandler("/uploads/logos/**").addResourceLocations(location + "logos/").setCachePeriod(0);
     }
 }

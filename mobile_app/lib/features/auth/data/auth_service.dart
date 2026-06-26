@@ -92,12 +92,13 @@ class AuthService {
   ///
   /// [avatarFile] is optional. When provided it must be JPEG/PNG and ≤ 15 MB
   /// (validate client-side before calling this method).
-  Future<ProfileDto> register({
+Future<ProfileDto> register({
     required String firstname,
     required String lastname,
     required String email,
     required String login,
     required String password,
+    required String phone,
     File? avatarFile,
   }) async {
     try {
@@ -109,6 +110,7 @@ class AuthService {
             'email': email,
             'login': login,
             'password': password,
+            'phone': phone,
           }),
           contentType: DioMediaType('application', 'json'),
         ),

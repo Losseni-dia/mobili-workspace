@@ -13,6 +13,7 @@ import com.mobili.backend.module.booking.ticket.dto.TicketRequestDTO;
 import com.mobili.backend.module.booking.ticket.dto.TicketResponseDTO;
 import com.mobili.backend.module.booking.ticket.dto.mapper.TicketMapper;
 import com.mobili.backend.module.booking.ticket.entity.Ticket;
+import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
 
 import java.util.List;
@@ -67,6 +68,15 @@ public class TicketController {
         // On renvoie le DTO pour que le contrôleur voie le nom du passager sur son
         // écran
         return ticketMapper.toDto(ticket);
+    }
+
+    @GetMapping("/trip/{tripId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+    public List<TicketResponseDTO> getByTrip(@PathVariable Long tripId) {
+        return ticketService.findAllByTripId(tripId).stream()
+                .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
+                .map(ticketMapper::toDto)
+                .collect(Collectors.toList());
     }
 
 }

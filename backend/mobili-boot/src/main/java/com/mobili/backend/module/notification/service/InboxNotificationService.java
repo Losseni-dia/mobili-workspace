@@ -47,6 +47,8 @@ public class InboxNotificationService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final FcmService fcmService;
+
 
     @Transactional
     public void notifyPassengerOnTicket(Ticket ticket) {
@@ -87,6 +89,14 @@ public class InboxNotificationService {
             ownerId = partner.getOwner().getId();
             User owner = userService.getReference(ownerId);
             saveOne(owner, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip, null);
+        }
+
+        // Trajet covoiturage particulier : pas de partenaire/gare réels derrière
+        // (partner = pool technique, station = null), donc l'organisateur ne
+        // recevait jamais cette notification sans ce cas dédié.
+        if (trip.getCovoiturageOrganizer() != null) {
+            User organizer = userService.getReference(trip.getCovoiturageOrganizer().getId());
+            saveOne(organizer, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip, null);
         }
 
         if (trip.getStation() != null) {
@@ -255,6 +265,10 @@ public class InboxNotificationService {
         n.setSourceChannelMessage(link);
         inboxRepository.save(n);
         eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(user.getId())));
+        // Push FCM
+        if (user.getFcmToken() != null) {
+            fcmService.sendToToken(user.getFcmToken(), title, body);
+        }
     }
 
     private InboxNotificationResponseDTO toDto(MobiliInboxNotification n) {

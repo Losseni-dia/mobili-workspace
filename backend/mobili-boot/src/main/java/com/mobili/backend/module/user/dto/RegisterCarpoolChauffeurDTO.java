@@ -20,6 +20,7 @@ public class RegisterCarpoolChauffeurDTO {
 
     @NotBlank(message = "Le login est obligatoire")
     private String login;
+    
     @Email(message = "Format d'email invalide")
     private String email; // ← retire @NotBlank
 

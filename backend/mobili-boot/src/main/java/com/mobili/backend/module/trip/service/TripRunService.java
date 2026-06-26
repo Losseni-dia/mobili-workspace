@@ -19,9 +19,11 @@ import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 import com.mobili.backend.module.trip.dto.driver.AlightingPassengerResponse;
 import com.mobili.backend.module.trip.entity.Trip;
+import com.mobili.backend.module.trip.entity.TripStatus;
 import com.mobili.backend.module.trip.entity.TripStop;
 import com.mobili.backend.module.trip.entity.TripStopEvent;
 import com.mobili.backend.module.trip.entity.TripStopEventType;
+import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.repository.TripStopEventRepository;
 import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.MobiliError.exception.MobiliException;
@@ -36,6 +38,7 @@ public class TripRunService {
     private final BookingRepository bookingRepository;
     private final TicketRepository ticketRepository;
     private final TripStopSyncService tripStopSyncService;
+    private final TripRepository tripRepository;
 
     public int lastStopIndex(Trip trip) {
         ensureStops(trip);
@@ -52,15 +55,18 @@ public class TripRunService {
         ensureStops(trip);
         int last = lastStopIndex(trip);
         if (boardingStopIndex < 0 || boardingStopIndex > last) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d’embarquement invalide.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d'embarquement invalide.");
         }
         if (alightingStopIndex <= boardingStopIndex || alightingStopIndex > last) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
-                    "Indice de descente invalide (doit être après l’embarquement).");
+                    "Indice de descente invalide (doit être après l'embarquement).");
         }
     }
 
-    /** Vente / réservation avec embarquement à cet arrêt encore autorisée (horaire + événement départ). */
+    /**
+     * Vente / réservation avec embarquement à cet arrêt encore autorisée (horaire +
+     * événement départ).
+     */
     public void assertBoardingStillOpen(Trip trip, int boardingStopIndex, LocalDateTime now) {
         ensureStops(trip);
         TripStop stop = trip.getStops().stream()
@@ -75,8 +81,42 @@ public class TripRunService {
         }
         if (!now.isBefore(stop.getPlannedDepartureAt())) {
             throw new MobiliException(MobiliErrorCode.BOARDING_CLOSED,
-                    "L’heure planifiée de départ depuis cet arrêt est passée : plus de réservation.");
+                    "L'heure planifiée de départ depuis cet arrêt est passée : plus de réservation.");
         }
+    }
+
+    /**
+     * Vrai si le car a déjà quitté cet arrêt (recherche voyageur : un trajet
+     * passant par cette ville ne doit plus apparaître comme embarquement
+     * possible une fois l'arrêt dépassé).
+     */
+    @Transactional(readOnly = true)
+    public boolean isBoardingClosedAtStop(Long tripId, int stopIndex) {
+        return tripStopEventRepository.existsByTripIdAndStopIndexAndEventType(
+                tripId, stopIndex, TripStopEventType.DEPARTURE_FROM_STOP);
+    }
+
+    /**
+     * Ville du prochain arrêt non encore quitté (catalogue voyageur : "En route
+     * vers X"). {@code null} si le trajet n'a pas encore démarré ou si le
+     * dernier arrêt a déjà été quitté (trajet en fin de course).
+     */
+    @Transactional(readOnly = true)
+    public String nextStopCityOrNull(Trip trip) {
+        ensureStops(trip);
+        int last = lastStopIndex(trip);
+        int currentStop = tripStopEventRepository
+                .findMaxStopIndexByTripIdAndEventType(trip.getId(), TripStopEventType.DEPARTURE_FROM_STOP)
+                .orElse(-1);
+        int nextIndex = currentStop + 1;
+        if (nextIndex > last) {
+            return null;
+        }
+        return trip.getStops().stream()
+                .filter(s -> s.getStopIndex() == nextIndex)
+                .map(TripStop::getCityLabel)
+                .findFirst()
+                .orElse(null);
     }
 
     @Transactional
@@ -84,7 +124,7 @@ public class TripRunService {
         ensureStops(trip);
         int last = lastStopIndex(trip);
         if (stopIndex < 0 || stopIndex > last) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d’arrêt invalide.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d'arrêt invalide.");
         }
         if (tripStopEventRepository.existsByTripIdAndStopIndexAndEventType(
                 trip.getId(), stopIndex, TripStopEventType.DEPARTURE_FROM_STOP)) {
@@ -96,6 +136,78 @@ public class TripRunService {
         ev.setEventType(TripStopEventType.DEPARTURE_FROM_STOP);
         ev.setRecordedAt(recordedAt);
         tripStopEventRepository.save(ev);
+
+        // ── Statuts automatiques ─────────────────────────────────────────────
+
+        // Tickets dont l'arrêt de descente prévu = cet arrêt
+        List<Ticket> tickets = ticketRepository.findAllByTripIdOrderBySeatNumberAsc(trip.getId());
+        for (Ticket t : tickets) {
+            if (t.getStatus() == TicketStatus.ANNULÉ)
+                continue;
+            int plannedAlight = Optional.ofNullable(t.getAlightingStopIndex()).orElse(last);
+            if (plannedAlight != stopIndex)
+                continue;
+            if (t.getStatus() == TicketStatus.UTILISÉ) {
+                // À bord → Arrivé automatiquement
+                t.setStatus(TicketStatus.ARRIVÉ);
+                t.setAlightedAtStopIndex(stopIndex);
+                t.setAlightedAt(recordedAt);
+                ticketRepository.saveAndFlush(t);
+            }
+            // VALIDÉ (non présenté) → reste VALIDÉ, affiché "Non présenté" côté Flutter
+        }
+
+        // Dernier arrêt → trajet TERMINÉ ; sinon (y compris le départ de la ville de
+        // départ) → trajet EN_COURS.
+        tripRepository.findById(trip.getId()).ifPresent(freshTrip -> {
+            if (freshTrip.getStatus() != TripStatus.ANNULÉ) {
+                freshTrip.setStatus(stopIndex == last ? TripStatus.TERMINÉ : TripStatus.EN_COURS);
+            }
+            refreshTripAvailableSeatsCounter(freshTrip);
+            tripRepository.saveAndFlush(freshTrip);
+        });
+    }
+
+    /**
+     * Annule le <strong>dernier</strong> départ enregistré (erreur de clic du
+     * chauffeur) : supprime l'événement, remet "à bord" les billets qui
+     * venaient d'être marqués "arrivé" à cet arrêt, et recalcule le statut du
+     * trajet. Toujours le dernier arrêt quitté, jamais un arrêt arbitraire,
+     * pour ne pas désynchroniser l'historique.
+     *
+     * @return l'indice de l'arrêt où le car se retrouve (= arrêt dont le
+     *         départ vient d'être annulé)
+     */
+    @Transactional
+    public int undoLastDeparture(Trip trip) {
+        int currentStop = tripStopEventRepository
+                .findMaxStopIndexByTripIdAndEventType(trip.getId(), TripStopEventType.DEPARTURE_FROM_STOP)
+                .orElse(-1);
+        if (currentStop < 0) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Aucun départ à annuler.");
+        }
+        tripStopEventRepository.deleteByTripIdAndStopIndexAndEventType(
+                trip.getId(), currentStop, TripStopEventType.DEPARTURE_FROM_STOP);
+
+        for (Ticket t : ticketRepository.findAllByTripIdOrderBySeatNumberAsc(trip.getId())) {
+            if (t.getStatus() == TicketStatus.ARRIVÉ
+                    && t.getAlightedAtStopIndex() != null
+                    && t.getAlightedAtStopIndex() == currentStop) {
+                t.setStatus(TicketStatus.UTILISÉ);
+                t.setAlightedAtStopIndex(null);
+                t.setAlightedAt(null);
+                ticketRepository.saveAndFlush(t);
+            }
+        }
+
+        tripRepository.findById(trip.getId()).ifPresent(freshTrip -> {
+            if (freshTrip.getStatus() != TripStatus.ANNULÉ) {
+                freshTrip.setStatus(currentStop == 0 ? TripStatus.PROGRAMMÉ : TripStatus.EN_COURS);
+            }
+            refreshTripAvailableSeatsCounter(freshTrip);
+            tripRepository.saveAndFlush(freshTrip);
+        });
+        return currentStop;
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +215,7 @@ public class TripRunService {
         ensureStops(trip);
         int last = lastStopIndex(trip);
         if (stopIndex < 0 || stopIndex > last) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d’arrêt invalide.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d'arrêt invalide.");
         }
         List<AlightingPassengerResponse> out = new ArrayList<>();
         List<Ticket> tickets = ticketRepository.findAllByTripIdOrderBySeatNumberAsc(trip.getId());
@@ -129,10 +241,34 @@ public class TripRunService {
         return out;
     }
 
+    @Transactional(readOnly = true)
+    public List<AlightingPassengerResponse> listBoardingPassengers(Trip trip, int stopIndex) {
+        ensureStops(trip);
+        int last = lastStopIndex(trip);
+        if (stopIndex < 0 || stopIndex > last) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Indice d'arrêt invalide.");
+        }
+        List<AlightingPassengerResponse> out = new ArrayList<>();
+        List<Ticket> tickets = ticketRepository.findAllByTripIdOrderBySeatNumberAsc(trip.getId());
+        for (Ticket t : tickets) {
+            if (t.getStatus() == TicketStatus.ANNULÉ)
+                continue;
+            int plannedBoarding = Optional.ofNullable(t.getBoardingStopIndex()).orElse(0);
+            if (plannedBoarding != stopIndex)
+                continue;
+            out.add(new AlightingPassengerResponse(
+                    t.getTicketNumber(),
+                    t.getPassengerName(),
+                    t.getSeatNumber(),
+                    t.getStatus().name(),
+                    plannedBoarding));
+        }
+        out.sort(Comparator.comparing(AlightingPassengerResponse::seatNumber));
+        return out;
+    }
+
     /**
      * Sièges occupés sur le tronçon (arrêt legIndex → legIndex+1).
-     *
-     * @param defaultAlightingStopIndex indice du terminus pour les tickets/résas sans fin de segment explicite
      */
     public Set<String> seatsOccupiedOnLeg(Long tripId, int legIndex, int defaultAlightingStopIndex) {
         Set<String> seats = new HashSet<>();
@@ -170,7 +306,10 @@ public class TripRunService {
         return seats;
     }
 
-    /** Nombre minimum de places libres sur tous les tronçons du segment [board, alight). */
+    /**
+     * Nombre minimum de places libres sur tous les tronçons du segment [board,
+     * alight).
+     */
     public int minFreeSeatsOnSegment(Trip trip, int boardingStopIndex, int alightingStopIndex) {
         ensureStops(trip);
         int lastIdx = lastStopIndex(trip);

@@ -3,11 +3,13 @@ package com.mobili.backend.module.partner.service;
 import java.security.SecureRandom;
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.dto.PartnerRegisterDTO;
 import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
 import com.mobili.backend.module.partner.entity.Partner;
@@ -21,10 +23,8 @@ import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.MobiliError.exception.MobiliException;
 import com.mobili.backend.shared.sharedService.UploadService;
 
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class PartnerService {
 
     private static final char[] REG_CODE_ALPHANUM = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
@@ -35,6 +35,22 @@ public class PartnerService {
     private final RoleRepository roleRepository;
     private final UploadService uploadService;
     private final PartnerMapper partnerMapper;
+    private final InboxNotificationService inboxNotificationService;
+
+    public PartnerService(
+            PartnerRepository partenaireRepository,
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            UploadService uploadService,
+            PartnerMapper partnerMapper,
+            @Lazy InboxNotificationService inboxNotificationService) {
+        this.partenaireRepository = partenaireRepository;
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.uploadService = uploadService;
+        this.partnerMapper = partnerMapper;
+        this.inboxNotificationService = inboxNotificationService;
+    }
 
     public Partner getCurrentPartner() {
         Object principal = org.springframework.security.core.context.SecurityContextHolder
@@ -170,6 +186,7 @@ public class PartnerService {
             partenaire.setRegistrationCode(generateUniqueRegistrationCode());
         }
         partenaire.setEnabled(false);
+        partenaire.setApprovalStatus(com.mobili.backend.module.partner.entity.PartnerApprovalStatus.PENDING);
         return partenaireRepository.save(partenaire);
     }
 
@@ -245,6 +262,55 @@ public class PartnerService {
         Partner p = findById(id);
         p.setEnabled(!p.isEnabled());
         partenaireRepository.save(p);
+        if (p.getOwner() != null) {
+            if (p.isEnabled()) {
+                inboxNotificationService.notifyUser(
+                        p.getOwner(),
+                        "Compagnie réactivée ✅",
+                        "Votre compagnie « " + p.getName()
+                                + " » a été réactivée. Vous pouvez à nouveau publier des trajets.",
+                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED);
+            } else {
+                inboxNotificationService.notifyUser(
+                        p.getOwner(),
+                        "Compagnie suspendue",
+                        "Votre compagnie « " + p.getName()
+                                + " » a été temporairement suspendue par l'équipe Mobili. Contactez le support pour plus d'informations.",
+                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_REJECTED);
+            }
+        }
+    }
+
+    @Transactional
+    public void approvePartner(Long id) {
+        Partner p = findById(id);
+        p.setApprovalStatus(com.mobili.backend.module.partner.entity.PartnerApprovalStatus.APPROVED);
+        p.setEnabled(true);
+        partenaireRepository.save(p);
+        if (p.getOwner() != null) {
+            inboxNotificationService.notifyUser(
+                    p.getOwner(),
+                    "Compagnie approuvée ✅",
+                    "Votre compagnie « " + p.getName()
+                            + " » a été approuvée par l'équipe Mobili. Vous pouvez maintenant publier des trajets.",
+                    com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED);
+        }
+    }
+
+    @Transactional
+    public void rejectPartner(Long id) {
+        Partner p = findById(id);
+        p.setApprovalStatus(com.mobili.backend.module.partner.entity.PartnerApprovalStatus.REJECTED);
+        p.setEnabled(false);
+        partenaireRepository.save(p);
+        if (p.getOwner() != null) {
+            inboxNotificationService.notifyUser(
+                    p.getOwner(),
+                    "Compagnie rejetée",
+                    "Votre compagnie « " + p.getName()
+                            + " » n'a pas pu être validée. Contactez le support Mobili pour plus d'informations.",
+                    com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_REJECTED);
+        }
     }
 
     @Transactional

@@ -59,4 +59,34 @@ public class PartnerDashboardService {
         data.put("bookingsList", bookings != null ? bookings : new ArrayList<>());
         return data;
     }
+
+    /**
+     * Même synthèse que {@link #getDashboardData}, mais scopée sur les trajets
+     * de CET organisateur covoiturage — jamais sur le partenaire technique du
+     * pool, qui regrouperait les trajets de tous les conducteurs particuliers.
+     */
+    public Map<String, Object> getDashboardDataForCovoiturageOrganizer(Long organizerId) {
+        long tripsCount = tripRepository.countTripsByCovoiturageOrganizer(organizerId);
+        List<Booking> bookings = bookingRepository.findRecentBookingsByCovoiturageOrganizer(organizerId);
+
+        double revenueOnline = bookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                .mapToDouble(Booking::getTotalPrice).sum();
+        double revenueOffline = bookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.OFFLINE_SALE)
+                .mapToDouble(Booking::getTotalPrice).sum();
+        long confirmedCount = bookings.stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED
+                        || b.getStatus() == BookingStatus.OFFLINE_SALE)
+                .count();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("activeTrips", tripsCount);
+        data.put("totalBookings", confirmedCount);
+        data.put("totalRevenue", revenueOnline + revenueOffline);
+        data.put("revenueOnline", revenueOnline);
+        data.put("revenueOffline", revenueOffline);
+        data.put("bookingsList", bookings);
+        return data;
+    }
 }

@@ -22,6 +22,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _firstnameCtrl = TextEditingController();
   final _lastnameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _loginCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
@@ -34,6 +35,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _firstnameCtrl.dispose();
     _lastnameCtrl.dispose();
     _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     _loginCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
@@ -62,9 +64,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? _validateLastname(String? v) => _required(v, 'Nom');
 
   String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email requis.';
+    if (v == null || v.trim().isEmpty) return null; // facultatif
     final emailRx = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w]{2,}$');
     if (!emailRx.hasMatch(v.trim())) return 'Email invalide.';
+    return null;
+  }
+
+  String? _validatePhone(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Téléphone requis.';
+    if (v.trim().length < 8) return 'Numéro invalide.';
     return null;
   }
 
@@ -99,6 +107,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           email: _emailCtrl.text.trim(),
           login: _loginCtrl.text.trim(),
           password: _passwordCtrl.text,
+          phone: _phoneCtrl.text.trim(),
           avatarFile: _avatarFile,
         );
   }
@@ -317,6 +326,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   icon: Icons.email_outlined,
                                   validator: _validateEmail,
                                   keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  enabled: !isLoading,
+                                ),
+                                const SizedBox(height: 14),
+                                _Field(
+                                  controller: _phoneCtrl,
+                                  label: 'Téléphone',
+                                  hint: '+225 07 00 00 00 00',
+                                  icon: Icons.phone_outlined,
+                                  validator: _validatePhone,
+                                  keyboardType: TextInputType.phone,
                                   textInputAction: TextInputAction.next,
                                   enabled: !isLoading,
                                 ),

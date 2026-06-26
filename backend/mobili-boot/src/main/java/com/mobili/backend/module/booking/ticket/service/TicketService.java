@@ -39,6 +39,25 @@ public class TicketService {
     private final TripRunService tripRunService;
     private final InboxNotificationService inboxNotificationService;
 
+
+    @Transactional(readOnly = true)
+    public List<Ticket> findAllByTripId(Long tripId) {
+        List<Ticket> tickets = ticketRepository.findAllByTripIdOrderBySeatNumberAsc(tripId);
+        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de la
+        // transaction, car le mapping vers TicketResponseDTO se fait hors session (dans le controller).
+        for (Ticket t : tickets) {
+            if (t.getTrip() != null) {
+                t.getTrip().getDepartureCity();
+            }
+            if (t.getBooking() != null
+                    && t.getBooking().getTrip() != null
+                    && t.getBooking().getTrip().getPartner() != null) {
+                t.getBooking().getTrip().getPartner().getName();
+            }
+        }
+        return tickets;
+    }
+    
     @Transactional
     public Ticket create(Long tripId, Long userId) {
         Trip trip = tripService.findById(tripId);
@@ -218,6 +237,9 @@ public class TicketService {
         }
         ticket.setAlightedAtStopIndex(stop);
         ticket.setAlightedAt(LocalDateTime.now());
+        if (ticket.getStatus() == TicketStatus.UTILISÉ) {
+            ticket.setStatus(TicketStatus.ARRIVÉ);
+        }
         Ticket saved = ticketRepository.save(ticket);
 
         Trip trip = tripRepository.findByIdWithPartnerAndStops(tripId)

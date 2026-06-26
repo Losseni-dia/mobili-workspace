@@ -25,5 +25,13 @@ public enum MobiliNotificationType {
     MOBILI_ADMIN_INFO_PARTNER,
             
     /** Réservation annulée. */
-    BOOKING_CANCELLED
+    BOOKING_CANCELLED,
+            /** Compagnie approuvée par l'admin. */
+    PARTNER_APPROVED,
+    /** Compagnie rejetée par l'admin. */
+    PARTNER_REJECTED,
+    /** Dossier KYC covoiturage approuvé par l'admin. */
+    COV_KYC_APPROVED,
+    /** Dossier KYC covoiturage rejeté par l'admin. */
+    COV_KYC_REJECTED,
 }

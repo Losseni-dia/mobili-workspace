@@ -138,7 +138,7 @@ class ProfilePage extends ConsumerWidget {
                             child: profile.avatarUrl != null
                                 ? ClipOval(
                                     child: Image.network(
-                                      'http://10.0.2.2:8080/v1/uploads/${profile.avatarUrl}',
+                                      'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) =>
                                           _Initials(name: profile.fullName),
@@ -164,6 +164,23 @@ class ProfilePage extends ConsumerWidget {
                                 .where((r) => r != 'USER')
                                 .map((r) => _RoleBadge(role: r))
                                 .toList(),
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton.icon(
+                            onPressed: () => context.push('/edit-profile'),
+                            icon: const Icon(Icons.edit_rounded,
+                                size: 14, color: AppColors.white),
+                            label: Text('Modifier le profil',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.white)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                  color: AppColors.white, width: 1),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 6),
+                            ),
                           ),
                         ],
                       ),
@@ -241,6 +258,15 @@ class ProfilePage extends ConsumerWidget {
                           onTap: () => context.go('/tickets'),
                         ),
                         const Divider(height: 1, color: AppColors.gray100),
+                        _ActionRow(
+                          icon: Icons.directions_car_filled_rounded,
+                          iconColor: AppColors.stationGreen,
+                          label: profile.isChauffeur && profile.hasCovoiturageProfile
+                              ? 'Espace covoiturage'
+                              : 'Devenir conducteur covoiturage',
+                          onTap: () => context.push('/covoiturage'),
+                        ),
+                        const Divider(height: 1, color: AppColors.gray100),
                       ],
                     ),
                   ),
@@ -250,9 +276,38 @@ class ProfilePage extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await ref.read(authProvider.notifier).logout();
-                        if (context.mounted) context.go('/');
+                    onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            title: const Text('Se déconnecter ?'),
+                            content: const Text(
+                                'Voulez-vous vraiment vous déconnecter de Mobili ?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Annuler'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.danger,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Se déconnecter',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref.read(authProvider.notifier).logout();
+                          if (context.mounted) context.go('/');
+                        }
                       },
                       icon: const Icon(Icons.logout_rounded,
                           color: AppColors.mobiliBlueDeep, size: 20),

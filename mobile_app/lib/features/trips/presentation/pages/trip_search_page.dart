@@ -178,7 +178,10 @@ class _TripSearchPageState extends ConsumerState<TripSearchPage> {
                   return const EmptyStateWidget(type: MobiliEmptyType.trips);
                 }
                 return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(tripsProvider),
+                  onRefresh: () async {
+                    await ref.read(tripServiceProvider).invalidateCache();
+                    ref.invalidate(tripsProvider);
+                  },
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: trips.length,

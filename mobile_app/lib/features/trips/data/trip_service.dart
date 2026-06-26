@@ -15,7 +15,10 @@ const _kTripsBox = 'trips_cache';
 const _kTripsListKey = 'trips_list';
 const _kTripDetailPrefix = 'trip_detail_';
 const _kTripStopsPrefix = 'trip_stops_';
-const _kCacheTtlMs = 5 * 60 * 1000; // 5 min
+// 45s : assez court pour refléter les changements de statut (départ, en route
+// vers X) faits côté app Pro sans recharger l'app à chaque fois, tout en
+// limitant les appels réseau répétés.
+const _kCacheTtlMs = 45 * 1000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TripService

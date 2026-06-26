@@ -18,6 +18,8 @@ import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
 import com.mobili.backend.module.trip.entity.TransportType;
 import com.mobili.backend.module.trip.entity.Trip;
+import com.mobili.backend.module.trip.entity.TripStatus;
+import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class TripReadController {
 
     private final TripService tripService;
     private final TripMapper tripMapper;
+    private final TripRunService tripRunService;
     private final AnalyticsEventService analyticsEventService;
 
     @GetMapping
@@ -36,8 +39,17 @@ public class TripReadController {
             @RequestParam(name = "transportType", required = false) String transportType) {
         TransportType tt = parseTransportType(transportType);
         return tripService.findAllUpcoming(tt).stream()
-                .map(tripMapper::toDto)
+                .map(this::toDtoWithNextStop)
                 .collect(Collectors.toList());
+    }
+
+    /** Catalogue voyageur : "En route vers X" pour les trajets déjà partis. */
+    private TripResponseDTO toDtoWithNextStop(Trip trip) {
+        TripResponseDTO dto = tripMapper.toDto(trip);
+        if (trip.getStatus() == TripStatus.EN_COURS) {
+            dto.setNextStopCity(tripRunService.nextStopCityOrNull(trip));
+        }
+        return dto;
     }
 
     @GetMapping("/{id}/stops")
@@ -47,7 +59,8 @@ public class TripReadController {
 
     @GetMapping("/{id}")
     public TripResponseDTO getById(@PathVariable Long id) {
-        TripResponseDTO dto = tripMapper.toDto(tripService.findById(id));
+        Trip trip = tripService.findById(id);
+        TripResponseDTO dto = toDtoWithNextStop(trip);
         dto.setLegFares(tripService.listLegFares(id));
         return dto;
     }
@@ -74,7 +87,7 @@ public class TripReadController {
         }
 
         return results.stream()
-                .map(tripMapper::toDto)
+                .map(this::toDtoWithNextStop)
                 .collect(Collectors.toList());
     }
 

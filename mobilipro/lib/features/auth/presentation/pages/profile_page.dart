@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobilipro/features/auth/presentation/pages/edit_profile_pro_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/providers/auth_provider.dart';
@@ -22,9 +23,8 @@ class ProfilePage extends ConsumerWidget {
       backgroundColor: AppColors.gray50,
       body: CustomScrollView(
         slivers: [
-          // ── Header ───────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: AppColors.mobiliBlue,
             automaticallyImplyLeading: false,
@@ -37,80 +37,133 @@ class ProfilePage extends ConsumerWidget {
                     colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    // Avatar
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.mobiliYellow,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.white.withValues(alpha: 0.3),
-                          width: 3,
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Avatar
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.mobiliYellow,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.white.withValues(alpha: 0.3),
+                            width: 3,
+                          ),
+                        ),
+                        child: profile.avatarUrl != null
+                            ? ClipOval(
+                                child: Image.network(
+                                  'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Center(
+                                    child: Text(
+                                      profile.firstname.isNotEmpty
+                                          ? profile.firstname[0].toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.mobiliBlue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  profile.firstname.isNotEmpty
+                                      ? profile.firstname[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.mobiliBlue,
+                                  ),
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        profile.fullName,
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      child: Center(
+                      const SizedBox(height: 6),
+                      // Badge rôle — une seule fois
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: roleColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: roleColor.withValues(alpha: 0.5),
+                          ),
+                        ),
                         child: Text(
-                          profile.firstname.isNotEmpty
-                              ? profile.firstname[0].toUpperCase()
-                              : 'U',
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.mobiliBlue,
+                          roleLabel,
+                          style: TextStyle(
+                            color: roleColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      profile.fullName,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: roleColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: roleColor.withValues(alpha: 0.5),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileProPage(),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.edit_rounded,
+                          size: 14,
+                          color: AppColors.white,
+                        ),
+                        label: const Text(
+                          'Modifier',
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: AppColors.white,
+                            width: 1,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        roleLabel,
-                        style: TextStyle(
-                          color: roleColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Infos compte ─────────────────────────────────
                   _SectionTitle(title: 'Informations du compte'),
                   const SizedBox(height: 8),
                   _InfoCard(
@@ -127,7 +180,7 @@ class ProfilePage extends ConsumerWidget {
                         value: '@${profile.login}',
                       ),
                       const Divider(height: 1, color: AppColors.gray100),
-                     _InfoRow(
+                      _InfoRow(
                         icon: Icons.email_outlined,
                         label: 'Email',
                         value: profile.email ?? 'Non renseigné',
@@ -140,10 +193,7 @@ class ProfilePage extends ConsumerWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // ── Rôles ────────────────────────────────────────
                   _SectionTitle(title: 'Rôles & accès'),
                   const SizedBox(height: 8),
                   _InfoCard(
@@ -184,10 +234,7 @@ class ProfilePage extends ConsumerWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // ── Statut compte ────────────────────────────────
                   _SectionTitle(title: 'Statut'),
                   const SizedBox(height: 8),
                   _InfoCard(
@@ -204,10 +251,7 @@ class ProfilePage extends ConsumerWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // ── Déconnexion ──────────────────────────────────
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -263,10 +307,7 @@ class ProfilePage extends ConsumerWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // Version app
                   Center(
                     child: Text(
                       'MobiliPro v1.0.0',
@@ -301,10 +342,6 @@ class ProfilePage extends ConsumerWidget {
     return AppColors.gray400;
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Widgets helper
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});
