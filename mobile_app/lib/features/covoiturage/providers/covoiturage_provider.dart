@@ -14,8 +14,7 @@ final covoiturageServiceProvider =
 // Mes trajets covoiturage (conducteur)
 // ─────────────────────────────────────────────────────────────────────────────
 
-final myCovoiturageTripsProvider =
-    FutureProvider.autoDispose<List<Trip>>((ref) async {
+final myCovoiturageTripsProvider = FutureProvider<List<Trip>>((ref) async {
   return ref.read(covoiturageServiceProvider).getMyTrips();
 });
 

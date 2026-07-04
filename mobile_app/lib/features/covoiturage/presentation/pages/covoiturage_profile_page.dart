@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobili/shared/widgets/private_network_image.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -93,11 +94,16 @@ class _CovoiturageProfilePageState
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
+     appBar: AppBar(
         backgroundColor: AppColors.mobiliBlue,
         foregroundColor: AppColors.white,
-        title: const Text('Mon profil conducteur',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        iconTheme: const IconThemeData(color: AppColors.white),
+        titleTextStyle: const TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
+        title: const Text('Mon profil conducteur'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -227,11 +233,27 @@ class _PhotoTile extends StatelessWidget {
     // via /media/private?rel=...) : Image.network ne peut pas porter ce
     // header simplement, donc on n'affiche un aperçu que pour un fichier
     // tout juste sélectionné localement, et un simple indicatif sinon.
+   // Priorité : photo tout juste sélectionnée localement > photo déjà
+    // enregistrée côté serveur (URL publique /uploads/..., même pattern que
+    // _DriverCard sur le dashboard) > aucun aperçu.
     Widget? preview;
     if (file != null) {
       preview = ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.file(file!, fit: BoxFit.cover, width: double.infinity),
+      );
+    } else if (existingUrl != null) {
+      final url = existingUrl!;
+      preview = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: PrivateNetworkImage(
+          relativePath: url,
+          fit: BoxFit.cover,
+          errorWidget: Center(
+            child: Icon(Icons.check_circle_outline_rounded,
+                color: AppColors.stationGreen, size: 26),
+          ),
+        ),
       );
     }
 
