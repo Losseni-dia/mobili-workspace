@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/bookings/domain/models/booking.dart';
+import 'package:mobili/features/trips/providers/trip_provider.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -153,11 +155,11 @@ class _CovoiturageTripDetailPageState
   late Trip _trip;
   bool _isStarting = false;
 
-  @override
+@override
   void initState() {
     super.initState();
     _trip = widget.trip;
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -241,8 +243,14 @@ class _CovoiturageTripDetailPageState
       appBar: AppBar(
         backgroundColor: AppColors.mobiliBlue,
         foregroundColor: AppColors.white,
-        title: Text('${_trip.departureCity} → ${_trip.arrivalCity}',
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        iconTheme: const IconThemeData(color: AppColors.white),
+        actionsIconTheme: const IconThemeData(color: AppColors.white),
+        titleTextStyle: const TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
+        title: Text('${_trip.departureCity} → ${_trip.arrivalCity}'),
         actions: [
           if (_trip.isUpcoming)
             IconButton(
@@ -268,27 +276,35 @@ class _CovoiturageTripDetailPageState
             onPressed: _confirmDelete,
           ),
         ],
-        bottom: TabBar(
+     bottom: TabBar(
           controller: _tabCtrl,
+          isScrollable: true,
           indicatorColor: AppColors.mobiliYellow,
           indicatorWeight: 3,
           labelColor: AppColors.white,
           unselectedLabelColor: AppColors.white.withValues(alpha: 0.6),
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          labelStyle:
+              const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
           tabs: const [
+            Tab(
+                icon: Icon(Icons.mark_email_unread_rounded, size: 16),
+                text: 'Demandes'),
             Tab(icon: Icon(Icons.people_rounded, size: 16), text: 'Passagers'),
             Tab(icon: Icon(Icons.route_rounded, size: 16), text: 'Arrêts'),
-            Tab(icon: Icon(Icons.qr_code_scanner_rounded, size: 16), text: 'Scanner'),
+            Tab(
+                icon: Icon(Icons.qr_code_scanner_rounded, size: 16),
+                text: 'Scanner'),
           ],
         ),
       ),
       body: Column(
         children: [
           _TripInfoBanner(trip: _trip),
-          Expanded(
+         Expanded(
             child: TabBarView(
               controller: _tabCtrl,
               children: [
+                _PendingRequestsTab(tripId: _trip.id),
                 _PassengersTab(tripId: _trip.id),
                 _StopsTab(trip: _trip),
                 const QrScannerWidget(showResultOverlay: true),
@@ -403,6 +419,215 @@ class _PassengersTab extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Onglet Demandes en attente (covoiturage)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PendingRequestsTab extends ConsumerWidget {
+  const _PendingRequestsTab({required this.tripId});
+  final int tripId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(pendingCovoiturageRequestsProvider(tripId));
+
+    return requestsAsync.when(
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
+      error: (e, _) => Center(
+          child: Text('$e', style: const TextStyle(color: AppColors.danger))),
+      data: (requests) {
+        if (requests.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.mark_email_read_outlined,
+                      size: 48, color: AppColors.gray300),
+                  SizedBox(height: 12),
+                  Text('Aucune demande en attente',
+                      style: TextStyle(color: AppColors.gray400, fontSize: 15)),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          color: AppColors.mobiliBlue,
+          onRefresh: () async =>
+              ref.invalidate(pendingCovoiturageRequestsProvider(tripId)),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: requests
+                .map((r) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _PendingRequestCard(tripId: tripId, booking: r),
+                    ))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PendingRequestCard extends ConsumerStatefulWidget {
+  const _PendingRequestCard({required this.tripId, required this.booking});
+  final int tripId;
+  final Booking booking;
+
+  @override
+  ConsumerState<_PendingRequestCard> createState() =>
+      _PendingRequestCardState();
+}
+
+class _PendingRequestCardState extends ConsumerState<_PendingRequestCard> {
+  bool _acting = false;
+
+  Future<void> _accept() async {
+    setState(() => _acting = true);
+    final ok = await ref
+        .read(covoiturageDecisionNotifierProvider.notifier)
+        .accept(widget.tripId, widget.booking.id);
+    if (mounted) {
+      setState(() => _acting = false);
+      if (ok) {
+        ref.invalidate(pendingCovoiturageRequestsProvider(widget.tripId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Demande acceptée ✅'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _reject() async {
+    setState(() => _acting = true);
+    final ok = await ref
+        .read(covoiturageDecisionNotifierProvider.notifier)
+        .reject(widget.tripId, widget.booking.id);
+    if (mounted) {
+      setState(() => _acting = false);
+      if (ok) {
+        ref.invalidate(pendingCovoiturageRequestsProvider(widget.tripId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Demande refusée'),
+            backgroundColor: AppColors.gray500,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.booking;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.mobiliBlueFog,
+                ),
+                child: ClipOval(
+                  child: b.customerAvatarUrl != null
+                      ? Image.network(
+                          'https://api.my-mobili.com/v1/uploads/${b.customerAvatarUrl}',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.mobiliBlue),
+                        )
+                      : const Icon(Icons.person_rounded,
+                          color: AppColors.mobiliBlue),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        b.customerFullName.isNotEmpty
+                            ? b.customerFullName
+                            : 'Voyageur',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mobiliBlueDeep,
+                          fontWeight: FontWeight.w700,
+                        )),
+                    Text('${b.numberOfSeats ?? 1} place(s)',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.gray400, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _acting ? null : _reject,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    side: const BorderSide(color: AppColors.danger),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Refuser'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _acting ? null : _accept,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: _acting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Text('Accepter'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
