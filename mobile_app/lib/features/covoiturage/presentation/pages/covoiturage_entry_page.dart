@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/support/presentation/pages/support_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -11,11 +12,29 @@ import '../../../auth/providers/auth_provider.dart';
 /// Point d'entrée unique de l'espace covoiturage conducteur. Redirige vers
 /// l'écran adapté au statut KYC de l'utilisateur courant — voir
 /// [ProfileDto.covoiturageKycStatus].
-class CovoiturageEntryPage extends ConsumerWidget {
+class CovoiturageEntryPage extends ConsumerStatefulWidget {
   const CovoiturageEntryPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CovoiturageEntryPage> createState() =>
+      _CovoiturageEntryPageState();
+}
+
+class _CovoiturageEntryPageState extends ConsumerState<CovoiturageEntryPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Le statut KYC (ex: validation admin) a pu changer côté serveur depuis
+    // le dernier login — on re-fetch le profil à chaque entrée sur cet
+    // espace pour ne pas afficher un statut périmé sans obliger l'utilisateur
+    // à se déconnecter/reconnecter.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).refreshProfile();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(currentProfileProvider);
 
     if (profile == null || !profile.hasCovoiturageProfile) {
@@ -182,7 +201,7 @@ class _KycStatusScreen extends StatelessWidget {
           AppColors.warning,
           'Dossier en cours de validation',
           'Votre demande a été envoyée. Un administrateur Mobili doit '
-              'valider votre dossier avant que vous puissiez publier des '
+              'valider le avant que vous puissiez publier des '
               'trajets. Vous recevrez une notification dès que c\'est fait.',
         ),
       'REJECTED' => (
@@ -192,7 +211,7 @@ class _KycStatusScreen extends StatelessWidget {
           'Votre dossier conducteur a été refusé. Vous pouvez soumettre un '
               'nouveau dossier, ou contacter le support pour en connaître la '
               'raison.',
-        ),
+        ),                 
       'EXPIRED' => (
           Icons.warning_amber_rounded,
           AppColors.danger,
@@ -201,10 +220,16 @@ class _KycStatusScreen extends StatelessWidget {
               'Soumettez un nouveau dossier avec une CNI à jour pour '
               'reprendre la publication de trajets.',
         ),
+    'NONE' => (
+          Icons.info_outline_rounded,
+          AppColors.mobiliBlue,
+          'Aucun dossier soumis',
+          'Vous n\'avez pas encore soumis de dossier conducteur covoiturage.',
+        ),
       _ => (
           Icons.info_outline_rounded,
           AppColors.gray400,
-          'Statut inconnu',
+          'Dossier en traitement',
           'Contactez le support Mobili pour plus d\'informations sur votre '
               'dossier conducteur.',
         ),
@@ -237,18 +262,31 @@ class _KycStatusScreen extends StatelessWidget {
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.white.withValues(alpha: 0.8))),
             const SizedBox(height: 28),
-            if (profile.covoiturageKycRejected || profile.covoiturageKycExpired) ...[
+           if (profile.covoiturageKycRejected ||
+                profile.covoiturageKycExpired ||
+                profile.covoiturageKycStatus == 'NONE') ...[
               MobiliButton(
-                label: 'Soumettre un nouveau dossier',
-                icon: Icons.refresh_rounded,
+                label: profile.covoiturageKycStatus == 'NONE'
+                    ? 'Soumettre mon dossier'
+                    : 'Soumettre un nouveau dossier',
+                icon: profile.covoiturageKycStatus == 'NONE'
+                    ? Icons.arrow_forward_rounded
+                    : Icons.refresh_rounded,
                 onPressed: () => context.push('/covoiturage/apply'),
               ),
               const SizedBox(height: 12),
             ],
-            MobiliButton.outlined(
+           // Le fond de cet écran est toujours sombre (gradientHeaderDark),
+            // quel que soit le thème de l'app — on force donc le contexte de
+            // luminosité à dark pour ce bouton .outlined, sinon il choisit les
+            // couleurs "mode clair" (bleu sur bleu = invisible) sur ce fond.
+            _WhiteOutlinedButton(
               label: 'Contacter le support',
               icon: Icons.support_agent_rounded,
-              onPressed: () => context.push('/profile'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SupportPage()),
+              ),
             ),
           ],
         ),
@@ -300,6 +338,64 @@ class _CovoiturageScaffold extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bouton bordure blanche — spécifique aux écrans à fond sombre
+// (MobiliButton.outlined choisit entre jaune/bleu selon le thème global,
+// jamais blanc, donc on ne peut pas l'utiliser tel quel ici).
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WhiteOutlinedButton extends StatelessWidget {
+  const _WhiteOutlinedButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: AppColors.white.withValues(alpha: 0.15),
+          highlightColor: AppColors.white.withValues(alpha: 0.08),
+          child: Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.white, width: 2),
+            ),
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 20, color: AppColors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: AppTextStyles.buttonPrimary.copyWith(
+                      color: AppColors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

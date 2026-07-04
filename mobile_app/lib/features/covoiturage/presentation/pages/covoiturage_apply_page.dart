@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobili/shared/widgets/qr_scanner_widget.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -362,4 +363,44 @@ class _PhotoPicker extends StatelessWidget {
                 ),
         ),
       );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page scanner pour conducteurs covoiturage (mobile_app)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class CovoiturageScannerPage extends StatelessWidget {
+  const CovoiturageScannerPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: AppColors.white,
+        title: const Text('Scanner un billet',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.lock_rounded,
+                    color: AppColors.mobiliYellow, size: 14),
+                const SizedBox(width: 4),
+                Text('Mobili',
+                    style: TextStyle(
+                        color: AppColors.white.withValues(alpha: 0.8),
+                        fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      body: QrScannerWidget(
+        showResultOverlay: true,
+      ),
+    );
+  }
 }
