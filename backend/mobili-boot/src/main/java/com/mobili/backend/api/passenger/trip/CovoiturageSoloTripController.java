@@ -24,6 +24,7 @@ import com.mobili.backend.module.partner.dto.RecentBookingDTO;
 import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
 import com.mobili.backend.module.partner.service.PartnerDashboardService;
 import com.mobili.backend.module.booking.booking.entity.Booking;
+import com.mobili.backend.module.booking.booking.service.BookingService;
 import com.mobili.backend.module.trip.dto.CovoiturageSoloTripRequestDTO;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
@@ -46,10 +47,40 @@ import java.util.Map;
 public class CovoiturageSoloTripController {
 
     private final TripService tripService;
+    private final BookingService bookingService;
     private final TripMapper tripMapper;
     private final BookingMapper bookingMapper;
     private final PartnerDashboardService partnerDashboardService;
     private final PartnerMapper partnerMapper;
+
+
+    /**
+     * Demandes covoiturage en attente de décision pour ce trajet — nom,
+     * prénom et photo du passager uniquement (voir BookingResponseDTO).
+     */
+    @GetMapping("/{id}/pending-requests")
+    public List<BookingResponseDTO> pendingRequests(
+            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
+        return bookingService.findPendingCovoiturageRequestsForTrip(id, principal).stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
+
+    @PostMapping("/{tripId}/bookings/{bookingId}/accept")
+    public void acceptBookingRequest(
+            @PathVariable Long tripId, @PathVariable Long bookingId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        bookingService.acceptCovoiturageRequest(bookingId, principal);
+    }
+
+    @PostMapping("/{tripId}/bookings/{bookingId}/reject")
+    public void rejectBookingRequest(
+            @PathVariable Long tripId, @PathVariable Long bookingId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        bookingService.rejectCovoiturageRequest(bookingId, principal);
+    }
+
+
 
     /**
      * Liste des trajets covoiturage du conducteur. La racine {@code GET /v1/covoiturage/trips} est un alias

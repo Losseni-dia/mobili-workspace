@@ -43,5 +43,29 @@ public class BookingResponseDTO {
     /** Bagages soute supplémentaires réservés (hors quota inclus). */
     private Integer extraHoldBags;
     /** Montant des suppléments bagages (estimé : extra × tarif voyage au moment de l’affichage). */
+    /**
+     * Montant des suppléments bagages (estimé : extra × tarif voyage au moment de
+     * l’affichage).
+     */
     private Double luggageFee;
+
+    // ── Covoiturage : validation chauffeur ──────────────────────────────
+    /**
+     * Covoiturage : date limite pour la réponse du chauffeur (24h après création).
+     */
+    private LocalDateTime driverResponseDeadline;
+    /**
+     * Covoiturage : date limite de paiement une fois le chauffeur ayant accepté.
+     */
+    private LocalDateTime paymentDeadline;
+    /**
+     * Prénom du client — utile côté chauffeur pour évaluer une demande, sans
+     * exposer email/téléphone.
+     */
+    private String customerFirstname;
+    private String customerLastname;
+    /**
+     * Photo de profil publique du client (dossier users/, pas de donnée sensible).
+     */
+    private String customerAvatarUrl;
 }

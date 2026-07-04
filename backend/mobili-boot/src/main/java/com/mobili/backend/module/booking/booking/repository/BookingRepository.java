@@ -160,4 +160,21 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.extraHoldBags), 0) FROM Booking b "
                         + "WHERE b.trip.id = :tripId AND b.status IN ('CONFIRMED', 'COMPLETED')")
         int sumExtraHoldBagsForTrip(@Param("tripId") Long tripId);
+
+
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.customer " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "WHERE b.trip.id = :tripId AND b.status = :status " +
+                        "ORDER BY b.createdAt ASC")
+        List<Booking> findByTripIdAndStatus(@Param("tripId") Long tripId, @Param("status") BookingStatus status);
+
+        /**
+         * Scheduler : demandes covoiturage dont le délai de réponse chauffeur est
+         * dépassé.
+         */
+        List<Booking> findByStatusAndDriverResponseDeadlineBefore(BookingStatus status, LocalDateTime cutoff);
+
+        /** Scheduler : réservations acceptées dont le délai de paiement est dépassé. */
+        List<Booking> findByStatusAndPaymentDeadlineBefore(BookingStatus status, LocalDateTime cutoff);
 }
