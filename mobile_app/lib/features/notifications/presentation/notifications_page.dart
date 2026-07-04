@@ -25,6 +25,7 @@ class InboxNotification {
     required this.createdAt,
     this.tripId,
     this.tripRoute,
+    this.bookingId,
   });
 
   final int id;
@@ -35,41 +36,47 @@ class InboxNotification {
   final DateTime createdAt;
   final int? tripId;
   final String? tripRoute;
+  final int? bookingId;
+
+  /// Parse une date UTC venant du backend et la convertit en heure locale
+  static DateTime _parseDate(String raw) {
+    if (raw.isEmpty) return DateTime.now();
+    try {
+      // Si la chaîne ne contient pas d'info timezone, on force UTC
+      final normalized =
+          raw.endsWith('Z') || raw.contains('+') ? raw : '${raw}Z';
+      return DateTime.parse(normalized).toLocal();
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
 
   String get formattedDate {
     final now = DateTime.now();
     final diff = now.difference(createdAt);
-    if (diff.inMinutes < 1) {
-      return "À l'instant";
-    }
-    if (diff.inMinutes < 60) {
-      return 'Il y a ${diff.inMinutes} min';
-    }
+    if (diff.inMinutes < 1) return "À l'instant";
+    if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
     if (diff.inHours < 24) {
       final h = diff.inHours;
       final m = diff.inMinutes % 60;
       return m > 0 ? 'Il y a ${h}h${m}min' : 'Il y a ${h}h';
     }
-    if (diff.inDays == 1) {
-      return 'Hier';
-    }
-    if (diff.inDays < 7) {
-      return 'Il y a ${diff.inDays}j';
-    }
-    return '${createdAt.day}/${createdAt.month}/${createdAt.year}';
+    if (diff.inDays == 1) return 'Hier';
+    if (diff.inDays < 7) return 'Il y a ${diff.inDays}j';
+    return '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}';
   }
 
-  factory InboxNotification.fromJson(Map<String, dynamic> json) =>
+factory InboxNotification.fromJson(Map<String, dynamic> json) =>
       InboxNotification(
         id: json['id'] as int,
         type: json['type'] as String? ?? 'INFO',
         title: json['title'] as String? ?? '',
         body: json['body'] as String? ?? '',
         read: json['read'] as bool? ?? false,
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
+        createdAt: _parseDate(json['createdAt'] as String? ?? ''),
         tripId: json['tripId'] as int?,
         tripRoute: json['tripRoute'] as String?,
+        bookingId: json['bookingId'] as int?,
       );
 
   InboxNotification copyWith({bool? read}) => InboxNotification(
@@ -81,6 +88,7 @@ class InboxNotification {
         createdAt: createdAt,
         tripId: tripId,
         tripRoute: tripRoute,
+        bookingId: bookingId,
       );
 }
 
@@ -188,18 +196,40 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     });
   }
 
-Future<void> _delete(InboxNotification notif) async {
-    // Optimistic update — retire immédiatement de l'UI
+  Future<void> _delete(InboxNotification notif) async {
     setState(() {
       _notifications = _notifications?.where((n) => n.id != notif.id).toList();
     });
     try {
       await _service.deleteNotification(notif.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Notification supprimée'),
+            backgroundColor: AppColors.gray700,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     } catch (_) {
-      // En cas d'erreur, remet la notif
       setState(() {
         _notifications = [...?_notifications, notif];
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Erreur lors de la suppression'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
 
@@ -209,7 +239,7 @@ Future<void> _delete(InboxNotification notif) async {
       _notifications = [];
       _hasMore = false;
     });
-    ref.invalidate(notificationsProvider); // ← ajoute ceci
+    ref.invalidate(notificationsProvider);
   }
 
   Future<void> _loadMore() async {
@@ -235,7 +265,7 @@ Future<void> _delete(InboxNotification notif) async {
 
     if (notifAsync.hasValue) {
       final newData = notifAsync.value!;
-      if (_notifications == null ) {
+      if (_notifications == null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             setState(() {
@@ -364,7 +394,6 @@ Future<void> _delete(InboxNotification notif) async {
               itemCount: notifications.length + (_hasMore ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                // Bouton "Voir plus"
                 if (index == notifications.length) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -426,20 +455,35 @@ Future<void> _delete(InboxNotification notif) async {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
-                                    onPressed: () {
-                                       Navigator.of(sheetContext).pop();
+                                 onPressed: () {
+                                      Navigator.of(sheetContext).pop();
                                       if (notif.type == 'TICKET_ISSUED') {
                                         context.go(
                                             '/tickets?tripId=${notif.tripId}');
                                       } else if (notif.type ==
-                                          'BOOKING_CONFIRMED') {
-                                        context.go('/my-bookings');
+                                              'BOOKING_CONFIRMED' ||
+                                          notif.type ==
+                                              'COVOITURAGE_BOOKING_ACCEPTED' ||
+                                          notif.type ==
+                                              'COVOITURAGE_BOOKING_REJECTED' ||
+                                          notif.type ==
+                                              'COVOITURAGE_BOOKING_NO_RESPONSE' ||
+                                          notif.type ==
+                                              'COVOITURAGE_BOOKING_PAYMENT_EXPIRED') {
+                                        context.go(notif.bookingId != null
+                                            ? '/my-bookings?bookingId=${notif.bookingId}'
+                                            : '/my-bookings');
                                       } else if (notif.type ==
                                               'TRIP_CHANNEL_MESSAGE' ||
                                           notif.type == 'TRIP_DELAY' ||
                                           notif.type == 'TRIP_GATE_CHANGE') {
                                         context.go('/my-bookings');
-                                      } else {
+                                      } else if (notif.type ==
+                                              'MOBILI_ADMIN_INFO_PARTNER' ||
+                                          notif.type ==
+                                              'MOBILI_ADMIN_INFO_SUPPORT') {
+                                        context.push('/support');
+                                      } else if (notif.tripId != null) {
                                         context.go('/trips/${notif.tripId}');
                                       }
                                     },
@@ -491,7 +535,7 @@ Future<void> _delete(InboxNotification notif) async {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Carte notification avec Dismissible + menu 3 points
+// Carte notification
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NotifCard extends StatelessWidget {
@@ -547,7 +591,6 @@ class _NotifCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icône type
                 Container(
                   width: 42,
                   height: 42,
@@ -558,8 +601,6 @@ class _NotifCard extends StatelessWidget {
                   child: Icon(config.$1, color: config.$2, size: 22),
                 ),
                 const SizedBox(width: 12),
-
-                // Contenu
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,8 +666,6 @@ class _NotifCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Menu 3 points
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded,
                       size: 18, color: AppColors.gray400),
@@ -679,6 +718,10 @@ class _NotifCard extends StatelessWidget {
         return (Icons.schedule_rounded, AppColors.warning);
       case 'TRIP_GATE_CHANGE':
         return (Icons.location_on_rounded, AppColors.warning);
+        case 'MOBILI_ADMIN_INFO_PARTNER':
+        return (Icons.support_agent_rounded, AppColors.mobiliBlue);
+      case 'MOBILI_ADMIN_INFO_SUPPORT':
+        return (Icons.support_agent_rounded, AppColors.mobiliBlue);
       default:
         return (Icons.notifications_rounded, AppColors.mobiliBlue);
     }
