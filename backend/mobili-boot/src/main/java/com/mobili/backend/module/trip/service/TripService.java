@@ -22,6 +22,8 @@ import com.mobili.backend.module.trip.dto.TripPricePreviewResponse;
 import com.mobili.backend.module.trip.dto.TripRequestDTO;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
+import com.mobili.backend.module.city.entity.City;
+import com.mobili.backend.module.city.repository.CityRepository;
 import com.mobili.backend.module.trip.dto.chauffeur.ChauffeurTripListItem;
 import com.mobili.backend.module.trip.dto.chauffeur.ChauffeurTripsOverviewResponse;
 import com.mobili.backend.module.trip.dto.driver.DriverLuggageSummaryResponse;
@@ -31,8 +33,8 @@ import com.mobili.backend.module.trip.entity.TripStop;
 import com.mobili.backend.module.trip.entity.TransportType;
 import com.mobili.backend.module.trip.entity.VehicleType;
 import com.mobili.backend.module.trip.repository.TripRepository;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 import com.mobili.backend.shared.sharedService.UploadService;
 
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,12 @@ public class TripService {
     private final StationService stationService;
     private final UserRepository userRepository;
     private final CovoiturageSoloPartnerBootstrap covoiturageSoloPartnerBootstrap;
+    private final CityRepository cityRepository;
+
+    public List<String> findDistinctCities(String q) {
+        return tripRepository.findDistinctCities(
+                q != null ? q.trim().toLowerCase() : "");
+    }
 
     @Transactional(readOnly = true)
     public List<Trip> findMyTrips() {
@@ -138,7 +146,14 @@ public class TripService {
             trip.setVehicleImageUrl(uploadService.saveImage(vehicleImage, "vehicles"));
         } else if (user.getCovoiturageVehiclePhotoUrl() != null
                 && !user.getCovoiturageVehiclePhotoUrl().isBlank()) {
-            trip.setVehicleImageUrl(user.getCovoiturageVehiclePhotoUrl());
+            // La photo véhicule du profil covoiturage est stockée dans un dossier privé
+            // (sensitive/covoiturage/vehicles) : on la COPIE vers le dossier public
+            // "vehicles" pour que le catalogue voyageur (Image.network sans JWT) puisse
+            // l'afficher. Fallback sur le chemin privé si la copie échoue (fichier
+            // manquant sur disque, etc.) pour ne jamais bloquer la création du trajet.
+            String publicPath = uploadService.copyToFolder(
+                    user.getCovoiturageVehiclePhotoUrl(), "vehicles");
+            trip.setVehicleImageUrl(publicPath != null ? publicPath : user.getCovoiturageVehiclePhotoUrl());
         }
         trip.setIncludedCabinBagsPerPassenger(1);
         trip.setIncludedHoldBagsPerPassenger(1);
@@ -152,6 +167,7 @@ public class TripService {
                 AnalyticsEventType.TRIP_PUBLISHED,
                 user.getId(),
                 String.format("{\"tripId\":%d,\"covoiturageSolo\":true}", saved.getId()));
+                persistCities(saved);
         return findById(saved.getId());
     }
 
@@ -169,10 +185,13 @@ public class TripService {
                         .equals(principal.getUser().getId())) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Vous n'êtes pas l'organisateur de ce voyage.");
         }
-        tripPricingService.clearSegmentFaresForTrip(id);
-        tripRepository.delete(t);
+        // Suppression logique : le trajet, ses réservations et son historique
+        // restent en base ; seule sa visibilité pour l'organisateur change.
+        t.setHiddenByOrganizer(true);
+        tripRepository.save(t);
     }
 
+    
     @Transactional
     public Trip updateCovoiturageSoloTrip(
             Long id, CovoiturageSoloTripRequestDTO dto, MultipartFile vehicleImage, UserPrincipal principal) {
@@ -247,10 +266,20 @@ public class TripService {
             return filterByTransport(candidates, transportType);
         }
 
-        return candidates.stream()
+        List<Trip> results = candidates.stream()
                 .filter(t -> transportType == null || t.getTransportType() == transportType)
                 .filter(t -> matchesRouteSearch(t, dep, arr))
                 .collect(Collectors.toList());
+        results.forEach(trip -> {
+            if (trip.getPartner() != null) {
+                trip.getPartner().getName();
+            }
+            if (trip.getCovoiturageOrganizer() != null) {
+                trip.getCovoiturageOrganizer().getFirstname();
+                trip.getCovoiturageOrganizer().getCovoiturageDriverPhotoUrl();
+            }
+        });
+        return results;
     }
 
     private List<Trip> filterByTransport(List<Trip> trips, TransportType transportType) {
@@ -357,14 +386,22 @@ public class TripService {
                     .filter(t -> t.getTransportType() == transportType)
                     .collect(Collectors.toList());
         }
-        // ASTUCE : On "touche" l'objet partenaire pour forcer Hibernate à le charger
+        // ASTUCE : On "touche" les relations lazy pour forcer Hibernate à les
+        // charger AVANT la fin de la transaction — le mapping vers
+        // TripResponseDTO se fait dans le contrôleur, hors session, et lit
+        // désormais aussi covoiturageOrganizer (photo/nom du conducteur).
         trips.forEach(trip -> {
             if (trip.getPartner() != null) {
                 trip.getPartner().getName();
             }
+            if (trip.getCovoiturageOrganizer() != null) {
+                trip.getCovoiturageOrganizer().getFirstname();
+                trip.getCovoiturageOrganizer().getCovoiturageDriverPhotoUrl();
+            }
         });
         return trips;
     }
+
 
     @Transactional
     public Trip findById(Long id) {
@@ -472,8 +509,10 @@ public class TripService {
             }
         }
 
-        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de la
-        // transaction, car le mapping vers TripResponseDTO se fait hors session (dans le controller).
+        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de
+        // la
+        // transaction, car le mapping vers TripResponseDTO se fait hors session (dans
+        // le controller).
         if (saved.getAssignedChauffeur() != null) {
             saved.getAssignedChauffeur().getFirstname();
         }
@@ -484,6 +523,7 @@ public class TripService {
             saved.getPartner().getName();
         }
 
+        persistCities(saved);
         return saved;
     }
 
@@ -864,5 +904,26 @@ public class TripService {
         t.setStops(new ArrayList<>());
         t.setOriginDestinationPrice(req.getOriginDestinationPrice());
         return t;
+    }
+
+    private void persistCities(Trip trip) {
+        persistCity(trip.getDepartureCity());
+        persistCity(trip.getArrivalCity());
+        if (trip.getMoreInfo() != null && !trip.getMoreInfo().isBlank()) {
+            for (String city : trip.getMoreInfo().split(",")) {
+                persistCity(city.trim());
+            }
+        }
+    }
+
+    private void persistCity(String name) {
+        if (name == null || name.isBlank())
+            return;
+        String normalized = name.trim().toLowerCase();
+        if (!cityRepository.existsByNameIgnoreCase(normalized)) {
+            City city = new City();
+            city.setName(normalized);
+            cityRepository.save(city);
+        }
     }
 }

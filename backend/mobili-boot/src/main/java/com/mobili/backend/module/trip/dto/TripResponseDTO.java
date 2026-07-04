@@ -35,10 +35,17 @@ public class TripResponseDTO {
     private String transportType;
 
     /**
-     * Non nul = offre publiée par un particulier (covoiturage solo), pour filtrage / affichage.
+     * Non nul = offre publiée par un particulier (covoiturage solo), pour filtrage
+     * / affichage.
      */
     private Long covoiturageOrganizerId;
-
+    private String covoiturageOrganizerFirstname;
+    private String covoiturageOrganizerLastname;
+    /**
+     * Photo KYC du conducteur (dossier privé) — accessible au passager via
+     * /media/private.
+     */
+    private String covoiturageOrganizerDriverPhotoUrl;
     /** Tronçons consécutifs avec prix (vide si tarification au prorata uniquement). */
     private List<TripLegFareResponse> legFares;
 

@@ -15,20 +15,31 @@ import com.mobili.backend.module.trip.entity.Trip;
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
 
+
+        @Query("""
+                        SELECT DISTINCT t.departureCity FROM Trip t
+                        WHERE LOWER(t.departureCity) LIKE LOWER(CONCAT(:q, '%'))
+                        UNION
+                        SELECT DISTINCT t.arrivalCity FROM Trip t
+                        WHERE LOWER(t.arrivalCity) LIKE LOWER(CONCAT(:q, '%'))
+                        ORDER BY 1
+                        """)
+        List<String> findDistinctCities(@Param("q") String q);
+
     /**
      * Catalogue voyageur : un trajet disparaît une fois son heure passée OU une
      * fois {@code TERMINÉ} / {@code ANNULÉ} ; un trajet {@code EN_COURS} reste
      * visible quelle que soit son heure de départ (le car a déjà décollé).
      */
     @Query("SELECT DISTINCT t FROM Trip t JOIN FETCH t.partner LEFT JOIN FETCH t.station "
-            + "LEFT JOIN FETCH t.assignedChauffeur LEFT JOIN FETCH t.stops "
-            + "WHERE t.status <> com.mobili.backend.module.trip.entity.TripStatus.ANNULÉ "
-            + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.TERMINÉ "
-            + "AND (t.status = com.mobili.backend.module.trip.entity.TripStatus.EN_COURS "
-            + "     OR t.departureDateTime >= ?1) "
-            + "ORDER BY t.departureDateTime ASC")
+                    + "LEFT JOIN FETCH t.assignedChauffeur LEFT JOIN FETCH t.stops "
+                    + "WHERE t.status <> com.mobili.backend.module.trip.entity.TripStatus.ANNULÉ "
+                    + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.TERMINÉ "
+                    + "AND t.hiddenByOrganizer = false "
+                    + "AND (t.status = com.mobili.backend.module.trip.entity.TripStatus.EN_COURS "
+                    + "     OR t.departureDateTime >= ?1) "
+                    + "ORDER BY t.departureDateTime ASC")
     List<Trip> findAllUpcomingTrips(LocalDateTime startDateTime);
-
     @Query("SELECT t FROM Trip t LEFT JOIN FETCH t.partner WHERE t.id = ?1")
     Optional<Trip> findByIdWithPartner(Long id);
 
@@ -61,9 +72,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findAllByPartnerIdAndStationId(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
-            + "WHERE t.covoiturageOrganizer.id = :userId ORDER BY t.departureDateTime DESC")
+                    + "WHERE t.covoiturageOrganizer.id = :userId AND t.hiddenByOrganizer = false "
+                    + "ORDER BY t.departureDateTime DESC")
     List<Trip> findAllByCovoiturageOrganizerId(@Param("userId") Long userId);
-
     /**
      * Ligne compagnie : services assignés, non terminés, récents ou en cours d’exécution.
      */
@@ -85,4 +96,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             + "         AND t.departureDateTime < :now)) "
             + "ORDER BY t.departureDateTime DESC")
     List<Trip> findAssignedChauffeurHistory(@Param("uid") Long uid, @Param("now") LocalDateTime now, Pageable page);
+
+
+    boolean existsByCovoiturageOrganizerCovoiturageDriverPhotoUrl(String driverPhotoUrl);
 }
