@@ -1,14 +1,16 @@
 // lib/features/auth/providers/auth_provider.dart
 
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobili/core/network/api_client.dart';
 import 'package:mobili/core/services/analytics_service.dart';
 import 'package:mobili/core/services/firebase_service.dart';
-import 'dart:io';
-import '../../../core/models/mobili_error.dart'; // Pour choper MobiliException
+
+import '../../../core/models/auth_response.dart';
+import '../../../core/models/mobili_error.dart';
 import '../data/auth_service.dart';
 import '../domain/models/profile_dto.dart';
-import '../../../core/models/auth_response.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
@@ -52,8 +54,7 @@ class AuthState {
         fieldErrors: null,
       );
 
-  AuthState asError(String message, {Map<String, String>? fields}) =>
-      AuthState(
+  AuthState asError(String message, {Map<String, String>? fields}) => AuthState(
         status: AuthStatus.error,
         profile: profile,
         authResponse: authResponse,
@@ -62,7 +63,7 @@ class AuthState {
       );
 }
 
-class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
+class AuthNotifier extends AsyncNotifier<AuthState> {
   late final AuthService _service;
 
   @override
@@ -84,17 +85,17 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
     try {
       final authResponse =
           await _service.login(login: login, password: password);
-     final profile = await _service.getMe();
+      final profile = await _service.getMe();
       state = AsyncData(AuthState(
         status: AuthStatus.authenticated,
         profile: profile,
         authResponse: authResponse,
       ));
-// Envoyer token FCM au backend après login
       await FirebaseService.sendTokenToBackend(ApiClient.instance.dio);
       await AnalyticsService.logLogin();
       await AnalyticsService.setUserId('${profile.id}');
       await AnalyticsService.setUserRole(profile.roles.first);
+      ref.read(showWelcomeProvider.notifier).state = true;
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -108,9 +109,10 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
       return false;
     }
   }
+
   Future<void> logout() async {
     state = AsyncData(state.requireValue.asLoading());
-  await _service.logout();
+    await _service.logout();
     await AnalyticsService.setUserId(null);
     state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
   }
@@ -126,7 +128,7 @@ Future<bool> register({
   }) async {
     state = AsyncData(state.requireValue.asLoading());
     try {
-      final profile = await _service.register(
+      await _service.register(
         firstname: firstname,
         lastname: lastname,
         email: email,
@@ -135,15 +137,14 @@ Future<bool> register({
         phone: phone,
         avatarFile: avatarFile,
       );
-     state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        profile: profile,
-      ));
+      state = AsyncData(const AuthState(status: AuthStatus.unauthenticated));
       await AnalyticsService.logRegister();
-      await AnalyticsService.setUserId('${profile.id}');
-      await AnalyticsService.setUserRole(profile.roles.first);
+      ref.read(showRegisterSuccessProvider.notifier).state = true;
       return true;
     } on MobiliException catch (e) {
+      // Le backend renvoie désormais directement les erreurs par champ
+      // (validationErrors) pour MOB-003 (validation) et MOB-004 (doublon
+      // email/login) — plus besoin de deviner via un contains() fragile.
       state = AsyncData(
         state.requireValue.asError(e.message, fields: e.validationErrors),
       );
@@ -156,8 +157,6 @@ Future<bool> register({
     }
   }
 
-  /// Remplace le profil en cache (ex: après une mise à jour partielle comme
-  /// `/covoiturage/profile`) sans repasser par `getMe()`.
   void setProfile(ProfileDto profile) {
     if (!state.hasValue) return;
     state = AsyncData(
@@ -168,25 +167,43 @@ Future<bool> register({
     );
   }
 
-  void clearError() {
+ void clearError() {
     if (state.hasValue && state.requireValue.hasError) {
       state = AsyncData(
         state.requireValue.copyWith(status: AuthStatus.unauthenticated),
       );
     }
   }
+
+  /// Re-fetch silencieux du profil (GET /auth/me) — utilisé quand on sait
+  /// que le profil a pu changer côté serveur (ex: validation KYC covoiturage
+  /// par un admin) sans que l'utilisateur ait besoin de se déconnecter /
+  /// reconnecter pour voir le changement.
+  Future<void> refreshProfile() async {
+    if (!state.hasValue || !state.requireValue.isAuthenticated) return;
+    try {
+      final profile = await _service.getMe();
+      setProfile(profile);
+    } catch (_) {
+      // Échec silencieux : on garde l'ancien profil affiché plutôt que de
+      // casser l'écran sur une simple erreur réseau transitoire.
+    }
+  }
 }
 
 final authServiceProvider = Provider<AuthService>((_) => AuthService());
 
-final authProvider = AutoDisposeAsyncNotifierProvider<AuthNotifier, AuthState>(
+final authProvider = AsyncNotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
 
-final currentProfileProvider = Provider.autoDispose<ProfileDto?>((ref) {
+final currentProfileProvider = Provider<ProfileDto?>((ref) {
   return ref.watch(authProvider).valueOrNull?.profile;
 });
 
-final isAuthenticatedProvider = Provider.autoDispose<bool>((ref) {
+final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).valueOrNull?.isAuthenticated ?? false;
 });
+
+final showWelcomeProvider = StateProvider<bool>((ref) => false);
+final showRegisterSuccessProvider = StateProvider<bool>((ref) => false);

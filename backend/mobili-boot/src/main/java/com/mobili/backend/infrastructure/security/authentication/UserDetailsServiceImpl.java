@@ -2,8 +2,8 @@ package com.mobili.backend.infrastructure.security.authentication;
 
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

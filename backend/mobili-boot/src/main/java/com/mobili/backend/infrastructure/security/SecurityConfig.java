@@ -29,7 +29,8 @@ import com.mobili.backend.infrastructure.security.ratelimit.MobiliRateLimitStore
 import com.mobili.backend.infrastructure.security.token.JwtAuthenticationFilter;
 
 /**
- * Filtre JWT + règles par surface API. Les chemins nominaux sont centralisés dans
+ * Filtre JWT + règles par surface API. Les chemins nominaux sont centralisés
+ * dans
  * {@link MobiliApiPaths} (phase 2 : modularité du monolithe, un seul JAR).
  * Sans proxy CGLIB (inutile ici) — évite des échecs au démarrage avec DevTools.
  */
@@ -38,137 +39,168 @@ import com.mobili.backend.infrastructure.security.token.JwtAuthenticationFilter;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public MobiliAuthRateLimitFilter mobiliAuthRateLimitFilter(
-            MobiliRateLimitProperties props,
-            MobiliRateLimitStore store) {
-        return new MobiliAuthRateLimitFilter(props, store);
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            JwtAuthenticationFilter jwtAuthFilter,
-            MobiliAuthRateLimitFilter mobiliAuthRateLimitFilter,
-            MobiliCorsSettings mobiliCorsSettings)
-            throws Exception {
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource(mobiliCorsSettings)))
-                .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny())
-                        .contentTypeOptions(Customizer.withDefaults())
-                        .referrerPolicy(ref -> ref.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        // --- Erreur, CORS preflight, fichiers, auth anonyme, catalogue public trajets
-                        .requestMatchers("/error", "/error/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/uploads/users/**", "/uploads/partners/**", "/uploads/vehicles/**",
-                                "/uploads/logos/**")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.GET, MobiliApiPaths.MEDIA_PRIVATE).authenticated()
-                        .requestMatchers(HttpMethod.POST,
-                                MobiliApiPaths.AUTH + "/login",
-                                MobiliApiPaths.AUTH + "/register",
-                                MobiliApiPaths.AUTH + "/register-company",
-                                MobiliApiPaths.AUTH + "/register-carpool-chauffeur",
-                                MobiliApiPaths.AUTH + "/refresh",
-                                MobiliApiPaths.AUTH + "/logout")
-                        .permitAll()
-                        .requestMatchers(MobiliApiPaths.TRIPS_WILD_DRIVER)
-                        .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_CHAUFFEUR)
-                        .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS, MobiliApiPaths.TRIPS_GLOB).permitAll()
-                        .requestMatchers(MobiliApiPaths.PAYMENTS_CALLBACK).permitAll()
-                        .requestMatchers(MobiliApiPaths.AUTH_REGISTRATION).permitAll()
-                        // Canal : hors GET public (reste de /trips/** ci-dessus)
-                        .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_WILD_CHANNEL_MESSAGES)
-                        .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.INBOX)
-                        .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_CHAUFFEUR", "ROLE_ADMIN")
-
-                        // Inscription d’une compagnie (utilisateur authentifié, hors admin partners/**)
-                        .requestMatchers(HttpMethod.POST, MobiliApiPaths.PARTNERS).authenticated()
-                        .requestMatchers(MobiliApiPaths.COVOITURAGE)
-                        .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
-
-                        // --- Écriture trajets + espaces pro (compagnie / gare) — {POST,PUT,DELETE} trips
-                        .requestMatchers(HttpMethod.POST, MobiliApiPaths.TRIPS, MobiliApiPaths.TRIPS_GLOB)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, MobiliApiPaths.TRIPS_GLOB)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, MobiliApiPaths.TRIPS_GLOB)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(
-                                MobiliApiPaths.PARTENAIRE_DASHBOARD,
-                                MobiliApiPaths.PARTENAIRE_STATIONS,
-                                MobiliApiPaths.PARTENAIRE_CHAUFFEURS,
-                                MobiliApiPaths.PARTENAIRE_CHAUFFEURS_GLOB)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.PARTNER_GARE_COM)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.TRIPS_MY_TRIPS)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-
-                        // Profil, réservations, billets (voyageur + pro)
-                        .requestMatchers(MobiliApiPaths.AUTH + "/me")
-                        .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_CHAUFFEUR", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.BOOKINGS)
-                        .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.TICKETS)
-                        .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_CHAUFFEUR", "ROLE_ADMIN")
-
-                        // Règles /partners : plus spécifiques en premier
-                        .requestMatchers(MobiliApiPaths.PARTNERS_MY_COMPANY)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, MobiliApiPaths.PARTNERS_GLOB)
-                        .hasAnyAuthority("ROLE_PARTNER", "ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.PARTNERS_GLOB).hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(MobiliApiPaths.ADMIN).hasAnyAuthority("ROLE_ADMIN")
-
-                        .anyRequest().authenticated())
-                .addFilterBefore(mobiliAuthRateLimitFilter,
-                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthFilter,
-                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
-
-    @Bean
-    public StandardServletMultipartResolver multipartResolver() {
-        return new StandardServletMultipartResolver();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource(MobiliCorsSettings mobiliCorsSettings) {
-        CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = mobiliCorsSettings.getAllowedOrigins();
-        if (origins == null || origins.isEmpty()) {
-            origins = List.of("http://localhost:4200", "http://127.0.0.1:4200");
+        @Bean
+        public MobiliAuthRateLimitFilter mobiliAuthRateLimitFilter(
+                        MobiliRateLimitProperties props,
+                        MobiliRateLimitStore store) {
+                return new MobiliAuthRateLimitFilter(props, store);
         }
-        configuration.setAllowedOrigins(origins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(
-                List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Last-Event-ID"));
-        configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+        @Bean
+        public SecurityFilterChain securityFilterChain(
+                        HttpSecurity http,
+                        JwtAuthenticationFilter jwtAuthFilter,
+                        MobiliAuthRateLimitFilter mobiliAuthRateLimitFilter,
+                        MobiliCorsSettings mobiliCorsSettings)
+                        throws Exception {
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource(mobiliCorsSettings)))
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .headers(headers -> headers
+                                                .frameOptions(frame -> frame.deny())
+                                                .contentTypeOptions(Customizer.withDefaults())
+                                                .referrerPolicy(ref -> ref.policy(
+                                                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
+                                .sessionManagement(session -> session.sessionCreationPolicy(
+                                                SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                // --- Erreur, CORS preflight, fichiers, auth anonyme, catalogue public
+                                                // trajets
+                                                .requestMatchers("/error", "/error/**").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/").permitAll()
+                                                .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .requestMatchers("/uploads/users/**", "/uploads/partners/**",
+                                                                "/uploads/vehicles/**",
+                                                                "/uploads/logos/**", "/uploads/covoiturage-drivers/**",
+                                                                "/uploads/covoiturage-vehicles/**")
+                                                .permitAll()
+                                                // covoiturage-ids (CNI recto/verso) reste privé — document sensible,
+                                                // consultable uniquement via /media/private (JWT requis).
+                                                .requestMatchers(HttpMethod.GET, MobiliApiPaths.MEDIA_PRIVATE)
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.POST,
+                                                                MobiliApiPaths.AUTH + "/login",
+                                                                MobiliApiPaths.AUTH + "/register",
+                                                                MobiliApiPaths.AUTH + "/register-company",
+                                                                MobiliApiPaths.AUTH + "/register-carpool-chauffeur",
+                                                                MobiliApiPaths.AUTH + "/refresh",
+                                                                MobiliApiPaths.AUTH + "/logout")
+                                                .permitAll()
+                                                .requestMatchers(MobiliApiPaths.TRIPS_WILD_DRIVER)
+                                                .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_PARTNER", "ROLE_GARE",
+                                                                "ROLE_ADMIN")
+                                                .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_CHAUFFEUR)
+                                                .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS,
+                                                                MobiliApiPaths.TRIPS_GLOB)
+                                                .permitAll()
+                                                .requestMatchers(MobiliApiPaths.PAYMENTS_CALLBACK).permitAll()
+                                                .requestMatchers(MobiliApiPaths.AUTH_REGISTRATION).permitAll()
+                                                // Canal : hors GET public (reste de /trips/** ci-dessus)
+                                                .requestMatchers(HttpMethod.GET,
+                                                                MobiliApiPaths.TRIPS_WILD_CHANNEL_MESSAGES)
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.INBOX)
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+                                                // Inscription d’une compagnie (utilisateur authentifié, hors admin
+                                                // partners/**)
+                                                // Inscription d’une compagnie (utilisateur authentifié, hors admin
+                                                // partners/**)
+                                                .requestMatchers(HttpMethod.POST, MobiliApiPaths.PARTNERS)
+                                                .authenticated()
+                                                // Candidature conducteur covoiturage : un simple voyageur (ROLE_USER)
+                                                // doit
+                                                // pouvoir postuler — il n'a pas encore ROLE_CHAUFFEUR à ce stade. Règle
+                                                // plus
+                                                // spécifique, donc placée AVANT la règle générale COVOITURAGE
+                                                // ci-dessous.
+                                                .requestMatchers(HttpMethod.POST, MobiliApiPaths.COVOITURAGE_APPLY)
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.COVOITURAGE)
+                                                .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+                                                // --- Écriture trajets + espaces pro (compagnie / gare) —
+                                                // {POST,PUT,DELETE} trips
+                                                .requestMatchers(HttpMethod.POST, MobiliApiPaths.TRIPS,
+                                                                MobiliApiPaths.TRIPS_GLOB)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, MobiliApiPaths.TRIPS_GLOB)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, MobiliApiPaths.TRIPS_GLOB)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(
+                                                                MobiliApiPaths.PARTENAIRE_DASHBOARD,
+                                                                MobiliApiPaths.PARTENAIRE_STATIONS,
+                                                                MobiliApiPaths.PARTENAIRE_CHAUFFEURS,
+                                                                MobiliApiPaths.PARTENAIRE_CHAUFFEURS_GLOB)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.PARTNER_GARE_COM)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.TRIPS_MY_TRIPS)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+
+                                                // Profil, réservations, billets (voyageur + pro)
+                                                .requestMatchers(MobiliApiPaths.AUTH + "/me")
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.BOOKINGS)
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.TICKETS)
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+
+                                                // Règles /partners : plus spécifiques en premier
+                                                .requestMatchers(MobiliApiPaths.PARTNERS_MY_COMPANY)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, MobiliApiPaths.PARTNERS_GLOB)
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.PARTNERS_GLOB)
+                                                .hasAnyAuthority("ROLE_ADMIN")
+                                                .requestMatchers(MobiliApiPaths.ADMIN).hasAnyAuthority("ROLE_ADMIN")
+
+                                                .anyRequest().authenticated())
+                                .addFilterBefore(mobiliAuthRateLimitFilter,
+                                                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(jwtAuthFilter,
+                                                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
+        }
+
+        @Bean
+        public StandardServletMultipartResolver multipartResolver() {
+                return new StandardServletMultipartResolver();
+        }
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource(MobiliCorsSettings mobiliCorsSettings) {
+                CorsConfiguration configuration = new CorsConfiguration();
+                List<String> origins = mobiliCorsSettings.getAllowedOrigins();
+                if (origins == null || origins.isEmpty()) {
+                        origins = List.of("http://localhost:4200", "http://127.0.0.1:4200");
+                }
+                configuration.setAllowedOrigins(origins);
+                configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(
+                                List.of("Authorization", "Content-Type", "Accept", "X-Requested-With",
+                                                "Last-Event-ID"));
+                configuration.setAllowCredentials(true);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
+
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+                return config.getAuthenticationManager();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }

@@ -22,7 +22,7 @@ public class RegisterCarpoolChauffeurDTO {
     private String login;
     
     @Email(message = "Format d'email invalide")
-    private String email; // ← retire @NotBlank
+    private String email; 
 
     @NotBlank(message = "Le numéro de téléphone est obligatoire")
     @Size(max = 20)

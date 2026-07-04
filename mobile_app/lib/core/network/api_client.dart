@@ -99,18 +99,54 @@ class ApiClient {
     // dio.interceptors.add(LogInterceptor(responseBody: true));
   }
 
-  /// Convenience: store a new access token after login / refresh
-  Future<void> saveToken(String token) =>
-      _secureStorage.write(key: ApiConstants.accessTokenKey, value: token);
+/// Convenience: store a new access token after login / refresh.
+  ///
+  /// Sur certains appareils Android, l'Android Keystore peut invalider sa clé
+  /// de chiffrement (bug système, changement de sécurité de l'écran de
+  /// verrouillage...), ce qui fait échouer EncryptedSharedPreferences avec
+  /// AEADBadTagException à chaque lecture/écriture. On efface alors le
+  /// stockage corrompu et on retente une seule fois.
+  Future<void> saveToken(String token) async {
+    try {
+      await _secureStorage.write(
+          key: ApiConstants.accessTokenKey, value: token);
+    } catch (_) {
+      await _recoverFromCorruptedSecureStorage();
+      try {
+        await _secureStorage.write(
+            key: ApiConstants.accessTokenKey, value: token);
+      } catch (_) {
+        // Toujours en échec après recovery : rien de plus à faire ici.
+      }
+    }
+  }
 
-  /// Convenience: read the current access token
-  Future<String?> readToken() =>
-      _secureStorage.read(key: ApiConstants.accessTokenKey);
+  /// Convenience: read the current access token.
+  Future<String?> readToken() async {
+    try {
+      return await _secureStorage.read(key: ApiConstants.accessTokenKey);
+    } catch (_) {
+      await _recoverFromCorruptedSecureStorage();
+      return null;
+    }
+  }
 
   /// Convenience: delete token + cookies on logout
   Future<void> clearSession() async {
-    await _secureStorage.delete(key: ApiConstants.accessTokenKey);
+    try {
+      await _secureStorage.delete(key: ApiConstants.accessTokenKey);
+    } catch (_) {
+      await _recoverFromCorruptedSecureStorage();
+    }
     await _cookieJar.deleteAll();
+  }
+
+  Future<void> _recoverFromCorruptedSecureStorage() async {
+    try {
+      await _secureStorage.deleteAll();
+    } catch (_) {
+      // Si même deleteAll échoue, rien de plus à faire ici.
+    }
   }
 }
 
@@ -132,12 +168,24 @@ class _AuthInterceptor extends Interceptor {
   // Guard to prevent infinite refresh loops
   bool _isRefreshing = false;
 
-  @override
+ @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await secureStorage.read(key: ApiConstants.accessTokenKey);
+    String? token;
+    try {
+      token = await secureStorage.read(key: ApiConstants.accessTokenKey);
+    } catch (_) {
+      // Keystore corrompu (AEADBadTagException, etc.) — on efface le
+      // stockage pour ne pas rester bloqué à chaque requête ; la requête
+      // part sans token, l'utilisateur sera redirigé vers /login si besoin.
+      try {
+        await secureStorage.deleteAll();
+      } catch (_) {
+        // Rien de plus à faire.
+      }
+    }
     if (token != null && token.isNotEmpty) {
       options.headers[ApiConstants.authHeader] = 'Bearer $token';
     }
