@@ -14,10 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 /**
  * Résolution et contrôle d’accès des fichiers sensibles (KYC covoiturage, etc.) hors exposition statique.
@@ -26,16 +27,22 @@ import com.mobili.backend.shared.MobiliError.exception.MobiliException;
 public class PrivateMediaService {
 
     private final UserRepository userRepository;
+    private final TripRepository tripRepository;
 
     @Value("${mobili.backend.upload.root-directory}")
     private String rootDirectory;
 
-    /** Dossier PDF / pièces hors arborescence {@code sensitive/…} — pas de diffusion statique publique. */
+    /**
+     * Dossier PDF / pièces hors arborescence {@code sensitive/…} — pas de diffusion
+     * statique publique.
+     */
     @Value("${mobili.backend.upload.documents-folder:documents}")
     private String documentsFolder;
 
-    public PrivateMediaService(UserRepository userRepository) {
+    public PrivateMediaService(UserRepository userRepository,
+            com.mobili.backend.module.trip.repository.TripRepository tripRepository) {
         this.userRepository = userRepository;
+        this.tripRepository = tripRepository;
     }
 
     /**
@@ -150,10 +157,21 @@ public class PrivateMediaService {
         if (u == null) {
             return false;
         }
-        return matchesNormalized(relative, u.getCovoiturageIdFrontUrl())
+        if (matchesNormalized(relative, u.getCovoiturageIdFrontUrl())
                 || matchesNormalized(relative, u.getCovoiturageIdBackUrl())
                 || matchesNormalized(relative, u.getCovoiturageDriverPhotoUrl())
-                || matchesNormalized(relative, u.getCovoiturageVehiclePhotoUrl());
+                || matchesNormalized(relative, u.getCovoiturageVehiclePhotoUrl())) {
+            return true;
+        }
+        // Tout utilisateur authentifié peut voir la photo du CONDUCTEUR (pas la
+        // CNI) d'un trajet covoiturage publié — même logique d'ouverture que la
+        // photo du véhicule, déjà publique sur la carte du trajet. Ça permet à
+        // un passager de voir qui va le conduire avant de réserver.
+        return isDriverPhotoOfAnyCovoiturageTrip(relative);
+    }
+
+    private boolean isDriverPhotoOfAnyCovoiturageTrip(String relative) {
+        return tripRepository.existsByCovoiturageOrganizerCovoiturageDriverPhotoUrl(relative);
     }
 
     private static boolean isAdmin(UserPrincipal principal) {

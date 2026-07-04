@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:mobili/shared/widgets/private_network_image.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -288,6 +289,70 @@ class _TripDetailContent extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // ── Escales ──────────────────────────────
+               // ── Conducteur (covoiturage uniquement) ───
+                if (trip.isCovoiturage &&
+                    (trip.covoiturageOrganizerFirstname != null ||
+                        trip.covoiturageOrganizerDriverPhotoUrl != null))
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : AppColors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.gray200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: AppColors.mobiliBlue, width: 2),
+                            color: AppColors.mobiliBlueFog,
+                          ),
+                          child: ClipOval(
+                            child:
+                                trip.covoiturageOrganizerDriverPhotoUrl != null
+                                    ? PrivateNetworkImage(
+                                        relativePath: trip
+                                            .covoiturageOrganizerDriverPhotoUrl!,
+                                        fit: BoxFit.cover,
+                                        errorWidget: const Icon(
+                                            Icons.person_rounded,
+                                            color: AppColors.mobiliBlue,
+                                            size: 28),
+                                      )
+                                    : const Icon(Icons.person_rounded,
+                                        color: AppColors.mobiliBlue, size: 28),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Votre conducteur',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.gray400, fontSize: 11)),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${trip.covoiturageOrganizerFirstname ?? ''} ${trip.covoiturageOrganizerLastname ?? ''}'
+                                    .trim(),
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: AppColors.mobiliBlueDeep,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // ── Escales ──────────────────────────────
                 if (trip.moreInfo != null && trip.moreInfo!.isNotEmpty)
