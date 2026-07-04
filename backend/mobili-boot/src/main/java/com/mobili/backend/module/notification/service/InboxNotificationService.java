@@ -16,8 +16,9 @@ import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -81,14 +82,16 @@ public class InboxNotificationService {
         }
         Partner partner = trip.getPartner();
         String route = shortRoute(trip);
-        String details = "Réservation n°" + booking.getId() + " : " + booking.getNumberOfSeats() + " place(s) sur " + route
+        String details = "Réservation n°" + booking.getId() + " : " + booking.getNumberOfSeats() + " place(s) sur "
+                + route
                 + " (client n°" + (booking.getCustomer() != null ? booking.getCustomer().getId() : "-") + ").";
 
         Long ownerId = null;
         if (partner != null && partner.getOwner() != null) {
             ownerId = partner.getOwner().getId();
             User owner = userService.getReference(ownerId);
-            saveOne(owner, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip, null);
+            saveOne(owner, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip,
+                    null);
         }
 
         // Trajet covoiturage particulier : pas de partenaire/gare réels derrière
@@ -96,7 +99,8 @@ public class InboxNotificationService {
         // recevait jamais cette notification sans ce cas dédié.
         if (trip.getCovoiturageOrganizer() != null) {
             User organizer = userService.getReference(trip.getCovoiturageOrganizer().getId());
-            saveOne(organizer, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip, null);
+            saveOne(organizer, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip,
+                    null);
         }
 
         if (trip.getStation() != null) {
@@ -111,6 +115,83 @@ public class InboxNotificationService {
                 saveOne(gareUser, MobiliNotificationType.GARE_STATION_NEW_BOOKING, gareTitle, gareBody, trip, null);
             }
         }
+    }
+    
+    /**
+     * Nouvelle demande de réservation covoiturage — notifie le conducteur
+     * organisateur du trajet, avec identité du demandeur (pas de données
+     * sensibles : nom/prénom seulement, la photo est déjà accessible via
+     * l'API profil du passager côté app).
+     */
+    @Transactional
+    public void notifyDriverOnNewCovoiturageRequest(Booking booking) {
+        Trip trip = booking.getTrip();
+        if (trip == null || trip.getCovoiturageOrganizer() == null) {
+            return;
+        }
+        User driver = userService.getReference(trip.getCovoiturageOrganizer().getId());
+        String route = shortRoute(trip);
+        String passengerName = fullName(booking.getCustomer());
+        String title = "Nouvelle demande de réservation";
+        String body = (passengerName == null || passengerName.isBlank() ? "Un voyageur" : passengerName)
+                + " souhaite réserver " + booking.getNumberOfSeats() + " place(s) sur " + route
+                + ". Vous avez 24h pour répondre.";
+        saveOne(driver, MobiliNotificationType.COVOITURAGE_BOOKING_REQUEST, title, body, trip, null, booking);
+    }
+
+    /**
+     * Décision du conducteur (accepté/refusé) sur une demande covoiturage —
+     * notifie le passager demandeur.
+     */
+    @Transactional
+    public void notifyPassengerOnCovoiturageDecision(Booking booking, boolean accepted) {
+        if (booking.getCustomer() == null) {
+            return;
+        }
+        User passenger = userService.getReference(booking.getCustomer().getId());
+        Trip trip = booking.getTrip();
+        String route = shortRoute(trip);
+        String title = accepted ? "Demande acceptée ✅" : "Demande refusée";
+        String body = accepted
+                ? "Le conducteur a accepté votre demande sur " + route
+                        + ". Vous avez 30 minutes pour finaliser le paiement."
+                : "Le conducteur a refusé votre demande sur " + route + ".";
+        MobiliNotificationType type = accepted
+                ? MobiliNotificationType.COVOITURAGE_BOOKING_ACCEPTED
+                : MobiliNotificationType.COVOITURAGE_BOOKING_REJECTED;
+        saveOne(passenger, type, title, body, trip, null, booking);
+    }
+
+    /**
+     * Scheduler : le conducteur n'a pas répondu dans les 24h — notifie le passager.
+     */
+    @Transactional
+    public void notifyPassengerOnCovoiturageNoResponse(Booking booking) {
+        if (booking.getCustomer() == null) {
+            return;
+        }
+        User passenger = userService.getReference(booking.getCustomer().getId());
+        Trip trip = booking.getTrip();
+        String route = shortRoute(trip);
+        String title = "Pas de réponse du conducteur";
+        String body = "Le conducteur n'a pas répondu à votre demande sur " + route
+                + " dans le délai imparti. Votre demande a expiré.";
+        saveOne(passenger, MobiliNotificationType.COVOITURAGE_BOOKING_NO_RESPONSE, title, body, trip, null, booking);
+    }
+
+    /** Scheduler : le passager n'a pas payé dans les 30 min après acceptation. */
+    @Transactional
+    public void notifyPassengerOnCovoiturageBookingPaymentExpired(Booking booking) {
+        if (booking.getCustomer() == null) {
+            return;
+        }
+        User passenger = userService.getReference(booking.getCustomer().getId());
+        Trip trip = booking.getTrip();
+        String route = shortRoute(trip);
+        String title = "Délai de paiement dépassé";
+        String body = "Vous n'avez pas finalisé le paiement dans les 30 minutes sur " + route
+                + ". La place a été libérée.";
+        saveOne(passenger, MobiliNotificationType.COVOITURAGE_BOOKING_PAYMENT_EXPIRED, title, body, trip, null, booking);
     }
 
     @Transactional
@@ -256,6 +337,11 @@ public class InboxNotificationService {
 
     private void saveOne(User user, MobiliNotificationType type, String title, String body, Trip trip,
             TripChannelMessage link) {
+        saveOne(user, type, title, body, trip, link, null);
+    }
+
+    private void saveOne(User user, MobiliNotificationType type, String title, String body, Trip trip,
+            TripChannelMessage link, com.mobili.backend.module.booking.booking.entity.Booking booking) {
         MobiliInboxNotification n = new MobiliInboxNotification();
         n.setUser(user);
         n.setType(type);
@@ -263,6 +349,7 @@ public class InboxNotificationService {
         n.setBody(body);
         n.setTrip(trip);
         n.setSourceChannelMessage(link);
+        n.setBooking(booking);
         inboxRepository.save(n);
         eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(user.getId())));
         // Push FCM
@@ -282,6 +369,7 @@ public class InboxNotificationService {
                 .createdAt(n.getCreatedAt())
                 .tripId(t.map(Trip::getId).orElse(null))
                 .tripRoute(t.map(this::shortRoute).orElse(null))
+                .bookingId(n.getBooking() == null ? null : n.getBooking().getId())
                 .channelMessageId(
                         n.getSourceChannelMessage() == null ? null : n.getSourceChannelMessage().getId())
                 .partnerGareComThreadId(

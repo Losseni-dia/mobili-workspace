@@ -17,6 +17,7 @@ public class InboxNotificationResponseDTO {
     LocalDateTime createdAt;
     Long tripId;
     String tripRoute;
+    Long bookingId;
     Long channelMessageId;
     /** Lien vers /compagnie/messages?thread=… */
     Long partnerGareComThreadId;
