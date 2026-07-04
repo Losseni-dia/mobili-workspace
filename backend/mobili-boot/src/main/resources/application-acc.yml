@@ -1,6 +1,11 @@
-# Recette / préproduction : schéma aligné sur Flyway (validate), logs raisonnables.
-# Adapter mobili.cors.allowed-origins à l’URL réelle du front (HTTPS).
+# ---------------------------------------------------------------------------
+# Profil ACC — acceptance / recette client
+# ---------------------------------------------------------------------------
 spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
   jpa:
     show-sql: false
     hibernate:
@@ -18,5 +23,17 @@ logging:
 mobili:
   cors:
     allowed-origins:
-      - https://CHANGE-ME-acc.votredomaine.ci
+      - https://acc.my-mobili.com
       - http://localhost:4200
+      - http://localhost:4201
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+    refresh:
+      secure: true
+
+fedapay:
+  secret:
+    key: ${FEDAPAY_SECRET_KEY}
+  webhook:
+    secret: ${FEDAPAY_WEBHOOK_SECRET}

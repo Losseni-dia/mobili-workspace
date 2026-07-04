@@ -4,6 +4,12 @@
 *.env
 ECSnames.txt
 
+DEV-LOCAL.md
+CHANGELOG.md
+AUDIT_FLUTTER_ACTUEL.md
+ROADMAP.md
+
+
 # --- DOCKER DATA ---
 # On ignore les données de la DB pour ne pas uploader des Go de données sur Git
 mobili-db-data/
