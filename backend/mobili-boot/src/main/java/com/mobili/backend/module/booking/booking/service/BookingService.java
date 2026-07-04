@@ -33,8 +33,8 @@ import com.mobili.backend.module.trip.service.TripService;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,7 +90,8 @@ public class BookingService {
 
         int minFree = tripRunService.minFreeSeatsOnSegment(trip, boarding, alighting);
         if (minFree < requestedSeats) {
-            throw new MobiliException(MobiliErrorCode.NO_SEATS_AVAILABLE, "Places insuffisantes sur une portion du trajet.");
+            throw new MobiliException(MobiliErrorCode.NO_SEATS_AVAILABLE,
+                    "Places insuffisantes sur une portion du trajet.");
         }
 
         double perSeatPrice = tripPricingService.resolvePricePerSeat(trip, boarding, alighting);
@@ -123,7 +124,14 @@ public class BookingService {
         booking.setExtraHoldBags(extraBags);
         booking.setBoardingStopIndex(boarding);
         booking.setAlightingStopIndex(alighting);
-        booking.setStatus(BookingStatus.PENDING);
+
+        boolean isCovoiturage = trip.getCovoiturageOrganizer() != null;
+        if (isCovoiturage) {
+            booking.setStatus(BookingStatus.PENDING_DRIVER_APPROVAL);
+            booking.setDriverResponseDeadline(LocalDateTime.now().plusHours(24));
+        } else {
+            booking.setStatus(BookingStatus.PENDING);
+        }
 
         List<String> names = request.getSelections().stream()
                 .map(BookingRequestDTO.SeatSelectionDTO::getPassengerName)
@@ -145,7 +153,74 @@ public class BookingService {
                 user.getId(),
                 String.format("{\"bookingId\":%d,\"tripId\":%d}", saved.getId(), trip.getId()));
 
+        if (isCovoiturage) {
+            inboxNotificationService.notifyDriverOnNewCovoiturageRequest(saved);
+        }
+
         return saved;
+    }
+
+    /**
+     * Le chauffeur accepte une demande covoiturage : le passager a 30 minutes
+     * pour payer, sinon la place est automatiquement libérée (voir
+     * {@link com.mobili.backend.module.booking.booking.scheduler.CovoiturageBookingExpiryScheduler}).
+     */
+    @Transactional
+    public void acceptCovoiturageRequest(Long bookingId, UserPrincipal principal) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
+        assertIsCovoiturageOrganizer(booking, principal);
+        if (booking.getStatus() != BookingStatus.PENDING_DRIVER_APPROVAL) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Cette demande n'est plus en attente de validation.");
+        }
+        booking.setStatus(BookingStatus.AWAITING_PAYMENT);
+        booking.setPaymentDeadline(LocalDateTime.now().plusMinutes(30));
+        bookingRepository.save(booking);
+        inboxNotificationService.notifyPassengerOnCovoiturageDecision(booking, true);
+    }
+
+    /**
+     * Le chauffeur refuse une demande covoiturage : la place n'a jamais été
+     * bloquée pour ce passager (elle reste ouverte pour d'autres demandes).
+     */
+    @Transactional
+    public void rejectCovoiturageRequest(Long bookingId, UserPrincipal principal) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
+        assertIsCovoiturageOrganizer(booking, principal);
+        if (booking.getStatus() != BookingStatus.PENDING_DRIVER_APPROVAL) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Cette demande n'est plus en attente de validation.");
+        }
+        booking.setStatus(BookingStatus.REJECTED_BY_DRIVER);
+        bookingRepository.save(booking);
+        inboxNotificationService.notifyPassengerOnCovoiturageDecision(booking, false);
+    }
+
+    /**
+     * Demandes covoiturage en attente de décision, pour un trajet donné —
+     * consultées par le chauffeur (nom, prénom, photo du passager uniquement).
+     */
+    @Transactional(readOnly = true)
+    public List<Booking> findPendingCovoiturageRequestsForTrip(Long tripId, UserPrincipal principal) {
+        Trip trip = tripService.findById(tripId);
+        if (trip.getCovoiturageOrganizer() == null
+                || !trip.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Vous n'êtes pas l'organisateur de ce trajet.");
+        }
+        List<Booking> bookings = bookingRepository.findByTripIdAndStatus(tripId, BookingStatus.PENDING_DRIVER_APPROVAL);
+        bookings.forEach(this::initLazyCollections);
+        return bookings;
+    }
+
+    private void assertIsCovoiturageOrganizer(Booking booking, UserPrincipal principal) {
+        Trip trip = booking.getTrip();
+        if (trip == null || trip.getCovoiturageOrganizer() == null
+                || !trip.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
+                    "Vous n'êtes pas l'organisateur de ce trajet covoiturage.");
+        }
     }
 
     @Transactional
@@ -155,10 +230,18 @@ public class BookingService {
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
         enforceCanManageBooking(booking);
 
-        // 2. Vérification du statut (Maintenant OK car Create s'arrête à PENDING)
-        if (booking.getStatus() != BookingStatus.PENDING) {
+        // 2. Vérification du statut — PENDING (trajet public) ou AWAITING_PAYMENT
+        // (covoiturage, après acceptation chauffeur)
+        if (booking.getStatus() != BookingStatus.PENDING
+                && booking.getStatus() != BookingStatus.AWAITING_PAYMENT) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
                     "Cette réservation est déjà confirmée ou annulée.");
+        }
+        if (booking.getStatus() == BookingStatus.AWAITING_PAYMENT
+                && booking.getPaymentDeadline() != null
+                && LocalDateTime.now().isAfter(booking.getPaymentDeadline())) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le délai de paiement de 30 minutes est dépassé.");
         }
 
         // 3. LOGIQUE DE PAIEMENT (Wallet)

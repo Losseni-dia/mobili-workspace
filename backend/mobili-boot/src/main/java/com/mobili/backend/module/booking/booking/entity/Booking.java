@@ -86,13 +86,28 @@ public class Booking extends AbstractEntity {
     /** Indice d’arrêt de descente (inclus dans la chaîne ; tronçon occupé = [boarding, alighting)). */
     @Column(name = "alighting_stop_index")
     private Integer alightingStopIndex;
-
     /**
      * Bagages soute supplémentaires (hors quota inclus) pour cette réservation.
      * Plafond : {@code numberOfSeats * trip.maxExtraHoldBagsPerPassenger}.
      */
     @Column(name = "extra_hold_bags", nullable = false)
     private Integer extraHoldBags = 0;
+
+    /**
+     * Covoiturage uniquement : date limite pour que le chauffeur réponde
+     * (accepte/refuse) à la demande — 24h après la création. Null pour les
+     * réservations sur trajets publics (achat direct, pas de validation).
+     */
+    @Column(name = "driver_response_deadline")
+    private LocalDateTime driverResponseDeadline;
+
+    /**
+     * Covoiturage uniquement : date limite pour que le passager paie une fois
+     * le chauffeur ayant accepté — 30 minutes après l'acceptation. Null tant
+     * que le chauffeur n'a pas répondu, ou pour les trajets publics.
+     */
+    @Column(name = "payment_deadline")
+    private LocalDateTime paymentDeadline;
 
     @PrePersist
     public void initBooking() {
