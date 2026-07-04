@@ -33,5 +33,17 @@ public enum MobiliNotificationType {
     /** Dossier KYC covoiturage approuvé par l'admin. */
     COV_KYC_APPROVED,
     /** Dossier KYC covoiturage rejeté par l'admin. */
+   /** Dossier KYC covoiturage rejeté par l'admin. */
     COV_KYC_REJECTED,
+    /** Nouvelle demande de réservation covoiturage : destiné au conducteur organisateur. */
+    COVOITURAGE_BOOKING_REQUEST,
+    /** Le conducteur a accepté la demande : destiné au passager (30 min pour payer). */
+    COVOITURAGE_BOOKING_ACCEPTED,
+    /** Le conducteur a refusé la demande : destiné au passager. */
+    COVOITURAGE_BOOKING_REJECTED,
+    /** La demande a expiré (24h sans réponse du conducteur) : destiné au passager. */
+    COVOITURAGE_BOOKING_NO_RESPONSE,
+    /** Le délai de paiement de 30 min après acceptation est dépassé : destiné au passager. */
+    COVOITURAGE_BOOKING_PAYMENT_EXPIRED,
+
 }

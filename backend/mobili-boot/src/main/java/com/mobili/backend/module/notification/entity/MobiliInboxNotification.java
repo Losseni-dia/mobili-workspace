@@ -45,6 +45,14 @@ public class MobiliInboxNotification extends AbstractEntity {
     @JoinColumn(name = "trip_id")
     private Trip trip;
 
+    /**
+     * Covoiturage : réservation précise concernée, pour ouvrir directement
+     * la bonne carte dans "Mes réservations" plutôt que la liste entière.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id")
+    private com.mobili.backend.module.booking.booking.entity.Booking booking;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_message_id")
     private TripChannelMessage sourceChannelMessage;
