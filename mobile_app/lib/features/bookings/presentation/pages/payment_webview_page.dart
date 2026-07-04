@@ -34,7 +34,6 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         NavigationDelegate(
           onPageStarted: (url) {
             setState(() => _isLoading = true);
-            _checkSuccessUrl(url);
           },
           onPageFinished: (url) {
             setState(() => _isLoading = false);
@@ -65,7 +64,8 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   }
 
   bool _isSuccessUrl(String url) {
-    return url.contains('my-mobili.com') ||
+    return url.contains('my-mobili.com/payment/success') ||
+        url.contains('my-mobili.com/v1/payments/callback') ||
         url.contains('mobili.app/payment/success');
   }
 

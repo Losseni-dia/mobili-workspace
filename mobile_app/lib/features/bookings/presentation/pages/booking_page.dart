@@ -32,7 +32,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _extraBags = 0;
   late List<String> _stopLabels;
 
-// AJOUTE après les déclarations de champs
+  final _scrollController = ScrollController();
+  final _passengerSectionKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +47,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     for (final c in _passengerCtrls) {
       c.dispose();
     }
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -67,7 +70,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     return labels;
   }
 
-double _pricePerSeat() {
+  double _pricePerSeat() {
     final fares = widget.trip.legFares;
     final lastIndex = _stopLabels.length - 1;
 
@@ -115,6 +118,7 @@ double _pricePerSeat() {
       return;
     }
     final seat = '$seatNumber';
+    final wasEmpty = _selectedSeats.isEmpty;
     setState(() {
       if (_selectedSeats.contains(seat)) {
         final idx = _selectedSeats.indexOf(seat);
@@ -127,6 +131,24 @@ double _pricePerSeat() {
       }
       if (_extraBags > _maxExtraBags()) _extraBags = _maxExtraBags();
     });
+
+    // Dès qu'on sélectionne le premier siège, on scroll automatiquement
+    // vers la section "Noms des passagers" pour éviter d'avoir à remonter
+    // manuellement — elle apparaît juste en dessous une fois _selectedSeats
+    // non vide (voir le `if` dans build()).
+    if (wasEmpty && _selectedSeats.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _passengerSectionKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+            alignment: 0.1,
+          );
+        }
+      });
+    }
   }
 
   bool get _isValid {
@@ -141,6 +163,8 @@ double _pricePerSeat() {
   @override
   Widget build(BuildContext context) {
     final bookingState = ref.watch(bookingNotifierProvider);
+    final covoiturageRequestState =
+        ref.watch(covoiturageRequestNotifierProvider);
     final occupiedAsync = ref.watch(occupiedSeatsProvider(
       OccupiedSeatsParams(
         tripId: widget.trip.id,
@@ -153,6 +177,18 @@ double _pricePerSeat() {
       if (next.step == BookingStep.done) _showSuccess();
     });
 
+    ref.listen<CovoiturageRequestState>(covoiturageRequestNotifierProvider,
+        (_, next) {
+      if (next.step == CovoiturageRequestStep.sent) _showRequestSent();
+      if (next.step == CovoiturageRequestStep.error && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(next.errorMessage ?? 'Erreur lors de la demande.'),
+              backgroundColor: AppColors.danger),
+        );
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: const MobiliAppBar(
@@ -163,6 +199,7 @@ double _pricePerSeat() {
         children: [
           Expanded(
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +235,7 @@ double _pricePerSeat() {
                   const SizedBox(height: 10),
                   occupiedAsync.when(
                     loading: () => const MobiliLoader(),
-                   error: (e, _) {
+                    error: (e, _) {
                       final is403 = e.toString().contains('403');
                       if (is403) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -220,9 +257,11 @@ double _pricePerSeat() {
 
                   // ── Noms passagers ─────────────────────
                   if (_selectedSeats.isNotEmpty) ...[
-                    const _SectionTitle(
-                        icon: Icons.people_outline_rounded,
-                        label: 'Noms des passagers'),
+                    _SectionTitle(
+                      key: _passengerSectionKey,
+                      icon: Icons.people_outline_rounded,
+                      label: 'Noms des passagers',
+                    ),
                     const SizedBox(height: 10),
                     ...List.generate(
                       _selectedSeats.length,
@@ -260,17 +299,49 @@ double _pricePerSeat() {
             ),
           ),
 
-          // ── Barre prix + paiement ──────────────────
+          // ── Barre prix + paiement / demande ──────────────
           _PriceBar(
             selectedCount: _selectedSeats.length,
             pricePerSeat: _pricePerSeat(),
             luggageFee: _luggageFee(),
             total: _totalPrice(),
-            isLoading: bookingState.isLoading,
+            isLoading: widget.trip.isCovoiturage
+                ? covoiturageRequestState.isLoading
+                : bookingState.isLoading,
             isValid: _isValid,
-           onPay: () async {
+            isCovoiturage: widget.trip.isCovoiturage,
+            onPay: () async {
               final profile = ref.read(authProvider).valueOrNull?.profile;
               if (profile == null) return;
+
+              final request = CreateBookingRequest(
+                tripId: widget.trip.id,
+                userId: profile.id,
+                numberOfSeats: _selectedSeats.length,
+                selections: _selectedSeats
+                    .asMap()
+                    .entries
+                    .map(
+                      (e) => SeatSelection(
+                        seatNumber: e.value,
+                        passengerName: _passengerCtrls[e.key].text.trim(),
+                      ),
+                    )
+                    .toList(),
+                boardingStopIndex: _boardingIndex,
+                alightingStopIndex: _alightingIndex,
+                extraHoldBags: _extraBags,
+              );
+
+              // ── Covoiturage : demande au chauffeur, pas de paiement immédiat ──
+              if (widget.trip.isCovoiturage) {
+                await ref
+                    .read(covoiturageRequestNotifierProvider.notifier)
+                    .sendRequest(request);
+                return;
+              }
+
+              // ── Trajet public : flux inchangé ──
               AnalyticsService.logBeginBooking(
                 tripId: widget.trip.id,
                 route:
@@ -279,26 +350,9 @@ double _pricePerSeat() {
                 price: _totalPrice(),
               );
 
-              await ref.read(bookingNotifierProvider.notifier).createAndPay(
-                    CreateBookingRequest(
-                      tripId: widget.trip.id,
-                      userId: profile.id,
-                      numberOfSeats: _selectedSeats.length,
-                      selections: _selectedSeats
-                          .asMap()
-                          .entries
-                          .map(
-                            (e) => SeatSelection(
-                              seatNumber: e.value,
-                              passengerName: _passengerCtrls[e.key].text.trim(),
-                            ),
-                          )
-                          .toList(),
-                      boardingStopIndex: _boardingIndex,
-                      alightingStopIndex: _alightingIndex,
-                      extraHoldBags: _extraBags,
-                    ),
-                  );
+              await ref
+                  .read(bookingNotifierProvider.notifier)
+                  .createAndPay(request);
               final state = ref.read(bookingNotifierProvider);
               if (state.paymentUrl != null && mounted) {
                 await Navigator.push(
@@ -348,8 +402,7 @@ double _pricePerSeat() {
             ),
           ],
         ),
-        content:
-            const Text('Votre réservation est validée. Bon voyage !'),
+        content: const Text('Votre réservation est validée. Bon voyage !'),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -364,6 +417,47 @@ double _pricePerSeat() {
                   borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Voir mes billets',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRequestSent() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.hourglass_top_rounded,
+                color: AppColors.warning, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text('Demande envoyée !', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Votre demande a été transmise au conducteur. '
+          'Vous recevrez une notification dès qu\'il aura répondu '
+          '(sous 24h maximum). S\'il accepte, vous aurez 30 minutes '
+          'pour finaliser le paiement.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.go('/my-bookings');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.mobiliBlue,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Voir mes réservations',
                 style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -793,7 +887,7 @@ class _CountBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Barre prix + bouton paiement
+// Barre prix + bouton paiement / demande
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PriceBar extends StatelessWidget {
@@ -805,6 +899,7 @@ class _PriceBar extends StatelessWidget {
     required this.isLoading,
     required this.isValid,
     required this.onPay,
+    this.isCovoiturage = false,
   });
 
   final int selectedCount;
@@ -814,6 +909,7 @@ class _PriceBar extends StatelessWidget {
   final bool isLoading;
   final bool isValid;
   final VoidCallback onPay;
+  final bool isCovoiturage;
 
   @override
   Widget build(BuildContext context) {
@@ -886,7 +982,9 @@ class _PriceBar extends StatelessWidget {
           ],
           MobiliButton(
             label: isValid
-                ? 'Payer ${total.toStringAsFixed(0)} FCFA via FedaPay'
+                ? (isCovoiturage
+                    ? 'Envoyer la demande au conducteur'
+                    : 'Payer ${total.toStringAsFixed(0)} FCFA via FedaPay')
                 : selectedCount == 0
                     ? 'Sélectionnez un siège'
                     : 'Renseignez les noms des passagers',
@@ -906,7 +1004,7 @@ class _PriceBar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.label});
+  const _SectionTitle({super.key, required this.icon, required this.label});
   final IconData icon;
   final String label;
 
