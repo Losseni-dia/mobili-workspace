@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Configuration globale Mobili
+# Configuration globale Mobili — commune à tous les profils
 # ---------------------------------------------------------------------------
 server:
   port: 8080
@@ -13,40 +13,31 @@ spring:
     multipart:
       max-file-size: 15MB
       max-request-size: 70MB
-  
-  # Configuration Datasource (Les identifiants sont injectés via docker.env)
   datasource:
     driver-class-name: org.postgresql.Driver
-    # Note : Spring injecte automatiquement SPRING_DATASOURCE_URL/USERNAME/PASSWORD
-  
   flyway:
     baseline-on-migrate: true
     baseline-version: 0
-    
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate # Sécurité en prod : ne modifie pas le schéma
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
-        
-
   data:
     redis:
-      # Injecté via SPRING_DATA_REDIS_HOST dans docker.env
       repositories:
         enabled: false
-  
   jackson:
     time-zone: UTC
+
 # ---------------------------------------------------------------------------
 # Configuration spécifique Mobili
 # ---------------------------------------------------------------------------
 mobili:
-  # Ajout des ports pour le Frontend User (4200/80) et Business (4201/81)
   cors:
     allowed-origins:
       - http://localhost:4200
@@ -59,7 +50,6 @@ mobili:
       - http://127.0.0.1:81
 
   ui:
-    # Désactivation des messages de succès (ex: "connexion réussie")
     show-success-messages: ${APP_SHOW_SUCCESS_MESSAGES:false}
 
   security:
@@ -69,25 +59,21 @@ mobili:
       register-mutations-per-minute: 10
       gare-preview-per-minute: 60
       payment-webhook-per-minute: 120
-      # Toggle Redis pour le Rate Limit si le profil redis-rate-limit est actif
       redis:
         enabled: ${REDIS_RATE_LIMIT_ENABLED:false}
         key-prefix: mobili:rl
         allow-on-redis-failure: true
-
     jwt:
       secret-key: ${JWT_SECRET}
-      
     refresh:
       cookie-name: MOBILI_REFRESH
       max-age-seconds: 604800
       path: /v1
-      secure: ${JWT_COOKIE_SECURE:false} # true en prod via docker.env
+      secure: ${JWT_COOKIE_SECURE:false}
       same-site: Lax
 
   backend:
     upload:
-      # Dossier racine (mappé en /app/uploads dans Docker)
       root-directory: ${BACKEND_UPLOAD_DIR:uploads}
       users: users
       partners: partners
@@ -104,6 +90,18 @@ fedapay:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:
     secret: ${FEDAPAY_WEBHOOK_SECRET}
+
+# ---------------------------------------------------------------------------
+# Actuator
+# ---------------------------------------------------------------------------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 logging:
   level:

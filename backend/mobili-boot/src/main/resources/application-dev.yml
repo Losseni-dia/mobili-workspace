@@ -1,24 +1,32 @@
+# ---------------------------------------------------------------------------
+# Profil DEV — développement local
+# ---------------------------------------------------------------------------
 spring:
-  # --- 1. CONNEXION À LA BASE (INTERNE DOCKER) ---
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/mobili_db}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:root}
-    driver-class-name: org.postgresql.Driver
-
-  # --- 2. GESTION DES TABLES ET DU SQL ---
   jpa:
     hibernate:
-      ddl-auto: update # Crée/Met à jour les tables sans supprimer les données
-    show-sql: true     # Affiche les requêtes dans la console pour débugger
+      ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-# --- 3. SURVEILLANCE (ACTUATOR) ---
 management:
   endpoints:
     web:
       exposure:
-        include: health # Docker l'utilise pour savoir si le Java a bien démarré
+        include: health,info,metrics
+
+logging:
+  level:
+    root: INFO
+    com.mobili.backend: DEBUG
+    org.hibernate.SQL: DEBUG
+
+mobili:
+  security:
+    refresh:
+      secure: false

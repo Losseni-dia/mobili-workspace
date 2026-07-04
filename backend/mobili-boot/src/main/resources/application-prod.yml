@@ -1,4 +1,6 @@
-# Production : pas de fuite SQL dans les logs, schéma contrôlé par Flyway uniquement.
+# ---------------------------------------------------------------------------
+# Profil PROD — production
+# ---------------------------------------------------------------------------
 spring:
   jpa:
     show-sql: false
@@ -22,17 +24,21 @@ management:
         include: health
   endpoint:
     health:
-      show-details: never # Sécurité : ne pas exposer les détails de la DB en public
+      show-details: never
 
 mobili:
-  security:
-    refresh:
-      secure: ${JWT_COOKIE_SECURE:true} # true en prod HTTPS, false en local HTTP
   cors:
     allowed-origins:
+      - https://my-mobili.com
+      - https://www.my-mobili.com
+      - capacitor://localhost
       - http://localhost
-      - http://localhost:81
-      - http://127.0.0.1
-      - http://127.0.0.1:81
-      - https://mobili.ci
-      - https://www.mobili.ci
+  security:
+    refresh:
+      secure: true
+
+fedapay:
+  secret:
+    key: ${FEDAPAY_SECRET_KEY}
+  webhook:
+    secret: ${FEDAPAY_WEBHOOK_SECRET}
