@@ -21,6 +21,10 @@ class Trip {
     this.maxExtraHoldBagsPerPassenger = 1,
     this.status,
     this.nextStopCity,
+    this.covoiturageOrganizerId,
+    this.covoiturageOrganizerFirstname,
+    this.covoiturageOrganizerLastname,
+    this.covoiturageOrganizerDriverPhotoUrl,
   });
 
   final int id;
@@ -42,6 +46,15 @@ class Trip {
   final int maxExtraHoldBagsPerPassenger;
   final String? status;
   final String? nextStopCity;
+  final int? covoiturageOrganizerId;
+  final String? covoiturageOrganizerFirstname;
+  final String? covoiturageOrganizerLastname;
+
+  /// Photo KYC du conducteur (dossier privé) — nécessite PrivateNetworkImage,
+  /// pas Image.network. Non-null uniquement si transportType == 'COVOITURAGE'.
+  final String? covoiturageOrganizerDriverPhotoUrl;
+
+  bool get isCovoiturage => transportType == 'COVOITURAGE';
 
   bool get isInProgress => status == 'EN_COURS';
   bool get isUpcoming => status == null || status == 'PROGRAMMÉ';
@@ -145,8 +158,15 @@ class Trip {
         extraHoldBagPrice: (json['extraHoldBagPrice'] as num?)?.toDouble(),
         maxExtraHoldBagsPerPassenger:
             json['maxExtraHoldBagsPerPassenger'] as int? ?? 1,
-        status: json['status'] as String?,
+       status: json['status'] as String?,
         nextStopCity: json['nextStopCity'] as String?,
+        covoiturageOrganizerId: json['covoiturageOrganizerId'] as int?,
+        covoiturageOrganizerFirstname:
+            json['covoiturageOrganizerFirstname'] as String?,
+        covoiturageOrganizerLastname:
+            json['covoiturageOrganizerLastname'] as String?,
+        covoiturageOrganizerDriverPhotoUrl:
+            json['covoiturageOrganizerDriverPhotoUrl'] as String?,
       );
 
   static DateTime? _parseDate(dynamic value) {

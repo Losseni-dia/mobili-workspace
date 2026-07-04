@@ -25,8 +25,8 @@ import com.mobili.backend.module.trip.entity.TripStopEvent;
 import com.mobili.backend.module.trip.entity.TripStopEventType;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.repository.TripStopEventRepository;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -293,12 +293,9 @@ public class TripRunService {
             }
             if (b.getStatus() != BookingStatus.PENDING
                     && b.getStatus() != BookingStatus.CONFIRMED
-                    && b.getStatus() != BookingStatus.OFFLINE_SALE) {
-                continue;
-            }
-            int from = Optional.ofNullable(b.getBoardingStopIndex()).orElse(0);
-            int to = Optional.ofNullable(b.getAlightingStopIndex()).orElse(defaultAlightingStopIndex);
-            if (!(from <= legIndex && legIndex < to)) {
+                    && b.getStatus() != BookingStatus.OFFLINE_SALE
+                    && b.getStatus() != BookingStatus.PENDING_DRIVER_APPROVAL
+                    && b.getStatus() != BookingStatus.AWAITING_PAYMENT) {
                 continue;
             }
             seats.addAll(b.getSeatNumbers());
