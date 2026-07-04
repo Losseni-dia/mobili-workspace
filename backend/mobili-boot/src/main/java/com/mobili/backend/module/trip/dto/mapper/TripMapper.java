@@ -22,10 +22,14 @@ public interface TripMapper {
     Trip toEntity(TripRequestDTO dto);
 
     // --- LECTURE (Entity -> ResponseDTO) ---
+    // --- LECTURE (Entity -> ResponseDTO) ---
     @Mapping(source = "partner.name", target = "partnerName")
     @Mapping(source = "station.id", target = "stationId")
     @Mapping(source = "station.name", target = "stationName")
     @Mapping(source = "covoiturageOrganizer.id", target = "covoiturageOrganizerId")
+    @Mapping(source = "covoiturageOrganizer.firstname", target = "covoiturageOrganizerFirstname")
+    @Mapping(source = "covoiturageOrganizer.lastname", target = "covoiturageOrganizerLastname")
+    @Mapping(source = "covoiturageOrganizer.covoiturageDriverPhotoUrl", target = "covoiturageOrganizerDriverPhotoUrl")
     @Mapping(source = "assignedChauffeur.id", target = "assignedChauffeurId")
     @Mapping(source = "assignedChauffeur.firstname", target = "assignedChauffeurFirstname")
     @Mapping(source = "assignedChauffeur.lastname", target = "assignedChauffeurLastname")

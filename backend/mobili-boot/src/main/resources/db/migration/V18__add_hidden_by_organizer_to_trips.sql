@@ -1,0 +1,2 @@
+ALTER TABLE trips
+ADD COLUMN hidden_by_organizer BOOLEAN NOT NULL DEFAULT FALSE;

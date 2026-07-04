@@ -133,6 +133,14 @@ public class Trip extends AbstractEntity {
     @OrderBy("stopIndex ASC")
     private List<TripStop> stops = new ArrayList<>();
 
+    /**
+     * Suppression logique côté conducteur covoiturage : le trajet reste en base
+     * (historique, réservations, statistiques intacts) mais devient invisible
+     * pour l'organisateur. Ne concerne que les trajets covoiturage solo.
+     */
+    @Column(name = "hidden_by_organizer", nullable = false)
+    private Boolean hiddenByOrganizer = false;
+
     /** Lignes migrées sans colonne : défaut côté lecture. */
     @PostLoad
     void defaultTransportTypeIfNull() {
