@@ -67,6 +67,15 @@ class TripSearchParams {
   int get hashCode => Object.hash(departure, arrival, date, transportType);
 }
 
+// Provider autocomplétion villes
+// Autocomplétion villes
+final citySearchProvider =
+    FutureProvider.family<List<String>, String>((ref, query) async {
+  if (query.trim().isEmpty) return [];
+  return ref.read(tripServiceProvider).fetchCities(query);
+});
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Trips list provider
 // ─────────────────────────────────────────────────────────────────────────────
@@ -255,4 +264,143 @@ Future<void> verifyAfterReturn() async {
 final bookingNotifierProvider =
     StateNotifierProvider.autoDispose<BookingNotifier, BookingState>((ref) {
   return BookingNotifier(ref.read(bookingServiceProvider));
+});
+
+
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// Covoiturage : demande de réservation (passager)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum CovoiturageRequestStep { idle, sending, sent, error }
+
+class CovoiturageRequestState {
+  const CovoiturageRequestState({
+    this.step = CovoiturageRequestStep.idle,
+    this.booking,
+    this.errorMessage,
+  });
+
+  final CovoiturageRequestStep step;
+  final Booking? booking;
+  final String? errorMessage;
+
+  bool get isLoading => step == CovoiturageRequestStep.sending;
+
+  CovoiturageRequestState copyWith({
+    CovoiturageRequestStep? step,
+    Booking? booking,
+    String? errorMessage,
+  }) =>
+      CovoiturageRequestState(
+        step: step ?? this.step,
+        booking: booking ?? this.booking,
+        errorMessage: errorMessage,
+      );
+}
+
+class CovoiturageRequestNotifier
+    extends StateNotifier<CovoiturageRequestState> {
+  CovoiturageRequestNotifier(this._service)
+      : super(const CovoiturageRequestState());
+
+  final BookingService _service;
+
+  Future<void> sendRequest(CreateBookingRequest request) async {
+    state = state.copyWith(step: CovoiturageRequestStep.sending);
+    try {
+      final booking = await _service.createCovoiturageRequest(request);
+      state = state.copyWith(
+        step: CovoiturageRequestStep.sent,
+        booking: booking,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        step: CovoiturageRequestStep.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  void reset() => state = const CovoiturageRequestState();
+}
+
+final covoiturageRequestNotifierProvider = StateNotifierProvider.autoDispose<
+    CovoiturageRequestNotifier, CovoiturageRequestState>((ref) {
+  return CovoiturageRequestNotifier(ref.read(bookingServiceProvider));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Covoiturage : demandes en attente pour un trajet (chauffeur)
+// ─────────────────────────────────────────────────────────────────────────────
+
+final pendingCovoiturageRequestsProvider =
+    FutureProvider.autoDispose.family<List<Booking>, int>((ref, tripId) async {
+  return ref.read(bookingServiceProvider).getPendingCovoiturageRequests(tripId);
+});
+
+enum CovoiturageDecisionStep { idle, submitting, done, error }
+
+class CovoiturageDecisionState {
+  const CovoiturageDecisionState({
+    this.step = CovoiturageDecisionStep.idle,
+    this.errorMessage,
+  });
+
+  final CovoiturageDecisionStep step;
+  final String? errorMessage;
+
+  bool get isLoading => step == CovoiturageDecisionStep.submitting;
+
+  CovoiturageDecisionState copyWith({
+    CovoiturageDecisionStep? step,
+    String? errorMessage,
+  }) =>
+      CovoiturageDecisionState(
+        step: step ?? this.step,
+        errorMessage: errorMessage,
+      );
+}
+
+class CovoiturageDecisionNotifier
+    extends StateNotifier<CovoiturageDecisionState> {
+  CovoiturageDecisionNotifier(this._service)
+      : super(const CovoiturageDecisionState());
+
+  final BookingService _service;
+
+  Future<bool> accept(int tripId, int bookingId) async {
+    state = state.copyWith(step: CovoiturageDecisionStep.submitting);
+    try {
+      await _service.acceptCovoiturageRequest(tripId, bookingId);
+      state = state.copyWith(step: CovoiturageDecisionStep.done);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        step: CovoiturageDecisionStep.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> reject(int tripId, int bookingId) async {
+    state = state.copyWith(step: CovoiturageDecisionStep.submitting);
+    try {
+      await _service.rejectCovoiturageRequest(tripId, bookingId);
+      state = state.copyWith(step: CovoiturageDecisionStep.done);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        step: CovoiturageDecisionStep.error,
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+}
+
+final covoiturageDecisionNotifierProvider = StateNotifierProvider
+    <CovoiturageDecisionNotifier, CovoiturageDecisionState>((ref) {
+  return CovoiturageDecisionNotifier(ref.read(bookingServiceProvider));
 });

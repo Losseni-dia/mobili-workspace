@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -26,17 +27,47 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final Set<int> _ratedTripIds = {};
+  int? _highlightedBookingId;
+  final Map<int, GlobalKey> _cardKeys = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    final uri = GoRouterState.of(context).uri;
+    final bookingIdParam = uri.queryParameters['bookingId'];
+    if (bookingIdParam != null) {
+      _highlightedBookingId = int.tryParse(bookingIdParam);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  GlobalKey _keyFor(int bookingId) =>
+      _cardKeys.putIfAbsent(bookingId, () => GlobalKey());
+
+  void _scrollToHighlighted() {
+    final id = _highlightedBookingId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        );
+      }
+      // On efface le surlignage après quelques secondes.
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _highlightedBookingId = null);
+      });
+    });
   }
 
   @override
@@ -109,6 +140,18 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
             ..sort(
                 (a, b) => b.departureDateTime.compareTo(a.departureDateTime));
 
+       // Si la réservation surlignée est dans "Passées", on bascule
+          // automatiquement sur cet onglet pour qu'elle soit visible.
+          if (_highlightedBookingId != null) {
+            final isPast = past.any((b) => b.id == _highlightedBookingId);
+            if (isPast && _tabController.index != 1) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _tabController.animateTo(1);
+              });
+            }
+          }
+          _scrollToHighlighted();
+
           return TabBarView(
             controller: _tabController,
             children: [
@@ -118,6 +161,8 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
                 emptyIcon: Icons.flight_takeoff_rounded,
                 ratedTripIds: _ratedTripIds,
                 onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
+                highlightedBookingId: _highlightedBookingId,
+                keyFor: _keyFor,
               ),
               _BookingList(
                 bookings: past,
@@ -125,6 +170,8 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
                 emptyIcon: Icons.history_rounded,
                 ratedTripIds: _ratedTripIds,
                 onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
+                highlightedBookingId: _highlightedBookingId,
+                keyFor: _keyFor,
               ),
             ],
           );
@@ -141,6 +188,8 @@ class _BookingList extends StatelessWidget {
     required this.emptyIcon,
     required this.ratedTripIds,
     required this.onRated,
+    this.highlightedBookingId,
+    required this.keyFor,
   });
 
   final List<BookingDetail> bookings;
@@ -148,7 +197,9 @@ class _BookingList extends StatelessWidget {
   final IconData emptyIcon;
   final Set<int> ratedTripIds;
   final ValueChanged<int> onRated;
-
+  final int? highlightedBookingId;
+  final GlobalKey Function(int bookingId) keyFor;
+  
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
@@ -174,17 +225,22 @@ class _BookingList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: bookings.length,
-      itemBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: _BookingCard(
-          booking: bookings[index],
-          ratedTripIds: ratedTripIds,
-          onRated: onRated,
-        ),
-      ),
+      itemBuilder: (context, index) {
+        final b = bookings[index];
+        return Padding(
+          key: keyFor(b.id),
+          padding: const EdgeInsets.only(bottom: 14),
+          child: _BookingCard(
+            booking: b,
+            ratedTripIds: ratedTripIds,
+            onRated: onRated,
+            isHighlighted: b.id == highlightedBookingId,
+          ),
+        );
+      },
     );
   }
 }
@@ -194,11 +250,14 @@ class _BookingCard extends StatelessWidget {
     required this.booking,
     required this.ratedTripIds,
     required this.onRated,
+    this.isHighlighted = false,
   });
 
   final BookingDetail booking;
   final Set<int> ratedTripIds;
   final ValueChanged<int> onRated;
+  final bool isHighlighted;
+
 
   @override
   Widget build(BuildContext context) {
@@ -209,16 +268,27 @@ class _BookingCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        decoration: BoxDecoration(
+       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.gray200),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
+          border: Border.all(
+            color: isHighlighted ? AppColors.mobiliBlue : AppColors.gray200,
+            width: isHighlighted ? 2 : 1,
+          ),
+          boxShadow: isHighlighted
+              ? [
+                  BoxShadow(
+                    color: AppColors.mobiliBlue.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           children: [
@@ -308,7 +378,7 @@ class _BookingCard extends StatelessWidget {
                             color: statusConfig.$1,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(booking.status,
+                          child: Text(_statusLabel(booking.status),
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: statusConfig.$2,
                                 fontSize: 10,
@@ -470,6 +540,59 @@ class _BookingCard extends StatelessWidget {
                             .toList(),
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+            // ── Covoiturage : en attente du conducteur ────
+            if (booking.isPendingDriverApproval)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningSoft,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.hourglass_top_rounded,
+                          size: 16, color: AppColors.warning),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'En attente de la réponse du conducteur (24h max).',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // ── Covoiturage : à payer sous 30 min ─────────
+            if (booking.isAwaitingPayment)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _payNow(context),
+                    icon: const Icon(Icons.payment_rounded, size: 16),
+                    label: const Text('Payer maintenant'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mobiliYellow,
+                      foregroundColor: AppColors.mobiliBlueDeep,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
               ),
@@ -825,13 +948,81 @@ class _BookingCard extends StatelessWidget {
     );
   }
 
+  Future<void> _payNow(BuildContext context) async {
+    try {
+      final url = await BookingService().checkout(booking.id);
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentWebViewPage(
+              paymentUrl: url,
+              onSuccess: () {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Paiement en cours de confirmation…'),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              onCancel: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du paiement : $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING_DRIVER_APPROVAL':
+        return 'En attente du conducteur';
+      case 'AWAITING_PAYMENT':
+        return 'À payer';
+      case 'REJECTED_BY_DRIVER':
+        return 'Refusée';
+      case 'EXPIRED':
+        return 'Expirée';
+      case 'PENDING':
+        return 'En attente';
+      case 'CONFIRMED':
+        return 'Confirmée';
+      case 'CANCELLED':
+        return 'Annulée';
+      case 'COMPLETED':
+        return 'Terminée';
+      default:
+        return status;
+    }
+  }
+
   (Color, Color) _statusConfig(String status) {
     switch (status.toUpperCase()) {
       case 'CONFIRMED':
         return (const Color(0xFFD1FAE5), AppColors.stationGreen);
       case 'PENDING':
+      case 'PENDING_DRIVER_APPROVAL':
         return (AppColors.warningSoft, AppColors.warning);
+      case 'AWAITING_PAYMENT':
+        return (
+          AppColors.mobiliYellow.withValues(alpha: 0.2),
+          AppColors.mobiliBlueDeep
+        );
       case 'CANCELLED':
+      case 'REJECTED_BY_DRIVER':
+      case 'EXPIRED':
         return (AppColors.dangerSoft, AppColors.danger);
       case 'COMPLETED':
         return (AppColors.mobiliBlueFog, AppColors.mobiliBlue);

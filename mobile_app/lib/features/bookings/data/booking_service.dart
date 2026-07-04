@@ -20,6 +20,35 @@ class BookingService {
     return Booking.fromJson(response.data!);
   }
 
+  /// Covoiturage : crée une demande de réservation SANS déclencher le
+  /// paiement — le chauffeur doit d'abord accepter (voir createBooking pour
+  /// les trajets publics, qui elle ne change pas).
+  Future<Booking> createCovoiturageRequest(CreateBookingRequest request) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/bookings',
+      data: request.toJson(),
+    );
+    return Booking.fromJson(response.data!);
+  }
+
+  /// Liste des demandes covoiturage en attente pour un trajet — utilisé
+  /// côté chauffeur (nom, prénom, photo du passager uniquement).
+  Future<List<Booking>> getPendingCovoiturageRequests(int tripId) async {
+    final response = await _dio
+        .get<List<dynamic>>('/covoiturage/trips/$tripId/pending-requests');
+    return _parseList(response.data);
+  }
+
+  Future<void> acceptCovoiturageRequest(int tripId, int bookingId) async {
+    await _dio
+        .post<void>('/covoiturage/trips/$tripId/bookings/$bookingId/accept');
+  }
+
+  Future<void> rejectCovoiturageRequest(int tripId, int bookingId) async {
+    await _dio
+        .post<void>('/covoiturage/trips/$tripId/bookings/$bookingId/reject');
+  }
+
   Future<List<Ticket>> getTicketsForUser(int userId) async {
     final response = await _dio.get<List<dynamic>>('/tickets/user/$userId');
     if (response.data == null) return [];

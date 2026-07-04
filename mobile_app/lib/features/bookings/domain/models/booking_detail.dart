@@ -18,6 +18,8 @@ class BookingDetail {
     this.moreInfo,
     this.boardingCity,
     this.alightingCity,
+    this.driverResponseDeadline,
+    this.paymentDeadline,
   });
 
   final int id;
@@ -39,10 +41,21 @@ class BookingDetail {
   final String? boardingCity;
   final String? alightingCity;
 
+  /// Covoiturage : délai de réponse du chauffeur (24h après la demande).
+  final DateTime? driverResponseDeadline;
+
+  /// Covoiturage : délai de paiement une fois le chauffeur ayant accepté.
+  final DateTime? paymentDeadline;
+
   bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
 
   bool get canCancel =>
       (status == 'PENDING' || status == 'CONFIRMED') && isUpcoming;
+
+  bool get isPendingDriverApproval => status == 'PENDING_DRIVER_APPROVAL';
+  bool get isAwaitingPayment => status == 'AWAITING_PAYMENT';
+  bool get isRejectedByDriver => status == 'REJECTED_BY_DRIVER';
+  bool get isCovoiturageExpired => status == 'EXPIRED';
 
   String get formattedPrice => '${totalPrice.toStringAsFixed(0)} FCFA';
 
@@ -95,6 +108,12 @@ class BookingDetail {
         tripRoute: json['tripRoute'] as String? ?? '',
         moreInfo: json['moreInfo'] as String?,
         boardingCity: json['boardingCity'] as String?,
-        alightingCity: json['alightingCity'] as String?, 
+        alightingCity: json['alightingCity'] as String?,
+        driverResponseDeadline: json['driverResponseDeadline'] != null
+            ? DateTime.tryParse(json['driverResponseDeadline'] as String)
+            : null,
+        paymentDeadline: json['paymentDeadline'] != null
+            ? DateTime.tryParse(json['paymentDeadline'] as String)
+            : null,
       );
 }
