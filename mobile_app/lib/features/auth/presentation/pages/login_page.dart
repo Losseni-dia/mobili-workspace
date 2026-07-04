@@ -42,10 +42,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(
+    final success = await ref.read(authProvider.notifier).login(
           login: _loginCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+    if (success && mounted) {
+      context.go('/');
+    }
   }
 
   @override
@@ -57,29 +60,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Fond bleu Mobili ──────────────────────────────
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0D2280),
-                  AppColors.mobiliBlueDeep,
-                ],
+                colors: [Color(0xFF0D2280), AppColors.mobiliBlueDeep],
               ),
             ),
           ),
-
-          // ── Pattern icônes transport ──────────────────────
           const _TransportPattern(),
-
-          // ── Overlay sombre pour lisibilité ────────────────
-          Container(
-            color: AppColors.mobiliBlueDeep.withValues(alpha: 0.45),
-          ),
-
-          // ── Contenu ───────────────────────────────────────
+          Container(color: AppColors.mobiliBlueDeep.withValues(alpha: 0.45)),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -88,7 +79,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo + titre
                     Column(
                       children: [
                         Container(
@@ -105,25 +95,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          'Mobili',
-                          style: AppTextStyles.displayMedium.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                        Text('Mobili',
+                            style: AppTextStyles.displayMedium.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w900,
+                            )),
                         const SizedBox(height: 6),
-                        Text(
-                          'Votre transport en Afrique',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
+                        Text('Votre transport en Afrique',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.75),
+                            )),
                       ],
                     ),
                     const SizedBox(height: 40),
-
-                    // Carte formulaire
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -142,15 +126,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
-                              'Connexion',
-                              style: AppTextStyles.headlineMedium.copyWith(
-                                color: AppColors.mobiliBlueDeep,
-                              ),
-                            ),
+                            Text('Connexion',
+                                style: AppTextStyles.headlineMedium.copyWith(
+                                  color: AppColors.mobiliBlueDeep,
+                                )),
                             const SizedBox(height: 20),
-
-                            // Erreur API
                             if (state?.hasError == true &&
                                 state?.errorMessage != null) ...[
                               MobiliErrorBanner(
@@ -161,8 +141,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                               const SizedBox(height: 16),
                             ],
-
-                            // Identifiant
                             _Field(
                               controller: _loginCtrl,
                               label: 'Identifiant',
@@ -173,8 +151,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               enabled: !isLoading,
                             ),
                             const SizedBox(height: 14),
-
-                            // Mot de passe
                             _Field(
                               controller: _passwordCtrl,
                               label: 'Mot de passe',
@@ -198,7 +174,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 24),
-
                             MobiliButton(
                               label: 'Se connecter',
                               onPressed: isLoading ? null : _submit,
@@ -210,26 +185,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    // Liens bas
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Pas encore de compte ? ',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
+                        Text('Pas encore de compte ? ',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.white.withValues(alpha: 0.8),
+                            )),
                         GestureDetector(
                           onTap: () => context.push('/register'),
-                          child: Text(
-                            "S'inscrire",
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.mobiliYellow,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          child: Text("S'inscrire",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.mobiliYellow,
+                                fontWeight: FontWeight.w700,
+                              )),
                         ),
                       ],
                     ),
@@ -243,10 +212,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Pattern icônes transport en filigrane (style WhatsApp)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _TransportPattern extends StatelessWidget {
   const _TransportPattern();
@@ -266,12 +231,10 @@ class _TransportPattern extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final items = <Widget>[];
-
     const cols = 5;
     const rows = 12;
     final cellW = size.width / cols;
     final cellH = size.height / rows;
-
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
         final icon = _icons[(r * cols + c) % _icons.length];
@@ -279,22 +242,14 @@ class _TransportPattern extends StatelessWidget {
         items.add(Positioned(
           left: c * cellW + offset - cellW * 0.1,
           top: r * cellH,
-          child: Icon(
-            icon,
-            size: 28,
-            color: AppColors.white.withValues(alpha: 0.08),
-          ),
+          child: Icon(icon,
+              size: 28, color: AppColors.white.withValues(alpha: 0.08)),
         ));
       }
     }
-
     return Stack(children: items);
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Champ de formulaire
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _Field extends StatelessWidget {
   const _Field({
@@ -326,14 +281,12 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.gray600,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-        ),
+        Text(label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.gray600,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            )),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -342,14 +295,12 @@ class _Field extends StatelessWidget {
           textInputAction: textInputAction,
           onFieldSubmitted: onFieldSubmitted,
           enabled: enabled,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.mobiliBlueDeep,
-          ),
+          style: AppTextStyles.bodyMedium
+              .copyWith(color: AppColors.mobiliBlueDeep),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.gray300,
-            ),
+            hintStyle:
+                AppTextStyles.bodyMedium.copyWith(color: AppColors.gray300),
             prefixIcon: Icon(icon, size: 20, color: AppColors.gray400),
             suffixIcon: suffixIcon,
             filled: true,

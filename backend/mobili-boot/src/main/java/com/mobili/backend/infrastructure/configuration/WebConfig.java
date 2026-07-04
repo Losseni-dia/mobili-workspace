@@ -22,12 +22,21 @@ public class WebConfig implements WebMvcConfigurer {
             location = location + "/";
         }
 
-        /* Avatars, logos, photos trajets — pas les dossiers sensibles (KYC sous sensitive/, anciens covoiturage-*). */
+        /*
+         * Avatars, logos, photos trajets, photos conducteur/véhicule covoiturage — pas
+         * les
+         * dossiers sensibles (KYC sous sensitive/, covoiturage-ids = pièces
+         * d'identité).
+         */
         registry.addResourceHandler("/uploads/users/**").addResourceLocations(location + "users/").setCachePeriod(0);
         registry.addResourceHandler("/uploads/partners/**").addResourceLocations(location + "partners/")
                 .setCachePeriod(0);
         registry.addResourceHandler("/uploads/vehicles/**").addResourceLocations(location + "vehicles/")
                 .setCachePeriod(0);
         registry.addResourceHandler("/uploads/logos/**").addResourceLocations(location + "logos/").setCachePeriod(0);
+        registry.addResourceHandler("/uploads/covoiturage-drivers/**")
+                .addResourceLocations(location + "covoiturage-drivers/").setCachePeriod(0);
+        registry.addResourceHandler("/uploads/covoiturage-vehicles/**")
+                .addResourceLocations(location + "covoiturage-vehicles/").setCachePeriod(0);
     }
 }

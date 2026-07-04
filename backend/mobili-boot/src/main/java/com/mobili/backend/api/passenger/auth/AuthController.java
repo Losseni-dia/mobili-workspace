@@ -31,8 +31,8 @@ import com.mobili.backend.module.user.dto.mapper.UserMapper;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import io.jsonwebtoken.JwtException;
 

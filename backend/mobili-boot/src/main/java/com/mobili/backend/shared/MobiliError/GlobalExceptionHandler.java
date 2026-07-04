@@ -1,4 +1,4 @@
-package com.mobili.backend.shared.MobiliError;
+package com.mobili.backend.shared.mobiliError;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -11,9 +11,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
-import com.mobili.backend.shared.MobiliError.exception.ErrorDetails;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.ErrorDetails;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
     // 1. GESTION DES ERREURS PERSONNALISÉES
     @ExceptionHandler(MobiliException.class)
     public ResponseEntity<ErrorDetails> handleMobiliException(MobiliException ex, WebRequest request) {
-        return buildResponse(ex.getErrorCode(), ex.getMessage(), request);
+        return buildResponse(ex.getErrorCode(), ex.getMessage(), request, ex.getFieldErrors());
     }
 
     // 2. GESTION DES DOUBLONS / CONTRAINTES SQL
@@ -104,14 +104,20 @@ public class GlobalExceptionHandler {
         return buildResponse(MobiliErrorCode.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
     }
 
-    // Méthode utilitaire privée utilisant le Record ErrorDetails
+ // Méthode utilitaire privée utilisant le Record ErrorDetails
     private ResponseEntity<ErrorDetails> buildResponse(MobiliErrorCode code, String message, WebRequest request) {
+        return buildResponse(code, message, request, null);
+    }
+
+    private ResponseEntity<ErrorDetails> buildResponse(MobiliErrorCode code, String message, WebRequest request,
+            Map<String, String> errors) {
         ErrorDetails details = new ErrorDetails(
                 LocalDateTime.now(),
                 code.getStatus().value(),
                 code.getCode(),
                 message,
-                request.getDescription(false).replace("uri=", ""));
+                request.getDescription(false).replace("uri=", ""),
+                errors);
         return new ResponseEntity<>(details, code.getStatus());
     }
 }

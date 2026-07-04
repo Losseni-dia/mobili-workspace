@@ -52,14 +52,14 @@ class FirebaseService {
     );
     await _localNotifications.initialize(initSettings);
 
-    final token = await _messaging.getToken();
+  final token = await _messaging.getToken();
     if (token != null) {
-      await _storage.write(key: 'fcm_token', value: token);
+      await _safeWrite('fcm_token', token);
       debugPrint('[FCM] Token stocké: ${token.substring(0, 20)}...');
     }
 
     _messaging.onTokenRefresh.listen((newToken) async {
-      await _storage.write(key: 'fcm_token', value: newToken);
+      await _safeWrite('fcm_token', newToken);
       debugPrint('[FCM] Token rafraîchi et stocké');
     });
 
@@ -91,7 +91,7 @@ class FirebaseService {
   /// Envoie le token FCM stocké au backend — à appeler après login
   static Future<void> sendTokenToBackend(Dio dio) async {
     try {
-      final token = await _storage.read(key: 'fcm_token');
+      final token = await _safeRead('fcm_token');
       if (token != null) {
         await dio.patch('/auth/me/fcm-token', data: {'fcmToken': token});
         debugPrint('[FCM] Token envoyé au backend');
@@ -100,4 +100,38 @@ class FirebaseService {
       debugPrint('[FCM] Erreur envoi token backend: $e');
     }
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Stockage sécurisé résilient — même logique que ApiClient.
+  // Sur certains appareils Android, l'Android Keystore peut invalider sa
+  // clé de chiffrement (AEADBadTagException) ; on efface le stockage
+  // corrompu au lieu de laisser l'exception remonter et bloquer FCM.
+  // ─────────────────────────────────────────────────────────────
+
+  static Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _storage.write(key: key, value: value);
+    } catch (_) {
+      try {
+        await _storage.deleteAll();
+        await _storage.write(key: key, value: value);
+      } catch (_) {
+        // Rien de plus à faire ici.
+      }
+    }
+  }
+
+  static Future<String?> _safeRead(String key) async {
+    try {
+      return await _storage.read(key: key);
+    } catch (_) {
+      try {
+        await _storage.deleteAll();
+      } catch (_) {
+        // Rien de plus à faire ici.
+      }
+      return null;
+    }
+  }
+
 }

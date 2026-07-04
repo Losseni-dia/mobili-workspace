@@ -94,7 +94,7 @@ class MobiliException implements Exception {
   // ---------------------------------------------------------------------------
 
   factory MobiliException.fromMobiliError(MobiliError err) {
-    // Validation errors carry a map, not a single message
+    // Validation errors (MOB-003) carry a map, not a single message
     if (err.errorCode == 'MOB-003' && err.errors != null) {
       final summary = err.errors!.entries
           .map((e) => '${e.key}: ${e.value}')
@@ -103,6 +103,20 @@ class MobiliException implements Exception {
         status: err.status,
         errorCode: err.errorCode,
         message: _localizeCode(err.errorCode, summary),
+        validationErrors: err.errors,
+        path: err.path,
+      );
+    }
+
+    // Doublon (MOB-004) avec un champ précis identifié côté backend
+    // (ex: email/login déjà utilisé) → on garde le message exact du serveur
+    // au lieu du message générique, et on peuple validationErrors pour que
+    // l'UI affiche l'erreur sous le bon champ plutôt que dans un banner.
+    if (err.errorCode == 'MOB-004' && err.errors != null) {
+      return MobiliException(
+        status: err.status,
+        errorCode: err.errorCode,
+        message: err.message ?? _localizeCode(err.errorCode, err.message),
         validationErrors: err.errors,
         path: err.path,
       );

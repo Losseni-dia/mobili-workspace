@@ -3,6 +3,7 @@ package com.mobili.backend.module.user.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,8 +30,8 @@ import com.mobili.backend.module.user.role.CovoiturageKycStatus;
 import com.mobili.backend.module.user.role.Role;
 import com.mobili.backend.module.user.role.RoleRepository;
 import com.mobili.backend.module.user.role.UserRole;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 import com.mobili.backend.shared.sharedService.UploadService;
 
 import jakarta.transaction.Transactional;
@@ -78,7 +79,6 @@ public class UserService {
         userRepository.save(user);
     }
 
-    
     @Transactional
     public void updateCovoiturageKycStatus(Long id, String status) {
         User user = findById(id);
@@ -130,11 +130,21 @@ public class UserService {
     @Transactional
     public User registerUser(User user, MultipartFile avatarFile) {
         // Vérification des doublons
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
+        String normalizedEmail = (user.getEmail() != null && !user.getEmail().trim().isEmpty())
+                ? user.getEmail().trim().toLowerCase()
+                : null;
+        user.setEmail(normalizedEmail);
+
+        String normalizedLogin = user.getLogin() != null ? user.getLogin().trim().toLowerCase() : null;
+        user.setLogin(normalizedLogin);
+
+        if (normalizedEmail != null && userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.",
+                    Map.of("email", "Cet email est déjà utilisé."));
         }
-        if (userRepository.existsByLogin(user.getLogin())) {
-            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé.");
+        if (normalizedLogin != null && userRepository.existsByLoginIgnoreCase(normalizedLogin)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé.",
+                    Map.of("login", "Ce login est déjà utilisé."));
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -153,12 +163,14 @@ public class UserService {
     }
 
     /**
-     * Inscription publique dirigeant : compte utilisateur + fiche société en attente validation admin
+     * Inscription publique dirigeant : compte utilisateur + fiche société en
+     * attente validation admin
      * (même règle que création compagnie depuis un compte déjà connecté).
      */
     @Transactional
-    public User registerCompanyPublic(RegisterCompanyPublicDTO dto, org.springframework.web.multipart.MultipartFile logo) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
+    public User registerCompanyPublic(RegisterCompanyPublicDTO dto,
+            org.springframework.web.multipart.MultipartFile logo) {
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email dirigeant est déjà utilisé.");
         }
         if (userRepository.existsByLogin(dto.getLogin())) {
@@ -186,11 +198,13 @@ public class UserService {
         partnerService.createPartnerForOwner(user, pr, logo);
 
         return userRepository.findByIdWithEverything(user.getId())
-                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Utilisateur introuvable après inscription."));
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                        "Utilisateur introuvable après inscription."));
     }
 
     /**
-     * Inscription **chauffeur covoiturage** : rôles USER + CHAUFFEUR, pièce d’identité recto/verso, date
+     * Inscription **chauffeur covoiturage** : rôles USER + CHAUFFEUR, pièce
+     * d’identité recto/verso, date
      * de fin de validité, statut KYC {@link CovoiturageKycStatus#PENDING}.
      */
     @Transactional
@@ -201,10 +215,12 @@ public class UserService {
             MultipartFile driverPhoto,
             MultipartFile vehiclePhoto) {
         if (idFront == null || idFront.isEmpty()) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le recto de la pièce d'identité est obligatoire.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le recto de la pièce d'identité est obligatoire.");
         }
         if (idBack == null || idBack.isEmpty()) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le verso de la pièce d'identité est obligatoire.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le verso de la pièce d'identité est obligatoire.");
         }
         if (driverPhoto == null || driverPhoto.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du conducteur est obligatoire.");
@@ -212,7 +228,7 @@ public class UserService {
         if (vehiclePhoto == null || vehiclePhoto.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du véhicule est obligatoire.");
         }
-        if (userRepository.existsByEmail(dto.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
         }
         if (userRepository.existsByLogin(dto.getLogin())) {
@@ -225,7 +241,10 @@ public class UserService {
         user.setLogin(dto.getLogin());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        /** Désactivé tant que l’admin n’active pas le compte (login impossible). KYC = PENDING. */
+        /**
+         * Désactivé tant que l’admin n’active pas le compte (login impossible). KYC =
+         * PENDING.
+         */
         user.setEnabled(false);
         user.setCovoiturageIdValidUntil(dto.getIdValidUntil());
         user.setCovoiturageKycStatus(CovoiturageKycStatus.PENDING);
@@ -251,20 +270,30 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(Long id, User updatedInfo, Set<UserRole> roleNames, MultipartFile avatarFile) {
+    public User updateUser(Long id, User updatedInfo, String oldPassword, Set<UserRole> roleNames,
+            MultipartFile avatarFile) {
         User existingUser = findById(id);
 
-        // Mise à jour des infos de base
         existingUser.setFirstname(updatedInfo.getFirstname());
         existingUser.setLastname(updatedInfo.getLastname());
         existingUser.setEmail(updatedInfo.getEmail());
         existingUser.setLogin(updatedInfo.getLogin());
-
+        if (updatedInfo.getPhone() != null) {
+            existingUser.setPhone(updatedInfo.getPhone());
+        }
         // Hashage du mot de passe seulement s'il est fourni
         if (updatedInfo.getPassword() != null && !updatedInfo.getPassword().isBlank()) {
+            // Vérifier l'ancien mot de passe
+            if (oldPassword == null || oldPassword.isBlank()) {
+                throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                        "L'ancien mot de passe est requis pour changer le mot de passe.");
+            }
+            if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
+                throw new MobiliException(MobiliErrorCode.INVALID_CREDENTIALS,
+                        "Ancien mot de passe incorrect.");
+            }
             existingUser.setPassword(passwordEncoder.encode(updatedInfo.getPassword()));
         }
-
         // Gestion des rôles (si passés, sinon on garde les anciens)
         if (roleNames != null && !roleNames.isEmpty()) {
             assignRoles(existingUser, roleNames);
@@ -324,10 +353,12 @@ public class UserService {
             MultipartFile driverPhoto,
             MultipartFile vehiclePhoto) {
         if (idFront == null || idFront.isEmpty()) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le recto de la pièce d'identité est obligatoire.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le recto de la pièce d'identité est obligatoire.");
         }
         if (idBack == null || idBack.isEmpty()) {
-            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le verso de la pièce d'identité est obligatoire.");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le verso de la pièce d'identité est obligatoire.");
         }
         if (driverPhoto == null || driverPhoto.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du conducteur est obligatoire.");
@@ -365,14 +396,18 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /** Ajoute CHAUFFEUR sans retirer les rôles déjà détenus (PARTNER, GARE, ADMIN, etc.). */
+    /**
+     * Ajoute CHAUFFEUR sans retirer les rôles déjà détenus (PARTNER, GARE, ADMIN,
+     * etc.).
+     */
     private void addChauffeurRoleIfMissing(User user) {
         boolean hasChauffeur = user.getRoles().stream().anyMatch(r -> r.getName() == UserRole.CHAUFFEUR);
         if (hasChauffeur) {
             return;
         }
         Role chauffeurRole = roleRepository.findByName(UserRole.CHAUFFEUR)
-                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Rôle CHAUFFEUR inexistant"));
+                .orElseThrow(
+                        () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Rôle CHAUFFEUR inexistant"));
         Set<Role> roles = new java.util.HashSet<>(user.getRoles());
         roles.add(chauffeurRole);
         user.setRoles(roles);
@@ -388,7 +423,8 @@ public class UserService {
     }
 
     /**
-     * Chauffeur société créé par le dirigeant ou un compte gare (espace partenaire).
+     * Chauffeur société créé par le dirigeant ou un compte gare (espace
+     * partenaire).
      */
     @Transactional
     public User registerCompanyChauffeur(Partner employer, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
@@ -399,7 +435,7 @@ public class UserService {
         }
         String email = dto.email() != null ? dto.email().trim().toLowerCase() : null;
         String login = dto.login().trim();
-        if (email != null && userRepository.existsByEmail(email)) {
+        if (email != null && userRepository.existsByEmailIgnoreCase(email)) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
         }
         if (userRepository.existsByLogin(login)) {
@@ -435,7 +471,8 @@ public class UserService {
     }
 
     /**
-     * Rattachement chauffeur / salarié à une fiche compagnie (hors covo. solo). {@code null} = retirer.
+     * Rattachement chauffeur / salarié à une fiche compagnie (hors covo. solo).
+     * {@code null} = retirer.
      */
     public void setEmployerPartnerForUser(Long userId, Long partnerIdOrNull) {
         User u = findById(userId);
@@ -450,7 +487,8 @@ public class UserService {
             Partner p = partnerRepository.findById(partnerIdOrNull)
                     .orElseThrow(
                             () -> new MobiliException(
-                                    MobiliErrorCode.RESOURCE_NOT_FOUND, "Partenaire introuvable (ID " + partnerIdOrNull + ")"));
+                                    MobiliErrorCode.RESOURCE_NOT_FOUND,
+                                    "Partenaire introuvable (ID " + partnerIdOrNull + ")"));
             if (p.isCovoiturageSoloPool()) {
                 throw new MobiliException(
                         MobiliErrorCode.VALIDATION_ERROR,
@@ -470,7 +508,10 @@ public class UserService {
         user.setRoles(roles);
     }
 
-    /** Recto / verso pièce d’identité : JPEG/PNG/WebP ou PDF — dossier sensible {@link UploadService#FOLDER_SENSITIVE_COVOITURAGE_IDS}. */
+    /**
+     * Recto / verso pièce d’identité : JPEG/PNG/WebP ou PDF — dossier sensible
+     * {@link UploadService#FOLDER_SENSITIVE_COVOITURAGE_IDS}.
+     */
     private String saveCarpoolIdentityScan(MultipartFile file) {
         if (looksLikePdfUpload(file)) {
             return uploadService.saveDocument(file, UploadService.FOLDER_SENSITIVE_COVOITURAGE_IDS);

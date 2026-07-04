@@ -60,11 +60,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
         List<User> findAllForProfileDto();
 
         // 3. Utilitaires pour l'inscription et les doublons
-        Optional<User> findByEmail(String email);
+        Optional<User> findByEmailIgnoreCase(String email);
+
+        boolean existsByEmailIgnoreCase(String email);
 
         boolean existsByLogin(String login);
 
-        boolean existsByEmail(String email);
+        boolean existsByLoginIgnoreCase(String login);
 
         @Query("SELECT u.id FROM User u JOIN u.roles r WHERE r.name = com.mobili.backend.module.user.role.UserRole.GARE "
                         + "AND u.station IS NOT NULL AND u.station.id = :stationId")
