@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/legal/presentation/cgu_page.dart';
+import 'package:mobili/features/legal/presentation/confidentialite_page.dart';
 import 'package:mobili/features/notifications/presentation/notifications_page.dart';
 import 'package:mobili/features/profile/presentation/edit_profile_page.dart';
+import 'package:mobili/features/support/presentation/pages/support_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../shared/widgets/mobili_error_widget.dart';
@@ -38,22 +42,41 @@ abstract class AppRoutes {
   static const covoiturage = '/covoiturage';
 }
 
-@riverpod
+/// Notifie GoRouter de ré-évaluer son `redirect` quand authProvider change,
+/// SANS jamais recréer l'objet GoRouter (ce qui ferait perdre la page
+/// actuelle et repartir sur initialLocation à chaque changement d'état).
+class _AuthRouterRefresh extends ChangeNotifier {
+  _AuthRouterRefresh(Ref ref) {
+    ref.listen<AsyncValue<AuthState>>(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+}
+
+@Riverpod(keepAlive: true)
 GoRouter goRouter(GoRouterRef ref) {
-  final authState = ref.watch(authProvider);
+  final refreshListenable = _AuthRouterRefresh(ref);
 
   return GoRouter(
     initialLocation: AppRoutes.home,
     debugLogDiagnostics: true,
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
+      if (authState.value?.isLoading == true) return null;
+      if (authState.value?.status == AuthStatus.initial) return null;
+
       final isLoggedIn = authState.value?.isAuthenticated ?? false;
       final isOnAuthPage = state.matchedLocation.startsWith('/login') ||
           state.matchedLocation.startsWith('/register');
+
+      if (isOnAuthPage) return null;
 
       final protectedPrefixes = [
         '/my-bookings',
         '/notifications',
         '/profile',
+        '/edit-profile',
         '/bookings',
         '/payments',
         '/tickets',
@@ -68,11 +91,11 @@ GoRouter goRouter(GoRouterRef ref) {
       if (needsAuth && !isLoggedIn) {
         return '${AppRoutes.login}?redirect=${state.uri}';
       }
-      if (isLoggedIn && isOnAuthPage) {
-        return AppRoutes.home;
-      }
+
       return null;
     },
+
+
     routes: [
       // ── Auth ──────────────────────────────────────────────
       GoRoute(
@@ -85,9 +108,21 @@ GoRouter goRouter(GoRouterRef ref) {
         name: 'register',
         builder: (_, __) => const RegisterPage(),
       ),
+      GoRoute(
+        path: '/cgu',
+        builder: (_, __) => const CguPage(),
+      ),
+      GoRoute(
+        path: '/confidentialite',
+        builder: (_, __) => const ConfidentialitePage(),
+      ),
+      GoRoute(
+        path: '/support',
+        builder: (_, __) => const SupportPage(),
+      ),
 
       // ── Billets (hors shell, plein écran) ─────────────────
-    GoRoute(
+      GoRoute(
         path: AppRoutes.tickets,
         name: 'myTickets',
         builder: (_, state) => MyTicketsPage(
@@ -142,11 +177,20 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          GoRoute(
+         GoRoute(
             path: 'history',
             name: 'covoiturageHistory',
             builder: (_, state) => CovoiturageHistoryPage(
               trips: (state.extra as List<Trip>?) ?? const [],
+            ),
+          ),
+          GoRoute(
+            path: 'all-trips',
+            name: 'covoiturageAllTrips',
+            builder: (_, state) => CovoiturageHistoryPage(
+              trips: (state.extra as List<Trip>?) ?? const [],
+              title: 'Tous mes trajets',
+              emptyLabel: 'Aucun trajet publié',
             ),
           ),
         ],
@@ -188,7 +232,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Tab 2 — Mes réservations (stub)
+          // Tab 2 — Mes réservations
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -199,7 +243,7 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Tab 3 — Notifications (stub)
+          // Tab 3 — Notifications
           StatefulShellBranch(
             routes: [
               GoRoute(
