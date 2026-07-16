@@ -23,7 +23,6 @@ import com.mobili.backend.module.station.dto.StationChauffeurSummary;
 import com.mobili.backend.module.station.dto.StationRequestDTO;
 import com.mobili.backend.module.station.dto.StationResponseDTO;
 import com.mobili.backend.module.station.entity.Station;
-import com.mobili.backend.module.station.entity.StationApprovalStatus;
 import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
@@ -31,8 +30,8 @@ import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.role.Role;
 import com.mobili.backend.module.user.role.RoleRepository;
 import com.mobili.backend.module.user.role.UserRole;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,46 +46,9 @@ public class StationService {
     private final PasswordEncoder passwordEncoder;
     private final TripRepository tripRepository;
 
-    /**
-     * Statut visuel / métier. Le booléen {@code validated} a priorité s’il est
-     * renseigné.
-     * Sinon (migration) : déduction à partir d’ {@code approvalStatus} et des codes
-     * GAR-…
-     */
-    public static StationApprovalStatus effectiveApproval(Station s) {
-        if (Boolean.FALSE.equals(s.getValidated())) {
-            return StationApprovalStatus.PENDING;
-        }
-        if (Boolean.TRUE.equals(s.getValidated())) {
-            return s.isActive() ? StationApprovalStatus.APPROVED : StationApprovalStatus.PENDING;
-        }
-        if (s.getApprovalStatus() != null) {
-            return s.getApprovalStatus();
-        }
-        String c = s.getCode();
-        if (c != null && c.startsWith("GAR-") && !s.isActive()) {
-            return StationApprovalStatus.PENDING;
-        }
-        if (c != null && c.startsWith("GAR-") && s.isActive()) {
-            return StationApprovalStatus.APPROVED;
-        }
-        if (s.isActive()) {
-            return StationApprovalStatus.APPROVED;
-        }
-        return StationApprovalStatus.APPROVED;
-    }
 
     public boolean isStationOperational(Station s) {
-        if (s == null) {
-            return false;
-        }
-        if (Boolean.FALSE.equals(s.getValidated())) {
-            return false;
-        }
-        if (Boolean.TRUE.equals(s.getValidated())) {
-            return s.isActive();
-        }
-        return effectiveApproval(s) == StationApprovalStatus.APPROVED && s.isActive();
+        return s != null && s.isActive();
     }
 
     /**
@@ -95,7 +57,7 @@ public class StationService {
     public void assertStationOperationalForTripUse(Station station) {
         if (!isStationOperational(station)) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
-                    "Cette gare n'est pas encore validée pour les trajets. Le dirigeant doit l'approuver.");
+                    "Cette gare est désactivée. Réactivez-la pour publier des trajets.");
         }
     }
 
@@ -105,9 +67,7 @@ public class StationService {
     public void applyNewStationDefaults(Station station, Partner partner) {
         station.setPartner(partner);
         station.setCode(generateUniqueStationCode(partner.getId()));
-        station.setApprovalStatus(StationApprovalStatus.PENDING);
-        station.setActive(false);
-        station.setValidated(Boolean.FALSE);
+        station.setActive(true);
     }
 
     @Transactional(readOnly = true)
@@ -134,44 +94,29 @@ public class StationService {
     @Transactional
     public StationResponseDTO create(StationRequestDTO dto, UserPrincipal principal) {
         requirePartnerOwner(principal);
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le mot de passe de la gare est obligatoire.",
+                    Map.of("password", "Le mot de passe de la gare est obligatoire."));
+        }
+        if (dto.getPassword().trim().length() < 6) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Le mot de passe doit contenir au moins 6 caractères.",
+                    Map.of("password", "Le mot de passe doit contenir au moins 6 caractères."));
+        }
         Partner partner = partnerService.getCurrentPartnerForOperations();
         Station s = new Station();
         s.setName(dto.getName().trim());
         s.setCity(dto.getCity().trim());
+        s.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         applyNewStationDefaults(s, partner);
         s = stationRepository.saveAndFlush(s);
         Station reloaded = stationRepository.findById(s.getId()).orElse(s);
-        if (reloaded.getApprovalStatus() == null
-                || reloaded.getCode() == null
-                || reloaded.getCode().isBlank()) {
+        if (reloaded.getCode() == null || reloaded.getCode().isBlank()) {
             applyNewStationDefaults(reloaded, partner);
             reloaded = stationRepository.saveAndFlush(reloaded);
         }
         return toDto(reloaded);
-    }
-
-    @Transactional
-    public StationResponseDTO approve(Long id, UserPrincipal principal) {
-        requirePartnerOwner(principal);
-        Partner partner = partnerService.getCurrentPartnerForOperations();
-        Station s = stationRepository.findByIdAndPartnerId(id, partner.getId())
-                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
-        if (isStationOperational(s)) {
-            if (!Boolean.TRUE.equals(s.getValidated())) {
-                s.setValidated(Boolean.TRUE);
-                s = stationRepository.save(s);
-            }
-            return toDto(s);
-        }
-        s.setApprovalStatus(StationApprovalStatus.APPROVED);
-        s.setValidated(Boolean.TRUE);
-        s.setActive(true);
-        if (s.getCode() == null || s.getCode().isBlank()) {
-            s.setCode(generateUniqueStationCode(partner.getId()));
-        }
-        s = stationRepository.save(s);
-        userRepository.enableUsersForStation(s.getId());
-        return toDto(s);
     }
 
     @Transactional
@@ -182,10 +127,16 @@ public class StationService {
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
         s.setName(dto.getName().trim());
         s.setCity(dto.getCity().trim());
-        if (effectiveApproval(s) == StationApprovalStatus.PENDING) {
-            s.setActive(false);
-        } else if (dto.getActive() != null) {
+        if (dto.getActive() != null) {
             s.setActive(dto.getActive());
+        }
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            if (dto.getPassword().trim().length() < 6) {
+                throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                        "Le mot de passe doit contenir au moins 6 caractères.",
+                        Map.of("password", "Le mot de passe doit contenir au moins 6 caractères."));
+            }
+            s.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         }
         return toDto(stationRepository.save(s));
     }
@@ -215,7 +166,7 @@ public class StationService {
         Station st = stationRepository.findByIdAndPartnerId(dto.getStationId(), partner.getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
 
-        if (userRepository.existsByEmail(dto.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
         }
         if (userRepository.existsByLogin(dto.getLogin())) {
@@ -261,7 +212,7 @@ public class StationService {
         u.setLastname(dto.lastname().trim());
         if (dto.email() != null && !dto.email().isBlank()) {
             String newEmail = dto.email().trim().toLowerCase();
-            if (!newEmail.equalsIgnoreCase(u.getEmail()) && userRepository.existsByEmail(newEmail)) {
+            if (!newEmail.equalsIgnoreCase(u.getEmail()) && userRepository.existsByEmailIgnoreCase(newEmail)) {
                 throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
             }
             u.setEmail(newEmail);
@@ -403,7 +354,6 @@ public class StationService {
     }
 
     private StationResponseDTO toDto(Station s, List<StationChauffeurSummary> assignedChauffeurs) {
-        StationApprovalStatus appr = effectiveApproval(s);
         String responsible = userRepository.findGareUsersByStationIdOrderByIdAsc(s.getId()).stream()
                 .findFirst()
                 .map(u -> {
@@ -421,21 +371,8 @@ public class StationService {
                 .code(s.getCode())
                 .active(s.isActive())
                 .partnerId(s.getPartner() != null ? s.getPartner().getId() : null)
-                .approvalStatus(appr.name())
-                .validated(resolvedValidatedFlag(s, appr))
                 .responsibleName(responsible)
                 .assignedChauffeurs(assignedChauffeurs)
                 .build();
-    }
-
-    /**
-     * Libellé API : dès que le booléen persistant est renvoyé, l’UI peut s’y fier ;
-     * sinon repli sur le statut d’approbation effectif.
-     */
-    private static boolean resolvedValidatedFlag(Station s, StationApprovalStatus appr) {
-        if (s.getValidated() != null) {
-            return s.getValidated();
-        }
-        return appr == StationApprovalStatus.APPROVED;
     }
 }

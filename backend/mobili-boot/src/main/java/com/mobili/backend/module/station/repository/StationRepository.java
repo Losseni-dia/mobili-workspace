@@ -18,4 +18,6 @@ public interface StationRepository extends JpaRepository<Station, Long> {
     long countByPartnerId(Long partnerId);
 
     boolean existsByPartnerIdAndCode(Long partnerId, String code);
+
+    Optional<Station> findByCode(String code);
 }

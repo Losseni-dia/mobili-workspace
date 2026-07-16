@@ -56,20 +56,23 @@ public class PaymentController {
         if (st == BookingStatus.CONFIRMED || st == BookingStatus.COMPLETED) {
             return ResponseEntity.ok(new PaymentVerifyResponse(true, st.name()));
         }
-        if (st != BookingStatus.PENDING) {
+        // PENDING (trajet public) ou AWAITING_PAYMENT (covoiturage, après
+        // acceptation chauffeur) sont les deux seuls statuts d'où un paiement
+        // peut encore être vérifié/confirmé.
+        if (st != BookingStatus.PENDING && st != BookingStatus.AWAITING_PAYMENT) {
             return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
         }
         String txId = booking.getFedapayTransactionId();
         if (txId == null || txId.isBlank()) {
             log.warn("Vérification FedaPay impossible : pas d'ID transaction enregistré (bookingId={})",
                     bookingId);
-            return ResponseEntity.ok(new PaymentVerifyResponse(false, BookingStatus.PENDING.name()));
+            return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
         }
         if (fedaPayService.isTransactionApprovedForBooking(txId)) {
             bookingService.confirmFedaPayPayment(bookingId);
             return ResponseEntity.ok(new PaymentVerifyResponse(true, BookingStatus.CONFIRMED.name()));
         }
-        return ResponseEntity.ok(new PaymentVerifyResponse(false, BookingStatus.PENDING.name()));
+        return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
     }
 
     @PostMapping("/callback")

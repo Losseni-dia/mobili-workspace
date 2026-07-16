@@ -274,9 +274,9 @@ class _OfflineSaleSheetState extends ConsumerState<OfflineSaleSheet> {
                               onChanged: (v) => setState(() {
                                 _boardingStopIndex = v!;
                                 if (_alightingStopIndex != null &&
-                                    _alightingStopIndex! <= v!) {
+                                    _alightingStopIndex! <= v) {
                                   _alightingStopIndex = stops
-                                      .where((s) => s.stopIndex > v!)
+                                      .where((s) => s.stopIndex > v)
                                       .first
                                       .stopIndex;
                                 }
@@ -422,7 +422,7 @@ class _OfflineSaleSheetState extends ConsumerState<OfflineSaleSheet> {
                               ],
                             ),
                             Text(
-                              NumberFormat('#,###').format(total) + ' FCFA',
+                              '${NumberFormat('#,###').format(total)} FCFA',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w900,
                                 color: AppColors.proGold,

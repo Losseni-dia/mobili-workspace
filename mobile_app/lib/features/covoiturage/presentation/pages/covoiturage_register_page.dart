@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/models/mobili_error.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -92,11 +93,16 @@ class _CovoiturageRegisterPageState
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_idValidUntil == null) {
-      setState(() => _errorMessage = 'La date de validité de la CNI est requise.');
+      setState(
+          () => _errorMessage = 'La date de validité de la CNI est requise.');
       return;
     }
-    if (_idFront == null || _idBack == null || _driverPhoto == null || _vehiclePhoto == null) {
-      setState(() => _errorMessage = 'Les 4 photos sont obligatoires (CNI recto/verso, vous, véhicule).');
+    if (_idFront == null ||
+        _idBack == null ||
+        _driverPhoto == null ||
+        _vehiclePhoto == null) {
+      setState(() => _errorMessage =
+          'Les 4 photos sont obligatoires (CNI recto/verso, vous, véhicule).');
       return;
     }
 
@@ -140,11 +146,9 @@ class _CovoiturageRegisterPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        title: const Text('Devenir conducteur',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+      appBar: const MobiliAppBar(
+        title: 'Devenir conducteur',
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -160,7 +164,6 @@ class _CovoiturageRegisterPageState
                 ),
                 const SizedBox(height: 16),
               ],
-
               const _SectionLabel(label: 'Identité'),
               const SizedBox(height: 12),
               Row(
@@ -197,7 +200,6 @@ class _CovoiturageRegisterPageState
                 validator: (v) => _required(v, 'Téléphone'),
               ),
               const SizedBox(height: 20),
-
               const _SectionLabel(label: 'Connexion'),
               const SizedBox(height: 12),
               _Field(
@@ -206,18 +208,17 @@ class _CovoiturageRegisterPageState
                 validator: (v) => _required(v, 'Identifiant'),
               ),
               const SizedBox(height: 12),
-              _Field(
+            _Field(
                 controller: _passwordCtrl,
-                label: 'Mot de passe',
+                label: 'Mot de passe (8 caractères minimum)',
                 obscureText: true,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Mot de passe requis.';
-                  if (v.length < 6) return 'Minimum 6 caractères.';
+                  if (v.length < 8) return 'Minimum 8 caractères.';
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-
               const _SectionLabel(label: 'Pièce d\'identité'),
               const SizedBox(height: 12),
               GestureDetector(
@@ -275,7 +276,6 @@ class _CovoiturageRegisterPageState
                 ],
               ),
               const SizedBox(height: 20),
-
               const _SectionLabel(label: 'Vous & votre véhicule'),
               const SizedBox(height: 12),
               Row(
@@ -336,7 +336,6 @@ class _CovoiturageRegisterPageState
                 validator: (v) => _required(v, 'Numéro de carte grise'),
               ),
               const SizedBox(height: 28),
-
               MobiliButton(
                 label: 'Envoyer mon dossier',
                 isLoading: _isLoading,
@@ -347,7 +346,8 @@ class _CovoiturageRegisterPageState
                 'Votre dossier sera examiné par un administrateur Mobili '
                 'avant que vous puissiez publier des trajets.',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500),
+                style:
+                    AppTextStyles.bodySmall.copyWith(color: AppColors.gray500),
               ),
               const SizedBox(height: 24),
             ],
@@ -373,7 +373,8 @@ class _SectionLabel extends StatelessWidget {
                 fontSize: 12,
               )),
           const SizedBox(width: 10),
-          const Expanded(child: Divider(thickness: 1, color: AppColors.gray200)),
+          const Expanded(
+              child: Divider(thickness: 1, color: AppColors.gray200)),
         ],
       );
 }
@@ -403,7 +404,8 @@ class _Field extends StatelessWidget {
           labelText: label,
           filled: true,
           fillColor: AppColors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppColors.gray200),
@@ -447,7 +449,8 @@ class _PhotoPicker extends StatelessWidget {
           child: file != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.file(file!, fit: BoxFit.cover, width: double.infinity),
+                  child: Image.file(file!,
+                      fit: BoxFit.cover, width: double.infinity),
                 )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,

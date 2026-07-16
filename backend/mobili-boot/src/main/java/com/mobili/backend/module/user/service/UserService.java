@@ -146,6 +146,10 @@ public class UserService {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé.",
                     Map.of("login", "Ce login est déjà utilisé."));
         }
+        if (user.getPhone() != null && userRepository.existsByPhone(user.getPhone().trim())) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce numéro de téléphone est déjà utilisé.",
+                    Map.of("phone", "Ce numéro de téléphone est déjà utilisé."));
+        }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
@@ -170,18 +174,45 @@ public class UserService {
     @Transactional
     public User registerCompanyPublic(RegisterCompanyPublicDTO dto,
             org.springframework.web.multipart.MultipartFile logo) {
-        if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
-            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email dirigeant est déjà utilisé.");
+        // Normalisation AVANT vérification et sauvegarde — même casse partout,
+        // sinon "Test"/"test" ou " test " passeraient pour des comptes
+        // différents alors qu'ils doivent être bloqués comme doublons.
+        String normalizedEmail = (dto.getEmail() != null && !dto.getEmail().trim().isEmpty())
+                ? dto.getEmail().trim().toLowerCase()
+                : null;
+        String normalizedLogin = dto.getLogin().trim().toLowerCase();
+        String normalizedPhone = dto.getPhone().trim();
+        String normalizedBusinessNumber = (dto.getBusinessNumber() != null && !dto.getBusinessNumber().trim().isEmpty())
+                ? dto.getBusinessNumber().trim()
+                : null;
+
+        if (normalizedEmail != null && userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email dirigeant est déjà utilisé.",
+                    Map.of("email", "Cet email est déjà utilisé."));
         }
-        if (userRepository.existsByLogin(dto.getLogin())) {
-            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé.");
+        // AVANT : existsByLogin (sensible à la casse) — corrigé en IgnoreCase.
+        if (userRepository.existsByLoginIgnoreCase(normalizedLogin)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé.",
+                    Map.of("login", "Ce login est déjà utilisé."));
+        }
+        if (userRepository.existsByPhone(normalizedPhone)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                    "Ce numéro de téléphone est déjà utilisé.",
+                    Map.of("phone", "Ce numéro de téléphone est déjà utilisé."));
+        }
+        if (normalizedBusinessNumber != null
+                && partnerRepository.existsByBusinessNumberIgnoreCase(normalizedBusinessNumber)) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                    "Ce numéro RCCM/contribuable est déjà utilisé par une autre société.",
+                    Map.of("businessNumber", "Ce numéro est déjà utilisé par une autre société."));
         }
 
         User user = new User();
         user.setFirstname(dto.getFirstname());
         user.setLastname(dto.getLastname());
-        user.setLogin(dto.getLogin());
-        user.setEmail(dto.getEmail());
+        user.setLogin(normalizedLogin);
+        user.setEmail(normalizedEmail);
+        user.setPhone(normalizedPhone);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setEnabled(true);
         assignRoles(user, Collections.singleton(UserRole.USER));
@@ -191,8 +222,8 @@ public class UserService {
         pr.setName(dto.getCompanyName());
         pr.setEmail(dto.getCompanyEmail());
         pr.setPhone(dto.getCompanyPhone());
-        if (dto.getBusinessNumber() != null && !dto.getBusinessNumber().isBlank()) {
-            pr.setBusinessNumber(dto.getBusinessNumber().trim());
+        if (normalizedBusinessNumber != null) {
+            pr.setBusinessNumber(normalizedBusinessNumber);
         }
 
         partnerService.createPartnerForOwner(user, pr, logo);

@@ -10,8 +10,8 @@ import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.partner.dto.PartnerProfileDTO;
 import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
 import com.mobili.backend.module.partner.service.PartnerService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import java.util.List;
 import java.util.stream.Collectors;

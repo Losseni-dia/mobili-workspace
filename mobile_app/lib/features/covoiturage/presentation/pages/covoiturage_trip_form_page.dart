@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -148,11 +149,10 @@ class _CovoiturageTripFormPageState
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        title: Text(_isEditing ? 'Modifier le trajet' : 'Publier un trajet',
-            style: const TextStyle(fontWeight: FontWeight.w700)),
+     appBar: MobiliAppBar(
+        title: _isEditing ? 'Modifier le trajet' : 'Publier un trajet',
+        showBackButton: true,
+        titleFontSize: 18,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -26,6 +26,7 @@ import com.mobili.backend.infrastructure.security.token.JwtService;
 import com.mobili.backend.module.admin.entity.LoginEvent;
 import com.mobili.backend.module.admin.repository.LoginEventRepository;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
+import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.user.dto.RegisterCompanyPublicDTO;
 import com.mobili.backend.module.user.dto.login.AuthResponse;
 import com.mobili.backend.module.user.dto.login.LoginRequest;
@@ -33,8 +34,8 @@ import com.mobili.backend.module.user.dto.mapper.UserMapper;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -45,6 +46,8 @@ class AuthControllerTest {
     private UserRepository userRepository;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private StationRepository stationRepository;
     @Mock
     private JwtService jwtService;
     @Mock
@@ -68,6 +71,7 @@ class AuthControllerTest {
     void setUp() {
         authController = new AuthController(
                 userRepository,
+                stationRepository,
                 passwordEncoder,
                 jwtService,
                 userMapper,

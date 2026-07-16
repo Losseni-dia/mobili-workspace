@@ -520,10 +520,9 @@ class _GareDetailPageState extends ConsumerState<GareDetailPage> {
                                     ),
                                     const Spacer(),
                                     Text(
-                                      NumberFormat(
+                                      '${NumberFormat(
                                             '#,###',
-                                          ).format(stats.totalRevenue) +
-                                          ' FCFA',
+                                          ).format(stats.totalRevenue)} FCFA',
                                       style: const TextStyle(
                                         color: AppColors.mobiliYellow,
                                         fontSize: 16,
@@ -683,7 +682,7 @@ class _GareDetailPageState extends ConsumerState<GareDetailPage> {
                       const SizedBox(height: 12),
                       ...widget.chauffeurs
                           .map((c) => _ChauffeurRow(chauffeur: c))
-                          .toList(),
+                          ,
                     ],
 
                     const SizedBox(height: 80),
@@ -817,7 +816,7 @@ class _TripAccordion extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          NumberFormat('#,###').format(item.revenue) + ' F',
+                          '${NumberFormat('#,###').format(item.revenue)} F',
                           style: const TextStyle(
                             color: AppColors.mobiliYellow,
                             fontWeight: FontWeight.w900,
@@ -838,10 +837,9 @@ class _TripAccordion extends StatelessWidget {
                               ),
                               const SizedBox(width: 2),
                               Text(
-                                NumberFormat(
+                                '${NumberFormat(
                                       '#,###',
-                                    ).format(item.revenueOnline) +
-                                    ' F',
+                                    ).format(item.revenueOnline)} F',
                                 style: const TextStyle(
                                   color: AppColors.stationGreen,
                                   fontSize: 9,
@@ -858,10 +856,9 @@ class _TripAccordion extends StatelessWidget {
                               ),
                               const SizedBox(width: 2),
                               Text(
-                                NumberFormat(
+                                '${NumberFormat(
                                       '#,###',
-                                    ).format(item.revenueOffline) +
-                                    ' F',
+                                    ).format(item.revenueOffline)} F',
                                 style: const TextStyle(
                                   color: AppColors.mobiliYellow,
                                   fontSize: 9,
@@ -1219,7 +1216,7 @@ class _RevenueChip extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(fontSize: 9, color: color)),
               Text(
-                NumberFormat('#,###').format(amount) + ' F',
+                '${NumberFormat('#,###').format(amount)} F',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   color: color,

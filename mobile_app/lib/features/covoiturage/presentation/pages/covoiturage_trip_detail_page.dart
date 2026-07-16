@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/features/bookings/domain/models/booking.dart';
 import 'package:mobili/features/trips/providers/trip_provider.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -240,17 +241,11 @@ class _CovoiturageTripDetailPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        iconTheme: const IconThemeData(color: AppColors.white),
-        actionsIconTheme: const IconThemeData(color: AppColors.white),
-        titleTextStyle: const TextStyle(
-          color: AppColors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 15,
-        ),
-        title: Text('${_trip.departureCity} → ${_trip.arrivalCity}'),
+      appBar: MobiliAppBar(
+        title: '${_trip.departureCity} → ${_trip.arrivalCity}',
+        showBackButton: true,
+        titleFontSize: 15,
+        showPattern: true,
         actions: [
           if (_trip.isUpcoming)
             IconButton(
@@ -258,7 +253,8 @@ class _CovoiturageTripDetailPageState
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
                     )
                   : const Icon(Icons.play_arrow_rounded),
               tooltip: 'Démarrer',
@@ -268,7 +264,8 @@ class _CovoiturageTripDetailPageState
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Modifier',
-              onPressed: () => context.push('/covoiturage/trips/${_trip.id}/edit', extra: _trip),
+              onPressed: () => context
+                  .push('/covoiturage/trips/${_trip.id}/edit', extra: _trip),
             ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded),
@@ -276,7 +273,7 @@ class _CovoiturageTripDetailPageState
             onPressed: _confirmDelete,
           ),
         ],
-     bottom: TabBar(
+        bottom: TabBar(
           controller: _tabCtrl,
           isScrollable: true,
           indicatorColor: AppColors.mobiliYellow,
@@ -550,7 +547,7 @@ class _PendingRequestCardState extends ConsumerState<_PendingRequestCard> {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.mobiliBlueFog,
                 ),

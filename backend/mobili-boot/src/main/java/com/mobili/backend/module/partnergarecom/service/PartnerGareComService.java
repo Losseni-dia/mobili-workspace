@@ -24,8 +24,8 @@ import com.mobili.backend.module.station.entity.Station;
 import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.role.UserRole;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 

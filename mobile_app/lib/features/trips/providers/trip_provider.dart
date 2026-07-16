@@ -89,13 +89,15 @@ final tripsProvider = FutureProvider.autoDispose<List<Trip>>((ref) async {
 
   final hasDeparture = params.departure != null && params.departure!.isNotEmpty;
   final hasArrival = params.arrival != null && params.arrival!.isNotEmpty;
+  final hasDate = params.date != null && params.date!.isNotEmpty;
 
-  // Dès qu'un champ est rempli, on délègue au backend (comme le fait l'app
-  // Angular) : il matche par segment sur toute la chaîne de villes (départ +
-  // étapes de moreInfo + arrivée), pas seulement sur departureCity/arrivalCity
-  // au sens littéral. Un filtre local ici manquerait les trajets où la ville
-  // cherchée n'est qu'une étape intermédiaire.
-  if (hasDeparture || hasArrival) {
+  // Dès qu'un champ est rempli (y compris la date seule), on délègue au
+  // backend (comme le fait l'app Angular) : il matche par segment sur toute
+  // la chaîne de villes (départ + étapes de moreInfo + arrivée), pas
+  // seulement sur departureCity/arrivalCity au sens littéral. Un filtre
+  // local ici manquerait les trajets où la ville cherchée n'est qu'une
+  // étape intermédiaire — et getTrips() seul ignore totalement la date.
+  if (hasDeparture || hasArrival || hasDate) {
     return service.searchTrips(
       departure: params.departure ?? '',
       arrival: params.arrival ?? '',

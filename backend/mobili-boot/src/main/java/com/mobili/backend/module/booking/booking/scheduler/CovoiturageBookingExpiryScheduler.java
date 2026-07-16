@@ -44,6 +44,7 @@ public class CovoiturageBookingExpiryScheduler {
         for (Booking b : noResponse) {
             b.setStatus(BookingStatus.EXPIRED);
             bookingRepository.save(b);
+            releaseSeats(b);
             inboxNotificationService.notifyPassengerOnCovoiturageNoResponse(b);
             log.info("Demande covoiturage #{} expirée (pas de réponse chauffeur)", b.getId());
         }

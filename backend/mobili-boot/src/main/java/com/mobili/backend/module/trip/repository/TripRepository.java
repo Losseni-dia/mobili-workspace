@@ -58,9 +58,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     long countTripsByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
     /** Dashboard conducteur covoiturage : trajets de l'organisateur, jamais ceux du pool entier. */
-    @Query("SELECT COUNT(t) FROM Trip t WHERE t.covoiturageOrganizer.id = :organizerId")
+    /**
+     * Dashboard conducteur covoiturage : trajets de l'organisateur, jamais ceux du
+     * pool entier.
+     */
+    @Query("SELECT COUNT(t) FROM Trip t WHERE t.covoiturageOrganizer.id = :organizerId AND t.hiddenByOrganizer = false")
     long countTripsByCovoiturageOrganizer(@Param("organizerId") Long organizerId);
-
+    
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
             + "LEFT JOIN FETCH t.assignedChauffeur "
             + "WHERE t.partner.id = ?1 ORDER BY t.departureDateTime DESC")

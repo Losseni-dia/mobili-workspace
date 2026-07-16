@@ -526,14 +526,17 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
               var filtered = partners
                   .where((p) => !p.covoiturageSoloPool)
                   .toList();
-              if (_approvalFilter != 'TOUS')
+              if (_approvalFilter != 'TOUS') {
                 filtered = filtered
                     .where((p) => p.approvalStatus == _approvalFilter)
                     .toList();
-              if (_statusFilter == 'ACTIF')
+              }
+              if (_statusFilter == 'ACTIF') {
                 filtered = filtered.where((p) => p.enabled).toList();
-              if (_statusFilter == 'INACTIF')
+              }
+              if (_statusFilter == 'INACTIF') {
                 filtered = filtered.where((p) => !p.enabled).toList();
+              }
               if (_search.isNotEmpty) {
                 final q = _search.toLowerCase();
                 filtered = filtered
@@ -561,7 +564,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                 if (_search.isNotEmpty) '"$_search"',
               ];
 
-              if (filtered.isEmpty)
+              if (filtered.isEmpty) {
                 return _EmptyState(
                   icon: Icons.business_outlined,
                   title: 'Aucun partenaire',
@@ -569,6 +572,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                       ? 'Filtres : ${activeFilters.join(', ')}'
                       : null,
                 );
+              }
 
               return RefreshIndicator(
                 color: AppColors.mobiliBlue,
@@ -682,18 +686,22 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
 
         // Appliquer les filtres
         var filtered = users;
-        if (_roleFilter != 'TOUS')
+        if (_roleFilter != 'TOUS') {
           filtered = filtered
               .where((u) => u.roles.contains(_roleFilter))
               .toList();
-        if (_statusFilter == 'ACTIF')
+        }
+        if (_statusFilter == 'ACTIF') {
           filtered = filtered.where((u) => u.enabled).toList();
-        if (_statusFilter == 'INACTIF')
+        }
+        if (_statusFilter == 'INACTIF') {
           filtered = filtered.where((u) => !u.enabled).toList();
-        if (_companyFilter != 'TOUS')
+        }
+        if (_companyFilter != 'TOUS') {
           filtered = filtered
               .where((u) => u.linkedCompanyName == _companyFilter)
               .toList();
+        }
         if (_search.isNotEmpty) {
           final q = _search.toLowerCase();
           filtered = filtered
@@ -908,14 +916,17 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
             ),
             data: (drivers) {
               var filtered = drivers;
-              if (_kycFilter != 'TOUS')
+              if (_kycFilter != 'TOUS') {
                 filtered = filtered
                     .where((d) => d.kycStatus == _kycFilter)
                     .toList();
-              if (_statusFilter == 'ACTIF')
+              }
+              if (_statusFilter == 'ACTIF') {
                 filtered = filtered.where((d) => d.enabled).toList();
-              if (_statusFilter == 'INACTIF')
+              }
+              if (_statusFilter == 'INACTIF') {
                 filtered = filtered.where((d) => !d.enabled).toList();
+              }
               if (_search.isNotEmpty) {
                 final q = _search.toLowerCase();
                 filtered = filtered
@@ -933,7 +944,7 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                 if (_search.isNotEmpty) '"$_search"',
               ];
 
-              if (filtered.isEmpty)
+              if (filtered.isEmpty) {
                 return _EmptyState(
                   icon: Icons.directions_car_outlined,
                   title: 'Aucun chauffeur',
@@ -941,6 +952,7 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                       ? 'Filtres : ${activeFilters.join(', ')}'
                       : null,
                 );
+              }
 
               return RefreshIndicator(
                 color: AppColors.mobiliBlue,

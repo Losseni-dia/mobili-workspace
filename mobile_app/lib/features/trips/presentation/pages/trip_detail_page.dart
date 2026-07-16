@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 import 'package:mobili/shared/widgets/private_network_image.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -43,7 +43,10 @@ class TripDetailPage extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (e, _) => Scaffold(
-          appBar: AppBar(title: const Text('Détail du trajet')),
+          appBar: const MobiliAppBar(
+            title: 'Détail du trajet',
+            showBackButton: true,
+          ),
           body: Center(child: Text('Erreur: $e')),
         ),
         data: (trip) => _TripDetailContent(

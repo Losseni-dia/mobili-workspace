@@ -17,26 +17,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
   final _formKey = GlobalKey<FormState>();
-
-  @override
+@override
   void dispose() {
     _loginCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    await ref
+Future<void> _submit() async {
+    if (_loginCtrl.text.trim().isEmpty || _passwordCtrl.text.isEmpty) {
+      _formKey.currentState!.validate();
+      return;
+    }
+    final ok = await ref
         .read(authProvider.notifier)
         .login(login: _loginCtrl.text.trim(), password: _passwordCtrl.text);
+    if (!ok && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState!.validate();
+      });
+    }
   }
-
   @override
   Widget build(BuildContext context) {
+    
     final authState = ref.watch(authProvider);
     final isLoading = authState.value?.isLoading ?? false;
     final errorMessage = authState.value?.errorMessage;
+    final fieldErrors = authState.value?.fieldErrors;
 
     return Scaffold(
       backgroundColor: AppColors.mobiliBlue,
@@ -120,12 +128,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   color: AppColors.gray50,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                 ),
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                       const Text(
                         'Connexion',
                         style: TextStyle(
@@ -176,10 +185,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               width: 2,
                             ),
                           ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.danger,
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.danger,
+                              width: 2,
+                            ),
+                          ),
                         ),
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? 'Identifiant requis'
-                            : null,
+                        validator: (v) {
+                          final apiError = fieldErrors?['login'];
+                          if (apiError != null) return apiError;
+                          return v == null || v.trim().isEmpty
+                              ? 'Identifiant requis'
+                              : null;
+                        },
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                       ),
                       const SizedBox(height: 14),
 
@@ -226,14 +254,37 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               width: 2,
                             ),
                           ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.danger,
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.danger,
+                              width: 2,
+                            ),
+                          ),
                         ),
-                        validator: (v) => v == null || v.isEmpty
-                            ? 'Mot de passe requis'
-                            : null,
+                        validator: (v) {
+                          final apiError = fieldErrors?['password'];
+                          if (apiError != null) return apiError;
+                          return v == null || v.isEmpty
+                              ? 'Mot de passe requis'
+                              : null;
+                        },
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                       ),
 
-                      // Erreur
-                      if (errorMessage != null) ...[
+                      // Bandeau d'erreur générique — n'apparaît plus que si
+                      // l'erreur n'est PAS déjà rattachée à un champ précis
+                      // (ex. compte désactivé), pour éviter le doublon visuel
+                      // avec les messages sous les champs login/mot de passe.
+                      if (errorMessage != null &&
+                          (fieldErrors == null || fieldErrors!.isEmpty)) ...[
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -266,7 +317,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                       ],
 
-                      const Spacer(),
+                      const SizedBox(height: 32),
 
                       // Bouton connexion
                       SizedBox(
@@ -322,6 +373,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
               ),
+            ),
             ),
           ],
         ),

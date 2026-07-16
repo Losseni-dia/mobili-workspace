@@ -13,16 +13,25 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.title,
     this.backRoute,
+    this.showBackButton = false,
     this.actions,
     this.bottom,
     this.showPattern = true,
+    this.titleFontSize,
+    this.subtitle,
   });
 
   final String title;
   final String? backRoute;
+  final bool showBackButton;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
   final bool showPattern;
+  final double? titleFontSize;
+
+  /// Petit texte secondaire sous le titre (ex. "Support Mobili"). Le titre
+  /// passe alors en une seule ligne tronquée pour laisser la place.
+  final String? subtitle;
 
   @override
   Size get preferredSize => Size.fromHeight(
@@ -36,21 +45,53 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.mobiliBlue,
       foregroundColor: AppColors.white,
       elevation: 0,
-      leading: backRoute != null
+     leading: backRoute != null
           ? IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
                   color: AppColors.white, size: 20),
               onPressed: () => context.go(backRoute!),
             )
-          : null,
+          : showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.white, size: 20),
+                  onPressed: () => context.pop(),
+                )
+              : null,
       automaticallyImplyLeading: false,
-      title: Text(title,
-          style: AppTextStyles.titleLarge.copyWith(
-            color: title == 'Mobili' ? AppColors.mobiliYellow : AppColors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: title == 'Mobili' ? 28 : null,
-            letterSpacing: title == 'Mobili' ? -0.5 : 0.5,
-          )),
+title: subtitle == null
+          ? Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.titleLarge.copyWith(
+                color: title == 'Mobili'
+                    ? AppColors.mobiliYellow
+                    : AppColors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: title == 'Mobili' ? 28 : titleFontSize,
+                letterSpacing: title == 'Mobili' ? -0.5 : 0.5,
+              ))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: titleFontSize ?? 16,
+                    )),
+                Text(subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xCCFFFFFF),
+                    )),
+              ],
+            ),
       actions: actions,
       bottom: bottom,
       flexibleSpace: showPattern

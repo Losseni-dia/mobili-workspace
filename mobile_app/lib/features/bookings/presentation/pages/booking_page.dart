@@ -333,11 +333,16 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 extraHoldBags: _extraBags,
               );
 
-              // ── Covoiturage : demande au chauffeur, pas de paiement immédiat ──
+            // ── Covoiturage : demande au chauffeur, pas de paiement immédiat ──
               if (widget.trip.isCovoiturage) {
                 await ref
                     .read(covoiturageRequestNotifierProvider.notifier)
                     .sendRequest(request);
+                // Le compteur "places restantes" affiché sur le catalogue
+                // doit refléter la place bloquée par cette demande, sans
+                // attendre un refresh manuel de l'utilisateur.
+                ref.invalidate(tripsProvider);
+                ref.invalidate(tripDetailProvider(widget.trip.id));
                 return;
               }
 

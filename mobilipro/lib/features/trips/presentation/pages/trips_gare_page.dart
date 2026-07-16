@@ -680,8 +680,7 @@ class _TripCard extends StatelessWidget {
                         child: _InfoChip(
                           icon: Icons.payments_rounded,
                           label:
-                              NumberFormat('#,###').format(trip.price) +
-                              ' FCFA',
+                              '${NumberFormat('#,###').format(trip.price)} FCFA',
                           color: AppColors.proGold,
                         ),
                       ),
@@ -1030,8 +1029,7 @@ class _PassengersSheet extends ConsumerWidget {
                           _MiniStat(
                             label: 'Revenus',
                             value:
-                                NumberFormat('#,###').format(totalRevenue) +
-                                ' F',
+                                '${NumberFormat('#,###').format(totalRevenue)} F',
                             color: AppColors.proGold,
                           ),
                         ],
@@ -1305,7 +1303,7 @@ class _OfflineSaleSheetState extends State<_OfflineSaleSheet> {
                       style: TextStyle(fontSize: 11, color: AppColors.gray500),
                     ),
                     Text(
-                      NumberFormat('#,###').format(widget.trip.price) + ' FCFA',
+                      '${NumberFormat('#,###').format(widget.trip.price)} FCFA',
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         color: AppColors.mobiliBlue,
@@ -1479,8 +1477,7 @@ class _OfflineSaleSheetState extends State<_OfflineSaleSheet> {
                   ),
                 ),
                 Text(
-                  NumberFormat('#,###').format(widget.trip.price * _seats) +
-                      ' FCFA',
+                  '${NumberFormat('#,###').format(widget.trip.price * _seats)} FCFA',
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     color: AppColors.proGold,

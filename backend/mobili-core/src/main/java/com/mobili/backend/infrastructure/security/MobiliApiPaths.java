@@ -39,6 +39,14 @@ public final class MobiliApiPaths {
     /** Covoiturage “solo” côté conducteur. */
     public static final String COVOITURAGE = "/covoiturage/**";
 
+
+    /**
+     * Candidature conducteur (ROLE_USER autorisé — pas encore ROLE_CHAUFFEUR à ce
+     * stade).
+     */
+    public static final String COVOITURAGE_APPLY = "/covoiturage/profile/apply";
+
+    
     public static final String INBOX = "/inbox/**";
 
     public static final String PARTNERS = "/partners";

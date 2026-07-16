@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 import 'package:mobili/shared/widgets/qr_scanner_widget.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -104,11 +105,9 @@ class _CovoiturageApplyPageState extends ConsumerState<CovoiturageApplyPage> {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        title: const Text('Devenir conducteur',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+     appBar: const MobiliAppBar(
+        title: 'Devenir conducteur',
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -398,7 +397,7 @@ class CovoiturageScannerPage extends StatelessWidget {
           ),
         ],
       ),
-      body: QrScannerWidget(
+      body: const QrScannerWidget(
         showResultOverlay: true,
       ),
     );

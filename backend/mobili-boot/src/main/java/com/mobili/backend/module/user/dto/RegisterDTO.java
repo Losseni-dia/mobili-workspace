@@ -21,11 +21,11 @@ public class RegisterDTO {
     private String email; // ← retire @NotBlank
 
     @NotBlank(message = "Le numéro de téléphone est obligatoire")
-    @Size(max = 20)
+    @Size(min = 8, max = 15, message = "Le numéro de téléphone doit faire entre 8 et 15 caractères")
     private String phone; // ← nouveau
     
     @NotBlank(message = "Le mot de passe est obligatoire")
-    @Size(min = 8, message = "Le mot de passe doit faire au moins 8 caractères")
+    @Size(min = 6, message = "Le mot de passe doit faire au moins 6 caractères")
     private String password;
 
   

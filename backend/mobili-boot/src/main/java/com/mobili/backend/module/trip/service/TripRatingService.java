@@ -7,8 +7,9 @@ import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.entity.TripRating;
 import com.mobili.backend.module.trip.repository.TripRatingRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -77,6 +77,17 @@ class TripService {
     return _parseList(response.data);
   }
 
+  /// Autocomplétion villes — pas de cache (toujours frais)
+  Future<List<String>> fetchCities(String query) async {
+    if (query.trim().isEmpty) return [];
+    final response = await _dio.get<List<dynamic>>(
+      '/trips/cities',
+      queryParameters: {'q': query.trim()},
+    );
+    if (response.data == null) return [];
+    return (response.data as List<dynamic>).map((e) => e.toString()).toList();
+  }
+
   // ── Detail ─────────────────────────────────────────────────────────────────
 
   Future<Trip> getTripById(int id) async {

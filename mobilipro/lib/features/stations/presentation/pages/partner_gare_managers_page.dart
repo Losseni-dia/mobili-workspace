@@ -19,8 +19,6 @@ class StationDetail {
     required this.city,
     required this.active,
     required this.responsibleName,
-    required this.approvalStatus,
-    required this.validated,
     required this.chauffeurs,
     this.code,
   });
@@ -29,22 +27,14 @@ class StationDetail {
   final String city;
   final bool active;
   final String? responsibleName;
-  final String approvalStatus;
-  final bool validated;
   final List<GareChauffeur> chauffeurs;
   final String? code;
-
-  bool get isApproved => approvalStatus == 'APPROVED' && validated;
-  bool get isPending => !isApproved;
-
   factory StationDetail.fromJson(Map<String, dynamic> json) => StationDetail(
     id: json['id'] as int,
     name: json['name'] as String? ?? '',
     city: json['city'] as String? ?? '',
     active: json['active'] as bool? ?? false,
     responsibleName: json['responsibleName'] as String?,
-    approvalStatus: json['approvalStatus'] as String? ?? '',
-    validated: json['validated'] as bool? ?? false,
     code: json['code'] as String?,
     chauffeurs: (json['assignedChauffeurs'] as List<dynamic>? ?? [])
         .map((e) => GareChauffeur.fromJson(e as Map<String, dynamic>))
@@ -454,30 +444,12 @@ class _StationsTab extends ConsumerWidget {
                   onSaved: () => ref.invalidate(stationsProvider),
                 ),
               ),
-              onToggle: () => _toggleActive(context, ref, stations[i], onSnack),
-              onApprove: stations[i].isPending
-                  ? () => _approveStation(context, ref, stations[i], onSnack)
-                  : null,
+             onToggle: () => _toggleActive(context, ref, stations[i], onSnack),
             ),
           ),
         );
       },
     );
-  }
-
-  Future<void> _approveStation(
-    BuildContext context,
-    WidgetRef ref,
-    StationDetail s,
-    void Function(String, {bool error}) snack,
-  ) async {
-    try {
-      await ApiClient.instance.dio.post('/partenaire/stations/${s.id}/approve');
-      ref.invalidate(stationsProvider);
-      snack('${s.name} approuvée et activée !');
-    } catch (e) {
-      snack('Erreur : $e', error: true);
-    }
   }
 
   Future<void> _toggleActive(
@@ -505,13 +477,11 @@ class _StationCard extends ConsumerWidget {
     required this.onTap,
     required this.onEdit,
     required this.onToggle,
-    this.onApprove,
   });
   final StationDetail station;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onToggle;
-  final VoidCallback? onApprove;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -521,12 +491,10 @@ class _StationCard extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
+       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: station.isPending
-                ? AppColors.warning.withValues(alpha: 0.4)
-                : station.active
+            color: station.active
                 ? AppColors.stationGreen.withValues(alpha: 0.3)
                 : AppColors.gray200,
           ),
@@ -547,9 +515,7 @@ class _StationCard extends ConsumerWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: station.isPending
-                        ? [const Color(0xFF92400E), const Color(0xFFB45309)]
-                        : station.active
+                    colors: station.active
                         ? [const Color(0xFF0A1F6E), AppColors.mobiliBlueDeep]
                         : [AppColors.gray400, AppColors.gray500],
                   ),
@@ -598,22 +564,18 @@ class _StationCard extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Container(
+                       Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: station.isPending
-                                ? AppColors.warning.withValues(alpha: 0.2)
-                                : station.active
+                            color: station.active
                                 ? AppColors.stationGreen.withValues(alpha: 0.2)
                                 : AppColors.danger.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: station.isPending
-                                  ? AppColors.warning.withValues(alpha: 0.5)
-                                  : station.active
+                              color: station.active
                                   ? AppColors.stationGreen.withValues(
                                       alpha: 0.5,
                                     )
@@ -621,15 +583,9 @@ class _StationCard extends ConsumerWidget {
                             ),
                           ),
                           child: Text(
-                            station.isPending
-                                ? 'En attente'
-                                : station.active
-                                ? 'Active'
-                                : 'Inactive',
+                            station.active ? 'Active' : 'Inactive',
                             style: TextStyle(
-                              color: station.isPending
-                                  ? AppColors.warning
-                                  : station.active
+                              color: station.active
                                   ? AppColors.stationGreen
                                   : AppColors.danger,
                               fontSize: 10,
@@ -652,43 +608,6 @@ class _StationCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (station.isPending)
-                GestureDetector(
-                  onTap: onApprove,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    color: AppColors.warningSoft,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          color: AppColors.warning,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'En attente — Appuyez pour approuver et activer',
-                            style: TextStyle(
-                              color: AppColors.warning,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.warning,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
@@ -749,8 +668,9 @@ class _StationCard extends ConsumerWidget {
                       ),
                       error: (_, __) => const SizedBox.shrink(),
                       data: (stats) {
-                        if (stats['total'] == 0 && stats['bookings'] == 0)
+                        if (stats['total'] == 0 && stats['bookings'] == 0) {
                           return const SizedBox.shrink();
+                        }
                         return Column(
                           children: [
                             const SizedBox(height: 10),
@@ -800,10 +720,9 @@ class _StationCard extends ConsumerWidget {
                                           ),
                                         ),
                                         Text(
-                                          NumberFormat(
+                                          '${NumberFormat(
                                                 '#,###',
-                                              ).format(stats['total']) +
-                                              ' F',
+                                              ).format(stats['total'])} F',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w900,
                                             color: AppColors.proGold,
@@ -819,10 +738,9 @@ class _StationCard extends ConsumerWidget {
                                             ),
                                             const SizedBox(width: 2),
                                             Text(
-                                              NumberFormat(
+                                              '${NumberFormat(
                                                     '#,###',
-                                                  ).format(stats['online']) +
-                                                  ' F',
+                                                  ).format(stats['online'])} F',
                                               style: const TextStyle(
                                                 fontSize: 9,
                                                 color: AppColors.stationGreen,
@@ -836,10 +754,9 @@ class _StationCard extends ConsumerWidget {
                                             ),
                                             const SizedBox(width: 2),
                                             Text(
-                                              NumberFormat(
+                                              '${NumberFormat(
                                                     '#,###',
-                                                  ).format(stats['offline']) +
-                                                  ' F',
+                                                  ).format(stats['offline'])} F',
                                               style: const TextStyle(
                                                 fontSize: 9,
                                                 color: AppColors.mobiliYellow,
@@ -860,7 +777,7 @@ class _StationCard extends ConsumerWidget {
                     const SizedBox(height: 10),
                     const Divider(height: 1, color: AppColors.gray100),
                     const SizedBox(height: 10),
-                    Wrap(
+                   Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
@@ -876,24 +793,16 @@ class _StationCard extends ConsumerWidget {
                           color: AppColors.mobiliBlue,
                           onTap: onEdit,
                         ),
-                        if (station.isApproved)
-                          _ActionBtn(
-                            icon: station.active
-                                ? Icons.pause_circle_rounded
-                                : Icons.play_circle_rounded,
-                            label: station.active ? 'Désactiver' : 'Activer',
-                            color: station.active
-                                ? AppColors.warning
-                                : AppColors.stationGreen,
-                            onTap: onToggle,
-                          ),
-                        if (station.isPending && onApprove != null)
-                          _ActionBtn(
-                            icon: Icons.check_circle_rounded,
-                            label: 'Approuver',
-                            color: AppColors.stationGreen,
-                            onTap: onApprove!,
-                          ),
+                        _ActionBtn(
+                          icon: station.active
+                              ? Icons.pause_circle_rounded
+                              : Icons.play_circle_rounded,
+                          label: station.active ? 'Désactiver' : 'Activer',
+                          color: station.active
+                              ? AppColors.warning
+                              : AppColors.stationGreen,
+                          onTap: onToggle,
+                        ),
                       ],
                     ),
                   ],
@@ -921,8 +830,12 @@ class _StationFormSheetState extends State<_StationFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _cityCtrl;
+  late final TextEditingController _passwordCtrl;
+  late final TextEditingController _passwordConfirmCtrl;
   bool _active = true;
   bool _loading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   String? _error;
 
   @override
@@ -930,6 +843,8 @@ class _StationFormSheetState extends State<_StationFormSheet> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.existing?.name ?? '');
     _cityCtrl = TextEditingController(text: widget.existing?.city ?? '');
+    _passwordCtrl = TextEditingController();
+    _passwordConfirmCtrl = TextEditingController();
     _active = widget.existing?.active ?? true;
   }
 
@@ -937,6 +852,8 @@ class _StationFormSheetState extends State<_StationFormSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _cityCtrl.dispose();
+    _passwordCtrl.dispose();
+    _passwordConfirmCtrl.dispose();
     super.dispose();
   }
 
@@ -947,10 +864,12 @@ class _StationFormSheetState extends State<_StationFormSheet> {
       _error = null;
     });
     try {
-      final body = {
+   final body = {
         'name': _nameCtrl.text.trim(),
         'city': _cityCtrl.text.trim(),
         'active': _active,
+        if (_passwordCtrl.text.trim().isNotEmpty)
+          'password': _passwordCtrl.text.trim(),
       };
       if (widget.existing == null) {
         await ApiClient.instance.dio.post('/partenaire/stations', data: body);
@@ -995,35 +914,6 @@ class _StationFormSheetState extends State<_StationFormSheet> {
                   color: AppColors.mobiliBlueDeep,
                 ),
               ),
-              if (!isEdit) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.warningSoft,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.warning,
-                        size: 14,
-                      ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'La gare sera créée en attente. Vous devrez l\'approuver pour l\'activer.',
-                          style: TextStyle(
-                            color: AppColors.warning,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 16),
               if (_error != null) ...[
                 Container(
@@ -1050,12 +940,67 @@ class _StationFormSheetState extends State<_StationFormSheet> {
                     v == null || v.trim().isEmpty ? 'Obligatoire' : null,
               ),
               const SizedBox(height: 12),
-              _Field(
+            _Field(
                 controller: _cityCtrl,
                 label: 'Ville',
                 icon: Icons.location_city_rounded,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Obligatoire' : null,
+              ),
+              const SizedBox(height: 12),
+            const SizedBox(height: 12),
+              _Field(
+                controller: _passwordCtrl,
+                label: isEdit
+                    ? 'Nouveau mot de passe gare'
+                    : 'Mot de passe de la gare',
+                icon: Icons.lock_rounded,
+                obscure: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.gray400,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+                validator: isEdit
+                    ? null
+                    : (v) => v == null || v.trim().length < 6
+                          ? 'Min 6 caractères'
+                          : null,
+              ),
+              const SizedBox(height: 12),
+              _Field(
+                controller: _passwordConfirmCtrl,
+                label: isEdit
+                    ? 'Confirmer le nouveau mot de passe'
+                    : 'Confirmer le mot de passe',
+                icon: Icons.lock_outline_rounded,
+                obscure: _obscureConfirm,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirm
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.gray400,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                ),
+                validator: (v) {
+                  if (_passwordCtrl.text.isEmpty && v == null) return null;
+                  if (_passwordCtrl.text.isEmpty && (v == null || v.isEmpty)) {
+                    return null;
+                  }
+                  if (_passwordCtrl.text.isNotEmpty &&
+                      v != _passwordCtrl.text) {
+                    return 'Les mots de passe ne correspondent pas';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -2889,6 +2834,7 @@ class _Field extends StatelessWidget {
     this.keyboardType,
     this.obscure = false,
     this.enabled = true,
+    this.suffixIcon,
   });
   final TextEditingController controller;
   final String label;
@@ -2897,6 +2843,7 @@ class _Field extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscure;
   final bool enabled;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -2908,6 +2855,7 @@ class _Field extends StatelessWidget {
     decoration: InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: AppColors.gray400, size: 20),
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: enabled ? AppColors.white : AppColors.gray100,
       border: OutlineInputBorder(

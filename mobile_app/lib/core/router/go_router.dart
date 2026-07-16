@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/covoiturage/presentation/pages/covoiturage_bookings_list_page.dart';
+import 'package:mobili/features/covoiturage/providers/covoiturage_provider.dart';
 import 'package:mobili/features/legal/presentation/cgu_page.dart';
 import 'package:mobili/features/legal/presentation/confidentialite_page.dart';
 import 'package:mobili/features/notifications/presentation/notifications_page.dart';
@@ -191,6 +193,15 @@ GoRouter goRouter(GoRouterRef ref) {
               trips: (state.extra as List<Trip>?) ?? const [],
               title: 'Tous mes trajets',
               emptyLabel: 'Aucun trajet publié',
+            ),
+            
+          ),
+          GoRoute(
+            path: 'bookings',
+            name: 'covoiturageBookings',
+            builder: (_, state) => CovoiturageBookingsListPage(
+              bookings:
+                  (state.extra as List<PartnerRecentBooking>?) ?? const [],
             ),
           ),
         ],

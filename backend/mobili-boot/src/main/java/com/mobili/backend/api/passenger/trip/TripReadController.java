@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
+import com.mobili.backend.module.city.repository.CityRepository;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
@@ -33,6 +34,14 @@ public class TripReadController {
     private final TripMapper tripMapper;
     private final TripRunService tripRunService;
     private final AnalyticsEventService analyticsEventService;
+    private final CityRepository cityRepository;
+
+    @GetMapping("/cities")
+    public List<String> getCities(
+            @RequestParam(required = false, defaultValue = "") String q) {
+        return cityRepository.findByNameStartingWith(
+                q != null ? q.trim().toLowerCase() : "");
+    }
 
     @GetMapping
     public List<TripResponseDTO> getAll(

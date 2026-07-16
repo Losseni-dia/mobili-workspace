@@ -33,22 +33,21 @@ part 'go_router.g.dart';
 
 @riverpod
 GoRouter goRouter(GoRouterRef ref) {
-  final authState = ref.watch(authProvider);
-
+  final isAuthLoading = ref.watch(authProvider.select((s) => s.isLoading));
+  final isLoggedIn = ref.watch(
+    authProvider.select((s) => s.value?.isAuthenticated ?? false),
+  );
+  final profile = ref.watch(authProvider.select((s) => s.value?.profile));
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      if (authState.isLoading) return null;
-
-      final isLoggedIn = authState.value?.isAuthenticated ?? false;
+      if (isAuthLoading) return null;
       final isOnLogin = state.matchedLocation == '/login';
       final isOnAuthPage =
           isOnLogin || state.matchedLocation.startsWith('/register');
-
       if (!isLoggedIn && !isOnAuthPage) return '/login';
       if (isLoggedIn && isOnLogin) {
-        final profile = authState.value?.profile;
         if (profile == null) return '/login';
         if (profile.isChauffeur) return '/chauffeur/trips';
         if (profile.isAdmin) return '/admin/dashboard';

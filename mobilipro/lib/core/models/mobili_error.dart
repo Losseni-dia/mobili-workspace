@@ -95,7 +95,7 @@ class MobiliException implements Exception {
 
   factory MobiliException.fromMobiliError(MobiliError err) {
     // Validation errors carry a map, not a single message
-    if (err.errorCode == 'MOB-003' && err.errors != null) {
+    if (err.errors != null && err.errors!.isNotEmpty) {
       final summary = err.errors!.entries
           .map((e) => '${e.key}: ${e.value}')
           .join('\n');

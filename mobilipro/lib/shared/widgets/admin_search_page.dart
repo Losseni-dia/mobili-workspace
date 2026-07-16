@@ -617,8 +617,9 @@ class _HighlightText extends StatelessWidget {
         spans.add(TextSpan(text: text.substring(start), style: baseStyle));
         break;
       }
-      if (idx > start)
+      if (idx > start) {
         spans.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
+      }
       spans.add(
         TextSpan(
           text: text.substring(idx, idx + q.length),

@@ -363,9 +363,9 @@ class _RegistrationStatsDetailPageState extends ConsumerState<RegistrationStatsD
               ),
               const SizedBox(height: 16),
               _TableCard(
-                headers: ['Date', 'Inscriptions'],
+                headers: const ['Date', 'Inscriptions'],
                 rows: stats.history.reversed.map((e) => [e.date, '${e.count}']).toList(),
-                colors: [null, AppColors.stationGreen],
+                colors: const [null, AppColors.stationGreen],
               ),
             ],
             const SizedBox(height: 32),
@@ -429,9 +429,9 @@ class _LoginStatsDetailPageState extends ConsumerState<LoginStatsDetailPage> {
               ),
               const SizedBox(height: 16),
               _TableCard(
-                headers: ['Date', 'Total', 'Uniques'],
+                headers: const ['Date', 'Total', 'Uniques'],
                 rows: login.history.reversed.take(30).map((e) => [e.date, '${e.totalLogins}', '${e.uniqueUsers}']).toList(),
-                colors: [null, AppColors.mobiliBlue, AppColors.stationGreen],
+                colors: const [null, AppColors.mobiliBlue, AppColors.stationGreen],
               ),
             ],
             const SizedBox(height: 32),
@@ -545,7 +545,7 @@ class _LineChartWidgetState extends State<_LineChartWidget> {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(color: AppColors.gray100, strokeWidth: 1),
+          getDrawingHorizontalLine: (_) => const FlLine(color: AppColors.gray100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
@@ -675,7 +675,7 @@ class _HorizontalBarChartState extends State<_HorizontalBarChart> {
           show: true,
           drawHorizontalLine: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(color: AppColors.gray100, strokeWidth: 1),
+          getDrawingHorizontalLine: (_) => const FlLine(color: AppColors.gray100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: widget.entries.asMap().entries.map((entry) {

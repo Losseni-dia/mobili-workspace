@@ -19,12 +19,32 @@ final _ticketsProvider =
   return BookingService().getTicketsForUser(userId);
 });
 
-class MyTicketsPage extends ConsumerWidget {
+class MyTicketsPage extends ConsumerStatefulWidget {
   const MyTicketsPage({super.key, this.filterTripId});
   final int? filterTripId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyTicketsPage> createState() => _MyTicketsPageState();
+}
+
+class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(authProvider).valueOrNull?.profile;
 
     if (profile == null) {
@@ -38,7 +58,24 @@ class MyTicketsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: const MobiliAppBar(title: 'Mes billets', backRoute: '/profile'),
+      appBar: MobiliAppBar(
+        title: 'Mes billets',
+        backRoute: '/profile',
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppColors.mobiliYellow,
+          indicatorWeight: 3,
+          labelColor: AppColors.white,
+          unselectedLabelColor: AppColors.white.withValues(alpha: 0.6),
+          labelStyle: AppTextStyles.bodyMedium
+              .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
+          unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
+          tabs: const [
+            Tab(text: 'À venir'),
+            Tab(text: 'Historique'),
+          ],
+        ),
+      ),
       body: ticketsAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.mobiliBlue),
@@ -61,7 +98,11 @@ class MyTicketsPage extends ConsumerWidget {
           ),
         ),
         data: (tickets) {
-          if (tickets.isEmpty) {
+          final filtered = widget.filterTripId != null
+              ? tickets.where((t) => t.tripId == widget.filterTripId).toList()
+              : tickets;
+
+          if (filtered.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -89,10 +130,30 @@ class MyTicketsPage extends ConsumerWidget {
               ),
             );
           }
-          final filtered = filterTripId != null
-              ? tickets.where((t) => t.tripId == filterTripId).toList()
-              : tickets;
-          return _TicketsList(tickets: filtered);
+
+          // À venir : trajets pas encore effectués — les plus proches en
+          // premier. Historique : trajets déjà effectués/annulés — les plus
+          // récents en premier.
+          final upcoming = filtered.where((t) => t.belongsToUpcoming).toList()
+            ..sort(
+                (a, b) => a.departureDateTime.compareTo(b.departureDateTime));
+          final history = filtered.where((t) => !t.belongsToUpcoming).toList()
+            ..sort(
+                (a, b) => b.departureDateTime.compareTo(a.departureDateTime));
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _TicketsList(
+                tickets: upcoming,
+                emptyLabel: 'Aucun billet à venir',
+              ),
+              _TicketsList(
+                tickets: history,
+                emptyLabel: 'Aucun billet dans l\'historique',
+              ),
+            ],
+          );
         },
       ),
     );
@@ -104,8 +165,9 @@ class MyTicketsPage extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TicketsList extends StatefulWidget {
-  const _TicketsList({required this.tickets});
+  const _TicketsList({required this.tickets, this.emptyLabel = 'Aucun billet'});
   final List<Ticket> tickets;
+  final String emptyLabel;
 
   @override
   State<_TicketsList> createState() => _TicketsListState();
@@ -120,6 +182,17 @@ class _TicketsListState extends State<_TicketsList> {
     _tickets = List.from(widget.tickets);
   }
 
+  @override
+  void didUpdateWidget(covariant _TicketsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Le parent (onglet À venir / Historique) peut être recréé quand les
+    // données sous-jacentes changent (ex. après suppression) — on
+    // resynchronise la liste locale dans ce cas.
+    if (oldWidget.tickets != widget.tickets) {
+      _tickets = List.from(widget.tickets);
+    }
+  }
+
   void _remove(int index) => setState(() => _tickets.removeAt(index));
 
   @override
@@ -132,7 +205,7 @@ class _TicketsListState extends State<_TicketsList> {
             const Icon(Icons.confirmation_number_outlined,
                 color: AppColors.mobiliBlue, size: 48),
             const SizedBox(height: 12),
-            Text('Aucun billet',
+            Text(widget.emptyLabel,
                 style: AppTextStyles.titleLarge
                     .copyWith(color: AppColors.mobiliBlueDeep)),
           ],
@@ -499,6 +572,18 @@ class _TicketCardState extends State<_TicketCard> {
                     ],
                   ),
                 ),
+
+               if (ticket.formattedBookingDate != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: Text(
+                      ticket.formattedBookingDate!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.gray400,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
 
                 _DashedDivider(),
 

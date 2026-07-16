@@ -319,14 +319,17 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
 
   List<AdminPartner> _applyFilters(List<AdminPartner> all) {
     var filtered = all.where((p) => !p.covoiturageSoloPool).toList();
-    if (_approvalFilter != 'TOUS')
+    if (_approvalFilter != 'TOUS') {
       filtered = filtered
           .where((p) => p.approvalStatus == _approvalFilter)
           .toList();
-    if (_statusFilter == 'ACTIF')
+    }
+    if (_statusFilter == 'ACTIF') {
       filtered = filtered.where((p) => p.enabled).toList();
-    if (_statusFilter == 'INACTIF')
+    }
+    if (_statusFilter == 'INACTIF') {
       filtered = filtered.where((p) => !p.enabled).toList();
+    }
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       filtered = filtered
@@ -426,7 +429,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                 if (_search.isNotEmpty) '"$_search"',
               ];
 
-              if (filtered.isEmpty)
+              if (filtered.isEmpty) {
                 return _EmptyState(
                   icon: Icons.business_outlined,
                   title: 'Aucun partenaire',
@@ -434,6 +437,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                       ? 'Filtres actifs : ${activeFilters.join(', ')}'
                       : null,
                 );
+              }
 
               return Column(
                 children: [
@@ -536,16 +540,20 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
 
   List<AdminUser> _applyFilters(List<AdminUser> all) {
     var filtered = all;
-    if (_roleFilter != 'TOUS')
+    if (_roleFilter != 'TOUS') {
       filtered = filtered.where((u) => u.roles.contains(_roleFilter)).toList();
-    if (_statusFilter == 'ACTIF')
+    }
+    if (_statusFilter == 'ACTIF') {
       filtered = filtered.where((u) => u.enabled).toList();
-    if (_statusFilter == 'INACTIF')
+    }
+    if (_statusFilter == 'INACTIF') {
       filtered = filtered.where((u) => !u.enabled).toList();
-    if (_companyFilter != 'TOUS')
+    }
+    if (_companyFilter != 'TOUS') {
       filtered = filtered
           .where((u) => u.linkedCompanyName == _companyFilter)
           .toList();
+    }
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       filtered = filtered
@@ -699,11 +707,12 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                           itemCount: visible.length + (hasMore ? 1 : 0),
                           itemBuilder: (_, i) {
-                            if (i == visible.length)
+                            if (i == visible.length) {
                               return _LoadMoreButton(
                                 remaining: filtered.length - _pageSize,
                                 onTap: () => setState(() => _pageSize += 20),
                               );
+                            }
                             final u = visible[i];
                             return _UserCard(
                               user: u,
@@ -759,12 +768,15 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
 
   List<CovoiturageSoloDriver> _applyFilters(List<CovoiturageSoloDriver> all) {
     var filtered = all;
-    if (_kycFilter != 'TOUS')
+    if (_kycFilter != 'TOUS') {
       filtered = filtered.where((d) => d.kycStatus == _kycFilter).toList();
-    if (_statusFilter == 'ACTIF')
+    }
+    if (_statusFilter == 'ACTIF') {
       filtered = filtered.where((d) => d.enabled).toList();
-    if (_statusFilter == 'INACTIF')
+    }
+    if (_statusFilter == 'INACTIF') {
       filtered = filtered.where((d) => !d.enabled).toList();
+    }
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       filtered = filtered
@@ -856,7 +868,7 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                 if (_search.isNotEmpty) '"$_search"',
               ];
 
-              if (filtered.isEmpty)
+              if (filtered.isEmpty) {
                 return _EmptyState(
                   icon: Icons.directions_car_outlined,
                   title: 'Aucun chauffeur',
@@ -864,6 +876,7 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                       ? 'Filtres : ${activeFilters.join(', ')}'
                       : null,
                 );
+              }
 
               return Column(
                 children: [
@@ -889,11 +902,12 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                         itemCount: visible.length + (hasMore ? 1 : 0),
                         itemBuilder: (_, i) {
-                          if (i == visible.length)
+                          if (i == visible.length) {
                             return _LoadMoreButton(
                               remaining: filtered.length - _pageSize,
                               onTap: () => setState(() => _pageSize += 20),
                             );
+                          }
                           final d = visible[i];
                           return _CovoiturageCard(
                             driver: d,
