@@ -30,14 +30,28 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
   int? _highlightedBookingId;
   final Map<int, GlobalKey> _cardKeys = {};
 
+ bool _readQueryParam = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    final uri = GoRouterState.of(context).uri;
-    final bookingIdParam = uri.queryParameters['bookingId'];
-    if (bookingIdParam != null) {
-      _highlightedBookingId = int.tryParse(bookingIdParam);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // GoRouterState.of(context) a besoin que le contexte soit pleinement
+    // rattaché à l'arbre de routes — ce n'est pas encore le cas dans
+    // initState(), d'où le déplacement ici, avec un verrou pour ne lire
+    // le paramètre qu'une seule fois.
+    if (!_readQueryParam) {
+      _readQueryParam = true;
+      final uri = GoRouterState.of(context).uri;
+      final bookingIdParam = uri.queryParameters['bookingId'];
+      if (bookingIdParam != null) {
+        _highlightedBookingId = int.tryParse(bookingIdParam);
+      }
     }
   }
 
@@ -107,7 +121,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
           unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
           tabs: const [
             Tab(text: 'À venir'),
-            Tab(text: 'Passées'),
+            Tab(text: 'Historique'),
           ],
         ),
       ),
@@ -133,10 +147,10 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
           ),
         ),
         data: (bookings) {
-          final upcoming = bookings.where((b) => b.isUpcoming).toList()
+        final upcoming = bookings.where((b) => b.belongsToUpcoming).toList()
             ..sort(
                 (a, b) => a.departureDateTime.compareTo(b.departureDateTime));
-          final past = bookings.where((b) => !b.isUpcoming).toList()
+          final past = bookings.where((b) => !b.belongsToUpcoming).toList()
             ..sort(
                 (a, b) => b.departureDateTime.compareTo(a.departureDateTime));
 
@@ -948,24 +962,48 @@ class _BookingCard extends StatelessWidget {
     );
   }
 
-  Future<void> _payNow(BuildContext context) async {
+ Future<void> _payNow(BuildContext context) async {
     try {
-      final url = await BookingService().checkout(booking.id);
+      final service = BookingService();
+      final url = await service.checkout(booking.id);
       if (context.mounted) {
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => PaymentWebViewPage(
               paymentUrl: url,
-              onSuccess: () {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Paiement en cours de confirmation…'),
-                      backgroundColor: AppColors.success,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+              onSuccess: () async {
+                // Comme pour un trajet public : on vérifie/confirme le
+                // paiement au retour, sans quoi la réservation reste
+                // indéfiniment "en attente" même si le paiement a réussi.
+                try {
+                  final result = await service.pollUntilConfirmed(
+                    booking.id,
+                    maxAttempts: 5,
+                    interval: const Duration(seconds: 2),
                   );
+                  if (context.mounted) {
+                    if (result.success) {
+                      _showPaymentConfirmed(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Paiement non confirmé. Réessayez ou contactez le support.'),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur de vérification : $e'),
+                        backgroundColor: AppColors.danger,
+                      ),
+                    );
+                  }
                 }
               },
               onCancel: () {},
@@ -983,6 +1021,43 @@ class _BookingCard extends StatelessWidget {
         );
       }
     }
+  }
+
+  void _showPaymentConfirmed(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded,
+                color: AppColors.stationGreen, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text('Réservation confirmée !',
+                  style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+        content: const Text('Votre paiement a été confirmé. Bon voyage !'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.go('/tickets?tripId=${booking.tripId}');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.mobiliBlue,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Voir mon billet',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _statusLabel(String status) {

@@ -56,11 +56,21 @@ class Trip {
 
   bool get isCovoiturage => transportType == 'COVOITURAGE';
 
-  bool get isInProgress => status == 'EN_COURS';
+ bool get isInProgress => status == 'EN_COURS';
   bool get isUpcoming => status == null || status == 'PROGRAMMÉ';
   bool get isCompleted => status == 'TERMINÉ';
   bool get isCancelled => status == 'ANNULÉ';
 
+  /// Un trajet est considéré "passé" (doit apparaître dans l'historique) si
+  /// son statut l'indique explicitement (TERMINÉ/ANNULÉ), OU si sa date de
+  /// départ est dépassée alors qu'il est resté PROGRAMMÉ (le chauffeur n'a
+  /// jamais cliqué "Démarrer" — le trajet n'a donc jamais été mis à jour,
+  /// mais il ne doit plus apparaître comme "à venir").
+  bool get isPastDue =>
+      isCompleted ||
+      isCancelled ||
+      (isUpcoming && departureTime.isBefore(DateTime.now()));
+      
   bool get isToday {
     final now = DateTime.now();
     return departureTime.year == now.year &&

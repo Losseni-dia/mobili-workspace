@@ -18,6 +18,7 @@ class Booking {
     this.customerLastname,
     this.customerAvatarUrl,
     this.numberOfSeats,
+    this.tripRoute,
   });
 
   final int id;
@@ -41,6 +42,7 @@ class Booking {
   final String? customerLastname;
   final String? customerAvatarUrl;
   final int? numberOfSeats;
+  final String? tripRoute;
 
   bool get isPendingDriverApproval => status == 'PENDING_DRIVER_APPROVAL';
   bool get isAwaitingPayment => status == 'AWAITING_PAYMENT';
@@ -68,10 +70,10 @@ class Booking {
             : null,
         customerFirstname: json['customerFirstname'] as String?,
         customerLastname: json['customerLastname'] as String?,
-        customerAvatarUrl: json['customerAvatarUrl'] as String?,
+      customerAvatarUrl: json['customerAvatarUrl'] as String?,
         numberOfSeats: json['numberOfSeats'] as int?,
+        tripRoute: json['tripRoute'] as String?,
       );
-
   Map<String, dynamic> toJson() => {
         'id': id,
         'tripId': tripId,

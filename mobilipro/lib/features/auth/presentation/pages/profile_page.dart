@@ -164,7 +164,7 @@ class ProfilePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionTitle(title: 'Informations du compte'),
+                  const _SectionTitle(title: 'Informations du compte'),
                   const SizedBox(height: 8),
                   _InfoCard(
                     children: [
@@ -194,7 +194,7 @@ class ProfilePage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _SectionTitle(title: 'Rôles & accès'),
+                  const _SectionTitle(title: 'Rôles & accès'),
                   const SizedBox(height: 8),
                   _InfoCard(
                     children: [
@@ -235,7 +235,7 @@ class ProfilePage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _SectionTitle(title: 'Statut'),
+                  const _SectionTitle(title: 'Statut'),
                   const SizedBox(height: 8),
                   _InfoCard(
                     children: [
@@ -308,7 +308,7 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Center(
+                  const Center(
                     child: Text(
                       'MobiliPro v1.0.0',
                       style: TextStyle(color: AppColors.gray400, fontSize: 11),

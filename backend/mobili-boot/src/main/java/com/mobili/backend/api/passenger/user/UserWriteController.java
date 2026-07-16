@@ -46,8 +46,7 @@ public class UserWriteController {
             @RequestPart(value = "avatar", required = false) MultipartFile avatar) {
 
         User updatedInfo = userMapper.toEntity(dto);
-        // Le service s'occupera de hasher le password s'il n'est pas blank
-        User user = userService.updateUser(id, updatedInfo, null, avatar);
+        User user = userService.updateUser(id, updatedInfo, dto.oldPassword(), null, avatar);
 
         ProfileDTO profile = userMapper.toProfileDto(user);
         gareProfileEnricher.enrich(profile, user);

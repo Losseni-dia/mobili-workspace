@@ -1,21 +1,23 @@
 package com.mobili.backend.infrastructure.security.token;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
-import com.mobili.backend.module.user.entity.User;
-
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+
+import com.mobili.backend.module.user.entity.User;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
@@ -55,8 +57,10 @@ public class JwtService {
     }
 
     /**
-     * Jeton de rafraîchissement (même signature que l’accès, claims minimaux) — 7 jours.
-     * Ne doit jamais être accepté en {@code Authorization: Bearer} (voir filtre JWT).
+     * Jeton de rafraîchissement (même signature que l’accès, claims minimaux) — 7
+     * jours.
+     * Ne doit jamais être accepté en {@code Authorization: Bearer} (voir filtre
+     * JWT).
      */
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
@@ -72,7 +76,29 @@ public class JwtService {
                 .compact();
     }
 
-    /** Vrai si le JWT (claims) indique le type rafraîchissement. */
+    public String generateStationToken(com.mobili.backend.module.station.entity.Station station) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TOKEN_TYPE, TYPE_ACCESS);
+        claims.put("stationId", station.getId());
+        claims.put("login", station.getCode());
+        claims.put("roles", java.util.List.of("ROLE_STATION"));
+        claims.put("name", station.getName());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(station.getCode())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * Jeton de rafraîchissement (même signature que l'accès, claims minimaux) — 7
+     * jours.
+     * 
+     * /** Vrai si le JWT (claims) indique le type rafraîchissement.
+     */
     public boolean isRefreshTokenType(String token) {
         if (token == null || token.isBlank()) {
             return false;

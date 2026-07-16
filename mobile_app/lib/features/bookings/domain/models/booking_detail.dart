@@ -47,7 +47,17 @@ class BookingDetail {
   /// Covoiturage : délai de paiement une fois le chauffeur ayant accepté.
   final DateTime? paymentDeadline;
 
-  bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
+bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
+
+  bool get _isResolvedNegatively =>
+      status == 'CANCELLED' ||
+      status == 'REJECTED_BY_DRIVER' ||
+      status == 'EXPIRED';
+
+  /// "À venir" = statut encore actif ET trajet pas encore passé. Une
+  /// demande expirée/refusée/annulée bascule immédiatement en historique,
+  /// même si la date du trajet est encore dans le futur.
+  bool get belongsToUpcoming => !_isResolvedNegatively && isUpcoming;
 
   bool get canCancel =>
       (status == 'PENDING' || status == 'CONFIRMED') && isUpcoming;

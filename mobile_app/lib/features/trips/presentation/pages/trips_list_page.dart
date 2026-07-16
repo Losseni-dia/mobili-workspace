@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobili/features/auth/providers/auth_provider.dart';
 import 'package:mobili/features/support/presentation/pages/support_page.dart';
+import 'package:mobili/shared/widgets/city_autocomplete_field.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -21,31 +23,33 @@ class TripsListPage extends ConsumerStatefulWidget {
 }
 
 class _TripsListPageState extends ConsumerState<TripsListPage> {
+
   final _departureCtrl = TextEditingController();
   final _arrivalCtrl = TextEditingController();
   DateTime? _selectedDate;
   String? _selectedType;
   bool _paramsInitialized = false;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final uri = GoRouterState.of(context).uri;
-    final dep = uri.queryParameters['departure'];
-    final arr = uri.queryParameters['arrival'];
-    if (dep != null && dep.isNotEmpty) {
-      _departureCtrl.text = dep;
-      _paramsInitialized = true;
-    }
-    if (arr != null && arr.isNotEmpty) {
-      _arrivalCtrl.text = arr;
-      _paramsInitialized = true;
-    }
-    if (_paramsInitialized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _updateParams());
-      _paramsInitialized = false;
-    }
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  final uri = GoRouterState.of(context).uri;
+  final dep = uri.queryParameters['departure'];
+  final arr = uri.queryParameters['arrival'];
+  if (dep != null && dep.isNotEmpty) {
+    _departureCtrl.text = dep;
+    _paramsInitialized = true;
   }
+  if (arr != null && arr.isNotEmpty) {
+    _arrivalCtrl.text = arr;
+    _paramsInitialized = true;
+  }
+  if (_paramsInitialized) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateParams());
+    _paramsInitialized = false;
+  }
+}
+
 
   @override
   void dispose() {
@@ -93,6 +97,53 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
 
   @override
   Widget build(BuildContext context) {
+  final showWelcome = ref.watch(showWelcomeProvider);
+  if (showWelcome) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(showWelcomeProvider.notifier).state = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Connexion réussie ! Bienvenue sur Mobili.'),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      });
+      
+      }
+
+    final showRegisterSuccess = ref.watch(showRegisterSuccessProvider);
+    if (showRegisterSuccess) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(showRegisterSuccessProvider.notifier).state = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Compte créé ! Appuyez sur Profil pour vous connecter.'),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      });
+    }
+
+    
+    
     final tripsAsync = ref.watch(tripsProvider);
 
     return Scaffold(
@@ -209,23 +260,86 @@ class _FilterSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+               Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _SearchInput(
+                      child: CityAutocompleteField(
                         controller: departureCtrl,
-                        hint: 'Départ',
-                        icon: Icons.trip_origin_rounded,
                         onChanged: onFieldChanged,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mobiliBlueDeep,
+                          fontSize: 14,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Départ',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.gray400,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(Icons.trip_origin_rounded,
+                              size: 18, color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: AppColors.mobiliBlue, width: 2),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _SearchInput(
+                      child: CityAutocompleteField(
                         controller: arrivalCtrl,
-                        hint: 'Arrivée',
-                        icon: Icons.location_on_rounded,
                         onChanged: onFieldChanged,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mobiliBlueDeep,
+                          fontSize: 14,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Arrivée',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.gray400,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(Icons.location_on_rounded,
+                              size: 18, color: AppColors.gray400),
+                          filled: true,
+                          fillColor: AppColors.white,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.gray200),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                                const BorderSide(color: AppColors.gray200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: AppColors.mobiliBlue, width: 2),
+                          ),
+                        ),
                       ),
                     ),
                   ],

@@ -872,7 +872,7 @@ class _Step3Bagages extends StatelessWidget {
           child: SwitchListTile(
             value: manageBagages,
             onChanged: onManageBagagesChanged,
-            activeColor: AppColors.mobiliBlue,
+            activeThumbColor: AppColors.mobiliBlue,
             title: const Text(
               'Gérer les bagages en ligne',
               style: TextStyle(
@@ -953,8 +953,8 @@ class _Step3Bagages extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(
                       Icons.info_outline_rounded,
                       color: AppColors.mobiliBlue,
@@ -994,8 +994,8 @@ class _Step3Bagages extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.gray200),
             ),
-            child: Row(
-              children: const [
+            child: const Row(
+              children: [
                 Icon(
                   Icons.luggage_outlined,
                   color: AppColors.gray400,

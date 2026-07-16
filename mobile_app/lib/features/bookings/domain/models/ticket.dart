@@ -17,6 +17,7 @@ class Ticket {
     this.alightingCity,
     this.boardingStopIndex,
     this.alightingStopIndex,
+    this.bookingDate,
   });
 
   final String ticketNumber;
@@ -37,6 +38,10 @@ class Ticket {
   final int? boardingStopIndex;
   final int? alightingStopIndex;
 
+  /// Date à laquelle le billet a été acheté — distincte de departureDateTime
+  /// (la date du voyage lui-même).
+  final DateTime? bookingDate;
+
   // Ville d'embarquement effective (tronçon si dispo, sinon départ complet)
   String get effectiveBoardingCity => boardingCity ?? departureCity;
   String get effectiveAlightingCity => alightingCity ?? arrivalCity;
@@ -49,26 +54,52 @@ class Ticket {
 
   String get formattedPrice => '${price.toStringAsFixed(0)} FCFA';
 
+  bool get _isCancelledStatus =>
+      status.toUpperCase() == 'ANNULÉ' || status.toUpperCase() == 'CANCELLED';
+  bool get _isArrivedStatus =>
+      status.toUpperCase() == 'ARRIVÉ' || status.toUpperCase() == 'ARRIVE';
+  bool get _isBoardedStatus =>
+      status.toUpperCase() == 'UTILISÉ' || status.toUpperCase() == 'UTILISE';
+
+  /// "À venir" = billet pas encore utilisé/arrivé/annulé, ET le voyage
+  /// n'est pas encore passé (ou en cours d'embarquement — UTILISÉ reste
+  /// "actif" même si l'heure de départ est dépassée).
+  bool get belongsToUpcoming =>
+      !_isCancelledStatus &&
+      !_isArrivedStatus &&
+      (_isBoardedStatus || departureDateTime.isAfter(DateTime.now()));
+
+static const _monthLabels = [
+    '',
+    'jan',
+    'fév',
+    'mar',
+    'avr',
+    'mai',
+    'juin',
+    'juil',
+    'août',
+    'sep',
+    'oct',
+    'nov',
+    'déc'
+  ];
+
   String get formattedDate {
-    final months = [
-      '',
-      'jan',
-      'fév',
-      'mar',
-      'avr',
-      'mai',
-      'juin',
-      'juil',
-      'août',
-      'sep',
-      'oct',
-      'nov',
-      'déc'
-    ];
     final d = departureDateTime;
     final h = d.hour.toString().padLeft(2, '0');
     final m = d.minute.toString().padLeft(2, '0');
-    return '${d.day} ${months[d.month]} · $h:$m';
+    return '${d.day} ${_monthLabels[d.month]} · $h:$m';
+  }
+
+  /// Date d'achat formatée (ex. "5 juil. 2026 à 14:30") — null si non fournie
+  /// par le backend (billets créés avant l'ajout de ce champ, par exemple).
+  String? get formattedBookingDate {
+    final d = bookingDate;
+    if (d == null) return null;
+    final h = d.hour.toString().padLeft(2, '0');
+    final m = d.minute.toString().padLeft(2, '0');
+    return 'Acheté le ${d.day} ${_monthLabels[d.month]} ${d.year} à $h:$m';
   }
 
   factory Ticket.fromJson(Map<String, dynamic> json) => Ticket(
@@ -89,7 +120,10 @@ class Ticket {
         tripId: json['tripId'] as int? ?? 0,
         boardingCity: json['boardingCity'] as String?,
         alightingCity: json['alightingCity'] as String?,
-        boardingStopIndex: json['boardingStopIndex'] as int?,
+       boardingStopIndex: json['boardingStopIndex'] as int?,
         alightingStopIndex: json['alightingStopIndex'] as int?,
+        bookingDate: json['bookingDate'] != null
+            ? DateTime.tryParse(json['bookingDate'] as String)
+            : null,
       );
 }

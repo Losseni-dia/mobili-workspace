@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 /**
  * Stockage fichiers sous {@code mobili.backend.upload.root-directory}.
@@ -64,6 +64,41 @@ public class UploadService {
     public String saveImage(MultipartFile file, String folder) {
         validateImage(file);
         return writeFile(file, folder, false);
+    }
+
+    /**
+     * Copie un fichier déjà stocké (identifié par son chemin relatif, ex. issu
+     * d'un dossier {@code sensitive/...}) vers un autre dossier — utile pour
+     * "publiciser" une image existante (ex. photo véhicule du profil covoiturage,
+     * privée, réutilisée sur un trajet dont l'image doit être publique).
+     * Retourne le nouveau chemin relatif, ou {@code null} si la source est
+     * introuvable.
+     */
+    public String copyToFolder(String existingRelativePath, String targetFolder) {
+        if (existingRelativePath == null || existingRelativePath.isBlank()) {
+            return null;
+        }
+        Path rootPath = Paths.get(rootDirectory).toAbsolutePath().normalize();
+        Path source = rootPath.resolve(existingRelativePath).normalize();
+        if (!source.startsWith(rootPath) || !Files.isRegularFile(source)) {
+            return null;
+        }
+        try {
+            Path targetDir = rootPath.resolve(targetFolder);
+            if (!Files.exists(targetDir)) {
+                Files.createDirectories(targetDir);
+            }
+            String originalName = source.getFileName().toString();
+            String filename = UUID.randomUUID() + "_" + originalName;
+            Path dest = targetDir.resolve(filename).normalize();
+            if (!dest.startsWith(targetDir.normalize())) {
+                throw new IOException("Chemin de fichier refusé");
+            }
+            Files.copy(source, dest);
+            return targetFolder + "/" + filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur de copie vers " + targetFolder, e);
+        }
     }
 
     /**

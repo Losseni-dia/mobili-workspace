@@ -169,18 +169,18 @@ class _CanalTripPageState extends ConsumerState<CanalTripPage> {
             width: double.infinity,
             color: AppColors.mobiliYellow.withValues(alpha: 0.15),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
+            child: const Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   size: 14,
                   color: AppColors.proGold,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Messages visibles par tous les passagers de ce trajet',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.proGold,
                     ),
@@ -284,10 +284,10 @@ class _CanalTripPageState extends ConsumerState<CanalTripPage> {
 
           // Zone saisie
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.white,
-              border: const Border(top: BorderSide(color: AppColors.gray200)),
-              boxShadow: const [
+              border: Border(top: BorderSide(color: AppColors.gray200)),
+              boxShadow: [
                 BoxShadow(
                   color: Color(0x0A000000),
                   blurRadius: 8,

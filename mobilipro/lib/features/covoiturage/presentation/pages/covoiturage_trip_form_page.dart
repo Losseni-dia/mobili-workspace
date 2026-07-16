@@ -305,16 +305,16 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
                                 child: Image.file(_vehicleImage!,
                                     fit: BoxFit.cover, width: double.infinity),
                               )
-                            : Column(
+                            : const Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.directions_car_rounded,
+                                  Icon(Icons.directions_car_rounded,
                                       color: AppColors.gray300, size: 28),
-                                  const SizedBox(height: 6),
+                                  SizedBox(height: 6),
                                   Text(
                                     'Photo du véhicule (optionnel — sinon celle de votre profil)',
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(color: AppColors.gray400, fontSize: 11),
+                                    style: TextStyle(color: AppColors.gray400, fontSize: 11),
                                   ),
                                 ],
                               ),

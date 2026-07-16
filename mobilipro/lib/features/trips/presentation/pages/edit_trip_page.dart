@@ -403,7 +403,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             ],
 
             // ── Route ──────────────────────────────────
-            _Section(label: 'Itinéraire'),
+            const _Section(label: 'Itinéraire'),
             _Field(
               controller: _departureCityCtrl,
               label: 'Ville de départ',
@@ -428,7 +428,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             const SizedBox(height: 20),
 
             // ── Date / heure ───────────────────────────
-            _Section(label: 'Date et heure'),
+            const _Section(label: 'Date et heure'),
             GestureDetector(
               onTap: _pickDateTime,
               child: Container(
@@ -471,7 +471,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             const SizedBox(height: 20),
 
             // ── Véhicule ───────────────────────────────
-            _Section(label: 'Véhicule'),
+            const _Section(label: 'Véhicule'),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: BoxDecoration(
@@ -559,7 +559,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             const SizedBox(height: 20),
 
             // ── Bagages ────────────────────────────────
-            _Section(label: 'Bagages'),
+            const _Section(label: 'Bagages'),
             Container(
               decoration: BoxDecoration(
                 color: AppColors.white,
@@ -574,7 +574,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
               child: SwitchListTile(
                 value: _manageBagages,
                 onChanged: (v) => setState(() => _manageBagages = v),
-                activeColor: AppColors.mobiliBlue,
+                activeThumbColor: AppColors.mobiliBlue,
                 title: const Text(
                   'Gérer les bagages en ligne',
                   style: TextStyle(
@@ -639,7 +639,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             const SizedBox(height: 20),
 
             // ── Chauffeur ──────────────────────────────
-            _Section(label: 'Chauffeur'),
+            const _Section(label: 'Chauffeur'),
             Consumer(
               builder: (context, ref, _) {
                 final chauffeursAsync = ref.watch(_editChauffeursProvider);
@@ -708,7 +708,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             const SizedBox(height: 20),
 
             // ── Tarif / places ─────────────────────────
-            _Section(label: 'Tarif et capacité'),
+            const _Section(label: 'Tarif et capacité'),
             Row(
               children: [
                 Expanded(
@@ -719,8 +719,9 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
                     keyboardType: TextInputType.number,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Obligatoire';
-                      if (double.tryParse(v.trim()) == null)
+                      if (double.tryParse(v.trim()) == null) {
                         return 'Nombre invalide';
+                      }
                       return null;
                     },
                   ),
@@ -734,8 +735,9 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
                     keyboardType: TextInputType.number,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Obligatoire';
-                      if (int.tryParse(v.trim()) == null)
+                      if (int.tryParse(v.trim()) == null) {
                         return 'Nombre invalide';
+                      }
                       return null;
                     },
                   ),
@@ -1025,8 +1027,7 @@ class _Field extends StatelessWidget {
     required this.icon,
     this.validator,
     this.keyboardType,
-    this.maxLines = 1,
-  });
+  }) : maxLines = 1;
   final TextEditingController controller;
   final String label;
   final IconData icon;

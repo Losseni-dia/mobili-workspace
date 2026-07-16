@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 import 'package:mobili/shared/widgets/private_network_image.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -94,16 +95,10 @@ class _CovoiturageProfilePageState
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-     appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        iconTheme: const IconThemeData(color: AppColors.white),
-        titleTextStyle: const TextStyle(
-          color: AppColors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-        ),
-        title: const Text('Mon profil conducteur'),
+    appBar: const MobiliAppBar(
+        title: 'Mon profil conducteur',
+        showBackButton: true,
+        titleFontSize: 18,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -249,7 +244,7 @@ class _PhotoTile extends StatelessWidget {
         child: PrivateNetworkImage(
           relativePath: url,
           fit: BoxFit.cover,
-          errorWidget: Center(
+          errorWidget: const Center(
             child: Icon(Icons.check_circle_outline_rounded,
                 color: AppColors.stationGreen, size: 26),
           ),

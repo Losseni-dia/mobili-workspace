@@ -72,7 +72,7 @@ class PartnerRecentBooking {
     return n.isNotEmpty ? n[0].toUpperCase() : '?';
   }
 
-  String get formattedAmount => NumberFormat('#,###').format(amount) + ' FCFA';
+  String get formattedAmount => '${NumberFormat('#,###').format(amount)} FCFA';
 
   factory PartnerRecentBooking.fromJson(Map<String, dynamic> json) =>
       PartnerRecentBooking(
@@ -359,10 +359,9 @@ class DashboardPartnerPage extends ConsumerWidget {
                                           ),
                                         ),
                                         Text(
-                                          NumberFormat(
+                                          '${NumberFormat(
                                                 '#,###',
-                                              ).format(stats.totalRevenue) +
-                                              ' FCFA',
+                                              ).format(stats.totalRevenue)} FCFA',
                                           style: const TextStyle(
                                             color: AppColors.mobiliYellow,
                                             fontSize: 20,
@@ -587,7 +586,7 @@ class _RevenueChip extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(fontSize: 10, color: color)),
               Text(
-                NumberFormat('#,###').format(amount) + ' F',
+                '${NumberFormat('#,###').format(amount)} F',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   color: color,

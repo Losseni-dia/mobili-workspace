@@ -21,9 +21,12 @@ public class RegisterCompanyPublicDTO {
     @NotBlank(message = "Le login est obligatoire")
     private String login;
 
-    @Email(message = "Format d’email invalide pour le dirigeant")
-    @NotBlank(message = "L’email du dirigeant est obligatoire")
+    @Email(message = "Format d'email invalide pour le dirigeant")
     private String email;
+
+    @NotBlank(message = "Le téléphone du responsable est obligatoire")
+    @Size(min = 8, max = 20, message = "Le numéro de téléphone doit faire entre 8 et 20 caractères")
+    private String phone;
 
     @NotBlank(message = "Le mot de passe est obligatoire")
     @Size(min = 6, message = "Le mot de passe doit faire au moins 6 caractères")
@@ -37,6 +40,7 @@ public class RegisterCompanyPublicDTO {
     private String companyEmail;
 
     @NotBlank(message = "Le téléphone de la société est obligatoire")
+    @Size(min = 8, max = 20, message = "Le numéro de téléphone doit faire entre 8 et 20 caractères")
     private String companyPhone;
 
     /** RCC / N° contribuable / ICE selon pays — optionnel. */

@@ -359,8 +359,9 @@ class _AdminActivityLogsPageState extends ConsumerState<AdminActivityLogsPage> {
                     itemBuilder: (_, i) {
                       // Bouton charger plus en bas
                       if (i == filtered.length) {
-                        if (logs.length < _limit)
+                        if (logs.length < _limit) {
                           return const SizedBox.shrink();
+                        }
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: OutlinedButton.icon(

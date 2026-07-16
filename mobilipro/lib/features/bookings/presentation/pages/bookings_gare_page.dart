@@ -559,7 +559,7 @@ class _TripAccordion extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          NumberFormat('#,###').format(tripTotal) + ' F',
+                          '${NumberFormat('#,###').format(tripTotal)} F',
                           style: const TextStyle(
                             color: AppColors.mobiliYellow,
                             fontWeight: FontWeight.w900,
@@ -579,7 +579,7 @@ class _TripAccordion extends StatelessWidget {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              NumberFormat('#,###').format(tripOnline) + ' F',
+                              '${NumberFormat('#,###').format(tripOnline)} F',
                               style: const TextStyle(
                                 color: AppColors.stationGreen,
                                 fontSize: 9,
@@ -596,7 +596,7 @@ class _TripAccordion extends StatelessWidget {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              NumberFormat('#,###').format(tripOffline) + ' F',
+                              '${NumberFormat('#,###').format(tripOffline)} F',
                               style: const TextStyle(
                                 color: AppColors.mobiliYellow,
                                 fontSize: 9,
@@ -885,7 +885,7 @@ class _RevenueChip extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(fontSize: 9, color: color)),
               Text(
-                NumberFormat('#,###').format(amount) + ' F',
+                '${NumberFormat('#,###').format(amount)} F',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   color: color,

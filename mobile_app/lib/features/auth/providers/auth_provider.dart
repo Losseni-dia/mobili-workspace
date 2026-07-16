@@ -137,7 +137,7 @@ Future<bool> register({
         phone: phone,
         avatarFile: avatarFile,
       );
-      state = AsyncData(const AuthState(status: AuthStatus.unauthenticated));
+      state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
       await AnalyticsService.logRegister();
       ref.read(showRegisterSuccessProvider.notifier).state = true;
       return true;

@@ -1100,7 +1100,7 @@ class _RecentBookingCard extends StatelessWidget {
             Container(
               width: 38,
               height: 38,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.mobiliBlueFog,
                 shape: BoxShape.circle,
               ),

@@ -167,7 +167,7 @@ public class TripService {
                 AnalyticsEventType.TRIP_PUBLISHED,
                 user.getId(),
                 String.format("{\"tripId\":%d,\"covoiturageSolo\":true}", saved.getId()));
-                persistCities(saved);
+        persistCities(saved);
         return findById(saved.getId());
     }
 
@@ -191,7 +191,6 @@ public class TripService {
         tripRepository.save(t);
     }
 
-    
     @Transactional
     public Trip updateCovoiturageSoloTrip(
             Long id, CovoiturageSoloTripRequestDTO dto, MultipartFile vehicleImage, UserPrincipal principal) {
@@ -259,17 +258,32 @@ public class TripService {
                 : LocalDateTime.now();
 
         List<Trip> candidates = tripRepository.findAllUpcomingTrips(startSearch);
+
+        // Si une date précise est demandée, on ne garde que les trajets de CE
+        // jour-là (borné par minuit le lendemain) — sans cette borne haute, le
+        // filtre "date" n'excluait que le passé et laissait passer tous les
+        // jours suivants aussi.
+        if (date != null) {
+            LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+            candidates = candidates.stream()
+                    .filter(t -> t.getDepartureDateTime().isBefore(endOfDay))
+                    .collect(Collectors.toList());
+        }
+
         String dep = normalizeQuery(departure);
         String arr = normalizeQuery(arrival);
 
-        if (dep == null && arr == null) {
-            return filterByTransport(candidates, transportType);
-        }
+        List<Trip> results = (dep == null && arr == null)
+                ? filterByTransport(candidates, transportType)
+                : candidates.stream()
+                        .filter(t -> transportType == null || t.getTransportType() == transportType)
+                        .filter(t -> matchesRouteSearch(t, dep, arr))
+                        .collect(Collectors.toList());
 
-        List<Trip> results = candidates.stream()
-                .filter(t -> transportType == null || t.getTransportType() == transportType)
-                .filter(t -> matchesRouteSearch(t, dep, arr))
-                .collect(Collectors.toList());
+        // Chargement des associations lazy AVANT la fin de la transaction — sans
+        // ça, un appel avec seulement la date (dep == null && arr == null)
+        // retournait plus tôt et sautait cette étape, provoquant une
+        // LazyInitializationException lors du mapping en DTO côté contrôleur.
         results.forEach(trip -> {
             if (trip.getPartner() != null) {
                 trip.getPartner().getName();
@@ -401,7 +415,6 @@ public class TripService {
         });
         return trips;
     }
-
 
     @Transactional
     public Trip findById(Long id) {

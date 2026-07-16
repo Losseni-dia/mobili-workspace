@@ -61,6 +61,13 @@ public class BookingService {
         return bookingRepository.findConfirmedByTripIdWithDetails(tripId);
     }
 
+    @Transactional(readOnly = true)
+    public List<Booking> findAllPendingCovoiturageRequestsForOrganizer(Long organizerId) {
+        List<Booking> bookings = bookingRepository.findPendingCovoiturageRequestsForOrganizer(organizerId);
+        bookings.forEach(this::initLazyCollections);
+        return bookings;
+    }
+
     @Transactional
     public Booking createOfflineSale(BookingRequestDTO dto) {
         Booking booking = create(dto);
@@ -181,8 +188,9 @@ public class BookingService {
     }
 
     /**
-     * Le chauffeur refuse une demande covoiturage : la place n'a jamais été
-     * bloquée pour ce passager (elle reste ouverte pour d'autres demandes).
+     * Le chauffeur refuse une demande covoiturage : la place doit redevenir
+     * immédiatement disponible pour d'autres demandes, pas seulement à la
+     * prochaine réservation qui déclencherait un recalcul.
      */
     @Transactional
     public void rejectCovoiturageRequest(Long bookingId, UserPrincipal principal) {
@@ -195,6 +203,13 @@ public class BookingService {
         }
         booking.setStatus(BookingStatus.REJECTED_BY_DRIVER);
         bookingRepository.save(booking);
+
+        Trip fresh = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+        tripRunService.ensureStops(fresh);
+        tripRunService.refreshTripAvailableSeatsCounter(fresh);
+        tripRepository.save(fresh);
+
         inboxNotificationService.notifyPassengerOnCovoiturageDecision(booking, false);
     }
 
@@ -353,7 +368,8 @@ public class BookingService {
         Booking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
         enforceCanAccessBooking(booking);
-        if (booking.getStatus() != BookingStatus.PENDING) {
+        if (booking.getStatus() != BookingStatus.PENDING
+                && booking.getStatus() != BookingStatus.AWAITING_PAYMENT) {
             return;
         }
         booking.setFedapayTransactionId(fedapayTransactionId);
@@ -366,9 +382,18 @@ public class BookingService {
         Booking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
 
-        // 2. Vérification du statut
-        if (booking.getStatus() != BookingStatus.PENDING) {
+        // 2. Vérification du statut — PENDING (trajet public) ou AWAITING_PAYMENT
+        // (covoiturage, après acceptation chauffeur). Sans ce deuxième cas,
+        // le paiement covoiturage était silencieusement ignoré ici.
+        if (booking.getStatus() != BookingStatus.PENDING
+                && booking.getStatus() != BookingStatus.AWAITING_PAYMENT) {
             log.warn("⚠️ Réservation {} déjà traitée. Statut actuel: {}", bookingId, booking.getStatus());
+            return;
+        }
+        if (booking.getStatus() == BookingStatus.AWAITING_PAYMENT
+                && booking.getPaymentDeadline() != null
+                && LocalDateTime.now().isAfter(booking.getPaymentDeadline())) {
+            log.warn("⚠️ Réservation {} : délai de paiement de 30 minutes dépassé.", bookingId);
             return;
         }
 

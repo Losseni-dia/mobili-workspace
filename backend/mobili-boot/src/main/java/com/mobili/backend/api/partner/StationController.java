@@ -56,13 +56,6 @@ public class StationController {
         return stationService.update(id, body, principal);
     }
 
-    @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('ROLE_PARTNER')")
-    public StationResponseDTO approve(
-            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
-        return stationService.approve(id, principal);
-    }
-
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('ROLE_PARTNER')")

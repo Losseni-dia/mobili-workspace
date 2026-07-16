@@ -325,8 +325,7 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
                           _MiniStat(
                             label: 'Revenus',
                             value:
-                                NumberFormat('#,###').format(totalRevenue) +
-                                ' F',
+                                '${NumberFormat('#,###').format(totalRevenue)} F',
                             color: AppColors.proGold,
                           ),
                           _MiniStat(

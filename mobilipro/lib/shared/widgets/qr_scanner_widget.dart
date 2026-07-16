@@ -228,7 +228,7 @@ class _ScanViewfinder extends StatelessWidget {
               border: Border.all(color: AppColors.mobiliYellow, width: 3),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Stack(
+            child: const Stack(
               children: [
                 _ScanCorner(top: true, left: true),
                 _ScanCorner(top: true, left: false),

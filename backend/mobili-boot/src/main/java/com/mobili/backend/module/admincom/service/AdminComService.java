@@ -22,8 +22,8 @@ import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -95,7 +95,33 @@ public class AdminComService {
                 preview,
                 MobiliNotificationType.MOBILI_ADMIN_INFO_PARTNER);
 
-                return toDto(thread);
+        // Message automatique d'accusé de réception si c'est un client qui ouvre le
+        // ticket
+        if (!callerIsAdmin) {
+            AdminComMessage autoReply = new AdminComMessage();
+            autoReply.setThread(thread);
+            autoReply.setAuthor(admin);
+            autoReply.setBody(
+                    "Bonjour " + partnerUser.getFirstname() + " 👋\n\n" +
+                            "Merci pour votre message. Notre équipe support a bien reçu votre demande concernant : \""
+                            + req.getSubject() + "\".\n\n" +
+                            "Un agent Mobili vous répondra dans les meilleurs délais (généralement sous 24h ouvrées).\n\n"
+                            +
+                            "L'équipe Mobili 🚌");
+            messageRepository.save(autoReply);
+            thread.setLastActivityAt(
+                    autoReply.getCreatedAt() != null ? autoReply.getCreatedAt() : LocalDateTime.now());
+            threadRepository.save(thread);
+
+            // Notifier le client de l'accusé de réception
+            inboxNotificationService.notifyUser(
+                    partnerUser,
+                    "✅ Demande reçue — " + req.getSubject(),
+                    "Notre équipe support a bien reçu votre demande et vous répondra sous 24h.",
+                    MobiliNotificationType.MOBILI_ADMIN_INFO_PARTNER);
+        }
+
+        return toDto(thread);
 
     }
 

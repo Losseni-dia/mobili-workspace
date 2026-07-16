@@ -22,4 +22,6 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
     Optional<Partner> findByOwnerId(@Param("userId") Long userId);
 
     Optional<Partner> findByRegistrationCodeIgnoreCase(String registrationCode);
+
+    boolean existsByBusinessNumberIgnoreCase(String businessNumber);
 }

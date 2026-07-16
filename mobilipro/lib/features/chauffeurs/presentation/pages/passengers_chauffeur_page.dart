@@ -5,7 +5,6 @@ import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_chauff
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/qr_scanner_widget.dart';
-import '../../../trips/presentation/widgets/passengers_sheet.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page Passagers Chauffeur

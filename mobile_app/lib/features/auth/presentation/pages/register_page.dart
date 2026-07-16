@@ -46,8 +46,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     // validator continue de renvoyer l'ancienne erreur (champ "figé") même
     // après correction, car il lit l'état du dernier build, pas le texte
     // actuel du champ.
-    _emailCtrl.addListener(_clearEmailFieldError);
+ _emailCtrl.addListener(_clearEmailFieldError);
     _loginCtrl.addListener(_clearLoginFieldError);
+    _phoneCtrl.addListener(_clearPhoneFieldError);
   }
 
   void _clearEmailFieldError() {
@@ -64,10 +65,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     }
   }
 
+  void _clearPhoneFieldError() {
+    final fieldErrors = ref.read(authProvider).valueOrNull?.fieldErrors;
+    if (fieldErrors?.containsKey('phone') == true) {
+      ref.read(authProvider.notifier).clearError();
+    }
+  }
+
   @override
-  void dispose() {
+ void dispose() {
     _emailCtrl.removeListener(_clearEmailFieldError);
     _loginCtrl.removeListener(_clearLoginFieldError);
+    _phoneCtrl.removeListener(_clearPhoneFieldError);
     _firstnameCtrl.dispose();
     _lastnameCtrl.dispose();
     _emailCtrl.dispose();
@@ -119,16 +128,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     return null;
   }
 
-  String? _validatePassword(String? v) {
+String? _validatePassword(String? v) {
     if (v == null || v.isEmpty) return 'Mot de passe requis.';
-    if (v.length < 6) return 'Minimum 6 caractères.';
+    if (v.length < 8) return 'Minimum 8 caractères.';
     return null;
   }
 
   String? _validateConfirm(String? v) {
     if (v == null || v.isEmpty) return 'Confirmation requise.';
-    if (v != _passwordCtrl.text)
+    if (v != _passwordCtrl.text) {
       return 'Les mots de passe ne correspondent pas.';
+    }
     return null;
   }
 
@@ -172,7 +182,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.successSoft,
                     shape: BoxShape.circle,
                   ),
@@ -442,10 +452,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   label: 'Téléphone',
                                   hint: '+225 07 00 00 00 00',
                                   icon: Icons.phone_outlined,
-                                  validator: _validatePhone,
+                                  validator: (v) {
+                                    final apiError =
+                                        state?.fieldErrors?['phone'];
+                                    if (apiError != null) return apiError;
+                                    return _validatePhone(v);
+                                  },
                                   keyboardType: TextInputType.phone,
                                   textInputAction: TextInputAction.next,
                                   enabled: !isLoading,
+                                  autovalidate: true,
                                 ),
                                 const SizedBox(height: 20),
 
@@ -477,6 +493,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   obscureText: _obscurePassword,
                                   textInputAction: TextInputAction.next,
                                   enabled: !isLoading,
+                                  helperText: '8 caractères minimum',
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword
@@ -799,6 +816,7 @@ class _Field extends StatelessWidget {
     this.enabled = true,
     this.suffixIcon,
     this.autovalidate = false,
+    this.helperText,
   });
 
   final TextEditingController controller;
@@ -812,6 +830,7 @@ class _Field extends StatelessWidget {
   final bool enabled;
   final Widget? suffixIcon;
   final bool autovalidate;
+  final String? helperText;
 
   @override
   Widget build(BuildContext context) {
@@ -837,10 +856,15 @@ class _Field extends StatelessWidget {
               : AutovalidateMode.disabled,
           style: AppTextStyles.bodyMedium
               .copyWith(color: AppColors.mobiliBlueDeep),
-          decoration: InputDecoration(
+         decoration: InputDecoration(
             hintText: hint,
             hintStyle:
                 AppTextStyles.bodyMedium.copyWith(color: AppColors.gray300),
+            helperText: helperText,
+            helperStyle: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.gray400,
+              fontSize: 11,
+            ),
             prefixIcon: Icon(icon, size: 20, color: AppColors.gray400),
             suffixIcon: suffixIcon,
             filled: true,

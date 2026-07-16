@@ -238,7 +238,7 @@ class _CanalSocieteTab extends ConsumerWidget {
               foregroundColor: AppColors.white,
               icon: const Icon(Icons.add_rounded),
               label: const Text('Nouveau fil'),
-              onPressed: () => _showCreateDialog(context, ref, profile!),
+              onPressed: () => _showCreateDialog(context, ref, profile),
             )
           : null,
     );

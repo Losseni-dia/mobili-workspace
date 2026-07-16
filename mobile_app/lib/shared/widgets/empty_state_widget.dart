@@ -5,14 +5,14 @@ import 'mobili_button.dart';
 
 /// Types d'états vides prédéfinis pour Mobili
 enum MobiliEmptyType {
-  trips,         // Aucun trajet trouvé
-  bookings,      // Aucune réservation
-  tickets,       // Aucun ticket
+  trips, // Aucun trajet trouvé
+  bookings, // Aucune réservation
+  tickets, // Aucun ticket
   notifications, // Inbox vide
-  search,        // Aucun résultat de recherche
-  offline,       // Pas de connexion Internet
-  messages,      // Canal messages vide
-  generic,       // Fallback
+  search, // Aucun résultat de recherche
+  offline, // Pas de connexion Internet
+  messages, // Canal messages vide
+  generic, // Fallback
 }
 
 /// Widget état vide Mobili — page ou section sans contenu
@@ -128,8 +128,7 @@ class EmptyStateWidget extends StatelessWidget {
       MobiliEmptyType.offline => const _EmptyCfg(
           icon: Icons.wifi_off_rounded,
           title: 'Hors connexion',
-          subtitle:
-              'Vérifiez votre connexion Internet et réessayez.',
+          subtitle: 'Vérifiez votre connexion Internet et réessayez.',
           accent: AppColors.warning,
           accentBg: AppColors.warningSoft,
         ),
@@ -155,10 +154,8 @@ class EmptyStateWidget extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cfg = _cfg();
 
-    final Color accent =
-        isDark ? _darkAccent(cfg.accent) : cfg.accent;
-    final Color accentBg =
-        isDark ? _darkAccentBg(cfg.accent) : cfg.accentBg;
+    final Color accent = isDark ? _darkAccent(cfg.accent) : cfg.accent;
+    final Color accentBg = isDark ? _darkAccentBg(cfg.accent) : cfg.accentBg;
     final Color titleColor =
         isDark ? AppColors.darkOnSurface : AppColors.mobiliBlueDeep;
     final Color subColor =
@@ -176,49 +173,62 @@ class EmptyStateWidget extends StatelessWidget {
       );
     }
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Illustration
-            _Illustration(
-              icon: cfg.icon,
-              accent: accent,
-              accentBg: accentBg,
-            ),
-            const SizedBox(height: 24),
+    // LayoutBuilder + SingleChildScrollView : évite tout débordement quand
+    // l'espace vertical disponible se réduit (ex. clavier ouvert au-dessus
+    // d'un état vide dans un Expanded) — le contenu reste centré tant qu'il
+    // y a la place, et devient scrollable sinon plutôt que de déborder.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Illustration
+                  _Illustration(
+                    icon: cfg.icon,
+                    accent: accent,
+                    accentBg: accentBg,
+                  ),
+                  const SizedBox(height: 24),
 
-            // Titre — Plus Jakarta Sans 900
-            Text(
-              cfg.title,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.headlineMedium.copyWith(color: titleColor),
-            ),
+                  // Titre — Plus Jakarta Sans 900
+                  Text(
+                    cfg.title,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.headlineMedium
+                        .copyWith(color: titleColor),
+                  ),
 
-            // Sous-titre
-            if (cfg.subtitle != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                cfg.subtitle!,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyLarge.copyWith(color: subColor),
+                  // Sous-titre
+                  if (cfg.subtitle != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      cfg.subtitle!,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodyLarge.copyWith(color: subColor),
+                    ),
+                  ],
+
+                  // Action — bouton primaire CTA gold
+                  if (onAction != null && actionLabel != null) ...[
+                    const SizedBox(height: 32),
+                    MobiliButton(
+                      label: actionLabel!,
+                      onPressed: onAction,
+                      fullWidth: false,
+                      size: MobiliButtonSize.medium,
+                      showShadow: false,
+                    ),
+                  ],
+                ],
               ),
-            ],
-
-            // Action — bouton primaire CTA gold
-            if (onAction != null && actionLabel != null) ...[
-              const SizedBox(height: 32),
-              MobiliButton(
-                label: actionLabel!,
-                onPressed: onAction,
-                fullWidth: false,
-                size: MobiliButtonSize.medium,
-                showShadow: false,
-              ),
-            ],
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -335,8 +345,8 @@ class _CompactEmpty extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: accentBg,
-              border: Border.all(
-                  color: accent.withValues(alpha: 0.25), width: 1.5),
+              border:
+                  Border.all(color: accent.withValues(alpha: 0.25), width: 1.5),
             ),
             child: Icon(cfg.icon, size: 22, color: accent),
           ),

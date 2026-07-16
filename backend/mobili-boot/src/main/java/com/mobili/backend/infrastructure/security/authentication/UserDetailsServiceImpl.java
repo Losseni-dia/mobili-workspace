@@ -1,5 +1,6 @@
 package com.mobili.backend.infrastructure.security.authentication;
 
+import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
@@ -15,14 +16,22 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final StationRepository stationRepository;
 
     @Override
     public UserDetails loadUserByUsername(String login) {
-        User user = userRepository.findByLogin(login)
-                .orElseThrow(() -> new MobiliException(
-                        MobiliErrorCode.INVALID_CREDENTIALS,
-                        "Utilisateur non trouvé avec le login : " + login));
+        var userOpt = userRepository.findByLogin(login);
+        if (userOpt.isPresent()) {
+            return UserPrincipal.fromUser(userOpt.get());
+        }
 
-        return UserPrincipal.fromUser(user);
+        var stationOpt = stationRepository.findByCode(login);
+        if (stationOpt.isPresent()) {
+            return new StationPrincipal(stationOpt.get());
+        }
+
+        throw new MobiliException(
+                MobiliErrorCode.INVALID_CREDENTIALS,
+                "Utilisateur non trouvé avec le login : " + login);
     }
 }

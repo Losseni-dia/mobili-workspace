@@ -71,7 +71,7 @@ class RecentBooking {
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
-  String get formattedAmount => NumberFormat('#,###').format(amount) + ' FCFA';
+  String get formattedAmount => '${NumberFormat('#,###').format(amount)} FCFA';
 
   String get formattedDate => DateFormat('dd/MM/yyyy HH:mm').format(date);
 
@@ -339,10 +339,9 @@ class DashboardGarePage extends ConsumerWidget {
                                       ),
                                     ),
                                     Text(
-                                      NumberFormat(
+                                      '${NumberFormat(
                                             '#,###',
-                                          ).format(stats.totalRevenue) +
-                                          ' FCFA',
+                                          ).format(stats.totalRevenue)} FCFA',
                                       style: const TextStyle(
                                         color: AppColors.mobiliYellow,
                                         fontSize: 20,
@@ -425,7 +424,7 @@ class DashboardGarePage extends ConsumerWidget {
                         ...stats.recentBookings
                             .take(10)
                             .map((b) => _BookingItem(booking: b))
-                            .toList(),
+                            ,
 
                       const SizedBox(height: 80),
                     ],
@@ -474,7 +473,7 @@ class _RevenueChip extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(fontSize: 10, color: color)),
               Text(
-                NumberFormat('#,###').format(amount) + ' F',
+                '${NumberFormat('#,###').format(amount)} F',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   color: color,

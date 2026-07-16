@@ -53,6 +53,14 @@ public class CovoiturageSoloTripController {
     private final PartnerDashboardService partnerDashboardService;
     private final PartnerMapper partnerMapper;
 
+    
+
+    @GetMapping("/pending-requests")
+    public List<BookingResponseDTO> allPendingRequests(@AuthenticationPrincipal UserPrincipal principal) {
+        return bookingService.findAllPendingCovoiturageRequestsForOrganizer(principal.getUser().getId()).stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
 
     /**
      * Demandes covoiturage en attente de décision pour ce trajet — nom,

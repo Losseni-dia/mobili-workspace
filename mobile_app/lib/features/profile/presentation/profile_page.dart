@@ -22,7 +22,7 @@ class ProfilePage extends ConsumerWidget {
     final profile = authState.valueOrNull?.profile;
 
     if (profile == null) {
-      return Scaffold(
+     return Scaffold(
         body: Stack(
           children: [
             Container(
@@ -36,6 +36,16 @@ class ProfilePage extends ConsumerWidget {
             ),
             const Positioned.fill(child: _TransportPattern()),
             Container(color: AppColors.mobiliBlueDeep.withValues(alpha: 0.35)),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.home_rounded, color: AppColors.white),
+                  tooltip: 'Accueil',
+                  onPressed: () => context.go('/'),
+                ),
+              ),
+            ),
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -94,11 +104,18 @@ class ProfilePage extends ConsumerWidget {
       backgroundColor: AppColors.gray50,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
+        SliverAppBar(
             expandedHeight: 240,
             pinned: true,
             backgroundColor: AppColors.mobiliBlue,
             automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.home_rounded, color: AppColors.white),
+                tooltip: 'Accueil',
+                onPressed: () => context.go('/'),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 children: [
@@ -166,7 +183,7 @@ class ProfilePage extends ConsumerWidget {
                                 .toList(),
                           ),
                           const SizedBox(height: 10),
-                          OutlinedButton.icon(
+                         OutlinedButton.icon(
                             onPressed: () => context.push('/edit-profile'),
                             icon: const Icon(Icons.edit_rounded,
                                 size: 14, color: AppColors.white),
@@ -180,6 +197,8 @@ class ProfilePage extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(20)),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
                         ],
@@ -304,9 +323,28 @@ class ProfilePage extends ConsumerWidget {
                             ],
                           ),
                         );
-                        if (confirm == true) {
+                      if (confirm == true) {
                           await ref.read(authProvider.notifier).logout();
-                          if (context.mounted) context.go('/');
+                          if (context.mounted) {
+                            context.go('/');
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(children: [
+                                    Icon(Icons.logout_rounded,
+                                        color: Colors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Vous avez été déconnecté.'),
+                                  ]),
+                                  backgroundColor: AppColors.mobiliBlue,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                ),
+                              );
+                            });
+                          }
                         }
                       },
                       icon: const Icon(Icons.logout_rounded,
@@ -399,12 +437,13 @@ class _StatsGrid extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.6,
       children: [
-        _StatCard(
+       _StatCard(
           icon: Icons.confirmation_number_rounded,
           iconColor: AppColors.mobiliBlue,
           iconBg: AppColors.mobiliBlueFog,
           label: 'Réservations',
           value: '$total',
+          onTap: () => context.go('/my-bookings'),
         ),
         _StatCard(
           icon: Icons.check_circle_rounded,
@@ -412,6 +451,7 @@ class _StatsGrid extends StatelessWidget {
           iconBg: AppColors.successSoft,
           label: 'Confirmées',
           value: '$confirmed',
+          onTap: () => context.go('/my-bookings?status=CONFIRMED'),
         ),
         _StatCard(
           icon: Icons.hourglass_empty_rounded,
@@ -419,6 +459,7 @@ class _StatsGrid extends StatelessWidget {
           iconBg: AppColors.warningSoft,
           label: 'En attente',
           value: '$pending',
+          onTap: () => context.go('/my-bookings?status=PENDING'),
         ),
         _StatCard(
           icon: Icons.cancel_rounded,
@@ -426,6 +467,7 @@ class _StatsGrid extends StatelessWidget {
           iconBg: AppColors.dangerSoft,
           label: 'Annulées',
           value: '$cancelled',
+          onTap: () => context.go('/my-bookings?status=CANCELLED'),
         ),
       ],
     );
@@ -439,6 +481,7 @@ class _StatCard extends StatelessWidget {
     required this.iconBg,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
@@ -446,47 +489,51 @@ class _StatCard extends StatelessWidget {
   final Color iconBg;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gray200),
-        boxShadow: AppColors.shadowSm,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.gray200),
+          boxShadow: AppColors.shadowSm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(value,
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      color: AppColors.mobiliBlueDeep,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 22,
-                    )),
-                Text(label,
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.gray500, fontSize: 11)),
-              ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(value,
+                      style: AppTextStyles.headlineMedium.copyWith(
+                        color: AppColors.mobiliBlueDeep,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                      )),
+                  Text(label,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.gray500, fontSize: 11)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

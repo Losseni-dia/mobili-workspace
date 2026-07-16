@@ -10,8 +10,9 @@ import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.service.UserService;
-import com.mobili.backend.shared.MobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.MobiliError.exception.MobiliException;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;

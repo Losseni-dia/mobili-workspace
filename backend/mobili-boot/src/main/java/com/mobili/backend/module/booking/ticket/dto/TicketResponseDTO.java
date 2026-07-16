@@ -22,4 +22,5 @@ public class TicketResponseDTO {
     private String alightingCity;
     private Integer boardingStopIndex;
     private Integer alightingStopIndex;
+    private LocalDateTime bookingDate;
 }

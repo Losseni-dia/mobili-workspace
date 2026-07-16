@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -84,21 +85,13 @@ class SupportPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Support Mobili',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-            Text('Nous sommes là pour vous aider',
-                style: TextStyle(fontSize: 11, color: Color(0xCCFFFFFF))),
-          ],
-        ),
+      appBar: MobiliAppBar(
+        title: 'Support Mobili',
+        subtitle: 'Nous sommes là pour vous aider',
+        showBackButton: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
             onPressed: () => ref.invalidate(_supportThreadsProvider),
           ),
         ],
@@ -183,7 +176,6 @@ class SupportPage extends ConsumerWidget {
           }
           return Column(
             children: [
-              // Bandeau info
               Container(
                 width: double.infinity,
                 color: AppColors.mobiliBlue.withValues(alpha: 0.07),
@@ -366,6 +358,22 @@ class _SupportConversationPageState
       ref.invalidate(_supportMessagesProvider(widget.thread.id));
       ref.invalidate(_supportThreadsProvider);
       _scrollToBottom();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+              SizedBox(width: 8),
+              Text('Message envoyé'),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -387,24 +395,15 @@ class _SupportConversationPageState
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.thread.subject,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-            const Text('Support Mobili',
-                style: TextStyle(fontSize: 11, color: Color(0xCCFFFFFF))),
-          ],
-        ),
+      appBar: MobiliAppBar(
+        title: widget.thread.subject,
+        subtitle: 'Support Mobili',
+        showBackButton: true,
+        titleFontSize: 15,
+        showPattern: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
             onPressed: () =>
                 ref.invalidate(_supportMessagesProvider(widget.thread.id)),
           ),
@@ -526,7 +525,6 @@ class _SupportConversationPageState
               },
             ),
           ),
-          // Input message
           Container(
             decoration: const BoxDecoration(
                 color: AppColors.white,
@@ -606,7 +604,6 @@ class _NewSupportThreadDialogState
   bool _isLoading = false;
   String? _error;
 
-  // Sujets prédéfinis pour guider l'utilisateur
   static const _subjects = [
     'Problème de réservation',
     'Remboursement',
@@ -642,7 +639,6 @@ class _NewSupportThreadDialogState
       _error = null;
     });
     try {
-      // On récupère d'abord le profil pour avoir l'userId
       final profile = ref.read(currentProfileProvider);
       if (profile == null) throw Exception('Non connecté');
       await ApiClient.instance.dio.post('/admin-com/threads', data: {
@@ -651,7 +647,23 @@ class _NewSupportThreadDialogState
         'firstMessage': msg,
       });
       widget.onCreated();
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(children: [
+              Icon(Icons.support_agent_rounded, color: Colors.white, size: 16),
+              SizedBox(width: 8),
+              Text('Votre demande a été envoyée au support Mobili.'),
+            ]),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     } catch (e) {
       setState(() => _error = '$e');
     } finally {

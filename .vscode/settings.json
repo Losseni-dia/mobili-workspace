@@ -10,5 +10,6 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "losseni-dia",
         "projectKey": "Losseni-dia_mobili-workspace"
-    }
+    },
+    "java.compile.nullAnalysis.mode": "disabled"
 }

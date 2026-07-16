@@ -1,5 +1,7 @@
 package com.mobili.backend.api.passenger.auth;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import com.mobili.backend.module.admin.entity.LoginEvent;
 import com.mobili.backend.module.admin.repository.LoginEventRepository;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
+import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.user.dto.ProfileDTO;
 import com.mobili.backend.module.user.dto.RegisterCompanyPublicDTO;
 import com.mobili.backend.module.user.dto.RegisterCarpoolChauffeurDTO;
@@ -50,6 +53,7 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UserRepository userRepository;
+    private final StationRepository stationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserMapper userMapper;
@@ -58,6 +62,7 @@ public class AuthController {
     private final AnalyticsEventService analyticsEventService;
     private final RefreshTokenCookieWriter refreshTokenCookieWriter;
     private final MobiliSecurityRefreshSettings refreshSettings;
+    
 
 
     @PostMapping("/login")
@@ -66,16 +71,15 @@ public class AuthController {
 
         var userOpt = userRepository.findByLogin(request.getLogin());
         if (userOpt.isEmpty()) {
-            log.warn("[Login] Utilisateur non trouvé: {}", request.getLogin());
-            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, null, "{\"reason\":\"NOT_FOUND\"}");
-            throw new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Utilisateur non trouvé");
+            return loginAsStation(request, response);
         }
 
         User user = userOpt.get();
 
         if (!user.isEnabled()) {
             log.warn("[Login] Compte désactivé: userId={}, login={}", user.getId(), user.getLogin());
-            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(), "{\"reason\":\"ACCOUNT_DISABLED\"}");
+            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(),
+                    "{\"reason\":\"ACCOUNT_DISABLED\"}");
             throw new MobiliException(
                     MobiliErrorCode.ACCESS_DENIED,
                     "Compte inactif : en attente de validation par un administrateur, ou compte suspendu. Réessayez après activation.");
@@ -83,8 +87,10 @@ public class AuthController {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             log.warn("[Login] Mot de passe incorrect pour login={}", request.getLogin());
-            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(), "{\"reason\":\"BAD_PASSWORD\"}");
-            throw new MobiliException(MobiliErrorCode.INVALID_CREDENTIALS, "Mot de passe incorrect");
+            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(),
+                    "{\"reason\":\"BAD_PASSWORD\"}");
+            throw new MobiliException(MobiliErrorCode.INVALID_CREDENTIALS, "Mot de passe incorrect.",
+                    Map.of("password", "Mot de passe incorrect."));
         }
 
         loginEventRepository.save(new LoginEvent(user.getId(), user.getLogin()));
@@ -186,5 +192,34 @@ public class AuthController {
 
         User saved = userService.registerCarpoolChauffeur(dto, idFront, idBack, driverPhoto, vehiclePhoto);
         return userMapper.toProfileDto(saved);
+    }
+
+
+    private ResponseEntity<AuthResponse> loginAsStation(LoginRequest request, HttpServletResponse response) {
+        var stationOpt = stationRepository.findByCode(request.getLogin());
+        if (stationOpt.isEmpty()) {
+            log.warn("[Login] Identifiant non trouvé (ni utilisateur ni gare): {}", request.getLogin());
+            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, null, "{\"reason\":\"NOT_FOUND\"}");
+            throw new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Identifiant incorrect.",
+                    Map.of("login", "Identifiant incorrect."));
+        }
+
+        var station = stationOpt.get();
+
+        if (!station.isActive()) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
+                    "Cette gare est désactivée. Contactez votre société.");
+        }
+
+        if (station.getPassword() == null
+                || !passwordEncoder.matches(request.getPassword(), station.getPassword())) {
+            log.warn("[Login] Mot de passe gare incorrect pour code={}", request.getLogin());
+            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, null, "{\"reason\":\"BAD_PASSWORD\"}");
+            throw new MobiliException(MobiliErrorCode.INVALID_CREDENTIALS, "Mot de passe incorrect.",
+                    Map.of("password", "Mot de passe incorrect."));
+        }
+
+        String token = jwtService.generateStationToken(station);
+        return ResponseEntity.ok(new AuthResponse(token, station.getCode(), station.getId(), null));
     }
 }

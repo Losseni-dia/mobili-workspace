@@ -177,4 +177,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
         /** Scheduler : réservations acceptées dont le délai de paiement est dépassé. */
         List<Booking> findByStatusAndPaymentDeadlineBefore(BookingStatus status, LocalDateTime cutoff);
+
+        @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
+                        "WHERE t.covoiturageOrganizer.id = :organizerId " +
+                        "AND b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.PENDING_DRIVER_APPROVAL "
+                        +
+                        "ORDER BY b.createdAt ASC")
+        List<Booking> findPendingCovoiturageRequestsForOrganizer(@Param("organizerId") Long organizerId);
 }

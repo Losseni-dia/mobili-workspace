@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.trip.entity.Trip;
@@ -26,6 +28,7 @@ import com.mobili.backend.shared.sharedService.UploadService;
 import com.mobili.backend.module.partner.service.PartnerService;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TripServiceSearchTest {
 
     @Mock
@@ -34,6 +37,8 @@ class TripServiceSearchTest {
     private PartnerService partenaireService;
     @Mock
     private UploadService uploadService;
+    @Mock
+    private TripRunService tripRunService;
 
     @InjectMocks
     private TripService tripService;
@@ -45,6 +50,8 @@ class TripServiceSearchTest {
     void setUp() {
         baseTime = LocalDateTime.of(2030, 6, 1, 8, 0);
         searchDate = LocalDate.of(2030, 6, 1);
+        when(tripRunService.isBoardingClosedAtStop(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyInt())).thenReturn(false);
     }
 
     @Test
