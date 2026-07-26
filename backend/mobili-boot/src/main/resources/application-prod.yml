@@ -31,7 +31,7 @@ mobili:
     allowed-origins:
       - https://my-mobili.com
       - https://www.my-mobili.com
-      - capacitor://localhost
+      - https://business.my-mobili.com
       - http://localhost
   security:
     refresh:
