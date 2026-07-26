@@ -9,6 +9,8 @@ CHANGELOG.md
 AUDIT_FLUTTER_ACTUEL.md
 ROADMAP.md
 
+docs
+
 
 # --- DOCKER DATA ---
 # On ignore les données de la DB pour ne pas uploader des Go de données sur Git

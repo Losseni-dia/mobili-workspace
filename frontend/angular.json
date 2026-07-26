@@ -150,7 +150,7 @@
           "options": {
             "browser": "projects/mobili-business/src/main.ts",
             "tsConfig": "projects/mobili-business/tsconfig.app.json",
-            "baseHref": "/mobili-workspace/",
+            "baseHref": "/",
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {
               "includePaths": ["src"]

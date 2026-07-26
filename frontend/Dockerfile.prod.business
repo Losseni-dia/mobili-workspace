@@ -18,7 +18,7 @@ RUN npx ng build mobili-business --configuration production
 
 # --- ÉTAPE 2 : Serveur de Production ---
 FROM nginx:alpine
-COPY --from=builder /app/dist/mobili-business/browser /usr/share/nginx/html/mobili-workspace
+COPY --from=builder /app/dist/mobili-business/browser /usr/share/nginx/html
 COPY nginx.business.prod.conf /etc/nginx/conf.d/default.conf
 EXPOSE 81
 CMD ["nginx", "-g", "daemon off;"]
