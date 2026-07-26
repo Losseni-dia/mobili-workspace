@@ -1,0 +1,42 @@
+name: Deploy Mobili User App (Firebase App Distribution)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile_app/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Decode keystore
+        run: echo "${{ secrets.MOBILEAPP_KEYSTORE_BASE64 }}" | base64 --decode > mobile_app/android/app/release-keystore.jks
+
+      - name: Get dependencies
+        working-directory: mobile_app
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: mobile_app
+        env:
+          MOBILEAPP_KEYSTORE_PATH: ${{ github.workspace }}/mobile_app/android/app/release-keystore.jks
+          MOBILEAPP_KEYSTORE_PASSWORD: ${{ secrets.MOBILEAPP_KEYSTORE_PASSWORD }}
+          MOBILEAPP_KEY_ALIAS: ${{ secrets.MOBILEAPP_KEY_ALIAS }}
+          MOBILEAPP_KEY_PASSWORD: ${{ secrets.MOBILEAPP_KEY_PASSWORD }}
+        run: flutter build apk --release
+
+      - name: Distribute via Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: '1:908432245037:android:37bd001a965d2da22bd3a4'
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: Mobili-user
+          file: mobile_app/build/app/outputs/flutter-apk/app-release.apk
