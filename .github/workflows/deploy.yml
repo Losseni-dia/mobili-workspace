@@ -54,12 +54,14 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/mobili-boot/target/application.jar"
-          target: "/home/ec2-user/application-prod.jar"
+          target: "/home/ec2-user/incoming-prod/"
           strip_components: 3
-      - name: Restart prod service
+      - name: Rename and restart prod service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: sudo systemctl restart mobili-prod
+          script: |
+            mv /home/ec2-user/incoming-prod/application.jar /home/ec2-user/application-prod.jar
+            sudo systemctl restart mobili-prod
