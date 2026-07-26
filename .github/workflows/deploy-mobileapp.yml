@@ -20,6 +20,9 @@ jobs:
       - name: Decode keystore
         run: echo "${{ secrets.MOBILEAPP_KEYSTORE_BASE64 }}" | base64 --decode > mobile_app/android/app/release-keystore.jks
 
+      - name: Decode google-services.json
+        run: echo "${{ secrets.MOBILEAPP_GOOGLE_SERVICES_BASE64 }}" | base64 --decode > mobile_app/android/app/google-services.json
+
       - name: Get dependencies
         working-directory: mobile_app
         run: flutter pub get
