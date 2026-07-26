@@ -27,9 +27,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MobiliInboxNotification extends AbstractEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    /**
+     * Nullable désormais : une notification peut viser une gare (station) plutôt
+     * qu'un utilisateur.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "station_id")
+    private com.mobili.backend.module.station.entity.Station station;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
@@ -61,6 +69,21 @@ public class MobiliInboxNotification extends AbstractEntity {
     @JoinColumn(name = "partner_gare_com_thread_id")
     private PartnerGareComThread partnerGareComThread;
 
+    /**
+     * Société concernée : pour permettre à l'admin d'ouvrir directement la fiche
+     * (ex. nouvelle inscription).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id")
+    private com.mobili.backend.module.partner.entity.Partner partner;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    /**
+     * Différent de readAt : "vu" (badge décompté) vs "lu" (notification ouverte
+     * individuellement).
+     */
+    @Column(name = "seen_at")
+    private LocalDateTime seenAt;
 }

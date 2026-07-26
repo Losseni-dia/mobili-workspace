@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../../core/models/auth_response.dart';
 import '../../../core/models/mobili_error.dart';
@@ -136,9 +137,11 @@ class AuthService {
   /// Registers a transport company and immediately authenticates the user.
   ///
   /// [companyData] must match the `RegisterCompanyPublicDTO` backend shape.
-  Future<AuthResponse> registerCompany({
+Future<AuthResponse> registerCompany({
     required Map<String, dynamic> companyData,
     File? logoFile,
+    required File kycFrontFile,
+    required File kycBackFile,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -151,6 +154,14 @@ class AuthService {
             logoFile.path,
             filename: logoFile.path.split('/').last,
           ),
+        'kycFront': await MultipartFile.fromFile(
+          kycFrontFile.path,
+          filename: kycFrontFile.path.split('/').last,
+        ),
+        'kycBack': await MultipartFile.fromFile(
+          kycBackFile.path,
+          filename: kycBackFile.path.split('/').last,
+        ),
       });
 
       final response = await _dio.post<Map<String, dynamic>>(

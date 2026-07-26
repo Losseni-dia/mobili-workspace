@@ -24,4 +24,16 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
     Optional<Partner> findByRegistrationCodeIgnoreCase(String registrationCode);
 
     boolean existsByBusinessNumberIgnoreCase(String businessNumber);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByPhone(String phone);
+
+    @Query("SELECT COUNT(p) FROM Partner p WHERE CAST(p.createdAt AS date) = :date")
+    long countByCreatedAtDate(@Param("date") java.time.LocalDate date);
+
+    @Query(value = "SELECT DATE(created_at) as day, COUNT(*) as cnt FROM partners " +
+            "WHERE created_at >= :from AND created_at <= :to GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
+    java.util.List<Object[]> dailyPartnersRegisteredBetween(@Param("from") java.time.LocalDateTime from,
+            @Param("to") java.time.LocalDateTime to);
 }

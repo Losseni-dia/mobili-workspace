@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.partner.repository.PartnerRepository;
 import com.mobili.backend.module.user.dto.ProfileDTO;
 import com.mobili.backend.module.user.dto.UserFcmTokenRequest;
 import com.mobili.backend.module.user.dto.mapper.UserMapper;
@@ -37,6 +38,7 @@ public class UserReadController {
     private final GareProfileEnricher gareProfileEnricher;
     private final CovoiturageProfileEnricher covoiturageProfileEnricher;
     private final UserService userService;
+    private final PartnerRepository partnerRepository;
 
     @PatchMapping("/me/fcm-token")
     @PreAuthorize("isAuthenticated()")
@@ -72,20 +74,50 @@ public class UserReadController {
 
     @GetMapping("/me")
     // 💡 On utilise hasAnyAuthority pour matcher exactement les chaînes
-    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_CHAUFFEUR', 'USER', 'ADMIN', 'PARTNER', 'GARE', 'CHAUFFEUR')")
-    public ProfileDTO getMyProfile(@AuthenticationPrincipal UserPrincipal principal) {
-        if (principal == null) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Session expirée ou invalide");
+    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_CHAUFFEUR', 'ROLE_STATION', 'USER', 'ADMIN', 'PARTNER', 'GARE', 'CHAUFFEUR')")
+    public ProfileDTO getMyProfile(org.springframework.security.core.Authentication authentication) {
+
+        Object rawPrincipal = authentication != null ? authentication.getPrincipal() : null;
+
+        if (rawPrincipal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return buildStationProfile(sp);
         }
 
-        User user = userRepository.findByLogin(principal.getUsername())
-                .orElseThrow(() -> new MobiliException(
-                        MobiliErrorCode.RESOURCE_NOT_FOUND,
-                        "Utilisateur introuvable."));
+        if (rawPrincipal instanceof UserPrincipal principal) {
+            User user = userRepository.findByLogin(principal.getUsername())
+                    .orElseThrow(() -> new MobiliException(
+                            MobiliErrorCode.RESOURCE_NOT_FOUND,
+                            "Utilisateur introuvable."));
 
-        ProfileDTO dto = userMapper.toProfileDto(user);
-        gareProfileEnricher.enrich(dto, user);
-        covoiturageProfileEnricher.enrich(dto, user);
+            ProfileDTO dto = userMapper.toProfileDto(user);
+            gareProfileEnricher.enrich(dto, user);
+            covoiturageProfileEnricher.enrich(dto, user);
+
+            partnerRepository.findByOwnerId(user.getId()).ifPresent(p -> {
+                dto.setPartnerApprovalStatus(
+                        p.getApprovalStatus() != null ? p.getApprovalStatus().name() : null);
+                dto.setPartnerRejectionReason(p.getRejectionReason());
+            });
+
+            return dto;
+        }
+
+        throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Session expirée ou invalide");
+    }
+
+    private ProfileDTO buildStationProfile(
+            com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+        var station = sp.getStation();
+        ProfileDTO dto = new ProfileDTO();
+        dto.setId(station.getId());
+        dto.setFirstname(station.getName());
+        dto.setLastname("");
+        dto.setLogin(station.getCode());
+        dto.setEnabled(station.isActive());
+        dto.setRoles(java.util.List.of("STATION"));
+        dto.setStationId(station.getId());
+        dto.setStationName(station.getName());
+        dto.setGareOperationsEnabled(station.isActive());
         return dto;
     }
 

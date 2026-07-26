@@ -71,9 +71,24 @@ public class StationService {
     }
 
     @Transactional(readOnly = true)
-    public List<StationResponseDTO> listForCurrentUser(UserPrincipal principal) {
+    public List<StationResponseDTO> listForCurrentUser(Object principal) {
         Partner partner = partnerService.getCurrentPartnerForOperations();
-        User u = principal.getUser();
+
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal) {
+            // Une connexion gare voit toutes les gares de sa compagnie (utilisé
+            // notamment pour choisir le destinataire d'un message "vers une autre gare").
+            List<Station> gares = stationRepository.findByPartnerIdOrderByCityAscNameAsc(partner.getId());
+            List<Long> ids = gares.stream().map(Station::getId).toList();
+            Map<Long, List<StationChauffeurSummary>> aff = loadChauffeursByStationIds(ids);
+            return gares.stream()
+                    .map(st -> toDto(st, aff.getOrDefault(st.getId(), List.of())))
+                    .toList();
+        }
+
+        if (!(principal instanceof UserPrincipal up)) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Non authentifié");
+        }
+        User u = up.getUser();
         if (u.getStation() != null) {
             Station s = u.getStation();
             s.getPartner().getId(); // init
@@ -139,6 +154,14 @@ public class StationService {
             s.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         }
         return toDto(stationRepository.save(s));
+    }
+
+    @Transactional
+    public void updateFcmToken(Long stationId, String fcmToken) {
+        Station s = stationRepository.findById(stationId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
+        s.setFcmToken(fcmToken);
+        stationRepository.save(s);
     }
 
     @Transactional

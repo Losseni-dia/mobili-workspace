@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_chauffeur_page.dart';
+import 'package:mobilipro/features/chauffeurs/presentation/models/chauffeur_dashboard_models.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';

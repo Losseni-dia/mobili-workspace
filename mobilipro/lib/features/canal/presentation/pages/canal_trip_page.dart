@@ -24,10 +24,14 @@ class ChannelMessage {
   final String authorName;
   final String authorRole;
 
-  bool get isGare =>
-      authorRole == 'GARE' || authorRole == 'PARTNER' || authorRole == 'ADMIN';
+bool get isGare =>
+      authorRole == 'GARE' ||
+      authorRole == 'STATION' ||
+      authorRole == 'PARTNER' ||
+      authorRole == 'ADMIN';
   bool get isChauffeur => authorRole == 'CHAUFFEUR';
 
+  
   String get formattedTime => DateFormat('dd/MM HH:mm').format(createdAt);
 
   factory ChannelMessage.fromJson(Map<String, dynamic> json) => ChannelMessage(
@@ -408,7 +412,7 @@ class _MessageBubble extends StatelessWidget {
                       color: roleColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
+                  child: Text(
                       message.authorRole,
                       style: TextStyle(
                         fontSize: 9,
@@ -501,10 +505,10 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
-
-  Color _roleColor(String role) {
+Color _roleColor(String role) {
     switch (role) {
       case 'GARE':
+      case 'STATION':
         return AppColors.warning;
       case 'PARTNER':
       case 'ADMIN':

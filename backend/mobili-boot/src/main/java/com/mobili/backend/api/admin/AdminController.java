@@ -1,5 +1,6 @@
 package com.mobili.backend.api.admin;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -54,8 +55,10 @@ public class AdminController {
     }
 
     @PatchMapping("/partners/{id}/reject")
-    public ResponseEntity<Void> rejectPartner(@PathVariable Long id) {
-        partnerService.rejectPartner(id);
+    public ResponseEntity<Void> rejectPartner(
+            @PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        partnerService.rejectPartner(id, body.get("reason"));
         return ResponseEntity.ok().build();
     }
 
@@ -98,7 +101,8 @@ public class AdminController {
                         u.getEmail(),
                         u.getCovoiturageKycStatus() == null ? null : u.getCovoiturageKycStatus().name(),
                         u.isEnabled(),
-                        u.getCovoiturageDriverPhotoUrl()))
+                        u.getCovoiturageDriverPhotoUrl(),
+                        u.getCreatedAt()))
                 .toList();
         return ResponseEntity.ok(list);
     }
@@ -165,15 +169,67 @@ public class AdminController {
 
     @GetMapping("/stats/trip-analytics")
     public ResponseEntity<AdminTripStatsResponse> getTripAnalytics(
-            @RequestParam(defaultValue = "WEEK") TripStatsPeriod period) {
-        log.info("GET /v1/admin/stats/trip-analytics — period={}", period);
-        return ResponseEntity.ok(tripStatisticsService.forPeriod(period));
+            @RequestParam(defaultValue = "WEEK") TripStatsPeriod period,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        log.info("GET /v1/admin/stats/trip-analytics — period={}, fromDate={}, toDate={}", period, fromDate, toDate);
+        return ResponseEntity.ok(tripStatisticsService.forPeriod(period, fromDate, toDate));
+    }
+
+    @GetMapping("/stats/tickets/list")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminTicketListItemResponse>> getTicketList(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getTicketList(fromDate, toDate, search));
+    }
+
+    @GetMapping("/stats/bookings/list")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminBookingListItemResponse>> getBookingList(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getBookingList(fromDate, toDate, search));
+    }
+
+    @GetMapping("/stats/trips/list")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminTripListItemResponse>> getTripList(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getTripList(fromDate, toDate, search));
+    }
+
+    @GetMapping("/stats/covoiturage")
+    public ResponseEntity<com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse> getCovoiturageStats(
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(adminService.getCovoiturageStats(days, fromDate, toDate));
     }
 
     @GetMapping("/stats/registrations")
     public ResponseEntity<DailyRegistrationStatsResponse> getRegistrationStats(
-            @RequestParam(defaultValue = "30") int days) {
-        return ResponseEntity.ok(adminService.getRegistrationStats(days));
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate) {
+        return ResponseEntity.ok(adminService.getRegistrationStats(days, fromDate, toDate));
+    }
+
+    @GetMapping("/stats/partners")
+    public ResponseEntity<com.mobili.backend.module.admin.dto.DailyPartnerStatsResponse> getPartnerStats(
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate) {
+        return ResponseEntity.ok(adminService.getPartnerStats(days, fromDate, toDate));
+    }
+
+    @GetMapping("/stats/tickets")
+    public ResponseEntity<com.mobili.backend.module.admin.dto.DailyTicketStatsResponse> getTicketStats(
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate) {
+        return ResponseEntity.ok(adminService.getTicketStats(days, fromDate, toDate));
     }
 
     @PatchMapping("/users/{id}/covoiturage-kyc")

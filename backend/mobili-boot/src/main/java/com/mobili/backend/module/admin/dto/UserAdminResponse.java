@@ -1,5 +1,6 @@
 package com.mobili.backend.module.admin.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -27,5 +28,6 @@ public record UserAdminResponse(
          * ID fiche compagnie employeuse (chauffeur / salarié), distinct de la fiche partenaire « propriétaire »
          * ({@link #partnerName}).
          */
-        Long employerPartnerId) {
+        Long employerPartnerId,
+        LocalDateTime createdAt) {
 }

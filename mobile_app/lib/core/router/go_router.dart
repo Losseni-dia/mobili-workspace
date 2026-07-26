@@ -6,6 +6,7 @@ import 'package:mobili/features/covoiturage/providers/covoiturage_provider.dart'
 import 'package:mobili/features/legal/presentation/cgu_page.dart';
 import 'package:mobili/features/legal/presentation/confidentialite_page.dart';
 import 'package:mobili/features/notifications/presentation/notifications_page.dart';
+import 'package:mobili/features/notifications/presentation/trip_channel_thread_page.dart';
 import 'package:mobili/features/profile/presentation/edit_profile_page.dart';
 import 'package:mobili/features/support/presentation/pages/support_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -123,15 +124,23 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (_, __) => const SupportPage(),
       ),
 
-      // ── Billets (hors shell, plein écran) ─────────────────
+    // ── Fil de discussion trajet (hors shell, plein écran, lecture seule) ──
       GoRoute(
-        path: AppRoutes.tickets,
-        name: 'myTickets',
-        builder: (_, state) => MyTicketsPage(
-          filterTripId: int.tryParse(state.uri.queryParameters['tripId'] ?? ''),
+        path: '/trips/:tripId/channel',
+        name: 'tripChannelThread',
+        builder: (_, state) => TripChannelThreadPage(
+          tripId: int.parse(state.pathParameters['tripId']!),
+          tripLabel: state.uri.queryParameters['label'] ?? '',
         ),
       ),
 
+      // ── Covoiturage (hors shell, plein écran) ─────────────
+  // ── Mes réservations (hors shell, plein écran) ─────────
+      GoRoute(
+        path: AppRoutes.myBookings,
+        name: 'myBookings',
+        builder: (_, __) => const MyBookingsPage(),
+      ),
       // ── Covoiturage (hors shell, plein écran) ─────────────
       GoRoute(
         path: AppRoutes.covoiturage,
@@ -232,28 +241,16 @@ GoRouter goRouter(GoRouterRef ref) {
             ],
           ),
 
-          // Tab 1 — Recherche
+        // Tab 1 — Mes tickets
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.search,
-                name: 'search',
-                builder: (_, __) => const TripSearchPage(),
+                path: AppRoutes.tickets,
+                name: 'myTicketsTab',
+                builder: (_, __) => const MyTicketsPage(),
               ),
             ],
           ),
-
-          // Tab 2 — Mes réservations
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.myBookings,
-                name: 'myBookings',
-                builder: (_, __) => const MyBookingsPage(),
-              ),
-            ],
-          ),
-
           // Tab 3 — Notifications
           StatefulShellBranch(
             routes: [

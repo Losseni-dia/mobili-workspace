@@ -35,7 +35,7 @@ public class InboxSseService {
         emitter.onError(e -> remove.run());
 
         try {
-            long unread = inboxRepository.countByUserIdAndReadAtIsNull(userId);
+            long unread = inboxRepository.countByUserIdAndSeenAtIsNull(userId);
             emitter.send(SseEmitter.event()
                     .id("init")
                     .name("unread")

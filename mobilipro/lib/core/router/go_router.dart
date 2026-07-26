@@ -1,9 +1,10 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobilipro/features/admin/presentation/pages/admin_activity_logs_page.dart';
-import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page.dart';
+import 'package:mobilipro/features/admin/presentation/pages/dashboard_admin_page.dart';
 import 'package:mobilipro/features/admincom/presentation/pages/admin_com_page.dart';
-import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_admin_page.dart';
-import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_chauffeur_page.dart';
+import 'package:mobilipro/features/auth/presentation/pages/partner_pending_page.dart';
+import 'package:mobilipro/features/auth/presentation/pages/partner_resubmit_page.dart';
+import 'package:mobilipro/features/chauffeurs/presentation/pages/dashboard_chauffeur_page.dart';
 import 'package:mobilipro/features/notifications/presentation/pages/notifications_pro_page.dart';
 import 'package:mobilipro/features/scanner/presentation/pages/scanner_page.dart';
 import 'package:mobilipro/shared/shell/shell_admin.dart';
@@ -13,15 +14,15 @@ import '../../features/auth/presentation/pages/register_choice_page.dart';
 import '../../features/auth/presentation/pages/register_company_page.dart';
 import '../../features/auth/presentation/pages/register_carpool_chauffeur_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/bookings/presentation/pages/bookings_gare_page.dart';
+import '../../features/stations/presentation/pages/bookings_gare_page.dart';
 import '../../features/canal/presentation/pages/canal_trip_page.dart';
 import '../../features/covoiturage/presentation/pages/covoiturage_trip_form_page.dart';
 import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
-import '../../features/dashboard/presentation/pages/dashboard_gare_page.dart';
+import '../../features/stations/presentation/pages/dashboard_gare_page.dart';
 import '../../features/trips/presentation/pages/create_trip_page.dart';
 import '../../features/trips/presentation/pages/trips_gare_page.dart';
 import 'package:mobilipro/features/auth/presentation/pages/profile_page.dart';
-import 'package:mobilipro/features/dashboard/presentation/pages/dashboard_partner_page.dart';
+import 'package:mobilipro/features/partner/presentation/pages/dashboard_partner_page.dart';
 import 'package:mobilipro/features/stations/presentation/pages/partner_gare_managers_page.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../shared/shell/shell_chauffeur.dart';
@@ -41,17 +42,34 @@ GoRouter goRouter(GoRouterRef ref) {
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
-    redirect: (context, state) {
+   redirect: (context, state) {
       if (isAuthLoading) return null;
       final isOnLogin = state.matchedLocation == '/login';
       final isOnAuthPage =
           isOnLogin || state.matchedLocation.startsWith('/register');
+  final isOnPendingPage =
+          state.matchedLocation == '/partner/pending' ||
+          state.matchedLocation == '/partner/resubmit';
       if (!isLoggedIn && !isOnAuthPage) return '/login';
+
+      // Société en attente/rejetée : toujours renvoyer vers l'écran dédié,
+      // quel que soit l'écran visé (pas seulement au login).
+      if (isLoggedIn &&
+          profile != null &&
+          (profile.isPartnerPending || profile.isPartnerRejected) &&
+          !isOnPendingPage &&
+          !isOnAuthPage) {
+        return '/partner/pending';
+      }
+
       if (isLoggedIn && isOnLogin) {
         if (profile == null) return '/login';
         if (profile.isChauffeur) return '/chauffeur/trips';
         if (profile.isAdmin) return '/admin/dashboard';
         if (profile.isGare) return '/gare/dashboard';
+        if (profile.isPartnerPending || profile.isPartnerRejected) {
+          return '/partner/pending';
+        }
         if (profile.isPartner) return '/partner/dashboard';
         return '/gare/dashboard';
       }
@@ -59,6 +77,17 @@ GoRouter goRouter(GoRouterRef ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+
+      // ── Attente/rejet d'approbation société (hors shell) ───────
+   // ── Attente/rejet d'approbation société (hors shell) ───────
+      GoRoute(
+        path: '/partner/pending',
+        builder: (_, __) => const PartnerPendingPage(),
+      ),
+      GoRoute(
+        path: '/partner/resubmit',
+        builder: (_, __) => const PartnerResubmitPage(),
+      ),
 
       // ── Inscription (hors shell) ──────────────────────────────
       GoRoute(
@@ -145,6 +174,14 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(
                 path: '/gare/chauffeurs',
                 builder: (_, __) => const ChauffeursGarePage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/gare/communications',
+                builder: (_, __) => const PartnerGareComPage(),
               ),
             ],
           ),
@@ -287,16 +324,6 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-         // 1 — Gestion (partenaires + utilisateurs + covoiturage)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/admin/gestion',
-                builder: (_, __) => const AdminGestionPage(),
-              ),
-            ],
-          ),
-          // 3 — Profil
          
           StatefulShellBranch(
             routes: [

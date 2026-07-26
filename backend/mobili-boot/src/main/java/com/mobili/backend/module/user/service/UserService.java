@@ -173,7 +173,9 @@ public class UserService {
      */
     @Transactional
     public User registerCompanyPublic(RegisterCompanyPublicDTO dto,
-            org.springframework.web.multipart.MultipartFile logo) {
+            org.springframework.web.multipart.MultipartFile logo,
+            org.springframework.web.multipart.MultipartFile kycFront,
+            org.springframework.web.multipart.MultipartFile kycBack) {
         // Normalisation AVANT vérification et sauvegarde — même casse partout,
         // sinon "Test"/"test" ou " test " passeraient pour des comptes
         // différents alors qu'ils doivent être bloqués comme doublons.
@@ -226,7 +228,12 @@ public class UserService {
             pr.setBusinessNumber(normalizedBusinessNumber);
         }
 
-        partnerService.createPartnerForOwner(user, pr, logo);
+        var createdPartner = partnerService.createPartnerForOwner(user, pr, logo, kycFront, kycBack);
+        inboxNotificationService.notifyAdmins(
+                "Nouvelle société inscrite",
+                "« " + pr.getName() + " » vient de s'inscrire et attend votre approbation.",
+                com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_SUBMISSION_PENDING,
+                createdPartner);
 
         return userRepository.findByIdWithEverything(user.getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,

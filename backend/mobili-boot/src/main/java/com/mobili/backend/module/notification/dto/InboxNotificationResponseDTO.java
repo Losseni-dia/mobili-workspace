@@ -21,4 +21,10 @@ public class InboxNotificationResponseDTO {
     Long channelMessageId;
     /** Lien vers /compagnie/messages?thread=… */
     Long partnerGareComThreadId;
+
+    /**
+     * Société concernée (nouvelle inscription/resoumission) : permet à l'admin
+     * d'ouvrir la fiche.
+     */
+    Long partnerId;
 }

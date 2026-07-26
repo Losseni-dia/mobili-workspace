@@ -13,4 +13,6 @@ public class PartnerProfileDTO {
     private boolean enabled;
     /** Code saisi par les gares à l’auto-inscription. */
     private String registrationCode;
+    private String approvalStatus;
+    private String rejectionReason;
 }

@@ -42,12 +42,17 @@ public class ProfileDTO {
     private String covoiturageVehiclePhotoUrl;
     /** Photo portrait du conducteur (KYC covoiturage). */
     private String covoiturageDriverPhotoUrl;
-    /**
-     * Jours avant expiration de l’ID (négatif si dépassée). null si non applicable.
-     */
+    /** Recto pièce d'identité (KYC covoiturage). */
+    private String covoiturageIdFrontUrl;
+    /** Verso pièce d'identité (KYC covoiturage). */
+    private String covoiturageIdBackUrl;
+    
     private Long covoiturageKycDaysUntilExpiry;
     private Boolean covoiturageKycExpiringWithin30Days;
     private Boolean covoiturageKycIsDocumentExpired;
     /** Inscription covoiturage grand public (non rattaché à une compagnie Mobili). */
     private Boolean covoiturageSoloProfile;
+
+    private String partnerApprovalStatus;
+    private String partnerRejectionReason;
 }

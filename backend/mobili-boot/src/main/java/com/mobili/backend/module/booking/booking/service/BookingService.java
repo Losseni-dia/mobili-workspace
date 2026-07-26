@@ -1,5 +1,6 @@
 package com.mobili.backend.module.booking.booking.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -443,11 +444,12 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<Booking> findMyPartnerBookings() {
         Partner partner = partenaireService.getCurrentPartnerForOperations();
-        UserPrincipal p = getAuthenticatedPrincipal();
+        Object p = getAuthenticatedPrincipal();
+        Long stationId = stationIdOf(p);
         List<Booking> bookings;
-        if (p.getStationId() != null) {
+        if (stationId != null) {
             bookings = bookingRepository.findAllByPartnerIdAndStationId(
-                    partner.getId(), p.getStationId());
+                    partner.getId(), stationId);
         } else {
             bookings = bookingRepository.findAllByPartnerId(partner.getId());
         }
@@ -455,14 +457,30 @@ public class BookingService {
         return bookings;
     }
 
+    public List<Booking> findMyPartnerBookingsInRange(LocalDate fromDate, LocalDate toDate, Long filterStationId) {
+        Partner partner = partenaireService.getCurrentPartnerForOperations();
+        Object p = getAuthenticatedPrincipal();
+        Long principalStationId = stationIdOf(p);
+        Long effectiveStationId = principalStationId != null ? principalStationId : filterStationId;
+
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        List<Booking> bookings = bookingRepository.findAllByPartnerIdAndOptionalStationIdAndDateRange(
+                partner.getId(), effectiveStationId, from, to);
+        bookings.forEach(this::initLazyCollections);
+        return bookings;
+    }
+
     @Transactional
     public void deactivateSeatsManually(ManualBlockRequest request) {
         Partner partner = partenaireService.getCurrentPartnerForOperations();
-        UserPrincipal principal = getAuthenticatedPrincipal();
+        Object principal = getAuthenticatedPrincipal();
         Trip trip = tripService.findById(request.getTripId());
-        if (principal.getStationId() != null) {
+        Long principalStationId = stationIdOf(principal);
+        if (principalStationId != null) {
             if (trip.getStation() == null
-                    || !trip.getStation().getId().equals(principal.getStationId())) {
+                    || !trip.getStation().getId().equals(principalStationId)) {
                 throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Hors périmètre de votre gare");
             }
         }
@@ -496,45 +514,59 @@ public class BookingService {
     }
 
     private void enforceCanReadUserBookings(Long userId) {
-        UserPrincipal principal = getAuthenticatedPrincipal();
-        if (hasAuthority(principal, "ROLE_ADMIN")) {
+        Object principal = getAuthenticatedPrincipal();
+        if (hasAuthority(principal, "ROLE_ADMIN") || hasAuthority(principal, "ROLE_STATION")) {
             return;
         }
-        if (!userId.equals(principal.getUser().getId())) {
+        Long principalUserId = userIdOf(principal);
+        if (principalUserId == null || !userId.equals(principalUserId)) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                     "Vous ne pouvez pas consulter les réservations d'un autre utilisateur");
         }
     }
 
     private void enforceCanManageBooking(Booking booking) {
-        UserPrincipal principal = getAuthenticatedPrincipal();
+        Object principal = getAuthenticatedPrincipal();
         if (hasAuthority(principal, "ROLE_ADMIN")) {
             return;
         }
+        Long userId = userIdOf(principal);
         if (hasAuthority(principal, "ROLE_PARTNER")
                 && booking.getTrip() != null
                 && booking.getTrip().getPartner() != null
                 && booking.getTrip().getPartner().getOwner() != null
-                && principal.getUser().getId().equals(booking.getTrip().getPartner().getOwner().getId())) {
+                && userId != null
+                && userId.equals(booking.getTrip().getPartner().getOwner().getId())) {
             return;
+        }
+        if (hasAuthority(principal, "ROLE_GARE") || hasAuthority(principal, "ROLE_STATION")) {
+            Long stationId = stationIdOf(principal);
+            if (stationId != null
+                    && booking.getTrip() != null
+                    && booking.getTrip().getStation() != null
+                    && booking.getTrip().getStation().getId().equals(stationId)) {
+                return;
+            }
         }
         throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                 "Vous ne pouvez pas confirmer cette réservation");
     }
 
     private void enforceCanAccessBooking(Booking booking) {
-        UserPrincipal principal = getAuthenticatedPrincipal();
+        Object principal = getAuthenticatedPrincipal();
         if (hasAuthority(principal, "ROLE_ADMIN")) {
             return;
         }
-        if (booking.getCustomer() != null && principal.getUser().getId().equals(booking.getCustomer().getId())) {
+        Long userId = userIdOf(principal);
+        if (booking.getCustomer() != null && userId != null && userId.equals(booking.getCustomer().getId())) {
             return;
         }
         if (hasAuthority(principal, "ROLE_PARTNER")
                 && booking.getTrip() != null
                 && booking.getTrip().getPartner() != null
                 && booking.getTrip().getPartner().getOwner() != null
-                && principal.getUser().getId().equals(booking.getTrip().getPartner().getOwner().getId())) {
+                && userId != null
+                && userId.equals(booking.getTrip().getPartner().getOwner().getId())) {
             return;
         }
         if (canGareAccessPartnerTrip(booking, principal)) {
@@ -544,31 +576,55 @@ public class BookingService {
                 "Vous ne pouvez pas accéder à cette réservation");
     }
 
-    private boolean canGareAccessPartnerTrip(Booking booking, UserPrincipal principal) {
-        if (!hasAuthority(principal, "ROLE_GARE")
-                || booking.getTrip() == null
-                || principal.getStationId() == null) {
+    private boolean canGareAccessPartnerTrip(Booking booking, Object principal) {
+        if (!(hasAuthority(principal, "ROLE_GARE") || hasAuthority(principal, "ROLE_STATION"))
+                || booking.getTrip() == null) {
+            return false;
+        }
+        Long stationId = stationIdOf(principal);
+        if (stationId == null) {
             return false;
         }
         return booking.getTrip().getStation() != null
-                && booking.getTrip().getStation().getId().equals(principal.getStationId());
+                && booking.getTrip().getStation().getId().equals(stationId);
     }
 
     private boolean isCurrentUserAdmin() {
-        UserPrincipal principal = getAuthenticatedPrincipal();
+        Object principal = getAuthenticatedPrincipal();
         return hasAuthority(principal, "ROLE_ADMIN");
     }
 
-    private UserPrincipal getAuthenticatedPrincipal() {
+    private Object getAuthenticatedPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+        if (authentication == null || authentication.getPrincipal() == null) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Session invalide ou expirée");
         }
-        return principal;
+        return authentication.getPrincipal();
     }
 
-    private boolean hasAuthority(UserPrincipal principal, String authority) {
-        return principal.getAuthorities().stream()
-                .anyMatch(granted -> authority.equals(granted.getAuthority()));
+    private static Long stationIdOf(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return sp.getStationId();
+        }
+        if (principal instanceof UserPrincipal up) {
+            return up.getStationId();
+        }
+        return null;
     }
+
+    private static Long userIdOf(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getUser().getId();
+        }
+        return null;
+    }
+
+    private boolean hasAuthority(Object principal, String authority) {
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails ud) {
+            return ud.getAuthorities().stream()
+                    .anyMatch(granted -> authority.equals(granted.getAuthority()));
+        }
+        return false;
+    }
+
 }

@@ -40,7 +40,7 @@ public class PartnerChauffeurService {
 
     @Transactional
     public PartnerChauffeurListItem reactivateChauffeur(
-            UserPrincipal principal, Long chauffeurUserId) {
+            Object principal, Long chauffeurUserId) {
         partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
         Partner comp = partnerService.getCurrentPartnerForOperations();
         User u = userRepository.findByIdWithEverything(chauffeurUserId)
@@ -59,8 +59,8 @@ public class PartnerChauffeurService {
     
     @Transactional
     public PartnerChauffeurListItem updateChauffeur(
-    UserPrincipal principal, Long chauffeurUserId,
-    PartnerChauffeurUpdateRequest dto, MultipartFile avatar)  {
+            Object principal, Long chauffeurUserId,
+            PartnerChauffeurUpdateRequest dto, MultipartFile avatar) {
         partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
         Partner comp = partnerService.getCurrentPartnerForOperations();
         User u = userRepository.findByIdWithEverything(chauffeurUserId)
@@ -91,7 +91,7 @@ public class PartnerChauffeurService {
     }
 
     @Transactional
-    public void deleteChauffeur(UserPrincipal principal, Long chauffeurUserId) {
+    public void deleteChauffeur(Object principal, Long chauffeurUserId) {
         partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
         Partner comp = partnerService.getCurrentPartnerForOperations();
         User u = userRepository.findByIdWithEverything(chauffeurUserId)
@@ -109,7 +109,7 @@ public class PartnerChauffeurService {
 
     @Transactional
     public PartnerChauffeurListItem updateChauffeurAffiliation(
-            UserPrincipal principal, Long chauffeurUserId, PartnerChauffeurAffiliationRequest body) {
+            Object principal, Long chauffeurUserId, PartnerChauffeurAffiliationRequest body) {
         partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
         Partner comp = partnerService.getCurrentPartnerForOperations();
         User u = userRepository
@@ -141,9 +141,21 @@ public class PartnerChauffeurService {
     }
 
     @Transactional(readOnly = true)
-    public List<PartnerChauffeurListItem> listForCurrentPartner() {
+    public List<PartnerChauffeurListItem> listForCurrentPartner(Object principal) {
         Partner p = partnerService.getCurrentPartnerForOperations();
-        return userRepository.findChauffeursByEmployerPartnerId(p.getId()).stream()
+        var stream = userRepository.findChauffeursByEmployerPartnerId(p.getId()).stream();
+
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            Long stationId = sp.getStationId();
+            stream = stream.filter(u -> u.getChauffeurAffiliationStation() != null
+                    && u.getChauffeurAffiliationStation().getId().equals(stationId));
+        }
+        // Une connexion chef de gare classique (UserPrincipal avec stationId) reste
+        // volontairement non filtrée ici : décision "gare" = uniquement pour la
+        // nouvelle identité StationPrincipal, pas pour changer le comportement
+        // existant des comptes chef de gare.
+
+        return stream
                 .sorted(Comparator
                         .comparing((User u) -> nullToEmpty(u.getLastname()), String.CASE_INSENSITIVE_ORDER)
                         .thenComparing((User u) -> nullToEmpty(u.getFirstname()), String.CASE_INSENSITIVE_ORDER)
@@ -170,7 +182,7 @@ public class PartnerChauffeurService {
     }
 
     public PartnerChauffeurListItem registerCompanyChauffeur(
-    UserPrincipal principal, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
+            Object principal, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
     partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
     Partner comp = partnerService.getCurrentPartnerForOperations();
     return toItem(userService.registerCompanyChauffeur(comp, dto, avatar));

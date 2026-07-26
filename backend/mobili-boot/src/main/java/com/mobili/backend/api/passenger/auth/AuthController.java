@@ -76,6 +76,17 @@ public class AuthController {
 
         User user = userOpt.get();
 
+        boolean isLegacyGareAccount = user.getStation() != null
+                && user.getRoles().stream()
+                        .anyMatch(r -> r.getName() == com.mobili.backend.module.user.role.UserRole.GARE);
+        if (isLegacyGareAccount) {
+            log.warn("[Login] Ancien compte chef de gare refusé: login={}", request.getLogin());
+            analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(),
+                    "{\"reason\":\"LEGACY_GARE_ACCOUNT\"}");
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
+                    "Ce type de compte ne se connecte plus avec un identifiant personnel. Utilisez le code de la gare (ex. GAR-XXXXX) et son mot de passe.");
+        }
+
         if (!user.isEnabled()) {
             log.warn("[Login] Compte désactivé: userId={}, login={}", user.getId(), user.getLogin());
             analyticsEventService.record(AnalyticsEventType.FAILED_LOGIN, user.getId(),
@@ -169,15 +180,16 @@ public class AuthController {
     public AuthResponse registerCompany(
             @RequestPart("company") @Valid RegisterCompanyPublicDTO dto,
             @RequestPart(value = "logo", required = false) MultipartFile logo,
+            @RequestPart("kycFront") MultipartFile kycFront,
+            @RequestPart("kycBack") MultipartFile kycBack,
             HttpServletResponse response) {
 
-        User saved = userService.registerCompanyPublic(dto, logo);
+        User saved = userService.registerCompanyPublic(dto, logo, kycFront, kycBack);
         String token = jwtService.generateToken(saved);
         refreshTokenCookieWriter.write(response, saved);
         loginEventRepository.save(new LoginEvent(saved.getId(), saved.getLogin()));
-        return new AuthResponse(token, saved.getLogin(), saved.getId(), Boolean.FALSE);
+        return new AuthResponse(token, saved.getLogin(), saved.getId(), Boolean.TRUE);
     }
-
     /**
      * Inscription chauffeur **covoiturage** : pièce d’identité recto + verso + date de fin de validité.
      */
@@ -207,6 +219,7 @@ public class AuthController {
         var station = stationOpt.get();
 
         if (!station.isActive()) {
+            log.warn("[Login] Gare désactivée: code={}", request.getLogin());
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                     "Cette gare est désactivée. Contactez votre société.");
         }

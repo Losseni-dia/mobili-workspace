@@ -16,6 +16,8 @@ class ProfileDto {
     this.avatarUrl,
     this.covoiturageSoloProfile,
     this.covoiturageKycStatus,
+    this.partnerApprovalStatus,
+    this.partnerRejectionReason,
   });
 
   final int id;
@@ -27,6 +29,8 @@ class ProfileDto {
   final String? avatarUrl;
   final List<String> roles;
   final bool enabled;
+  final String? partnerApprovalStatus; // PENDING | APPROVED | REJECTED
+  final String? partnerRejectionReason;
 
   /// Conducteur covoiturage particulier (par opposition à un chauffeur
   /// salarié assigné par une compagnie/gare) — distinct du rôle CHAUFFEUR :
@@ -47,10 +51,103 @@ class ProfileDto {
 
   /// Vrai uniquement pour un conducteur covoiturage avec KYC validé — c'est
   /// la seule condition qui autorise à créer/modifier/supprimer un trajet.
-  bool get isCovoiturageDriver =>
+bool get isCovoiturageDriver =>
       covoiturageSoloProfile == true && covoiturageKycStatus == 'APPROVED';
 
+  bool get isPartnerPending => isPartner && partnerApprovalStatus == 'PENDING';
+  bool get isPartnerRejected =>
+      isPartner && partnerApprovalStatus == 'REJECTED';
+
   String get fullName => '$firstname $lastname';
+/////////////////////////////5v
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ---------------------------------------------------------------------------
   // Serialisation

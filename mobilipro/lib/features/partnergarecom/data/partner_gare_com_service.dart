@@ -49,4 +49,11 @@ class PartnerGareComService {
     );
     return ComMessage.fromJson(res.data!);
   }
+
+  Future<void> deleteThread(int threadId, {required bool forEveryone}) async {
+    await _dio.delete<void>(
+      '$_base/threads/$threadId',
+      queryParameters: {'mode': forEveryone ? 'EVERYONE' : 'ME'},
+    );
+  }
 }

@@ -18,6 +18,8 @@ ProfileDto _$ProfileDtoFromJson(Map<String, dynamic> json) => ProfileDto(
   avatarUrl: json['avatarUrl'] as String?,
   covoiturageSoloProfile: json['covoiturageSoloProfile'] as bool?,
   covoiturageKycStatus: json['covoiturageKycStatus'] as String?,
+  partnerApprovalStatus: json['partnerApprovalStatus'] as String?,
+  partnerRejectionReason: json['partnerRejectionReason'] as String?,
 );
 
 Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
@@ -31,6 +33,8 @@ Map<String, dynamic> _$ProfileDtoToJson(ProfileDto instance) =>
       'avatarUrl': instance.avatarUrl,
       'roles': instance.roles,
       'enabled': instance.enabled,
+      'partnerApprovalStatus': instance.partnerApprovalStatus,
+      'partnerRejectionReason': instance.partnerRejectionReason,
       'covoiturageSoloProfile': instance.covoiturageSoloProfile,
       'covoiturageKycStatus': instance.covoiturageKycStatus,
     };

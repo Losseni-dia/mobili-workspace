@@ -203,7 +203,7 @@ class ProfilePage extends ConsumerWidget {
                         child: Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: profile.roles
+                         children: profile.roles
                               .map(
                                 (r) => Container(
                                   padding: const EdgeInsets.symmetric(
@@ -220,7 +220,7 @@ class ProfilePage extends ConsumerWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    r,
+                                    r == 'STATION' ? 'GARE' : r,
                                     style: const TextStyle(
                                       color: AppColors.mobiliBlue,
                                       fontSize: 12,
@@ -327,7 +327,7 @@ class ProfilePage extends ConsumerWidget {
   String _roleLabel(List<String> roles) {
     if (roles.contains('ADMIN')) return 'SUPER ADMIN';
     if (roles.contains('PARTNER')) return 'PARTENAIRE';
-    if (roles.contains('GARE')) return 'GARE';
+    if (roles.contains('GARE') || roles.contains('STATION')) return 'GARE';
     if (roles.contains('CHAUFFEUR')) return 'CHAUFFEUR';
     if (roles.contains('COVOITURAGE')) return 'CONDUCTEUR';
     return 'UTILISATEUR';
@@ -336,7 +336,8 @@ class ProfilePage extends ConsumerWidget {
   Color _roleColor(List<String> roles) {
     if (roles.contains('ADMIN')) return AppColors.proGold;
     if (roles.contains('PARTNER')) return AppColors.mobiliYellow;
-    if (roles.contains('GARE')) return AppColors.stationGreen;
+    if (roles.contains('GARE') || roles.contains('STATION'))
+      return AppColors.stationGreen;
     if (roles.contains('CHAUFFEUR')) return AppColors.mobiliBlue;
     if (roles.contains('COVOITURAGE')) return AppColors.warning;
     return AppColors.gray400;

@@ -25,8 +25,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
         long countByCreatedAtDate(@Param("date") LocalDate date);
 
         @Query(value = "SELECT DATE(created_at) as day, COUNT(*) as cnt FROM users " +
-                        "WHERE created_at >= :from GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
-        List<Object[]> dailyRegistrationsBetween(@Param("from") LocalDateTime from);
+                        "WHERE created_at >= :from AND created_at <= :to GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
+        List<Object[]> dailyRegistrationsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
         // 1. Pour getMyProfile (Recherche par Login avec Fetch)
         @Query("SELECT u FROM User u " +
@@ -141,4 +141,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
                         + "AND u.chauffeurAffiliationStation IS NOT NULL "
                         + "AND u.chauffeurAffiliationStation.id IN :stationIds")
         List<User> findChauffeursByAffiliationStationIds(@Param("stationIds") List<Long> stationIds);
+
+        @Query("SELECT COUNT(u) FROM User u WHERE u.covoiturageSoloProfile = true AND CAST(u.createdAt AS date) = :date")
+        long countCovoiturageSoloProfileByCreatedAtDate(@Param("date") LocalDate date);
+
+        @Query("SELECT COUNT(u) FROM User u WHERE u.covoiturageSoloProfile = true")
+        long countCovoiturageSoloProfileTotal();
+
+        @Query(value = "SELECT DATE(created_at) as day, COUNT(*) as cnt FROM users " +
+                        "WHERE covoiturage_solo_profile = true AND created_at >= :from AND created_at <= :to " +
+                        "GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
+        List<Object[]> dailyCovoiturageRegistrationsBetween(@Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to);
 }

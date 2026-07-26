@@ -32,30 +32,30 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/partenaire/chauffeurs")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ROLE_PARTNER','ROLE_GARE','ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_PARTNER','ROLE_GARE','ROLE_ADMIN','ROLE_STATION')")
 public class PartnerChauffeurController {
 
     private final PartnerChauffeurService partnerChauffeurService;
 
     @GetMapping
-    public List<PartnerChauffeurListItem> list() {
-        return partnerChauffeurService.listForCurrentPartner();
+    public List<PartnerChauffeurListItem> list(org.springframework.security.core.Authentication authentication) {
+        return partnerChauffeurService.listForCurrentPartner(authentication.getPrincipal());
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public PartnerChauffeurListItem create(
             @RequestPart("chauffeur") @Valid PartnerChauffeurCreateRequest body,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        return partnerChauffeurService.registerCompanyChauffeur(principal, body, avatar);
+            org.springframework.security.core.Authentication authentication) {
+        return partnerChauffeurService.registerCompanyChauffeur(authentication.getPrincipal(), body, avatar);
     }
 
     @PatchMapping("/{id}/affiliation")
     public PartnerChauffeurListItem updateAffiliation(
             @PathVariable("id") Long userId,
             @RequestBody PartnerChauffeurAffiliationRequest body,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        return partnerChauffeurService.updateChauffeurAffiliation(principal, userId, body);
+            org.springframework.security.core.Authentication authentication) {
+        return partnerChauffeurService.updateChauffeurAffiliation(authentication.getPrincipal(), userId, body);
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -63,22 +63,22 @@ public class PartnerChauffeurController {
             @PathVariable("id") Long userId,
             @RequestPart("chauffeur") @Valid PartnerChauffeurUpdateRequest body,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        return partnerChauffeurService.updateChauffeur(principal, userId, body, avatar);
+            org.springframework.security.core.Authentication authentication) {
+        return partnerChauffeurService.updateChauffeur(authentication.getPrincipal(), userId, body, avatar);
     }
 
     @PatchMapping("/{id}/reactivate")
     public PartnerChauffeurListItem reactivate(
             @PathVariable("id") Long userId,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        return partnerChauffeurService.reactivateChauffeur(principal, userId);
+            org.springframework.security.core.Authentication authentication) {
+        return partnerChauffeurService.reactivateChauffeur(authentication.getPrincipal(), userId);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
             @PathVariable("id") Long userId,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        partnerChauffeurService.deleteChauffeur(principal, userId);
+            org.springframework.security.core.Authentication authentication) {
+        partnerChauffeurService.deleteChauffeur(authentication.getPrincipal(), userId);
     }
 }

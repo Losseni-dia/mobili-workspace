@@ -4,16 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mobilipro/core/theme/app_colors.dart';
 import 'package:mobilipro/features/notifications/data/notification_service.dart';
 import 'package:mobilipro/features/notifications/providers/notification_provider.dart';
-
 class ShellAdmin extends ConsumerWidget {
   const ShellAdmin({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadAsync = ref.watch(unreadCountProvider);
     final unread = unreadAsync.valueOrNull ?? 0;
-
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
@@ -23,9 +20,9 @@ class ShellAdmin extends ConsumerWidget {
             i,
             initialLocation: i == navigationShell.currentIndex,
           );
-          // Index 5 = Notifications
-          if (i == 5) {
-            await NotificationService().markAllRead();
+          // Index 4 = Notifications (après suppression de l'onglet Gestion)
+          if (i == 4) {
+            await NotificationService().markAllSeen();
             ref.invalidate(unreadCountProvider);
           }
         },
@@ -37,10 +34,6 @@ class ShellAdmin extends ConsumerWidget {
           const BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_rounded),
             label: 'Dashboard',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.manage_accounts_rounded),
-            label: 'Gestion',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.history_rounded),

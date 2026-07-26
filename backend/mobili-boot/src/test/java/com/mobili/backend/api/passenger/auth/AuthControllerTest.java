@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -106,16 +107,18 @@ class AuthControllerTest {
         User saved = new User();
         saved.setId(42L);
         saved.setLogin("dirigeant01");
+        MultipartFile kycFront = mock(MultipartFile.class);
+        MultipartFile kycBack = mock(MultipartFile.class);
 
-        when(userService.registerCompanyPublic(eq(dto), isNull())).thenReturn(saved);
+        when(userService.registerCompanyPublic(eq(dto), isNull(), eq(kycFront), eq(kycBack))).thenReturn(saved);
         when(jwtService.generateToken(saved)).thenReturn("jwt-access-token");
 
-        AuthResponse response = authController.registerCompany(dto, null, httpServletResponse);
+        AuthResponse response = authController.registerCompany(dto, null, kycFront, kycBack, httpServletResponse);
 
         assertEquals("jwt-access-token", response.getToken());
         assertEquals("dirigeant01", response.getLogin());
         assertEquals(42L, response.getUserId());
-        assertEquals(Boolean.FALSE, response.getAccountPending());
+        assertEquals(Boolean.TRUE, response.getAccountPending());
 
         verify(jwtService).generateToken(saved);
         verify(refreshTokenCookieWriter).write(httpServletResponse, saved);
@@ -129,24 +132,29 @@ class AuthControllerTest {
         User saved = new User();
         saved.setId(7L);
         saved.setLogin("boss");
-        MultipartFile logo = org.mockito.Mockito.mock(MultipartFile.class);
+        MultipartFile logo = mock(MultipartFile.class);
+        MultipartFile kycFront = mock(MultipartFile.class);
+        MultipartFile kycBack = mock(MultipartFile.class);
 
-        when(userService.registerCompanyPublic(dto, logo)).thenReturn(saved);
+        when(userService.registerCompanyPublic(dto, logo, kycFront, kycBack)).thenReturn(saved);
         when(jwtService.generateToken(saved)).thenReturn("t");
 
-        authController.registerCompany(dto, logo, httpServletResponse);
+        authController.registerCompany(dto, logo, kycFront, kycBack, httpServletResponse);
 
-        verify(userService).registerCompanyPublic(dto, logo);
+        verify(userService).registerCompanyPublic(dto, logo, kycFront, kycBack);
     }
 
     @Test
     void registerCompanyPropagatesMobiliExceptionAndSkipsJwtAndCookie() {
         RegisterCompanyPublicDTO dto = sampleRegisterCompanyDto();
-        when(userService.registerCompanyPublic(any(RegisterCompanyPublicDTO.class), isNull()))
+        MultipartFile kycFront = mock(MultipartFile.class);
+        MultipartFile kycBack = mock(MultipartFile.class);
+        when(userService.registerCompanyPublic(any(RegisterCompanyPublicDTO.class), isNull(), eq(kycFront),
+                eq(kycBack)))
                 .thenThrow(new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé."));
 
         MobiliException ex = assertThrows(MobiliException.class,
-                () -> authController.registerCompany(dto, null, httpServletResponse));
+                () -> authController.registerCompany(dto, null, kycFront, kycBack, httpServletResponse));
 
         assertEquals(MobiliErrorCode.DUPLICATE_RESOURCE, ex.getErrorCode());
         verify(jwtService, never()).generateToken(any());

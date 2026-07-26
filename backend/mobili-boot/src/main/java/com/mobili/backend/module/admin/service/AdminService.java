@@ -19,12 +19,15 @@ import com.mobili.backend.module.admin.dto.AnalyticsSummaryResponse;
 import com.mobili.backend.module.admin.dto.AnalyticsSummaryResponse.CountByType;
 import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse;
 import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse.DayEntry;
+import com.mobili.backend.module.admin.dto.DailyPartnerStatsResponse;
 import com.mobili.backend.module.admin.dto.DailyRegistrationStatsResponse;
+import com.mobili.backend.module.admin.dto.DailyTicketStatsResponse;
 import com.mobili.backend.module.admin.repository.LoginEventRepository;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.entity.AppAnalyticsEvent;
 import com.mobili.backend.module.analytics.repository.AppAnalyticsEventRepository;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
+import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 import com.mobili.backend.module.partner.repository.PartnerRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.repository.UserRepository;
@@ -49,20 +52,31 @@ public class AdminService {
     private final TripRepository tripRepository;
     private final LoginEventRepository loginEventRepository;
     private final AppAnalyticsEventRepository appAnalyticsEventRepository;
+    private final TicketRepository ticketRepository;
+
+
 
     @Transactional(readOnly = true)
-    public DailyRegistrationStatsResponse getRegistrationStats(int days) {
-        if (days < 1)
-            days = 1;
-        if (days > 365)
-            days = 365;
+    public DailyRegistrationStatsResponse getRegistrationStats(int days, LocalDate fromDate, LocalDate toDate) {
         LocalDate today = LocalDate.now();
-        LocalDateTime from = today.minusDays(days - 1).atStartOfDay();
+        LocalDateTime from;
+        LocalDateTime to;
+        if (fromDate != null && toDate != null) {
+            from = fromDate.atStartOfDay();
+            to = toDate.atTime(23, 59, 59);
+        } else {
+            if (days < 1)
+                days = 1;
+            if (days > 365)
+                days = 365;
+            from = today.minusDays(days - 1).atStartOfDay();
+            to = LocalDateTime.now();
+        }
 
         long todayCount = userRepository.countByCreatedAtDate(today);
         long totalUsers = userRepository.count();
 
-        List<Object[]> raw = userRepository.dailyRegistrationsBetween(from);
+        List<Object[]> raw = userRepository.dailyRegistrationsBetween(from, to);
         List<DailyRegistrationStatsResponse.DayEntry> history = raw.stream()
                 .map(row -> {
                     Object col0 = row[0];
@@ -81,25 +95,214 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
+    public DailyPartnerStatsResponse getPartnerStats(int days, LocalDate fromDate, LocalDate toDate) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime from;
+        LocalDateTime to;
+        if (fromDate != null && toDate != null) {
+            from = fromDate.atStartOfDay();
+            to = toDate.atTime(23, 59, 59);
+        } else {
+            if (days < 1)
+                days = 1;
+            if (days > 365)
+                days = 365;
+            from = today.minusDays(days - 1).atStartOfDay();
+            to = LocalDateTime.now();
+        }
+
+        long todayCount = partnerRepository.countByCreatedAtDate(today);
+        long totalPartners = partnerRepository.count();
+
+        List<Object[]> raw = partnerRepository.dailyPartnersRegisteredBetween(from, to);
+        List<DailyPartnerStatsResponse.DayEntry> history = raw.stream()
+                .map(row -> {
+                    Object col0 = row[0];
+                    LocalDate date;
+                    if (col0 instanceof java.sql.Date sqlDate) {
+                        date = sqlDate.toLocalDate();
+                    } else if (col0 instanceof LocalDate ld) {
+                        date = ld;
+                    } else {
+                        date = LocalDate.parse(col0.toString());
+                    }
+                    return new DailyPartnerStatsResponse.DayEntry(date, ((Number) row[1]).longValue());
+                })
+                .toList();
+        return new DailyPartnerStatsResponse(todayCount, totalPartners, history);
+    }
+
+    @Transactional(readOnly = true)
+    public DailyTicketStatsResponse getTicketStats(int days, LocalDate fromDate, LocalDate toDate) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime from;
+        LocalDateTime to;
+        if (fromDate != null && toDate != null) {
+            from = fromDate.atStartOfDay();
+            to = toDate.atTime(23, 59, 59);
+        } else {
+            if (days < 1)
+                days = 1;
+            if (days > 365)
+                days = 365;
+            from = today.minusDays(days - 1).atStartOfDay();
+            to = LocalDateTime.now();
+        }
+
+        long todayCount = ticketRepository.countByBookingDateDate(today);
+        long totalTickets = ticketRepository.countActiveTickets();
+
+        List<Object[]> raw = ticketRepository.dailyTicketsBetween(from, to);
+        List<DailyTicketStatsResponse.DayEntry> history = raw.stream()
+                .map(row -> {
+                    Object col0 = row[0];
+                    LocalDate date;
+                    if (col0 instanceof java.sql.Date sqlDate) {
+                        date = sqlDate.toLocalDate();
+                    } else if (col0 instanceof LocalDate ld) {
+                        date = ld;
+                    } else {
+                        date = LocalDate.parse(col0.toString());
+                    }
+                    return new DailyTicketStatsResponse.DayEntry(date, ((Number) row[1]).longValue());
+                })
+                .toList();
+        return new DailyTicketStatsResponse(todayCount, totalTickets, history);
+    }
+
+    @Transactional(readOnly = true)
     public AdminStatsResponse getGlobalStats() {
         long totalUsers = userRepository.count();
         long totalPartners = partnerRepository.count();
         long totalTrips = tripRepository.count();
         long activeBookings = bookingRepository.count();
+        long totalTickets = ticketRepository.countActiveTickets();
 
         Double revenue = bookingRepository.sumTotalRevenue();
         double totalRevenue = revenue != null ? revenue : 0.0;
 
-        log.info("[AdminStats] users={}, partners={}, trips={}, bookings={}, revenue={}",
-                totalUsers, totalPartners, totalTrips, activeBookings, totalRevenue);
+        log.info("[AdminStats] users={}, partners={}, trips={}, bookings={}, tickets={}, revenue={}",
+                totalUsers, totalPartners, totalTrips, activeBookings, totalTickets, totalRevenue);
 
         return new AdminStatsResponse(
                 totalUsers,
                 totalPartners,
                 totalTrips,
+                totalTickets,
                 activeBookings,
                 totalRevenue);
     }
+
+    @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.admin.dto.AdminTicketListItemResponse> getTicketList(
+            LocalDate fromDate, LocalDate toDate, String search) {
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        List<com.mobili.backend.module.booking.ticket.entity.Ticket> tickets = ticketRepository.findForAdminList(from,
+                to, search);
+
+        return tickets.stream()
+                .map(t -> new com.mobili.backend.module.admin.dto.AdminTicketListItemResponse(
+                        t.getId(),
+                        t.getTicketNumber(),
+                        t.getPassengerName(),
+                        t.getTrip().getDepartureCity() + " → " + t.getTrip().getArrivalCity(),
+                        t.getTrip().getPartner() != null ? t.getTrip().getPartner().getName() : "—",
+                        t.getBookingDate(),
+                        t.getAmountPaid(),
+                        t.getStatus() != null ? t.getStatus().name() : "—",
+                        t.getSeatNumber(),
+                        t.isScanned()))
+                .toList();
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.admin.dto.AdminBookingListItemResponse> getBookingList(
+            LocalDate fromDate, LocalDate toDate, String search) {
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        List<com.mobili.backend.module.booking.booking.entity.Booking> bookings = bookingRepository
+                .findForAdminList(from, to, search);
+
+        return bookings.stream()
+                .map(b -> new com.mobili.backend.module.admin.dto.AdminBookingListItemResponse(
+                        b.getId(),
+                        b.getReference(),
+                        b.getCustomer().getFirstname() + " " + b.getCustomer().getLastname(),
+                        b.getTrip().getDepartureCity() + " → " + b.getTrip().getArrivalCity(),
+                        b.getTrip().getPartner() != null ? b.getTrip().getPartner().getName() : "—",
+                        b.getBookingDate(),
+                        b.getNumberOfSeats(),
+                        b.getTotalPrice(),
+                        b.getStatus() != null ? b.getStatus().name() : "—"))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.admin.dto.AdminTripListItemResponse> getTripList(
+            LocalDate fromDate, LocalDate toDate, String search) {
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDate.now().plusDays(30).atTime(23, 59, 59);
+
+        List<com.mobili.backend.module.trip.entity.Trip> trips = tripRepository.findForAdminList(from, to, search);
+
+        return trips.stream()
+                .map(t -> new com.mobili.backend.module.admin.dto.AdminTripListItemResponse(
+                        t.getId(),
+                        t.getDepartureCity() + " → " + t.getArrivalCity(),
+                        t.getPartner() != null ? t.getPartner().getName() : "—",
+                        t.getDepartureDateTime(),
+                        t.getTotalSeats(),
+                        t.getAvailableSeats(),
+                        t.getPrice(),
+                        t.getStatus() != null ? t.getStatus().name() : "—"))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse getCovoiturageStats(
+            int days, LocalDate fromDate, LocalDate toDate) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime from;
+        LocalDateTime to;
+        if (fromDate != null && toDate != null) {
+            from = fromDate.atStartOfDay();
+            to = toDate.atTime(23, 59, 59);
+        } else {
+            if (days < 1)
+                days = 1;
+            if (days > 365)
+                days = 365;
+            from = today.minusDays(days - 1).atStartOfDay();
+            to = LocalDateTime.now();
+        }
+
+        long todayCount = userRepository.countCovoiturageSoloProfileByCreatedAtDate(today);
+        long totalDrivers = userRepository.countCovoiturageSoloProfileTotal();
+
+        List<Object[]> raw = userRepository.dailyCovoiturageRegistrationsBetween(from, to);
+        List<com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse.DayEntry> history = raw.stream()
+                .map(row -> {
+                    Object col0 = row[0];
+                    LocalDate date;
+                    if (col0 instanceof java.sql.Date sqlDate) {
+                        date = sqlDate.toLocalDate();
+                    } else if (col0 instanceof LocalDate ld) {
+                        date = ld;
+                    } else {
+                        date = LocalDate.parse(col0.toString());
+                    }
+                    return new com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse.DayEntry(
+                            date, ((Number) row[1]).longValue());
+                })
+                .toList();
+        return new com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse(todayCount, totalDrivers, history);
+    }
+
 
     @Transactional(readOnly = true)
     public DailyLoginStatsResponse getDailyLoginStats(int days) {

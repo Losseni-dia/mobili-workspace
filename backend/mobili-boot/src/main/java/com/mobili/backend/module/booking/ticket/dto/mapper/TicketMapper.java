@@ -25,7 +25,33 @@ public interface TicketMapper {
     @Mapping(source = "alightingStopIndex", target = "alightingStopIndex")
     @Mapping(target = "boardingCity", ignore = true)
     @Mapping(target = "alightingCity", ignore = true)
+    @Mapping(target = "extraHoldBags", ignore = true)
+    @Mapping(target = "luggageFee", ignore = true)
+    @Mapping(target = "transportPrice", ignore = true)
+    @Mapping(target = "numberOfSeatsInBooking", ignore = true)
     TicketResponseDTO toDto(Ticket ticket);
+
+    @AfterMapping
+    default void fillLuggageAndReceiptInfo(Ticket ticket, @MappingTarget TicketResponseDTO dto) {
+        var booking = ticket.getBooking();
+        var trip = ticket.getTrip();
+        if (booking == null || trip == null) {
+            return;
+        }
+        int extraBags = booking.getExtraHoldBags() != null ? booking.getExtraHoldBags() : 0;
+        double luggageFee = (extraBags > 0 && trip.getExtraHoldBagPrice() != null)
+                ? extraBags * trip.getExtraHoldBagPrice()
+                : 0.0;
+        double totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0;
+        int seats = booking.getNumberOfSeats() != null ? booking.getNumberOfSeats() : 1;
+        double transportTotal = totalPrice - luggageFee;
+        dto.setExtraHoldBags(extraBags);
+        dto.setLuggageFee(luggageFee);
+        dto.setNumberOfSeatsInBooking(seats);
+        // Part de transport pour CE ticket (répartition équitable entre les
+        // sièges de la même réservation).
+        dto.setTransportPrice(seats > 0 ? transportTotal / seats : transportTotal);
+    }
 
     @AfterMapping
     default void fillSegmentCities(Ticket ticket, @MappingTarget TicketResponseDTO dto) {

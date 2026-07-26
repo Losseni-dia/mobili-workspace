@@ -132,8 +132,12 @@ class NotificationService {
     await _dio.patch<void>('/inbox/notifications/$id/read');
   }
 
-  Future<void> markAllRead() async {
+Future<void> markAllRead() async {
     await _dio.patch<void>('/inbox/notifications/read-all');
+  }
+
+  Future<void> markAllSeen() async {
+    await _dio.patch<void>('/inbox/notifications/mark-all-seen');
   }
 
   Future<void> deleteNotification(int id) async {
@@ -418,12 +422,23 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                   );
                 }
 
-                final notif = notifications[index];
+             final notif = notifications[index];
                 return _NotifCard(
                   notification: notif,
                   onDelete: () => _delete(notif),
                   onTap: () async {
                     await _markRead(notif);
+                    if (!context.mounted) return;
+
+                    // Canal trajet : ouvre directement le fil, pas de modale.
+                    if (notif.type == 'TRIP_CHANNEL_MESSAGE' &&
+                        notif.tripId != null) {
+                      context.push(
+                        '/trips/${notif.tripId}/channel?label=${Uri.encodeComponent(notif.tripRoute ?? '')}',
+                      );
+                      return;
+                    }
+
                     if (context.mounted) {
                       showModalBottomSheet(
                         context: context,

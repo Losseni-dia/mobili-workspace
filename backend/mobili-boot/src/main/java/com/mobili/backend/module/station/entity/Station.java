@@ -44,6 +44,9 @@ public class Station extends AbstractEntity {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "fcm_token", length = 500)
+    private String fcmToken;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "partner_id", nullable = false)
     private Partner partner;

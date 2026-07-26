@@ -119,6 +119,35 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "ORDER BY b.createdAt DESC")
         List<Booking> findAllByPartnerId(@Param("partnerId") Long partnerId);
 
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames " +
+                        "WHERE t.partner.id = :partnerId " +
+                        "AND b.createdAt >= :from AND b.createdAt <= :to " +
+                        "ORDER BY b.createdAt DESC")
+        List<Booking> findAllByPartnerIdAndDateRange(
+                        @Param("partnerId") Long partnerId,
+                        @Param("from") java.time.LocalDateTime from,
+                        @Param("to") java.time.LocalDateTime to);
+
+        @Query("SELECT b FROM Booking b " +
+                        "LEFT JOIN FETCH b.trip t " +
+                        "LEFT JOIN FETCH t.partner " +
+                        "LEFT JOIN FETCH t.station " +
+                        "LEFT JOIN FETCH b.customer " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames " +
+                        "WHERE t.partner.id = :partnerId AND t.station.id = :stationId " +
+                        "AND b.createdAt >= :from AND b.createdAt <= :to " +
+                        "ORDER BY b.createdAt DESC")
+        List<Booking> findAllByPartnerIdAndStationIdAndDateRange(
+                        @Param("partnerId") Long partnerId,
+                        @Param("stationId") Long stationId,
+                        @Param("from") java.time.LocalDateTime from,
+                        @Param("to") java.time.LocalDateTime to);
+
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status <> com.mobili.backend.module.booking.booking.entity.BookingStatus.CANCELLED")
         Double sumTotalRevenue();
 
@@ -184,4 +213,34 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         +
                         "ORDER BY b.createdAt ASC")
         List<Booking> findPendingCovoiturageRequestsForOrganizer(@Param("organizerId") Long organizerId);
+
+
+        @Query("SELECT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "LEFT JOIN FETCH t.partner " +
+                        "JOIN FETCH b.customer c " +
+                        "WHERE b.bookingDate >= :from AND b.bookingDate <= :to " +
+                        "AND (:search IS NULL OR :search = '' " +
+                        "     OR LOWER(b.reference) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "     OR LOWER(c.firstname) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "     OR LOWER(c.lastname) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "ORDER BY b.bookingDate DESC")
+        List<Booking> findForAdminList(
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
+                        @Param("search") String search);
+
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames " +
+                        "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) " +
+                        "AND b.createdAt >= :from AND b.createdAt <= :to " +
+                        "ORDER BY b.createdAt DESC")
+        List<Booking> findAllByPartnerIdAndOptionalStationIdAndDateRange(
+                        @Param("partnerId") Long partnerId,
+                        @Param("stationId") Long stationId,
+                        @Param("from") java.time.LocalDateTime from,
+                        @Param("to") java.time.LocalDateTime to);
 }

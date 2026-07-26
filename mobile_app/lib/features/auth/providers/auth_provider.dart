@@ -1,5 +1,6 @@
 // lib/features/auth/providers/auth_provider.dart
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,11 +67,15 @@ class AuthState {
 class AuthNotifier extends AsyncNotifier<AuthState> {
   late final AuthService _service;
 
-  @override
+@override
   Future<AuthState> build() async {
     _service = ref.read(authServiceProvider);
     try {
       final profile = await _service.getMe();
+      // Session déjà active (pas de re-login) : on renvoie quand même le
+      // token FCM au backend, sinon un utilisateur déjà connecté ne reçoit
+      // jamais de push si son token n'avait pas encore été enregistré.
+      unawaited(FirebaseService.sendTokenToBackend(ApiClient.instance.dio));
       return AuthState(
         status: AuthStatus.authenticated,
         profile: profile,

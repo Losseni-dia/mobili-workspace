@@ -18,7 +18,14 @@ public class InboxSseController {
     private final InboxSseService inboxSseService;
 
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@AuthenticationPrincipal UserPrincipal principal) {
-        return inboxSseService.subscribe(principal.getUser().getId());
+    public SseEmitter stream(org.springframework.security.core.Authentication authentication) {
+        Object principal = authentication != null ? authentication.getPrincipal() : null;
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal) {
+            SseEmitter emitter = new SseEmitter(0L);
+            emitter.complete();
+            return emitter;
+        }
+        UserPrincipal up = (UserPrincipal) principal;
+        return inboxSseService.subscribe(up.getUser().getId());
     }
 }

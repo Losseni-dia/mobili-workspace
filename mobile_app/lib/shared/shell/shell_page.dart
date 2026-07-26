@@ -44,13 +44,13 @@ class _ShellPageState extends ConsumerState<ShellPage> {
       body: widget.navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: widget.navigationShell.currentIndex,
-        onTap: (index) async {
+       onTap: (index) async {
           widget.navigationShell.goBranch(
             index,
             initialLocation: index == widget.navigationShell.currentIndex,
           );
-          if (index == 3) {
-            await NotificationService().markAllRead();
+          if (index == 2) {
+            await NotificationService().markAllSeen();
             ref.invalidate(unreadCountProvider);
           }
         },
@@ -62,9 +62,8 @@ class _ShellPageState extends ConsumerState<ShellPage> {
           const BottomNavigationBarItem(
               icon: Icon(Icons.home_rounded), label: 'Accueil'),
           const BottomNavigationBarItem(
-              icon: Icon(Icons.search_rounded), label: 'Recherche'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_rounded), label: 'Réservations'),
+              icon: Icon(Icons.confirmation_number_rounded),
+              label: 'Mes tickets'),
           BottomNavigationBarItem(
             icon: Badge(
               isLabelVisible: unreadCount > 0,

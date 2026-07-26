@@ -19,8 +19,12 @@ class AdminPartner {
     required this.enabled,
     this.ownerName,
     this.logoUrl,
+    this.kycFrontUrl,
+    this.kycBackUrl,
+    this.rejectionReason,
     required this.covoiturageSoloPool,
     required this.approvalStatus,
+    this.createdAt,
   });
   final int id;
   final String name;
@@ -30,8 +34,12 @@ class AdminPartner {
   final bool enabled;
   final String? ownerName;
   final String? logoUrl;
+  final String? kycFrontUrl;
+  final String? kycBackUrl;
+  final String? rejectionReason;
   final bool covoiturageSoloPool;
   final String approvalStatus;
+  final DateTime? createdAt;
 
   bool get isPending => approvalStatus == 'PENDING';
   bool get isApproved => approvalStatus == 'APPROVED';
@@ -46,8 +54,12 @@ class AdminPartner {
     enabled: json['enabled'] as bool? ?? false,
     ownerName: json['ownerName'] as String?,
     logoUrl: json['logoUrl'] as String?,
+    kycFrontUrl: json['kycFrontUrl'] as String?,
+    kycBackUrl: json['kycBackUrl'] as String?,
+    rejectionReason: json['rejectionReason'] as String?,
     covoiturageSoloPool: json['covoiturageSoloPool'] as bool? ?? false,
     approvalStatus: json['approvalStatus'] as String? ?? 'APPROVED',
+    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
   );
 }
 
@@ -64,6 +76,7 @@ class AdminUser {
     this.linkedCompanyName,
     this.stationName,
     this.employerPartnerId,
+    this.createdAt,
   });
   final int id;
   final String firstname;
@@ -76,11 +89,12 @@ class AdminUser {
   final String? linkedCompanyName;
   final String? stationName;
   final int? employerPartnerId;
+  final DateTime? createdAt;
 
   String get fullName => '$firstname $lastname'.trim();
   String get initial => firstname.isNotEmpty ? firstname[0].toUpperCase() : '?';
 
-  factory AdminUser.fromJson(Map<String, dynamic> json) => AdminUser(
+factory AdminUser.fromJson(Map<String, dynamic> json) => AdminUser(
     id: json['id'] as int,
     firstname: json['firstname'] as String? ?? '',
     lastname: json['lastname'] as String? ?? '',
@@ -94,9 +108,9 @@ class AdminUser {
     linkedCompanyName: json['linkedCompanyName'] as String?,
     stationName: json['stationName'] as String?,
     employerPartnerId: json['employerPartnerId'] as int?,
+    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
   );
 }
-
 class CovoiturageSoloDriver {
   const CovoiturageSoloDriver({
     required this.id,
@@ -106,6 +120,7 @@ class CovoiturageSoloDriver {
     this.kycStatus,
     required this.enabled,
     this.driverPhotoUrl,
+    this.createdAt,
   });
   final int id;
   final String firstname;
@@ -114,6 +129,7 @@ class CovoiturageSoloDriver {
   final String? kycStatus;
   final bool enabled;
   final String? driverPhotoUrl;
+  final DateTime? createdAt;
 
   String get fullName => '$firstname $lastname'.trim();
   String get initial => firstname.isNotEmpty ? firstname[0].toUpperCase() : '?';
@@ -124,9 +140,10 @@ class CovoiturageSoloDriver {
         firstname: json['firstname'] as String? ?? '',
         lastname: json['lastname'] as String? ?? '',
         email: json['email'] as String?,
-        kycStatus: json['kycStatus'] as String?,
+        kycStatus: json['covoiturageKycStatus'] as String?,
         enabled: json['enabled'] as bool? ?? false,
-        driverPhotoUrl: json['driverPhotoUrl'] as String?,
+        driverPhotoUrl: json['covoiturageDriverPhotoUrl'] as String?,
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       );
 }
 
@@ -179,6 +196,9 @@ class UserDetail {
     this.covoiturageVehiclePlate,
     this.covoiturageVehicleColor,
     this.covoiturageDriverPhotoUrl,
+    this.covoiturageVehiclePhotoUrl,
+    this.covoiturageIdFrontUrl,
+    this.covoiturageIdBackUrl,
     this.totalBookingsCount,
   });
   final int id;
@@ -196,11 +216,12 @@ class UserDetail {
   final String? covoiturageVehiclePlate;
   final String? covoiturageVehicleColor;
   final String? covoiturageDriverPhotoUrl;
+  final String? covoiturageVehiclePhotoUrl;
+  final String? covoiturageIdFrontUrl;
+  final String? covoiturageIdBackUrl;
   final int? totalBookingsCount;
-
   String get fullName => '$firstname $lastname'.trim();
   String get initial => firstname.isNotEmpty ? firstname[0].toUpperCase() : '?';
-
   factory UserDetail.fromJson(Map<String, dynamic> json) => UserDetail(
     id: json['id'] as int,
     firstname: json['firstname'] as String? ?? '',
@@ -219,6 +240,9 @@ class UserDetail {
     covoiturageVehiclePlate: json['covoiturageVehiclePlate'] as String?,
     covoiturageVehicleColor: json['covoiturageVehicleColor'] as String?,
     covoiturageDriverPhotoUrl: json['covoiturageDriverPhotoUrl'] as String?,
+    covoiturageVehiclePhotoUrl: json['covoiturageVehiclePhotoUrl'] as String?,
+    covoiturageIdFrontUrl: json['covoiturageIdFrontUrl'] as String?,
+    covoiturageIdBackUrl: json['covoiturageIdBackUrl'] as String?,
     totalBookingsCount: json['totalBookingsCount'] as int?,
   );
 }
@@ -423,27 +447,59 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
   }
 
   Future<void> _reject(AdminPartner p) async {
-    final confirmed = await showDialog<bool>(
+    final reasonCtrl = TextEditingController();
+    final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rejeter cette compagnie ?'),
-        content: Text('${p.name} sera rejetée.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Rejeter cette compagnie ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${p.name} sera rejetée.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif du rejet (obligatoire)',
+                  hintText:
+                      'Ex : document illisible, informations incohérentes...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Rejeter', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: reasonCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(ctx, reasonCtrl.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+              ),
+              child: const Text(
+                'Rejeter',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
-    if (confirmed != true) return;
+    if (reason == null || reason.isEmpty) return;
     try {
-      await ApiClient.instance.dio.patch('/admin/partners/${p.id}/reject');
+      await ApiClient.instance.dio.patch(
+        '/admin/partners/${p.id}/reject',
+        data: {'reason': reason},
+      );
       ref.invalidate(adminPartnersProvider);
       widget.onSnack('${p.name} rejeté');
     } catch (e) {
@@ -1657,6 +1713,48 @@ class PartnerDetailPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+            if (partner.logoUrl != null ||
+                partner.kycFrontUrl != null ||
+                partner.kycBackUrl != null)
+              _DetailSection(
+                title: 'Documents',
+                children: [
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      if (partner.logoUrl != null)
+                        _DocumentThumb(label: 'Logo', path: partner.logoUrl!),
+                      if (partner.kycFrontUrl != null)
+                        _DocumentThumb(
+                          label: 'CNI recto',
+                          path: partner.kycFrontUrl!,
+                        ),
+                      if (partner.kycBackUrl != null)
+                        _DocumentThumb(
+                          label: 'CNI verso',
+                          path: partner.kycBackUrl!,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            if (partner.isRejected && partner.rejectionReason != null) ...[
+              const SizedBox(height: 16),
+              _DetailSection(
+                title: 'Motif du rejet',
+                children: [
+                  Text(
+                    partner.rejectionReason!,
+                    style: const TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
             _DetailSection(
               title: 'Informations',
               children: [
@@ -1697,6 +1795,86 @@ class PartnerDetailPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _DocumentThumb extends StatelessWidget {
+  const _DocumentThumb({required this.label, required this.path});
+  final String label;
+  final String path;
+
+  String get _fullUrl {
+    // Le backend renvoie un chemin relatif (ex: "partners/kyc/xxx.jpg") ; ces
+    // fichiers sont exposés sous /v1/uploads/**.
+    const apiBase = 'https://api.my-mobili.com/v1/uploads';
+    return path.startsWith('http') ? path : '$apiBase/$path';
+  }
+
+  @override
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                _fullUrl,
+                errorBuilder: (_, __, ___) => const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+    child: Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            _fullUrl,
+            width: 90,
+            height: 90,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 90,
+              height: 90,
+              color: AppColors.gray100,
+              child: const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.gray300,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.gray500),
+        ),
+      ],
+    ),
+  );
 }
 
 class UserDetailPage extends ConsumerWidget {
@@ -1867,7 +2045,7 @@ class UserDetailPage extends ConsumerWidget {
                 ],
               ),
             ],
-           if (detail.covoiturageKycStatus != null &&
+            if (detail.covoiturageKycStatus != null &&
                 detail.covoiturageKycStatus != 'NONE') ...[
               const SizedBox(height: 12),
               _DetailSection(
@@ -1902,7 +2080,7 @@ class UserDetailPage extends ConsumerWidget {
                       label: 'Plaque',
                       value: detail.covoiturageVehiclePlate!,
                     ),
-                  if (detail.covoiturageVehicleColor != null)
+                if (detail.covoiturageVehicleColor != null)
                     _DetailRow(
                       icon: Icons.palette_rounded,
                       label: 'Couleur',
@@ -1910,6 +2088,46 @@ class UserDetailPage extends ConsumerWidget {
                     ),
                 ],
               ),
+              if (detail.covoiturageIdFrontUrl != null ||
+                  detail.covoiturageIdBackUrl != null ||
+                  detail.covoiturageDriverPhotoUrl != null ||
+                  detail.covoiturageVehiclePhotoUrl != null) ...[
+                const SizedBox(height: 12),
+                _DetailSection(
+                  title: 'Documents KYC',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          if (detail.covoiturageIdFrontUrl != null)
+                            _DocumentThumb(
+                              label: 'CNI recto',
+                              path: detail.covoiturageIdFrontUrl!,
+                            ),
+                          if (detail.covoiturageIdBackUrl != null)
+                            _DocumentThumb(
+                              label: 'CNI verso',
+                              path: detail.covoiturageIdBackUrl!,
+                            ),
+                          if (detail.covoiturageDriverPhotoUrl != null)
+                            _DocumentThumb(
+                              label: 'Photo conducteur',
+                              path: detail.covoiturageDriverPhotoUrl!,
+                            ),
+                          if (detail.covoiturageVehiclePhotoUrl != null)
+                            _DocumentThumb(
+                              label: 'Photo véhicule',
+                              path: detail.covoiturageVehiclePhotoUrl!,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               // Boutons KYC — uniquement si PENDING ou EXPIRED
               if (detail.covoiturageKycStatus == 'PENDING' ||
                   detail.covoiturageKycStatus == 'EXPIRED') ...[
@@ -1927,7 +2145,6 @@ class UserDetailPage extends ConsumerWidget {
     );
   }
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // WIDGETS UTILITAIRES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2260,7 +2477,7 @@ class _KycActionButtons extends ConsumerWidget {
         '/admin/users/$userId/covoiturage-kyc',
         queryParameters: {'status': status},
       );
-     ref.invalidate(userDetailProvider(userId));
+      ref.invalidate(userDetailProvider(userId));
       ref.invalidate(adminCovoiturageDriversProvider);
       if (status == 'APPROVED') AnalyticsService.logApproveKyc(userId: userId);
       if (context.mounted) {

@@ -87,12 +87,18 @@ class FirebaseService {
     debugPrint('[FCM] Initialisé avec succès');
   }
 
-  static Future<void> sendTokenToBackend(Dio dio) async {
+  static Future<void> sendTokenToBackend(
+    Dio dio, {
+    bool isStation = false,
+  }) async {
     try {
       final token = await _storage.read(key: 'fcm_token');
       if (token != null) {
-        await dio.patch('/auth/me/fcm-token', data: {'fcmToken': token});
-        debugPrint('[FCM] Token envoyé au backend');
+        final path = isStation
+            ? '/partenaire/stations/me/fcm-token'
+            : '/auth/me/fcm-token';
+        await dio.patch(path, data: {'fcmToken': token});
+        debugPrint('[FCM] Token envoyé au backend ($path)');
       }
     } catch (e) {
       debugPrint('[FCM] Erreur envoi token backend: $e');

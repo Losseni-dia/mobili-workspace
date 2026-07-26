@@ -1,6 +1,5 @@
 package com.mobili.backend.api.passenger.inbox;
 
-import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.notification.dto.InboxNotificationResponseDTO;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
 import jakarta.validation.constraints.Min;
@@ -9,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,41 +29,45 @@ public class InboxNotificationController {
     public Page<InboxNotificationResponseDTO> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") @Min(1) int size,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        return inboxNotificationService.listForUser(principal,
+            org.springframework.security.core.Authentication authentication) {
+        return inboxNotificationService.listForUser(authentication.getPrincipal(),
                 PageRequest.of(page, size, Sort.by("createdAt").descending()));
     }
 
     @GetMapping("/notifications/unread-count")
-    public Map<String, Long> unreadCount(@AuthenticationPrincipal UserPrincipal principal) {
-        return Map.of("count", inboxNotificationService.countUnread(principal));
+    public Map<String, Long> unreadCount(org.springframework.security.core.Authentication authentication) {
+        return Map.of("count", inboxNotificationService.countUnread(authentication.getPrincipal()));
     }
 
     @PatchMapping("/notifications/{id}/read")
     public void markRead(
             @PathVariable Long id,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        inboxNotificationService.markRead(id, principal);
+            org.springframework.security.core.Authentication authentication) {
+        inboxNotificationService.markRead(id, authentication.getPrincipal());
     }
 
     @PatchMapping("/notifications/read-all")
-    public Map<String, Integer> markAllRead(@AuthenticationPrincipal UserPrincipal principal) {
-        return Map.of("updated", inboxNotificationService.markAllRead(principal));
+    public Map<String, Integer> markAllRead(org.springframework.security.core.Authentication authentication) {
+        return Map.of("updated", inboxNotificationService.markAllRead(authentication.getPrincipal()));
+    }
+
+    @PatchMapping("/notifications/mark-all-seen")
+    public Map<String, Integer> markAllSeen(org.springframework.security.core.Authentication authentication) {
+        return Map.of("updated", inboxNotificationService.markAllSeen(authentication.getPrincipal()));
     }
 
     @DeleteMapping("/notifications/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
-            @AuthenticationPrincipal UserPrincipal principal) {
-        inboxNotificationService.delete(id, principal);
+            org.springframework.security.core.Authentication authentication) {
+        inboxNotificationService.delete(id, authentication.getPrincipal());
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/notifications")
     public ResponseEntity<Void> deleteAll(
-            @AuthenticationPrincipal UserPrincipal principal) {
-        inboxNotificationService.deleteAll(principal);
+            org.springframework.security.core.Authentication authentication) {
+        inboxNotificationService.deleteAll(authentication.getPrincipal());
         return ResponseEntity.noContent().build();
     }
-
 }

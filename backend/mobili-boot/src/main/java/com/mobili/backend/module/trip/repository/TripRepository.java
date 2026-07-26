@@ -71,10 +71,29 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findAllByPartnerId(Long partnerId);
 
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
-            + "LEFT JOIN FETCH t.assignedChauffeur "
-            + "WHERE t.partner.id = :partnerId AND t.station.id = :stationId ORDER BY t.departureDateTime DESC")
+                    + "LEFT JOIN FETCH t.assignedChauffeur "
+                    + "WHERE t.partner.id = :partnerId AND t.station.id = :stationId ORDER BY t.departureDateTime DESC")
     List<Trip> findAllByPartnerIdAndStationId(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
+    @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
+                    + "LEFT JOIN FETCH t.assignedChauffeur "
+                    + "WHERE t.partner.id = :partnerId AND t.departureDateTime >= :from AND t.departureDateTime <= :to "
+                    + "ORDER BY t.departureDateTime DESC")
+    List<Trip> findAllByPartnerIdAndDateRange(
+                    @Param("partnerId") Long partnerId,
+                    @Param("from") java.time.LocalDateTime from,
+                    @Param("to") java.time.LocalDateTime to);
+
+    @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
+                    + "LEFT JOIN FETCH t.assignedChauffeur "
+                    + "WHERE t.partner.id = :partnerId AND t.station.id = :stationId "
+                    + "AND t.departureDateTime >= :from AND t.departureDateTime <= :to "
+                    + "ORDER BY t.departureDateTime DESC")
+    List<Trip> findAllByPartnerIdAndStationIdAndDateRange(
+                    @Param("partnerId") Long partnerId,
+                    @Param("stationId") Long stationId,
+                    @Param("from") java.time.LocalDateTime from,
+                    @Param("to") java.time.LocalDateTime to);
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
                     + "WHERE t.covoiturageOrganizer.id = :userId AND t.hiddenByOrganizer = false "
                     + "ORDER BY t.departureDateTime DESC")
@@ -103,4 +122,31 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
 
     boolean existsByCovoiturageOrganizerCovoiturageDriverPhotoUrl(String driverPhotoUrl);
+
+
+    @Query("SELECT DISTINCT t FROM Trip t " +
+                    "JOIN FETCH t.partner p " +
+                    "WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to " +
+                    "AND (:search IS NULL OR :search = '' " +
+                    "     OR LOWER(t.departureCity) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "     OR LOWER(t.arrivalCity) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                    "     OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                    "ORDER BY t.departureDateTime DESC")
+    List<Trip> findForAdminList(
+                    @Param("from") LocalDateTime from,
+                    @Param("to") LocalDateTime to,
+                    @Param("search") String search);
+
+    @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
+                    + "LEFT JOIN FETCH t.assignedChauffeur "
+                    + "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) "
+                    + "AND t.departureDateTime >= :from AND t.departureDateTime <= :to "
+                    + "ORDER BY t.departureDateTime DESC")
+    List<Trip> findAllByPartnerIdAndOptionalStationIdAndDateRange(
+                    @Param("partnerId") Long partnerId,
+                    @Param("stationId") Long stationId,
+                    @Param("from") java.time.LocalDateTime from,
+                    @Param("to") java.time.LocalDateTime to);
+
+  
 }

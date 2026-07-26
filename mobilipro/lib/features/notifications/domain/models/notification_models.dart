@@ -15,6 +15,7 @@ class InboxNotification {
     this.tripRoute,
     this.channelMessageId,
     this.partnerGareComThreadId,
+    this.partnerId,
   });
 
   final int id;
@@ -27,6 +28,7 @@ class InboxNotification {
   final String? tripRoute;
   final int? channelMessageId;
   final int? partnerGareComThreadId;
+  final int? partnerId;
 
   String get formattedDate {
     final now = DateTime.now();
@@ -43,6 +45,21 @@ class InboxNotification {
     return '${createdAt.day}/${createdAt.month}/${createdAt.year}';
   }
 
+ /// Parse une date UTC venant du backend et la convertit en heure locale
+  /// (le backend n'envoie pas d'indicateur de fuseau, donc sans ce forçage
+  /// Dart traiterait la valeur comme déjà locale).
+  static DateTime _parseDate(String raw) {
+    if (raw.isEmpty) return DateTime.now();
+    try {
+      final normalized = raw.endsWith('Z') || raw.contains('+')
+          ? raw
+          : '${raw}Z';
+      return DateTime.parse(normalized).toLocal();
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
   factory InboxNotification.fromJson(Map<String, dynamic> json) =>
       InboxNotification(
         id: json['id'] as int,
@@ -50,13 +67,12 @@ class InboxNotification {
         title: json['title'] as String? ?? '',
         body: json['body'] as String? ?? '',
         read: json['read'] as bool? ?? false,
-        createdAt:
-            DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
+        createdAt: _parseDate(json['createdAt'] as String? ?? ''),
         tripId: json['tripId'] as int?,
         tripRoute: json['tripRoute'] as String?,
         channelMessageId: json['channelMessageId'] as int?,
-        partnerGareComThreadId: json['partnerGareComThreadId'] as int?,
+       partnerGareComThreadId: json['partnerGareComThreadId'] as int?,
+        partnerId: json['partnerId'] as int?,
       );
 
   InboxNotification copyWith({bool? read}) => InboxNotification(

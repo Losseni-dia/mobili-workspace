@@ -35,6 +35,10 @@ class NotificationService {
     await _dio.patch<void>('/inbox/notifications/read-all');
   }
 
+  Future<void> markAllSeen() async {
+    await _dio.patch<void>('/inbox/notifications/mark-all-seen');
+  }
+
   Future<void> deleteNotification(int id) async {
     await _dio.delete<void>('/inbox/notifications/$id');
   }

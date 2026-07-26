@@ -286,6 +286,7 @@ public class TripRunService {
                 seats.add(t.getSeatNumber());
             }
         }
+        
         List<Booking> bookings = bookingRepository.findByTripIdWithSeats(tripId);
         for (Booking b : bookings) {
             if (b.getStatus() == BookingStatus.CANCELLED) {
@@ -298,7 +299,11 @@ public class TripRunService {
                     && b.getStatus() != BookingStatus.AWAITING_PAYMENT) {
                 continue;
             }
-            seats.addAll(b.getSeatNumbers());
+            int bb = Optional.ofNullable(b.getBoardingStopIndex()).orElse(0);
+            int bEndExclusive = Optional.ofNullable(b.getAlightingStopIndex()).orElse(defaultAlightingStopIndex);
+            if (bb <= legIndex && legIndex < bEndExclusive) {
+                seats.addAll(b.getSeatNumbers());
+            }
         }
         return seats;
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobili/features/bookings/presentation/pages/booking_receipt_page.dart';
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
@@ -385,7 +386,7 @@ class _BookingCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Container(
+                       Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -398,6 +399,28 @@ class _BookingCard extends StatelessWidget {
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                               )),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  BookingReceiptPage(booking: booking),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.white.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long_rounded,
+                              color: AppColors.white,
+                              size: 16,
+                            ),
+                          ),
                         ),
                       ],
                     ),

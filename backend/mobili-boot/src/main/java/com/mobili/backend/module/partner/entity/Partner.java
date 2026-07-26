@@ -34,6 +34,15 @@ public class Partner extends AbstractEntity {
 
     private String phone;
 
+    @Column(name = "kyc_front_url")
+    private String kycFrontUrl;
+
+    @Column(name = "kyc_back_url")
+    private String kycBackUrl;
+
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
     @Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "approval_status", nullable = false, length = 20)
     private PartnerApprovalStatus approvalStatus = PartnerApprovalStatus.PENDING;

@@ -60,7 +60,7 @@ public class TicketController {
     }
 
     @PatchMapping("/verify/{ticketNumber}")
-    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_GARE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
     public TicketResponseDTO verifyTicket(@PathVariable String ticketNumber) {
         // Le service traite la logique et change le statut
         Ticket ticket = ticketService.verifyAndUseTicket(ticketNumber);
@@ -71,7 +71,7 @@ public class TicketController {
     }
 
     @GetMapping("/trip/{tripId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
     public List<TicketResponseDTO> getByTrip(@PathVariable Long tripId) {
         return ticketService.findAllByTripId(tripId).stream()
                 .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)

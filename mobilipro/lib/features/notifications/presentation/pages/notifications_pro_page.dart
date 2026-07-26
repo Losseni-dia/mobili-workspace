@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page_v2.dart';
+import 'package:mobilipro/features/admin/presentation/pages/partner_stats_page.dart';
 import 'package:mobilipro/features/partnergarecom/presentation/pages/partner_gare_com_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -134,8 +136,51 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
               style: const TextStyle(color: AppColors.gray400, fontSize: 12),
             ),
 
-            // ── Action selon type ────────────────────
-            if (notif.partnerGareComThreadId != null) ...[
+          // ── Action selon type ────────────────────
+            if (notif.type == 'PARTNER_SUBMISSION_PENDING' &&
+                notif.partnerId != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(sheetCtx).pop();
+                    try {
+                      final partners = await ref.read(
+                        adminPartnersProvider.future,
+                      );
+                      final partner = partners.firstWhere(
+                        (p) => p.id == notif.partnerId,
+                      );
+                      if (context.mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => PartnerDetailPage(partner: partner),
+                          ),
+                        );
+                      }
+                  } catch (_) {
+                      if (context.mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PartnerStatsDetailPage(),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.business_rounded, size: 16),
+                  label: const Text('Voir la fiche société'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (notif.partnerGareComThreadId != null) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -225,34 +270,25 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
-    final notifAsync = ref.watch(notificationsProvider);
-    final profile = ref.watch(currentProfileProvider);
+    ref.listen<AsyncValue<List<InboxNotification>>>(notificationsProvider, (
+      previous,
+      next,
+    ) {
+      if (next.hasValue) {
+        setState(() {
+          _notifications = next.value;
+          _currentPage = 0;
+          _hasMore = next.value!.length == 20;
+        });
+      }
 
-    // Partner/société mère → ne voit PAS les notifs de réservation
-    // Seules les gares reçoivent les notifs de réservation liées à leurs trajets
-    final isPartnerOnly =
-        profile != null && profile.isPartner && !profile.isGare;
-
-    if (notifAsync.hasValue && _notifications == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _notifications = notifAsync.value!;
-            _currentPage = 0;
-            _hasMore = notifAsync.value!.length == 20;
-          });
-        }
-      });
-    }
+    });
+ final notifAsync = ref.watch(notificationsProvider);
 
     // Filtre selon le rôle
-    final notifications = (_notifications ?? []).where((n) {
-      if (isPartnerOnly && n.type == 'GARE_STATION_NEW_BOOKING') return false;
-      if (isPartnerOnly && n.type == 'PARTNER_NEW_BOOKING') return false;
-      return true;
-    }).toList();
+  final notifications = _notifications ?? [];
 
     final unreadCount = notifications.where((n) => !n.read).length;
 
@@ -339,38 +375,59 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
             style: const TextStyle(color: AppColors.gray500),
           ),
         ),
-        data: (_) {
+    data: (_) {
           if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              color: AppColors.mobiliBlue,
+              onRefresh: () async {
+                setState(() {
+                  _notifications = null;
+                  _currentPage = 0;
+                });
+                ref.invalidate(notificationsProvider);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.mobiliBlueFog,
-                      borderRadius: BorderRadius.circular(20),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: AppColors.mobiliBlueFog,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: AppColors.mobiliBlue,
+                              size: 40,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Aucune notification',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.mobiliBlueDeep,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Vos notifications apparaîtront ici.',
+                            style: TextStyle(
+                              color: AppColors.gray400,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.mobiliBlue,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Aucune notification',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.mobiliBlueDeep,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Vos notifications apparaîtront ici.',
-                    style: TextStyle(color: AppColors.gray400, fontSize: 13),
                   ),
                 ],
               ),
@@ -618,6 +675,8 @@ class _NotifCard extends StatelessWidget {
         return (Icons.forum_rounded, AppColors.mobiliBlue);
      case 'MOBILI_ADMIN_INFO_PARTNER':
         return (Icons.support_agent_rounded, AppColors.warning);
+      case 'PARTNER_SUBMISSION_PENDING':
+        return (Icons.business_center_rounded, AppColors.proGold);
       case 'COV_KYC_EXPIRING_SOON':
         return (Icons.warning_amber_rounded, AppColors.warning);
       case 'COV_KYC_EXPIRED':

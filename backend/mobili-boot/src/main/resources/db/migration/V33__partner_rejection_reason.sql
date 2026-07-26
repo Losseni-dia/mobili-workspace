@@ -1,0 +1,1 @@
+ALTER TABLE partners ADD COLUMN rejection_reason VARCHAR(1000);

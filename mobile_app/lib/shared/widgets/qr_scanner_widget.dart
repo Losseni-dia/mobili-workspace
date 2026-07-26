@@ -18,6 +18,9 @@ class QrScanResult {
     this.arrivalCity,
     this.status,
     this.message,
+    this.transportPrice,
+    this.extraHoldBags = 0,
+    this.luggageFee = 0,
   });
 
   final bool valid;
@@ -28,9 +31,15 @@ class QrScanResult {
   final String? arrivalCity;
   final String? status;
   final String? message;
+  final double? transportPrice;
+  final int extraHoldBags;
+  final double luggageFee;
 
-  String get route =>
-      (departureCity != null && arrivalCity != null) ? '$departureCity → $arrivalCity' : '';
+  String get route => (departureCity != null && arrivalCity != null)
+      ? '$departureCity → $arrivalCity'
+      : '';
+
+  double get totalPaid => (transportPrice ?? 0) + luggageFee;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +92,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
         '/tickets/verify/$ticketNumber',
       );
       final data = res.data!;
-      result = QrScanResult(
+  result = QrScanResult(
         valid: true,
         ticketNumber: ticketNumber,
         passengerName: data['passengerFullName'] as String?,
@@ -91,6 +100,9 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
         departureCity: data['departureCity'] as String?,
         arrivalCity: data['arrivalCity'] as String?,
         status: data['status'] as String?,
+        transportPrice: (data['transportPrice'] as num?)?.toDouble(),
+        extraHoldBags: (data['extraHoldBags'] as num?)?.toInt() ?? 0,
+        luggageFee: (data['luggageFee'] as num?)?.toDouble() ?? 0,
       );
     } catch (e) {
       result = QrScanResult(
@@ -263,7 +275,31 @@ class QrScanResultOverlay extends StatelessWidget {
                         _Row(icon: Icons.route_rounded, label: 'Trajet', value: result.route),
                       if (result.status != null)
                         _Row(icon: Icons.info_outline_rounded, label: 'Statut', value: result.status!),
-                      _Row(icon: Icons.qr_code_rounded, label: 'N° ticket', value: result.ticketNumber),
+                      _Row(
+                          icon: Icons.qr_code_rounded,
+                          label: 'N° ticket',
+                          value: result.ticketNumber),
+                      if (isValid && result.transportPrice != null) ...[
+                        const SizedBox(height: 4),
+                        _Row(
+                          icon: Icons.directions_bus_rounded,
+                          label: 'Transport',
+                          value:
+                              '${result.transportPrice!.toStringAsFixed(0)} FCFA',
+                        ),
+                        if (result.extraHoldBags > 0)
+                          _Row(
+                            icon: Icons.luggage_rounded,
+                            label: 'Bagages (${result.extraHoldBags})',
+                            value:
+                                '${result.luggageFee.toStringAsFixed(0)} FCFA',
+                          ),
+                        _Row(
+                          icon: Icons.payments_rounded,
+                          label: 'Total payé',
+                          value: '${result.totalPaid.toStringAsFixed(0)} FCFA',
+                        ),
+                      ],
                       if (!isValid && result.message != null) ...[
                         const SizedBox(height: 8),
                         Container(

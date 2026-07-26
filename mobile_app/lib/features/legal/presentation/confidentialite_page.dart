@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/theme/app_colors.dart';

@@ -23,9 +23,9 @@ class ShellGare extends ConsumerWidget {
             i,
             initialLocation: i == navigationShell.currentIndex,
           );
-          // Index 4 = Notifications dans shell gare
-          if (i == 4) {
-            await NotificationService().markAllRead();
+         // Index 5 = Notifications dans shell gare
+          if (i == 5) {
+            await NotificationService().markAllSeen();
             ref.invalidate(unreadCountProvider);
           }
         },
@@ -51,9 +51,13 @@ class ShellGare extends ConsumerWidget {
             icon: Icon(Icons.bookmark_rounded),
             label: 'Réservations',
           ),
-          const BottomNavigationBarItem(
+        const BottomNavigationBarItem(
             icon: Icon(Icons.people_rounded),
             label: 'Chauffeurs',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.forum_rounded),
+            label: 'Communications',
           ),
           BottomNavigationBarItem(
             icon: _BadgeIcon(icon: Icons.notifications_rounded, count: unread),
