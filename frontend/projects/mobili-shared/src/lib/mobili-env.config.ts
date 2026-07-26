@@ -5,22 +5,13 @@ export const CONFIGURATION_DATA = {
   environments: [
     {
       env: 'local',
-      // Domaines de développement
+      // Domaines de développement (ng serve)
       domain: ['localhost:4200', '127.0.0.1:4200', 'localhost:4201', '127.0.0.1:4201'],
     },
     {
       env: 'prod',
-      // Domaines de production (Docker Compose Prod)
-      domain: [
-        'localhost',
-        'localhost:80',
-        'localhost:81',
-        '127.0.0.1',
-        '127.0.0.1:80',
-        '127.0.0.1:81',
-        'mobili.ci',
-        'www.mobili.ci',
-      ],
+      // Domaines de production réels
+      domain: ['my-mobili.com', 'www.my-mobili.com', 'business.my-mobili.com'],
     },
   ],
   variables: {
@@ -31,14 +22,10 @@ export const CONFIGURATION_DATA = {
       travelerWebBase: 'http://localhost:4200',
     },
     prod: {
-      /** Nginx proxifie `/v1` vers le backend (voir nginx*.conf). */
+      /** Nginx système proxifie `/v1` vers le backend. */
       apiUrl: '/v1',
-
-      /** Port 81 pour le Business */
-      businessWebBase: 'http://localhost:81/mobili-workspace',
-
-      /** Port 80 pour l'User */
-      travelerWebBase: 'http://localhost:80',
+      businessWebBase: 'https://business.my-mobili.com',
+      travelerWebBase: 'https://www.my-mobili.com',
     },
   },
 } as const;
