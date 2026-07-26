@@ -1,0 +1,42 @@
+name: Deploy MobiliPro (Firebase App Distribution)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobilipro/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Decode keystore
+        run: echo "${{ secrets.MOBILIPRO_KEYSTORE_BASE64 }}" | base64 --decode > mobilipro/android/app/release-keystore.jks
+
+      - name: Get dependencies
+        working-directory: mobilipro
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: mobilipro
+        env:
+          MOBILIPRO_KEYSTORE_PATH: ${{ github.workspace }}/mobilipro/android/app/release-keystore.jks
+          MOBILIPRO_KEYSTORE_PASSWORD: ${{ secrets.MOBILIPRO_KEYSTORE_PASSWORD }}
+          MOBILIPRO_KEY_ALIAS: ${{ secrets.MOBILIPRO_KEY_ALIAS }}
+          MOBILIPRO_KEY_PASSWORD: ${{ secrets.MOBILIPRO_KEY_PASSWORD }}
+        run: flutter build apk --release
+
+      - name: Distribute via Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: '1:908432245037:android:0b00c6f5d27550d72bd3a4'
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: Mobili-business
+          file: mobilipro/build/app/outputs/flutter-apk/app-release.apk
