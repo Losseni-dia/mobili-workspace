@@ -134,12 +134,12 @@ class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
           // À venir : trajets pas encore effectués — les plus proches en
           // premier. Historique : trajets déjà effectués/annulés — les plus
           // récents en premier.
-          final upcoming = filtered.where((t) => t.belongsToUpcoming).toList()
-            ..sort(
-                (a, b) => a.departureDateTime.compareTo(b.departureDateTime));
+        final upcoming = filtered.where((t) => t.belongsToUpcoming).toList()
+            ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
+                .compareTo(a.bookingDate ?? a.departureDateTime));
           final history = filtered.where((t) => !t.belongsToUpcoming).toList()
-            ..sort(
-                (a, b) => b.departureDateTime.compareTo(a.departureDateTime));
+            ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
+                .compareTo(a.bookingDate ?? a.departureDateTime));
 
           return TabBarView(
             controller: _tabController,
@@ -248,10 +248,14 @@ class _TicketCard extends StatefulWidget {
 class _TicketCardState extends State<_TicketCard> {
   final _repaintKey = GlobalKey();
   bool _isSharing = false;
+  bool _qrExpanded = false;
 
-  Future<void> _shareTicket() async {
+Future<void> _shareTicket() async {
+    final wasCollapsed = !_qrExpanded;
+    if (wasCollapsed) setState(() => _qrExpanded = true);
     setState(() => _isSharing = true);
     try {
+      await Future.delayed(const Duration(milliseconds: 50));
       final boundary = _repaintKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) return;
@@ -267,8 +271,9 @@ class _TicketCardState extends State<_TicketCard> {
         text:
             'Mon billet Mobili — ${widget.ticket.effectiveBoardingCity} → ${widget.ticket.effectiveAlightingCity}\n${widget.ticket.ticketNumber}',
       );
-    } finally {
+  } finally {
       setState(() => _isSharing = false);
+      if (wasCollapsed) setState(() => _qrExpanded = false);
     }
   }
 
@@ -528,11 +533,7 @@ class _TicketCardState extends State<_TicketCard> {
                                 label: 'PASSAGER',
                                 value: ticket.passengerFullName),
                             const SizedBox(height: 12),
-                            _InfoItem(
-                              label: 'PRIX',
-                              value: ticket.formattedPrice,
-                              valueColor: AppColors.mobiliBlueDeep,
-                            ),
+                            
                             const SizedBox(height: 12),
                             _InfoItem(
                                 label: 'VÉHICULE',
@@ -586,59 +587,89 @@ class _TicketCardState extends State<_TicketCard> {
                   ),
 
                 _DashedDivider(),
-
-                // ── QR Code ──────────────────────────────
+                // ── QR Code (repliable) ────────────────────
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Column(
-                    children: [
-                      Text('SCANNEZ À L\'EMBARQUEMENT',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.gray400,
-                            fontSize: 10,
-                            letterSpacing: 1.2,
-                          )),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.gray100),
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x08000000), blurRadius: 8),
-                          ],
-                        ),
-                        child: QrImageView(
-                          data: ticket.qrCodeData,
-                          version: QrVersions.auto,
-                          size: 200,
-                          backgroundColor: AppColors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.mobiliBlueFog,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          ticket.ticketNumber,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.mobiliBlue,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.5,
-                            fontSize: 14,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => setState(() => _qrExpanded = !_qrExpanded),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.qr_code_2_rounded,
+                              color: AppColors.mobiliBlue, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            _qrExpanded
+                                ? 'Masquer le code QR'
+                                : 'Afficher le code QR',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.mobiliBlue,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            _qrExpanded
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.mobiliBlue,
+                            size: 18,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                    ],
+                    ),
                   ),
                 ),
+                if (_qrExpanded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.gray100),
+                            boxShadow: const [
+                              BoxShadow(
+                                  color: Color(0x08000000), blurRadius: 8),
+                            ],
+                          ),
+                          child: QrImageView(
+                            data: ticket.qrCodeData,
+                            version: QrVersions.auto,
+                            size: 200,
+                            backgroundColor: AppColors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.mobiliBlueFog,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            ticket.ticketNumber,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.mobiliBlue,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.5,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

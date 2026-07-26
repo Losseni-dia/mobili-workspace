@@ -1,5 +1,7 @@
 package com.mobili.backend.module.admin.dto;
 
+import java.time.LocalDateTime;
+
 public record PartnerAdminResponse(
                 Long id,
                 String name,
@@ -9,11 +11,10 @@ public record PartnerAdminResponse(
                 boolean enabled,
                 String ownerName,
                 String logoUrl,
-                /**
-                 * Partenaire technique (pool) pour le covoiturage particulier : à afficher à
-                 * part des
-                 * compagnies transport.
-                 */
+                String kycFrontUrl,
+                String kycBackUrl,
+                String rejectionReason,
                 boolean covoiturageSoloPool,
-                String approvalStatus) {
+                String approvalStatus,
+                LocalDateTime createdAt) {
 }

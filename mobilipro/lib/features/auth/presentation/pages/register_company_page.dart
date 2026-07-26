@@ -30,11 +30,13 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
   final _passwordCtrl = TextEditingController();
   final _companyNameCtrl = TextEditingController();
   final _companyEmailCtrl = TextEditingController();
-final _companyPhoneCtrl = TextEditingController();
+  final _companyPhoneCtrl = TextEditingController();
   final _businessNumberCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
 
   File? _logo;
+  File? _kycFront;
+  File? _kycBack;
   String? _errorMessage;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -50,7 +52,7 @@ final _companyPhoneCtrl = TextEditingController();
     _companyNameCtrl.dispose();
     _companyEmailCtrl.dispose();
     _companyPhoneCtrl.dispose();
-   _businessNumberCtrl.dispose();
+    _businessNumberCtrl.dispose();
     _confirmPasswordCtrl.dispose();
     super.dispose();
   }
@@ -64,11 +66,36 @@ final _companyPhoneCtrl = TextEditingController();
     if (picked != null) setState(() => _logo = File(picked.path));
   }
 
+  Future<void> _pickKycFront() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    if (picked != null) setState(() => _kycFront = File(picked.path));
+  }
+
+  Future<void> _pickKycBack() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    if (picked != null) setState(() => _kycBack = File(picked.path));
+  }
+
   String? _required(String? v, String field) =>
       v == null || v.trim().isEmpty ? '$field requis(e).' : null;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_kycFront == null || _kycBack == null) {
+      setState(
+        () => _errorMessage =
+            'Ajoutez les photos recto et verso de votre carte d\'identité.',
+      );
+      return;
+    }
     setState(() => _errorMessage = null);
 
     final ok = await ref
@@ -88,16 +115,25 @@ final _companyPhoneCtrl = TextEditingController();
               'businessNumber': _businessNumberCtrl.text.trim(),
           },
           logoFile: _logo,
+          kycFrontFile: _kycFront!,
+          kycBackFile: _kycBack!,
         );
 
     if (ok && mounted) {
       context.go('/partner/dashboard');
-    } else if (mounted) {
+  } else if (mounted) {
       final authState = ref.read(authProvider).valueOrNull;
+      final hasFieldErrors = (authState?.fieldErrors?.isNotEmpty) ?? false;
       setState(
-        () => _errorMessage =
-            authState?.errorMessage ?? 'Une erreur est survenue.',
+        () => _errorMessage = hasFieldErrors
+            ? null
+            : (authState?.errorMessage ?? 'Une erreur est survenue.'),
       );
+      if (hasFieldErrors) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _formKey.currentState!.validate();
+        });
+      }
     }
   }
 
@@ -159,7 +195,7 @@ final _companyPhoneCtrl = TextEditingController();
                 ],
               ),
               const SizedBox(height: 12),
-             _Field(
+              _Field(
                 controller: _emailCtrl,
                 label: 'Email du responsable (optionnel)',
                 keyboardType: TextInputType.emailAddress,
@@ -169,13 +205,21 @@ final _companyPhoneCtrl = TextEditingController();
                   return emailRx.hasMatch(v.trim()) ? null : 'Email invalide.';
                 },
               ),
-              const SizedBox(height: 12),
-              _Field(
+          _Field(
                 controller: _phoneCtrl,
                 label: 'Téléphone du responsable',
                 keyboardType: TextInputType.phone,
+                onChanged: (_) {
+                  ref.read(authProvider.notifier).clearFieldErrors();
+                  if (_errorMessage != null) {
+                    setState(() => _errorMessage = null);
+                  }
+                },
                 validator: (v) {
-                  final apiError = ref.watch(authProvider).valueOrNull?.fieldErrors?['phone'];
+                  final apiError = ref
+                      .watch(authProvider)
+                      .valueOrNull
+                      ?.fieldErrors?['phone'];
                   if (apiError != null) return apiError;
                   if (v == null || v.trim().isEmpty) return 'Téléphone requis.';
                   if (v.trim().length < 8) return 'Numéro invalide.';
@@ -184,9 +228,14 @@ final _companyPhoneCtrl = TextEditingController();
                 autovalidate: true,
               ),
               const SizedBox(height: 12),
-              _Field(
+            _Field(
                 controller: _loginCtrl,
                 label: 'Identifiant',
+                onChanged: (_) {
+                  ref.read(authProvider.notifier).clearFieldErrors();
+                  if (_errorMessage != null)
+                    setState(() => _errorMessage = null);
+                },
                 validator: (v) {
                   final apiError = ref
                       .watch(authProvider)
@@ -198,7 +247,7 @@ final _companyPhoneCtrl = TextEditingController();
                 autovalidate: true,
               ),
               const SizedBox(height: 12),
-           _Field(
+              _Field(
                 controller: _passwordCtrl,
                 label: 'Mot de passe (6 caractères minimum)',
                 obscureText: _obscurePassword,
@@ -256,16 +305,45 @@ final _companyPhoneCtrl = TextEditingController();
               const SizedBox(height: 12),
               _Field(
                 controller: _companyEmailCtrl,
-                label: 'Email officiel',
+                label: 'Email officiel (optionnel)',
                 keyboardType: TextInputType.emailAddress,
-                validator: (v) => _required(v, 'Email officiel'),
+               onChanged: (_) {
+                  ref.read(authProvider.notifier).clearFieldErrors();
+                  if (_errorMessage != null) {
+                    setState(() => _errorMessage = null);
+                  }
+                },
+                validator: (v) {
+                  final apiError = ref
+                      .watch(authProvider)
+                      .valueOrNull
+                      ?.fieldErrors?['companyEmail'];
+                  if (apiError != null) return apiError;
+                  if (v == null || v.trim().isEmpty) return null;
+                  final emailRx = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w]{2,}$');
+                  return emailRx.hasMatch(v.trim()) ? null : 'Email invalide.';
+                },
               ),
               const SizedBox(height: 12),
-              _Field(
+            _Field(
                 controller: _companyPhoneCtrl,
                 label: 'Téléphone',
                 keyboardType: TextInputType.phone,
-                validator: (v) => _required(v, 'Téléphone'),
+                autovalidate: true,
+                onChanged: (_) {
+                  ref.read(authProvider.notifier).clearFieldErrors();
+                  if (_errorMessage != null) {
+                    setState(() => _errorMessage = null);
+                  }
+                },
+                validator: (v) {
+                  final apiError = ref
+                      .watch(authProvider)
+                      .valueOrNull
+                      ?.fieldErrors?['companyPhone'];
+                  if (apiError != null) return apiError;
+                  return _required(v, 'Téléphone');
+                },
               ),
               const SizedBox(height: 12),
               _Field(
@@ -316,8 +394,34 @@ final _companyPhoneCtrl = TextEditingController();
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
+              const _SectionLabel(label: 'Pièce d\'identité du dirigeant'),
+              const SizedBox(height: 4),
+              const Text(
+                'Photos recto et verso de votre carte d\'identité (vérifiées par notre équipe avant activation).',
+                style: TextStyle(color: AppColors.gray400, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _KycPicker(
+                      label: 'Recto',
+                      file: _kycFront,
+                      onTap: _pickKycFront,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _KycPicker(
+                      label: 'Verso',
+                      file: _kycBack,
+                      onTap: _pickKycBack,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 28),
-
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
@@ -356,6 +460,60 @@ final _companyPhoneCtrl = TextEditingController();
   }
 }
 
+class _KycPicker extends StatelessWidget {
+  const _KycPicker({
+    required this.label,
+    required this.file,
+    required this.onTap,
+  });
+  final String label;
+  final File? file;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 100,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: file != null ? AppColors.mobiliBlue : AppColors.gray200,
+          width: file != null ? 2 : 1,
+        ),
+      ),
+      child: file != null
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                file!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            )
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.badge_outlined,
+                  color: AppColors.gray300,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.gray400,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+    ),
+  );
+}
+
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
   final String label;
@@ -387,6 +545,7 @@ class _Field extends StatelessWidget {
     this.keyboardType,
     this.autovalidate = false,
     this.suffixIcon,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -396,6 +555,7 @@ class _Field extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool autovalidate;
   final Widget? suffixIcon;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -403,6 +563,7 @@ class _Field extends StatelessWidget {
     validator: validator,
     obscureText: obscureText,
     keyboardType: keyboardType,
+    onChanged: onChanged,
     autovalidateMode: autovalidate
         ? AutovalidateMode.onUserInteraction
         : AutovalidateMode.disabled,

@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mobilipro/core/services/analytics_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:csv/csv.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -127,6 +129,113 @@ Future<void> _shareCsv(
       );
     }
   }
+}
+
+Future<void> exportPartnersPdf(
+  List<AdminPartner> partners,
+  BuildContext context,
+) async {
+  final pdf = pw.Document();
+  pdf.addPage(
+    pw.MultiPage(
+      build: (ctx) => [
+        pw.Text(
+          'Partenaires',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          'Généré le ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+          style: const pw.TextStyle(fontSize: 9),
+        ),
+        pw.SizedBox(height: 14),
+        pw.TableHelper.fromTextArray(
+          headers: [
+            'Nom',
+            'Propriétaire',
+            'Email',
+            'Téléphone',
+            'Statut',
+            'Approbation',
+          ],
+          data: partners
+              .map(
+                (p) => [
+                  p.name,
+                  p.ownerName ?? '—',
+                  p.email ?? '—',
+                  p.phone ?? '—',
+                  p.enabled ? 'Actif' : 'Inactif',
+                  p.approvalStatus,
+                ],
+              )
+              .toList(),
+          cellStyle: const pw.TextStyle(fontSize: 8),
+          headerStyle: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+  final dir = await getTemporaryDirectory();
+  final file = File(
+    '${dir.path}/partenaires_${DateTime.now().millisecondsSinceEpoch}.pdf',
+  );
+  await file.writeAsBytes(await pdf.save());
+  await Share.shareXFiles([
+    XFile(file.path),
+  ], subject: 'Export Mobili — Partenaires');
+  AnalyticsService.logExportCsv(type: 'partenaires_pdf');
+}
+
+Future<void> exportUsersPdf(List<AdminUser> users, BuildContext context) async {
+  final pdf = pw.Document();
+  pdf.addPage(
+    pw.MultiPage(
+      build: (ctx) => [
+        pw.Text(
+          'Utilisateurs',
+          style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          'Généré le ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+          style: const pw.TextStyle(fontSize: 9),
+        ),
+        pw.SizedBox(height: 14),
+        pw.TableHelper.fromTextArray(
+          headers: ['Nom', 'Email', 'Rôles', 'Statut', 'Compagnie'],
+          data: users
+              .map(
+                (u) => [
+                  u.fullName,
+                  u.email ?? '—',
+                  u.roles.join(', '),
+                  u.enabled ? 'Actif' : 'Inactif',
+                  u.linkedCompanyName ?? '—',
+                ],
+              )
+              .toList(),
+          cellStyle: const pw.TextStyle(fontSize: 8),
+          headerStyle: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+  final dir = await getTemporaryDirectory();
+  final file = File(
+    '${dir.path}/utilisateurs_${DateTime.now().millisecondsSinceEpoch}.pdf',
+  );
+  await file.writeAsBytes(await pdf.save());
+  await Share.shareXFiles([
+    XFile(file.path),
+  ], subject: 'Export Mobili — Utilisateurs');
+  AnalyticsService.logExportCsv(type: 'utilisateurs_pdf');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -260,6 +369,34 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
   String _statusFilter = 'TOUS';
   final _searchCtrl = TextEditingController();
   int _pageSize = 20;
+  DateTime? _fromDate;
+  DateTime? _toDate;
+
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
+      initialDateRange: _fromDate != null && _toDate != null
+          ? DateTimeRange(start: _fromDate!, end: _toDate!)
+          : null,
+    );
+    if (range != null) {
+      setState(() {
+        _fromDate = range.start;
+        _toDate = DateTime(
+          range.end.year,
+          range.end.month,
+          range.end.day,
+          23,
+          59,
+          59,
+        );
+        _pageSize = 20;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -278,28 +415,60 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
     }
   }
 
-  Future<void> _reject(AdminPartner p) async {
-    final confirmed = await showDialog<bool>(
+ Future<void> _reject(AdminPartner p) async {
+    final reasonCtrl = TextEditingController();
+    final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rejeter cette compagnie ?'),
-        content: Text('${p.name} sera rejetée.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Rejeter cette compagnie ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${p.name} sera rejetée.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 3,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif du rejet (obligatoire)',
+                  hintText:
+                      'Ex : document illisible, informations incohérentes...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Rejeter', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: reasonCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(ctx, reasonCtrl.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+              ),
+              child: const Text(
+                'Rejeter',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
-    if (confirmed != true) return;
+    if (reason == null || reason.isEmpty) return;
     try {
-      await ApiClient.instance.dio.patch('/admin/partners/${p.id}/reject');
+      await ApiClient.instance.dio.patch(
+        '/admin/partners/${p.id}/reject',
+        data: {'reason': reason},
+      );
       ref.invalidate(adminPartnersProvider);
       widget.onSnack('${p.name} rejeté');
     } catch (e) {
@@ -317,8 +486,18 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
     }
   }
 
-  List<AdminPartner> _applyFilters(List<AdminPartner> all) {
+List<AdminPartner> _applyFilters(List<AdminPartner> all) {
     var filtered = all.where((p) => !p.covoiturageSoloPool).toList();
+    if (_fromDate != null && _toDate != null) {
+      filtered = filtered
+          .where(
+            (p) =>
+                p.createdAt != null &&
+                !p.createdAt!.isBefore(_fromDate!) &&
+                !p.createdAt!.isAfter(_toDate!),
+          )
+          .toList();
+    }
     if (_approvalFilter != 'TOUS') {
       filtered = filtered
           .where((p) => p.approvalStatus == _approvalFilter)
@@ -370,7 +549,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                 }),
               ),
               const SizedBox(height: 10),
-              Row(
+            Row(
                 children: [
                   Expanded(
                     child: _DropdownFilter<String>(
@@ -406,6 +585,59 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _pickDateRange,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _fromDate != null
+                        ? AppColors.mobiliBlueFog
+                        : AppColors.gray50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.gray200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_month_rounded,
+                        size: 16,
+                        color: AppColors.mobiliBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _fromDate != null
+                            ? '${DateFormat('dd/MM/yy').format(_fromDate!)} → ${DateFormat('dd/MM/yy').format(_toDate!)}'
+                            : "Filtrer par date d'inscription",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.mobiliBlueDeep,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (_fromDate != null) ...[
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => setState(() {
+                            _fromDate = null;
+                            _toDate = null;
+                            _pageSize = 20;
+                          }),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: AppColors.gray400,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -423,10 +655,11 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
               final filtered = _applyFilters(all);
               final visible = filtered.take(_pageSize).toList();
               final hasMore = filtered.length > _pageSize;
-              final activeFilters = [
+             final activeFilters = [
                 if (_approvalFilter != 'TOUS') _approvalFilter,
                 if (_statusFilter != 'TOUS') _statusFilter,
                 if (_search.isNotEmpty) '"$_search"',
+                if (_fromDate != null) 'date',
               ];
 
               if (filtered.isEmpty) {
@@ -442,7 +675,7 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
               return Column(
                 children: [
                   // Barre résumé + export
-                  _ActionBar(
+                _ActionBar(
                     count: filtered.length,
                     total: all.where((p) => !p.covoiturageSoloPool).length,
                     hasFilters: activeFilters.isNotEmpty,
@@ -451,9 +684,12 @@ class _PartnersTabState extends ConsumerState<_PartnersTab> {
                       _statusFilter = 'TOUS';
                       _search = '';
                       _searchCtrl.clear();
+                      _fromDate = null;
+                      _toDate = null;
                       _pageSize = 20;
                     }),
-                    onExport: () => exportPartnersCsv(filtered, context),
+                    onExportCsv: () => exportPartnersCsv(filtered, context),
+                    onExportPdf: () => exportPartnersPdf(filtered, context),
                   ),
                   Expanded(
                     child: RefreshIndicator(
@@ -521,6 +757,35 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  DateTime? _fromDate;
+  DateTime? _toDate;
+
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
+      initialDateRange: _fromDate != null && _toDate != null
+          ? DateTimeRange(start: _fromDate!, end: _toDate!)
+          : null,
+    );
+    if (range != null) {
+      setState(() {
+        _fromDate = range.start;
+        _toDate = DateTime(
+          range.end.year,
+          range.end.month,
+          range.end.day,
+          23,
+          59,
+          59,
+        );
+        _pageSize = 20;
+      });
+    }
   }
 
   Future<void> _toggleStatus(AdminUser u) async {
@@ -591,11 +856,12 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
         final filtered = _applyFilters(all);
         final visible = filtered.take(_pageSize).toList();
         final hasMore = filtered.length > _pageSize;
-        final activeFilters = [
+      final activeFilters = [
           if (_roleFilter != 'TOUS') _roleFilter,
           if (_statusFilter != 'TOUS') _statusFilter,
           if (_companyFilter != 'TOUS') _companyFilter,
           if (_search.isNotEmpty) '"$_search"',
+          if (_fromDate != null) 'date',
         ];
 
         return Column(
@@ -651,7 +917,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                       ),
                     ],
                   ),
-                  if (companies.isNotEmpty) ...[
+                 if (companies.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     _DropdownFilter<String>(
                       label: 'Compagnie',
@@ -666,6 +932,59 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                       }),
                     ),
                   ],
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickDateRange,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _fromDate != null
+                            ? AppColors.mobiliBlueFog
+                            : AppColors.gray50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.gray200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_rounded,
+                            size: 16,
+                            color: AppColors.mobiliBlue,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _fromDate != null
+                                ? '${DateFormat('dd/MM/yy').format(_fromDate!)} → ${DateFormat('dd/MM/yy').format(_toDate!)}'
+                                : "Filtrer par date d'inscription",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.mobiliBlueDeep,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (_fromDate != null) ...[
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _fromDate = null;
+                                _toDate = null;
+                                _pageSize = 20;
+                              }),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: AppColors.gray400,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -684,7 +1003,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
               Expanded(
                 child: Column(
                   children: [
-                    _ActionBar(
+                  _ActionBar(
                       count: filtered.length,
                       total: all.length,
                       hasFilters: activeFilters.isNotEmpty,
@@ -694,9 +1013,12 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                         _companyFilter = 'TOUS';
                         _search = '';
                         _searchCtrl.clear();
+                        _fromDate = null;
+                        _toDate = null;
                         _pageSize = 20;
                       }),
-                      onExport: () => exportUsersCsv(filtered, context),
+                      onExportCsv: () => exportUsersCsv(filtered, context),
+                      onExportPdf: () => exportUsersPdf(filtered, context),
                     ),
                     Expanded(
                       child: RefreshIndicator(
@@ -880,7 +1202,7 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
 
               return Column(
                 children: [
-                  _ActionBar(
+                _ActionBar(
                     count: filtered.length,
                     total: all.length,
                     hasFilters: activeFilters.isNotEmpty,
@@ -891,7 +1213,8 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
                       _searchCtrl.clear();
                       _pageSize = 20;
                     }),
-                    onExport: () => exportDriversCsv(filtered, context),
+                    onExportCsv: () => exportDriversCsv(filtered, context),
+                    onExportPdf: () => exportDriversCsv(filtered, context),
                   ),
                   Expanded(
                     child: RefreshIndicator(
@@ -1500,20 +1823,21 @@ class _CovoiturageCard extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 // WIDGETS UTILITAIRES
 // ═══════════════════════════════════════════════════════════════════════════
-
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.count,
     required this.total,
     required this.hasFilters,
     required this.onClear,
-    required this.onExport,
+    required this.onExportCsv,
+    required this.onExportPdf,
   });
   final int count;
   final int total;
   final bool hasFilters;
   final VoidCallback onClear;
-  final VoidCallback onExport;
+  final VoidCallback onExportCsv;
+  final VoidCallback onExportPdf;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1558,9 +1882,9 @@ class _ActionBar extends StatelessWidget {
               ],
             ),
           ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         GestureDetector(
-          onTap: onExport,
+          onTap: onExportCsv,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -1570,10 +1894,40 @@ class _ActionBar extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.download_rounded, size: 13, color: Colors.white),
+                Icon(Icons.table_chart_rounded, size: 13, color: Colors.white),
                 SizedBox(width: 4),
                 Text(
                   'CSV',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: onExportPdf,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.proGold,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.picture_as_pdf_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  'PDF',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white,

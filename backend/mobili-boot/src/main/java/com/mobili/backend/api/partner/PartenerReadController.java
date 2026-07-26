@@ -37,7 +37,7 @@ public class PartenerReadController {
     }
 
     @GetMapping("/my-company")
-    @PreAuthorize("hasAnyRole('PARTNER', 'GARE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PARTNER', 'GARE', 'ADMIN','STATION')")
     public PartnerProfileDTO getMyCompany(@AuthenticationPrincipal UserPrincipal principal) {
 
         if (principal == null || principal.getUser() == null) {

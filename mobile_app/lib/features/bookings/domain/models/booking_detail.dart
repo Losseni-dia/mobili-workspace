@@ -20,6 +20,8 @@ class BookingDetail {
     this.alightingCity,
     this.driverResponseDeadline,
     this.paymentDeadline,
+    this.extraHoldBags = 0,
+    this.luggageFee = 0,
   });
 
   final int id;
@@ -40,6 +42,8 @@ class BookingDetail {
   final String? moreInfo;
   final String? boardingCity;
   final String? alightingCity;
+  final int extraHoldBags;
+  final double luggageFee;
 
   /// Covoiturage : délai de réponse du chauffeur (24h après la demande).
   final DateTime? driverResponseDeadline;
@@ -47,7 +51,7 @@ class BookingDetail {
   /// Covoiturage : délai de paiement une fois le chauffeur ayant accepté.
   final DateTime? paymentDeadline;
 
-bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
+  bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
 
   bool get _isResolvedNegatively =>
       status == 'CANCELLED' ||
@@ -68,6 +72,10 @@ bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
   bool get isCovoiturageExpired => status == 'EXPIRED';
 
   String get formattedPrice => '${totalPrice.toStringAsFixed(0)} FCFA';
+  double get transportTotal => totalPrice - luggageFee;
+  String get formattedTransportTotal =>
+      '${transportTotal.toStringAsFixed(0)} FCFA';
+  String get formattedLuggageFee => '${luggageFee.toStringAsFixed(0)} FCFA';
 
   String get formattedDate {
     final months = [
@@ -125,5 +133,7 @@ bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
         paymentDeadline: json['paymentDeadline'] != null
             ? DateTime.tryParse(json['paymentDeadline'] as String)
             : null,
+        extraHoldBags: (json['extraHoldBags'] as num?)?.toInt() ?? 0,
+        luggageFee: (json['luggageFee'] as num?)?.toDouble() ?? 0,
       );
 }

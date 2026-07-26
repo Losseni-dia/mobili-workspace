@@ -23,4 +23,8 @@ public class TicketResponseDTO {
     private Integer boardingStopIndex;
     private Integer alightingStopIndex;
     private LocalDateTime bookingDate;
+    private Integer extraHoldBags;
+    private Double luggageFee;
+    private Double transportPrice;
+    private Integer numberOfSeatsInBooking;
 }

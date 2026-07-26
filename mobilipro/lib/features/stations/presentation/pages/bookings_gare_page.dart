@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:csv/csv.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:mobilipro/features/partner/presentation/widgets/partner_period_selector.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -115,48 +121,60 @@ class TripGroup {
 // Provider
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _bookingsGroupedProvider = FutureProvider.autoDispose<List<TripGroup>>((
-  ref,
-) async {
-  final dio = ApiClient.instance.dio;
-  final results = await Future.wait([
-    dio.get<List<dynamic>>('/trips/my-trips'),
-    dio.get<List<dynamic>>('/bookings/partner/my-bookings'),
-  ]);
+final _bookingsGroupedProvider = FutureProvider.autoDispose
+    .family<List<TripGroup>, PartnerPeriod>((ref, period) async {
+      final dio = ApiClient.instance.dio;
+      final f = DateFormat('yyyy-MM-dd');
+      final results = await Future.wait([
+        dio.get<List<dynamic>>(
+          '/trips/my-trips/range',
+          queryParameters: {
+            'fromDate': f.format(period.fromAsDate),
+            'toDate': f.format(period.toAsDate),
+          },
+        ),
+        dio.get<List<dynamic>>(
+          '/bookings/partner/my-bookings/range',
+          queryParameters: {
+            'fromDate': f.format(period.fromAsDate),
+            'toDate': f.format(period.toAsDate),
+          },
+        ),
+      ]);
 
-  final trips = results[0].data ?? [];
-  final bookings = (results[1].data ?? [])
-      .map((e) => BookingItem.fromJson(e as Map<String, dynamic>))
-      .toList();
+      final trips = results[0].data ?? [];
+      final bookings = (results[1].data ?? [])
+          .map((e) => BookingItem.fromJson(e as Map<String, dynamic>))
+          .toList();
 
-  final Map<int, List<BookingItem>> byTrip = {};
-  for (final b in bookings) {
-    byTrip.putIfAbsent(b.tripId, () => []).add(b);
-  }
+      final Map<int, List<BookingItem>> byTrip = {};
+      for (final b in bookings) {
+        byTrip.putIfAbsent(b.tripId, () => []).add(b);
+      }
 
-  final groups = <TripGroup>[];
-  for (final t in trips) {
-    final tripId = t['id'] as int;
-    final tripBookings = byTrip[tripId] ?? [];
-    if (tripBookings.isEmpty) continue;
-    groups.add(
-      TripGroup(
-        tripId: tripId,
-        departureCity: t['departureCity'] as String? ?? '',
-        arrivalCity: t['arrivalCity'] as String? ?? '',
-        departureDateTime:
-            DateTime.tryParse(t['departureDateTime'] as String? ?? '') ??
-            DateTime.now(),
-        vehicleType: t['vehicleType'] as String? ?? '',
-        status: t['status'] as String? ?? '',
-        bookings: tripBookings,
-      ),
-    );
-  }
+      final groups = <TripGroup>[];
+      for (final t in trips) {
+        final tripId = t['id'] as int;
+        final tripBookings = byTrip[tripId] ?? [];
+        if (tripBookings.isEmpty) continue;
+        groups.add(
+          TripGroup(
+            tripId: tripId,
+            departureCity: t['departureCity'] as String? ?? '',
+            arrivalCity: t['arrivalCity'] as String? ?? '',
+            departureDateTime:
+                DateTime.tryParse(t['departureDateTime'] as String? ?? '') ??
+                DateTime.now(),
+            vehicleType: t['vehicleType'] as String? ?? '',
+            status: t['status'] as String? ?? '',
+            bookings: tripBookings,
+          ),
+        );
+      }
 
-  groups.sort((a, b) => b.departureDateTime.compareTo(a.departureDateTime));
-  return groups;
-});
+      groups.sort((a, b) => b.departureDateTime.compareTo(a.departureDateTime));
+      return groups;
+    });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes
@@ -184,6 +202,7 @@ class BookingsGarePage extends ConsumerStatefulWidget {
 class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
   String _filter = 'TOUS';
   String _search = '';
+  PartnerPeriod _period = PartnerPeriod.week;
   final _searchCtrl = TextEditingController();
 
   @override
@@ -192,16 +211,112 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
     super.dispose();
   }
 
+  Future<void> _exportCsv(List<TripGroup> groups) async {
+    final rows = [
+      [
+        'Trajet',
+        'Date départ',
+        'Passager',
+        'Référence',
+        'Siège',
+        'Montant FCFA',
+        'Statut',
+      ],
+      for (final g in groups)
+        for (final b in _filterBookings(g.bookings, _filter, _search))
+          [
+            '${g.departureCity} → ${g.arrivalCity}',
+            DateFormat('dd/MM/yyyy HH:mm').format(g.departureDateTime),
+            b.displayName,
+            b.reference,
+            b.seatNumbers.isNotEmpty ? b.seatNumbers.join(', ') : '—',
+            b.amount.toStringAsFixed(0),
+            b.status,
+          ],
+    ];
+    final csv = const ListToCsvConverter().convert(rows);
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/reservations_gare_${DateTime.now().millisecondsSinceEpoch}.csv',
+    );
+    await file.writeAsString(csv);
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], subject: 'Réservations — Mobili');
+  }
+
+  Future<void> _exportPdf(List<TripGroup> groups) async {
+    final pdf = pw.Document();
+    final rows = [
+      for (final g in groups)
+        for (final b in _filterBookings(g.bookings, _filter, _search))
+          [
+            '${g.departureCity} → ${g.arrivalCity}',
+            DateFormat('dd/MM/yy HH:mm').format(g.departureDateTime),
+            b.displayName,
+            b.seatNumbers.isNotEmpty ? b.seatNumbers.join(', ') : '—',
+            '${b.amount.toStringAsFixed(0)} F',
+            b.status,
+          ],
+    ];
+    pdf.addPage(
+      pw.MultiPage(
+        build: (ctx) => [
+          pw.Text(
+            'Réservations',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Généré le ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 14),
+          pw.TableHelper.fromTextArray(
+            headers: [
+              'Trajet',
+              'Date',
+              'Passager',
+              'Siège',
+              'Montant',
+              'Statut',
+            ],
+            data: rows,
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            headerStyle: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/reservations_gare_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(await pdf.save());
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], subject: 'Réservations — Mobili');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final groupsAsync = ref.watch(_bookingsGroupedProvider);
+    final groupsAsync = ref.watch(_bookingsGroupedProvider(_period));
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: AppBar(
         backgroundColor: AppColors.mobiliBlue,
         foregroundColor: AppColors.white,
-        automaticallyImplyLeading: false,
+      automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           'Réservations',
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -209,12 +324,46 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.invalidate(_bookingsGroupedProvider),
+            onPressed: () => ref.invalidate(_bookingsGroupedProvider(_period)),
           ),
         ],
       ),
       body: Column(
         children: [
+        PartnerPeriodSelector(
+            selected: _period,
+            onChanged: (p) => setState(() => _period = p),
+          ),
+          groupsAsync.whenOrNull(
+                data: (groups) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _exportCsv(groups),
+                        icon: const Icon(Icons.table_chart_rounded, size: 15),
+                        label: const Text(
+                          'CSV',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _exportPdf(groups),
+                        icon: const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          size: 15,
+                        ),
+                        label: const Text(
+                          'PDF',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ) ??
+              const SizedBox.shrink(),
           SearchFilterBar(
             hintText: 'Rechercher passager, référence...',
             filterValue: _filter,
@@ -244,7 +393,8 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () => ref.invalidate(_bookingsGroupedProvider),
+                      onPressed: () =>
+                          ref.invalidate(_bookingsGroupedProvider(_period)),
                       child: const Text('Réessayer'),
                     ),
                   ],
@@ -276,7 +426,7 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
                 return RefreshIndicator(
                   color: AppColors.mobiliBlue,
                   onRefresh: () async =>
-                      ref.invalidate(_bookingsGroupedProvider),
+                      ref.invalidate(_bookingsGroupedProvider(_period)),
                   child: CustomScrollView(
                     slivers: [
                       // Stats

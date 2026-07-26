@@ -124,4 +124,14 @@ public class TripReadController {
                 .map(tripMapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    @GetMapping("/my-trips/range")
+    public List<TripResponseDTO> getMyTripsInRange(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate,
+            @RequestParam(required = false) Long stationId) {
+        return tripService.findMyTripsInRange(fromDate, toDate, stationId).stream()
+                .map(tripMapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

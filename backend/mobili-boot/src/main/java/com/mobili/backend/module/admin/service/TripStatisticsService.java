@@ -26,13 +26,21 @@ public class TripStatisticsService {
     private final BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
-    public AdminTripStatsResponse forPeriod(TripStatsPeriod period) {
-        LocalDateTime to = LocalDateTime.now();
-        LocalDateTime from = switch (period) {
-            case DAY -> LocalDate.now().atStartOfDay();
-            case WEEK -> LocalDate.now().minusDays(6).atStartOfDay();
-            case MONTH -> LocalDate.now().minusDays(29).atStartOfDay();
-        };
+    public AdminTripStatsResponse forPeriod(TripStatsPeriod period, LocalDate fromDate, LocalDate toDate) {
+        LocalDateTime to;
+        LocalDateTime from;
+        if (period == TripStatsPeriod.CUSTOM && fromDate != null && toDate != null) {
+            from = fromDate.atStartOfDay();
+            to = toDate.atTime(23, 59, 59);
+        } else {
+            to = LocalDateTime.now();
+            from = switch (period) {
+                case DAY -> LocalDate.now().atStartOfDay();
+                case WEEK -> LocalDate.now().minusDays(6).atStartOfDay();
+                case MONTH -> LocalDate.now().minusDays(29).atStartOfDay();
+                case CUSTOM -> LocalDate.now().minusDays(29).atStartOfDay(); // repli si dates manquantes
+            };
+        }
 
         TripStatsAggrJpa agg = bookingRepository.aggregateForTripStats(from, to);
         if (agg == null) {

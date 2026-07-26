@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobilipro/features/partner/presentation/widgets/partner_period_selector.dart';
 import 'package:mobilipro/features/trips/presentation/pages/edit_trip_page.dart';
 import 'package:mobilipro/features/trips/presentation/widgets/offline_sale_sheet.dart';
 import 'package:mobilipro/features/trips/presentation/widgets/passengers_sheet.dart';
+
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:csv/csv.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -170,15 +177,31 @@ class PassengerItem {
 // Providers
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _myTripsProvider = FutureProvider.autoDispose<List<TripItem>>((
-  ref,
-) async {
-  final dio = ApiClient.instance.dio;
-  final response = await dio.get<List<dynamic>>('/trips/my-trips');
-  return (response.data ?? [])
-      .map((e) => TripItem.fromJson(e as Map<String, dynamic>))
-      .toList();
-});
+final _myTripsProvider = FutureProvider.autoDispose
+    .family<List<TripItem>, PartnerPeriod>((ref, period) async {
+      final dio = ApiClient.instance.dio;
+      final f = DateFormat('yyyy-MM-dd');
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final DateTime from;
+      final DateTime to;
+      if (period.isCustom) {
+        from = period.customFrom!;
+        to = period.customTo!;
+      } else {
+        from = todayStart;
+        to = todayStart
+            .add(Duration(days: period.days))
+            .subtract(const Duration(seconds: 1));
+      }
+      final response = await dio.get<List<dynamic>>(
+        '/trips/my-trips/range',
+        queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},
+      );
+      return (response.data ?? [])
+          .map((e) => TripItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
 
 final _passengersProvider = FutureProvider.autoDispose
     .family<List<PassengerItem>, int>((ref, tripId) async {
@@ -196,10 +219,9 @@ final _passengersProvider = FutureProvider.autoDispose
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _tripFilterItems = [
-  FilterItem(value: 'TOUS', label: 'Actifs'),
-  FilterItem(value: 'PROGRAMMÉ', label: 'Programmé'),
   FilterItem(value: 'EN_COURS', label: 'En cours'),
-  FilterItem(value: 'TERMINÉ', label: 'Terminé'),
+  FilterItem(value: 'PROGRAMMÉ', label: 'Programmé'),
+  FilterItem(value: 'TERMINÉ', label: 'Historique'),
   FilterItem(value: 'ANNULÉ', label: 'Annulé'),
 ];
 
@@ -215,8 +237,9 @@ class TripsGarePage extends ConsumerStatefulWidget {
 }
 
 class _TripsGarePageState extends ConsumerState<TripsGarePage> {
-  String _filter = 'TOUS';
+  String _filter = 'EN_COURS';
   String _search = '';
+  PartnerPeriod _period = PartnerPeriod.week;
   final Set<int> _archivedIds = {};
   bool _showArchived = false;
   final _searchCtrl = TextEditingController();
@@ -227,16 +250,120 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
     super.dispose();
   }
 
+ List<TripItem> _filteredTrips(List<TripItem> trips) {
+    var filtered = trips.where((t) => t.status == _filter).toList();
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      filtered = filtered
+          .where(
+            (t) =>
+                t.departureCity.toLowerCase().contains(q) ||
+                t.arrivalCity.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+    return filtered;
+  }
+
+  Future<void> _exportCsv(List<TripItem> trips) async {
+    final filtered = _filteredTrips(trips);
+    final rows = [
+      [
+        'Trajet',
+        'Départ',
+        'Places totales',
+        'Places restantes',
+        'Prix FCFA',
+        'Statut',
+        'Véhicule',
+      ],
+      ...filtered.map(
+        (t) => [
+          '${t.departureCity} → ${t.arrivalCity}',
+          DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime),
+          '${t.totalSeats}',
+          '${t.availableSeats}',
+          t.price.toStringAsFixed(0),
+          t.status,
+          t.vehiculePlateNumber,
+        ],
+      ),
+    ];
+    final csv = const ListToCsvConverter().convert(rows);
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/mes_trajets_gare_${DateTime.now().millisecondsSinceEpoch}.csv',
+    );
+    await file.writeAsString(csv);
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], subject: 'Mes trajets — Mobili');
+  }
+
+  Future<void> _exportPdf(List<TripItem> trips) async {
+    final filtered = _filteredTrips(trips);
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.MultiPage(
+        build: (ctx) => [
+          pw.Text(
+            'Mes trajets',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Généré le ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 14),
+          pw.TableHelper.fromTextArray(
+            headers: ['Trajet', 'Départ', 'Places', 'Prix', 'Statut'],
+            data: filtered
+                .map(
+                  (t) => [
+                    '${t.departureCity} → ${t.arrivalCity}',
+                    DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime),
+                    '${t.availableSeats}/${t.totalSeats}',
+                    '${t.price.toStringAsFixed(0)} F',
+                    t.status,
+                  ],
+                )
+                .toList(),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            headerStyle: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/mes_trajets_gare_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(await pdf.save());
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], subject: 'Mes trajets — Mobili');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final tripsAsync = ref.watch(_myTripsProvider);
+    final tripsAsync = ref.watch(_myTripsProvider(_period));
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: AppBar(
         backgroundColor: AppColors.mobiliBlue,
         foregroundColor: AppColors.white,
-        automaticallyImplyLeading: false,
+       automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           'Mes trajets',
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -255,14 +382,14 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
             ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.invalidate(_myTripsProvider),
+            onPressed: () => ref.invalidate(_myTripsProvider(_period)),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await context.push('/gare/trips/create');
-          if (result == true) ref.invalidate(_myTripsProvider);
+          if (result == true) ref.invalidate(_myTripsProvider(_period));
         },
         backgroundColor: AppColors.mobiliBlue,
         icon: const Icon(Icons.add_rounded, color: AppColors.white),
@@ -271,8 +398,42 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
           style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
         ),
       ),
-      body: Column(
+     body: Column(
         children: [
+      PartnerPeriodSelector(
+            selected: _period,
+            onChanged: (p) => setState(() => _period = p),
+          ),
+          tripsAsync.whenOrNull(
+                data: (trips) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _exportCsv(trips),
+                        icon: const Icon(Icons.table_chart_rounded, size: 15),
+                        label: const Text(
+                          'CSV',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _exportPdf(trips),
+                        icon: const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          size: 15,
+                        ),
+                        label: const Text(
+                          'PDF',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ) ??
+              const SizedBox.shrink(),
           SearchFilterBar(
             hintText: 'Rechercher un trajet...',
             filterValue: _filter,
@@ -302,26 +463,16 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () => ref.invalidate(_myTripsProvider),
+                      onPressed: () => ref.invalidate(_myTripsProvider(_period)),
                       child: const Text('Réessayer'),
                     ),
                   ],
                 ),
               ),
-              data: (trips) {
+             data: (trips) {
                 var filtered = trips.where((t) {
                   if (_archivedIds.contains(t.id)) return _showArchived;
-                  if (_filter != 'TOUS' && t.status != _filter) return false;
-                  // Vue par défaut ("Tous") : on ne montre que les trajets
-                  // actifs/proches (aujourd'hui, demain, en cours). Les trajets
-                  // terminés/annulés restent consultables via le filtre dédié.
-                  if (_filter == 'TOUS' &&
-                      !t.isInProgress &&
-                      !t.isToday &&
-                      !t.isTomorrow &&
-                      (t.status == 'TERMINÉ' || t.status == 'ANNULÉ')) {
-                    return false;
-                  }
+                  if (t.status != _filter) return false;
                   if (_search.isNotEmpty) {
                     final q = _search.toLowerCase();
                     return t.departureCity.toLowerCase().contains(q) ||
@@ -384,7 +535,7 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
 
                 return RefreshIndicator(
                   color: AppColors.mobiliBlue,
-                  onRefresh: () async => ref.invalidate(_myTripsProvider),
+                  onRefresh: () async => ref.invalidate(_myTripsProvider(_period)),
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     itemCount: filtered.length,
@@ -424,7 +575,7 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                               builder: (_) => EditTripPage(trip: trip),
                             ),
                           );
-                          if (result == true) ref.invalidate(_myTripsProvider);
+                          if (result == true) ref.invalidate(_myTripsProvider(_period));
                         },
                       );
                     },
@@ -459,7 +610,7 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
       builder: (ctx) => OfflineSaleSheet(
         trip: trip,
         onSuccess: () {
-          ref.invalidate(_myTripsProvider);
+          ref.invalidate(_myTripsProvider(_period));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Vente directe enregistrée ! ✅'),

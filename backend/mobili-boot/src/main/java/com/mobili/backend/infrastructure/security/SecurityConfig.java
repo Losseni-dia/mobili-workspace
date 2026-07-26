@@ -89,7 +89,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers(MobiliApiPaths.TRIPS_WILD_DRIVER)
                                                 .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_PARTNER", "ROLE_GARE",
-                                                                "ROLE_ADMIN")
+                                                                "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_CHAUFFEUR)
                                                 .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
                                                 .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS,
@@ -100,10 +101,12 @@ public class SecurityConfig {
                                                 // Canal : hors GET public (reste de /trips/** ci-dessus)
                                                 .requestMatchers(HttpMethod.GET,
                                                                 MobiliApiPaths.TRIPS_WILD_CHANNEL_MESSAGES)
-                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(MobiliApiPaths.INBOX)
                                                 .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
-                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
 
                                                 // Inscription d’une compagnie (utilisateur authentifié, hors admin
                                                 // partners/**)
@@ -126,35 +129,44 @@ public class SecurityConfig {
                                                 // {POST,PUT,DELETE} trips
                                                 .requestMatchers(HttpMethod.POST, MobiliApiPaths.TRIPS,
                                                                 MobiliApiPaths.TRIPS_GLOB)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(HttpMethod.PUT, MobiliApiPaths.TRIPS_GLOB)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(HttpMethod.DELETE, MobiliApiPaths.TRIPS_GLOB)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(
                                                                 MobiliApiPaths.PARTENAIRE_DASHBOARD,
                                                                 MobiliApiPaths.PARTENAIRE_STATIONS,
                                                                 MobiliApiPaths.PARTENAIRE_CHAUFFEURS,
                                                                 MobiliApiPaths.PARTENAIRE_CHAUFFEURS_GLOB)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(MobiliApiPaths.PARTNER_GARE_COM)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(MobiliApiPaths.TRIPS_MY_TRIPS)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
 
                                                 // Profil, réservations, billets (voyageur + pro)
                                                 .requestMatchers(MobiliApiPaths.AUTH + "/me")
                                                 .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
-                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN", "ROLE_STATION")
                                                 .requestMatchers(MobiliApiPaths.BOOKINGS)
-                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(MobiliApiPaths.TICKETS)
                                                 .hasAnyAuthority("ROLE_USER", "ROLE_PARTNER", "ROLE_GARE",
-                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                                "ROLE_CHAUFFEUR", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
 
                                                 // Règles /partners : plus spécifiques en premier
                                                 .requestMatchers(MobiliApiPaths.PARTNERS_MY_COMPANY)
-                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN")
+                                                .hasAnyAuthority("ROLE_PARTNER", "ROLE_GARE", "ROLE_ADMIN",
+                                                                "ROLE_STATION")
                                                 .requestMatchers(HttpMethod.PUT, MobiliApiPaths.PARTNERS_GLOB)
                                                 .hasAnyAuthority("ROLE_PARTNER", "ROLE_ADMIN")
                                                 .requestMatchers(MobiliApiPaths.PARTNERS_GLOB)

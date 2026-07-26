@@ -12,15 +12,18 @@ class _StationOption {
     required this.id,
     required this.name,
     required this.city,
+    this.code,
   });
   final int id;
   final String name;
   final String city;
+  final String? code;
 
   factory _StationOption.fromJson(Map<String, dynamic> json) => _StationOption(
     id: (json['id'] as num).toInt(),
     name: json['name'] as String? ?? '',
     city: json['city'] as String? ?? '',
+    code: json['code'] as String?,
   );
 }
 
@@ -126,25 +129,30 @@ class PartnerGareComPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<PartnerGareComPage> createState() => _PartnerGareComPageState();
 }
-
 class _PartnerGareComPageState extends ConsumerState<PartnerGareComPage>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
+  bool? _stationOnly;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+  void _ensureController(bool stationOnly) {
+    if (_stationOnly == stationOnly) return;
+    _stationOnly = stationOnly;
+    _tabController?.dispose();
+    _tabController = TabController(length: stationOnly ? 1 : 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(currentProfileProvider);
+    final stationOnly = profile != null && profile.roles.contains('STATION');
+    _ensureController(stationOnly);
+
     return Scaffold(
       backgroundColor: AppColors.gray50,
       appBar: AppBar(
@@ -155,32 +163,36 @@ class _PartnerGareComPageState extends ConsumerState<PartnerGareComPage>
           'Communications',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.mobiliYellow,
-          indicatorWeight: 3,
-          labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withValues(alpha: 0.6),
-          labelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.business_rounded, size: 18),
-              text: 'Canal société',
-            ),
-            Tab(
-              icon: Icon(Icons.admin_panel_settings_rounded, size: 18),
-              text: 'Canal support',
-            ),
-          ],
-        ),
+        bottom: stationOnly
+            ? null
+            : TabBar(
+                controller: _tabController,
+                indicatorColor: AppColors.mobiliYellow,
+                indicatorWeight: 3,
+                labelColor: AppColors.white,
+                unselectedLabelColor: AppColors.white.withValues(alpha: 0.6),
+                labelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+                tabs: const [
+                  Tab(
+                    icon: Icon(Icons.business_rounded, size: 18),
+                    text: 'Canal société',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.admin_panel_settings_rounded, size: 18),
+                    text: 'Canal support',
+                  ),
+                ],
+              ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [_CanalSocieteTab(), _MessagesMobiliTab()],
-      ),
+      body: stationOnly
+          ? const _CanalSocieteTab()
+          : TabBarView(
+              controller: _tabController,
+              children: const [_CanalSocieteTab(), _MessagesMobiliTab()],
+            ),
     );
   }
 }
@@ -197,7 +209,10 @@ class _CanalSocieteTab extends ConsumerWidget {
     final threadsAsync = ref.watch(_threadsProvider);
     final profile = ref.watch(currentProfileProvider);
     final canCreateThread =
-        profile != null && (profile.isPartner || profile.isGare);
+        profile != null &&
+        (profile.isPartner ||
+            profile.isGare ||
+            profile.roles.contains('STATION'));
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
@@ -226,6 +241,7 @@ class _CanalSocieteTab extends ConsumerWidget {
                       builder: (_) => ThreadPage(thread: threads[i]),
                     ),
                   ),
+                  onLongPress: () => _showDeleteMenu(context, ref, threads[i]),
                 ),
               ),
             ),
@@ -244,6 +260,105 @@ class _CanalSocieteTab extends ConsumerWidget {
     );
   }
 
+  void _showDeleteMenu(BuildContext context, WidgetRef ref, ComThread thread) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray200,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.gray500,
+              ),
+              title: const Text('Supprimer pour moi'),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                try {
+                  await PartnerGareComService().deleteThread(
+                    thread.id,
+                    forEveryone: false,
+                  );
+                  ref.invalidate(_threadsProvider);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.delete_forever_rounded,
+                color: AppColors.danger,
+              ),
+              title: const Text(
+                'Supprimer pour tout le monde',
+                style: TextStyle(color: AppColors.danger),
+              ),
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Confirmer la suppression'),
+                    content: const Text(
+                      'Ce fil sera supprimé pour tous les participants. Cette action est irréversible.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        child: const Text('Annuler'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(true),
+                        child: const Text(
+                          'Supprimer',
+                          style: TextStyle(color: AppColors.danger),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true) return;
+                try {
+                  await PartnerGareComService().deleteThread(
+                    thread.id,
+                    forEveryone: true,
+                  );
+                  ref.invalidate(_threadsProvider);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showCreateDialog(
     BuildContext context,
     WidgetRef ref,
@@ -252,7 +367,9 @@ class _CanalSocieteTab extends ConsumerWidget {
     await showDialog<void>(
       context: context,
       builder: (_) => _CreateThreadDialog(
-        isGareOnly: profile.isGare && !profile.isPartner,
+        isGareOnly:
+            (profile.isGare || profile.roles.contains('STATION')) &&
+            !profile.isPartner,
         onCreated: () => ref.invalidate(_threadsProvider),
       ),
     );
@@ -349,10 +466,14 @@ class _MessagesMobiliTab extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ThreadCard extends StatelessWidget {
-  const _ThreadCard({required this.thread, required this.onTap});
+  const _ThreadCard({
+    required this.thread,
+    required this.onTap,
+    this.onLongPress,
+  });
   final ComThread thread;
   final VoidCallback onTap;
-
+  final VoidCallback? onLongPress;
   @override
   Widget build(BuildContext context) {
     final isAll = thread.scope == ThreadScope.all;
@@ -362,6 +483,7 @@ class _ThreadCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
@@ -1177,9 +1299,12 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
   final _msgCtrl = TextEditingController();
   ThreadScope _scope = ThreadScope.all;
   final Set<int> _selectedStationIds = {};
+  bool _showStationPicker = true;
   bool _isLoading = false;
   String? _error;
-
+ bool _gareTargetsPartner = true;
+  int? _otherStationId;
+  bool _showOtherStationPicker = true;
   @override
   void initState() {
     super.initState();
@@ -1206,6 +1331,10 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
       setState(() => _error = 'Sélectionnez au moins une gare');
       return;
     }
+    if (widget.isGareOnly && !_gareTargetsPartner && _otherStationId == null) {
+      setState(() => _error = 'Sélectionnez la gare destinataire');
+      return;
+    }
     setState(() {
       _isLoading = true;
       _error = null;
@@ -1218,9 +1347,11 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
               scope: _scope,
               title: title,
               firstMessage: msg,
-              stationIds: _scope == ThreadScope.targeted && !widget.isGareOnly
-                  ? _selectedStationIds.toList()
-                  : null,
+              stationIds: widget.isGareOnly
+                  ? (_gareTargetsPartner ? null : [_otherStationId!])
+                  : (_scope == ThreadScope.targeted
+                        ? _selectedStationIds.toList()
+                        : null),
             ),
           );
       widget.onCreated();
@@ -1248,12 +1379,140 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
           fontSize: 16,
         ),
       ),
-      content: SizedBox(
+     content: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.isGareOnly) ...[
+              const Text(
+                'Destinataire',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.gray400,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _ScopeChip(
+                    label: 'Vers le partenaire',
+                    icon: Icons.business_rounded,
+                    selected: _gareTargetsPartner,
+                    onTap: () => setState(() {
+                      _gareTargetsPartner = true;
+                      _otherStationId = null;
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  _ScopeChip(
+                    label: 'Vers une autre gare',
+                    icon: Icons.location_on_rounded,
+                    selected: !_gareTargetsPartner,
+                    onTap: () => setState(() => _gareTargetsPartner = false),
+                  ),
+                ],
+              ),
+          if (!_gareTargetsPartner) ...[
+                const SizedBox(height: 12),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final stationsAsync = ref.watch(_stationsProvider);
+                    final myProfile = ref.watch(currentProfileProvider);
+                    return stationsAsync.when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.mobiliBlue,
+                        ),
+                      ),
+                      error: (e, _) => const Text(
+                        'Erreur chargement gares',
+                        style: TextStyle(color: AppColors.danger, fontSize: 12),
+                      ),
+                      data: (stations) {
+                        final others = stations
+                            .where((s) => s.code != myProfile?.login)
+                            .toList();
+
+                        if (!_showOtherStationPicker &&
+                            _otherStationId != null) {
+                          final selected = others.firstWhere(
+                            (s) => s.id == _otherStationId,
+                            orElse: () => others.first,
+                          );
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Chip(
+                                label: Text(
+                                  selected.name,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                backgroundColor: AppColors.mobiliBlueFog,
+                                deleteIcon: const Icon(Icons.close, size: 16),
+                                onDeleted: () => setState(() {
+                                  _otherStationId = null;
+                                  _showOtherStationPicker = true;
+                                }),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return SizedBox(
+                          height: 140,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.gray200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: ListView.builder(
+                                physics: const ClampingScrollPhysics(),
+                                itemCount: others.length,
+                                itemBuilder: (_, i) {
+                                  final station = others[i];
+                                  return RadioListTile<int>(
+                                    dense: true,
+                                    value: station.id,
+                                    groupValue: _otherStationId,
+                                    onChanged: (v) => setState(() {
+                                      _otherStationId = v;
+                                      _showOtherStationPicker = false;
+                                    }),
+                                    title: Text(
+                                      station.name,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.mobiliBlueDeep,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      station.city,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.gray400,
+                                      ),
+                                    ),
+                                    activeColor: AppColors.mobiliBlue,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
             if (!widget.isGareOnly) ...[
               const Text(
                 'Destinataires',
@@ -1283,81 +1542,127 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 160,
-                child: stationsAsync.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.mobiliBlue,
-                    ),
-                  ),
-                  error: (e, _) => const Center(
-                    child: Text(
-                      'Erreur chargement gares',
-                      style: TextStyle(color: AppColors.danger, fontSize: 12),
-                    ),
-                  ),
-                  data: (stations) => stations.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Aucune gare disponible',
-                            style: TextStyle(
-                              color: AppColors.gray400,
-                              fontSize: 12,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.gray200),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: ListView.builder(
-                              physics: const ClampingScrollPhysics(),
-                              itemCount: stations.length,
-                              itemBuilder: (_, i) {
-                                final station = stations[i];
-                                final selected = _selectedStationIds.contains(
-                                  station.id,
-                                );
-                                return CheckboxListTile(
-                                  dense: true,
-                                  value: selected,
-                                  onChanged: (v) => setState(() {
-                                    if (v == true) {
-                                      _selectedStationIds.add(station.id);
-                                    } else {
-                                      _selectedStationIds.remove(station.id);
-                                    }
-                                  }),
-                                  title: Text(
-                                    station.name,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.mobiliBlueDeep,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    station.city,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.gray400,
-                                    ),
-                                  ),
-                                  activeColor: AppColors.mobiliBlue,
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                );
-                              },
-                            ),
-                          ),
+              if (!_showStationPicker && _selectedStationIds.isNotEmpty) ...[
+                stationsAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
+                  data: (stations) => Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final id in _selectedStationIds)
+                        Builder(
+                          builder: (_) {
+                            final station = stations.firstWhere(
+                              (s) => s.id == id,
+                              orElse: () => stations.first,
+                            );
+                            return Chip(
+                              label: Text(
+                                station.name,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              backgroundColor: AppColors.mobiliBlueFog,
+                              deleteIcon: const Icon(Icons.close, size: 16),
+                              onDeleted: () => setState(() {
+                                _selectedStationIds.remove(id);
+                                if (_selectedStationIds.isEmpty) {
+                                  _showStationPicker = true;
+                                }
+                              }),
+                            );
+                          },
                         ),
+                      ActionChip(
+                        label: const Text(
+                          '+ Ajouter une gare',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () =>
+                            setState(() => _showStationPicker = true),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ] else ...[
+                SizedBox(
+                  height: 160,
+                  child: stationsAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.mobiliBlue,
+                      ),
+                    ),
+                    error: (e, _) => const Center(
+                      child: Text(
+                        'Erreur chargement gares',
+                        style: TextStyle(color: AppColors.danger, fontSize: 12),
+                      ),
+                    ),
+                    data: (stations) => stations.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Aucune gare disponible',
+                              style: TextStyle(
+                                color: AppColors.gray400,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.gray200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: ListView.builder(
+                                physics: const ClampingScrollPhysics(),
+                                itemCount: stations.length,
+                                itemBuilder: (_, i) {
+                                  final station = stations[i];
+                                  final selected = _selectedStationIds.contains(
+                                    station.id,
+                                  );
+                                  return CheckboxListTile(
+                                    dense: true,
+                                    value: selected,
+                                    onChanged: (v) => setState(() {
+                                      if (v == true) {
+                                        _selectedStationIds.add(station.id);
+                                        _showStationPicker = false;
+                                      } else {
+                                        _selectedStationIds.remove(station.id);
+                                      }
+                                    }),
+                                    title: Text(
+                                      station.name,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.mobiliBlueDeep,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      station.city,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.gray400,
+                                      ),
+                                    ),
+                                    activeColor: AppColors.mobiliBlue,
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ],
             Flexible(
               child: SingleChildScrollView(

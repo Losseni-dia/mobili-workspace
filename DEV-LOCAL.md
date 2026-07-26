@@ -1,4 +1,7 @@
-
+## token pour test
+```bash
+TOKEN=$(MSYS_NO_PATHCONV=1 curl -s -X POST http://localhost:8080/v1/auth/login -H "Content-Type: application/json" -d '{"login":"dia","password":"123456"}' | grep -o '"token":"[^"]*"' | sed 's/"token":"//;s/"$//')
+````
 
 
 # 🚀 Guide de Déploiement Mobili
@@ -12,8 +15,24 @@ mvn clean install
 
 ## 1. Build Backend (Spring Boot)
 ```bash
+
+
 cd C:\Users\User\Desktop\prj\mobili\backend\mobili-boot
 mvn clean package -DskipTests
+scp -i C:\Users\User\Downloads\mobili-key.pem target\application.jar ec2-user@51.45.30.213:/home/ec2-user/
+
+ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo systemctl restart mobili"
+
+ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo systemctl status mobili"
+
+curl https://api.my-mobili.com/v1/actuator/health
+
+
+## Outil de monitoring : uptimerobot
+
+https://dashboard.uptimerobot.com/monitors/803590903
+
+
 ```
 
 ---
@@ -71,6 +90,9 @@ ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo journa
 
 # Logs avec erreurs uniquement
 ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo journalctl -u mobili -p err"
+
+# Logs avec erreurs sur interval
+ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo journalctl -u mobili --since '2026-07-21 13:09:30' --until '2026-07-21 13:09:40'"
 
 ```
 
@@ -130,6 +152,11 @@ ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213 "sudo journa
 | Base de données | `mobili_db` |
 | Utilisateur | `postgres` |
 | Mot de passe | *(le tien, non stocké ici)* |
+
+## Connexion dans powershell
+ssh -i C:\Users\User\Downloads\mobili-key.pem ec2-user@51.45.30.213
+psql -h mobili-db-staging.cng2w8wes1qt.eu-west-3.rds.amazonaws.com -U postgres -d mobili_db
+Mot de pass
 
 ## Pourquoi on ne peut pas se connecter directement depuis son PC
 

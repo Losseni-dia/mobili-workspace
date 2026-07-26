@@ -77,14 +77,40 @@ public class TripService {
     @Transactional(readOnly = true)
     public List<Trip> findMyTrips() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal up)) {
+        Object rawPrincipal = auth != null ? auth.getPrincipal() : null;
+        Partner partner = partenaireService.getCurrentPartnerForOperations();
+
+        if (rawPrincipal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return tripRepository.findAllByPartnerIdAndStationId(partner.getId(), sp.getStationId());
+        }
+        if (!(rawPrincipal instanceof UserPrincipal up)) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Non authentifié");
         }
-        Partner partner = partenaireService.getCurrentPartnerForOperations();
         if (up.getStationId() != null) {
             return tripRepository.findAllByPartnerIdAndStationId(partner.getId(), up.getStationId());
         }
         return tripRepository.findAllByPartnerId(partner.getId());
+    }
+
+    public List<Trip> findMyTripsInRange(LocalDate fromDate, LocalDate toDate, Long filterStationId) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        Object rawPrincipal = auth != null ? auth.getPrincipal() : null;
+        Partner partner = partenaireService.getCurrentPartnerForOperations();
+
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDate.now().plusDays(30).atTime(23, 59, 59);
+
+        // Un compte GARE reste cantonné à sa propre gare, même si un stationId
+        // différent est demandé.
+        Long effectiveStationId = filterStationId;
+        if (rawPrincipal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            effectiveStationId = sp.getStationId();
+        } else if (rawPrincipal instanceof UserPrincipal up && up.getStationId() != null) {
+            effectiveStationId = up.getStationId();
+        }
+
+        return tripRepository.findAllByPartnerIdAndOptionalStationIdAndDateRange(partner.getId(), effectiveStationId,
+                from, to);
     }
 
     @Transactional(readOnly = true)
@@ -438,7 +464,7 @@ public class TripService {
     }
 
     @Transactional
-    public Trip save(Trip trip, MultipartFile tripImage, UserPrincipal principal, TripRequestDTO requestDto) {
+    public Trip save(Trip trip, MultipartFile tripImage, Object principal, TripRequestDTO requestDto) {
         final boolean isNew = trip.getId() == null;
         List<TripLegFareRequest> legFares = requestDto.getLegFares();
         Long stationIdFromDto = requestDto.getStationId();
@@ -507,7 +533,7 @@ public class TripService {
         Trip saved = tripRepository.save(trip);
 
         if (isNew) {
-            Long userId = principal.getUser().getId();
+            Long userId = userIdOf(principal);
             analyticsEventService.record(
                     AnalyticsEventType.TRIP_PUBLISHED,
                     userId,
@@ -602,22 +628,41 @@ public class TripService {
         return r;
     }
 
-    private void assertTripWriteAccess(Trip existing, UserPrincipal p, Partner currentPartner) {
+    private static Long stationIdOf(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return sp.getStationId();
+        }
+        if (principal instanceof UserPrincipal up) {
+            return up.getStationId();
+        }
+        return null;
+    }
+
+    private static Long userIdOf(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getUser().getId();
+        }
+        return null;
+    }
+
+    private void assertTripWriteAccess(Trip existing, Object principal, Partner currentPartner) {
         if (!existing.getPartner().getId().equals(currentPartner.getId())) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Voyage d'un autre partenaire");
         }
-        if (p.getStationId() != null) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
             if (existing.getStation() == null
-                    || !existing.getStation().getId().equals(p.getStationId())) {
+                    || !existing.getStation().getId().equals(stationId)) {
                 throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Ce voyage n'appartient pas à votre gare");
             }
         }
     }
 
     private void applyStationOnWrite(
-            Trip trip, UserPrincipal principal, Partner partner, Long stationIdFromDto, Trip existing) {
-        if (principal.getStationId() != null) {
-            Station st = stationService.getStationForPartnerOrThrow(principal.getStationId(), partner.getId());
+            Trip trip, Object principal, Partner partner, Long stationIdFromDto, Trip existing) {
+        Long principalStationId = stationIdOf(principal);
+        if (principalStationId != null) {
+            Station st = stationService.getStationForPartnerOrThrow(principalStationId, partner.getId());
             trip.setStation(st);
             stationService.assertStationOperationalForTripUse(st);
             return;
@@ -695,7 +740,7 @@ public class TripService {
     }
 
     @Transactional
-    public void delete(Long id, UserPrincipal principal) {
+    public void delete(Long id, Object principal) {
         Trip t = findById(id);
         assertTripWriteAccess(t, principal, partenaireService.getCurrentPartnerForOperations());
         tripPricingService.clearSegmentFaresForTrip(id);

@@ -24,8 +24,9 @@ class ShellPartner extends ConsumerWidget {
             initialLocation: i == navigationShell.currentIndex,
           );
           // Index 4 = Notifications dans shell gare
-          if (i == 4) {
-            await NotificationService().markAllRead();
+         // Index 3 = Notifications dans shell partner
+          if (i == 3) {
+            await NotificationService().markAllSeen();
             ref.invalidate(unreadCountProvider);
           }
         },

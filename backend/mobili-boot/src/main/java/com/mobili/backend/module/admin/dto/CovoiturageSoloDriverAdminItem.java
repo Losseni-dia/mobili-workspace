@@ -5,12 +5,12 @@ package com.mobili.backend.module.admin.dto;
  * @see com.mobili.backend.module.user.entity.User#getCovoiturageSoloProfile
  */
 public record CovoiturageSoloDriverAdminItem(
-        Long id,
-        String firstname,
-        String lastname,
-        String email,
-        /** Valeur de {@link com.mobili.backend.module.user.role.CovoiturageKycStatus} ou {@code null}. */
-        String covoiturageKycStatus,
-        boolean enabled,
-        String covoiturageDriverPhotoUrl) {
+                Long id,
+                String firstname,
+                String lastname,
+                String email,
+                String covoiturageKycStatus,
+                boolean enabled,
+                String covoiturageDriverPhotoUrl,
+                java.time.LocalDateTime createdAt) {
 }

@@ -104,16 +104,10 @@ public class InboxNotificationService {
         }
 
         if (trip.getStation() != null) {
-            List<Long> gareUserIds = userRepository.findGareUserIdsByStationId(trip.getStation().getId());
-            for (Long gid : gareUserIds) {
-                if (ownerId != null && gid.equals(ownerId)) {
-                    continue;
-                }
-                User gareUser = userService.getReference(gid);
-                String gareTitle = "Nouvelle réservation (votre gare)";
-                String gareBody = "Une réservation payée concerne un voyage lié à votre gare. " + details;
-                saveOne(gareUser, MobiliNotificationType.GARE_STATION_NEW_BOOKING, gareTitle, gareBody, trip, null);
-            }
+            String gareTitle = "Nouvelle réservation";
+            String gareBody = details;
+            saveOneForStation(trip.getStation(), MobiliNotificationType.GARE_STATION_NEW_BOOKING, gareTitle,
+                    gareBody, trip, booking);
         }
     }
     
@@ -209,12 +203,17 @@ public class InboxNotificationService {
         }
         String route = shortRoute(trip);
         String title = "Annonce voyage " + route;
-        String name = fullName(message.getAuthor());
+        String name = message.getStation() != null
+                ? "Gare " + message.getStation().getName()
+                : fullName(message.getAuthor());
         String body = (name == null || name.isBlank() ? "Organisateur" : name) + " : " + message.getBody();
         List<MobiliInboxNotification> batch = new ArrayList<>();
+        List<User> recipients = new ArrayList<>();
         for (Long uid : ids) {
+            User recipient = userService.getReference(uid);
+            recipients.add(recipient);
             MobiliInboxNotification n = new MobiliInboxNotification();
-            n.setUser(userService.getReference(uid));
+            n.setUser(recipient);
             n.setType(MobiliNotificationType.TRIP_CHANNEL_MESSAGE);
             n.setTitle(title);
             n.setBody(body);
@@ -224,37 +223,96 @@ public class InboxNotificationService {
         }
         inboxRepository.saveAll(batch);
         eventPublisher.publishEvent(new InboxRefreshEvent(new HashSet<>(ids)));
+        for (User recipient : recipients) {
+            if (recipient.getFcmToken() != null) {
+                fcmService.sendToToken(recipient.getFcmToken(), title, body);
+            }
+        }
     }
 
     @Transactional
-    public void markRead(Long id, UserPrincipal principal) {
+    public void markRead(Long id, Object principal) {
         MobiliInboxNotification n = inboxRepository.findById(id)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Notification introuvable"));
-        if (!n.getUser().getId().equals(principal.getUser().getId())) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            if (n.getStation() == null || !n.getStation().getId().equals(stationId)) {
+                throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+            }
+        } else {
+            Long userId = userIdOf(principal);
+            if (userId == null || n.getUser() == null || !n.getUser().getId().equals(userId)) {
+                throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+            }
         }
-        n.setReadAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        n.setReadAt(now);
+        if (n.getSeenAt() == null) {
+            n.setSeenAt(now);
+        }
         inboxRepository.save(n);
-        eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(principal.getUser().getId())));
+        if (stationId == null) {
+            eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(userIdOf(principal))));
+        }
     }
 
     @Transactional
-    public int markAllRead(UserPrincipal principal) {
-        int updated = inboxRepository.markAllReadForUser(principal.getUser().getId(), LocalDateTime.now());
-        eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(principal.getUser().getId())));
+    public int markAllRead(Object principal) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            return inboxRepository.markAllReadForStation(stationId, LocalDateTime.now());
+        }
+        Long userId = userIdOf(principal);
+        int updated = inboxRepository.markAllReadForUser(userId, LocalDateTime.now());
+        eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(userId)));
         return updated;
     }
 
     @Transactional(readOnly = true)
-    public Page<InboxNotificationResponseDTO> listForUser(UserPrincipal principal, Pageable pageable) {
+    public Page<InboxNotificationResponseDTO> listForUser(Object principal, Pageable pageable) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            return inboxRepository.findByStationIdOrderByCreatedAtDesc(stationId, pageable).map(this::toDto);
+        }
         return inboxRepository
-                .findByUserIdOrderByCreatedAtDesc(principal.getUser().getId(), pageable)
+                .findByUserIdOrderByCreatedAtDesc(userIdOf(principal), pageable)
                 .map(this::toDto);
     }
 
     @Transactional(readOnly = true)
-    public long countUnread(UserPrincipal principal) {
-        return inboxRepository.countByUserIdAndReadAtIsNull(principal.getUser().getId());
+    public long countUnread(Object principal) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            return inboxRepository.countByStationIdAndSeenAtIsNull(stationId);
+        }
+        return inboxRepository.countByUserIdAndSeenAtIsNull(userIdOf(principal));
+    }
+
+    /**
+     * Vide le badge (pastille) sans marquer les notifications comme lues
+     * individuellement.
+     */
+    @Transactional
+    public int markAllSeen(Object principal) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            return inboxRepository.markAllSeenForStation(stationId, LocalDateTime.now());
+        }
+        return inboxRepository.markAllSeenForUser(userIdOf(principal), LocalDateTime.now());
+    }
+
+    private static Long userIdOf(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getUser().getId();
+        }
+        return null;
+    }
+
+    private static Long stationIdOf(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return sp.getStationId();
+        }
+        return null;
     }
 
     @Transactional
@@ -280,9 +338,29 @@ public class InboxNotificationService {
      */
     @Transactional
     public void notifyAdmins(String title, String body, MobiliNotificationType type) {
+        notifyAdmins(title, body, type, null);
+    }
+
+    @Transactional
+    public void notifyAdmins(String title, String body, MobiliNotificationType type,
+            com.mobili.backend.module.partner.entity.Partner partner) {
         List<User> admins = userRepository.findUsersWithAdminRole();
+        Set<Long> adminIds = new HashSet<>();
         for (User a : admins) {
-            saveOne(a, type, title, body, null, null);
+            MobiliInboxNotification n = new MobiliInboxNotification();
+            n.setUser(a);
+            n.setType(type);
+            n.setTitle(title);
+            n.setBody(body);
+            n.setPartner(partner);
+            inboxRepository.save(n);
+            adminIds.add(a.getId());
+            if (a.getFcmToken() != null) {
+                fcmService.sendToToken(a.getFcmToken(), title, body);
+            }
+        }
+        if (!adminIds.isEmpty()) {
+            eventPublisher.publishEvent(new InboxRefreshEvent(adminIds));
         }
     }
 
@@ -333,6 +411,30 @@ public class InboxNotificationService {
         n.setSourceChannelMessage(null);
         inboxRepository.save(n);
         eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(recipient.getId())));
+        if (recipient.getFcmToken() != null) {
+            fcmService.sendToToken(recipient.getFcmToken(), title, bodyPreview);
+        }
+    }
+
+    /**
+     * Variante ciblant directement une gare (StationPrincipal), plus utilisée via
+     * un compte chef de gare.
+     */
+    @Transactional
+    public void notifyPartnerGareComForStation(com.mobili.backend.module.station.entity.Station station,
+            com.mobili.backend.module.partnergarecom.entity.PartnerGareComThread thread,
+            String title,
+            String bodyPreview) {
+        MobiliInboxNotification n = new MobiliInboxNotification();
+        n.setStation(station);
+        n.setType(MobiliNotificationType.PARTNER_GARE_COM_MESSAGE);
+        n.setTitle(title);
+        n.setBody(bodyPreview);
+        n.setPartnerGareComThread(thread);
+        inboxRepository.save(n);
+        if (station.getFcmToken() != null) {
+            fcmService.sendToToken(station.getFcmToken(), title, bodyPreview);
+        }
     }
 
     private void saveOne(User user, MobiliNotificationType type, String title, String body, Trip trip,
@@ -358,6 +460,27 @@ public class InboxNotificationService {
         }
     }
 
+    /**
+     * Notification ciblant directement une gare (StationPrincipal), pas un compte
+     * utilisateur.
+     */
+    private void saveOneForStation(com.mobili.backend.module.station.entity.Station station,
+            MobiliNotificationType type, String title, String body, Trip trip,
+            com.mobili.backend.module.booking.booking.entity.Booking booking) {
+        MobiliInboxNotification n = new MobiliInboxNotification();
+        n.setStation(station);
+        n.setType(type);
+        n.setTitle(title);
+        n.setBody(body);
+        n.setTrip(trip);
+        n.setBooking(booking);
+        inboxRepository.save(n);
+        if (station.getFcmToken() != null) {
+            fcmService.sendToToken(station.getFcmToken(), title, body);
+        }
+    }
+
+
     private InboxNotificationResponseDTO toDto(MobiliInboxNotification n) {
         Optional<Trip> t = Optional.ofNullable(n.getTrip());
         return InboxNotificationResponseDTO.builder()
@@ -374,6 +497,7 @@ public class InboxNotificationService {
                         n.getSourceChannelMessage() == null ? null : n.getSourceChannelMessage().getId())
                 .partnerGareComThreadId(
                         n.getPartnerGareComThread() == null ? null : n.getPartnerGareComThread().getId())
+                .partnerId(n.getPartner() == null ? null : n.getPartner().getId())
                 .build();
     }
 
@@ -402,18 +526,31 @@ public class InboxNotificationService {
         return (a + " " + c).trim();
     }
 
-    @Transactional
-    public void delete(Long id, UserPrincipal principal) {
+  @Transactional
+    public void delete(Long id, Object principal) {
         MobiliInboxNotification n = inboxRepository.findById(id)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Notification introuvable"));
-        if (!n.getUser().getId().equals(principal.getUser().getId())) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            if (n.getStation() == null || !n.getStation().getId().equals(stationId)) {
+                throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+            }
+        } else {
+            Long userId = userIdOf(principal);
+            if (userId == null || n.getUser() == null || !n.getUser().getId().equals(userId)) {
+                throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+            }
         }
         inboxRepository.delete(n);
     }
 
     @Transactional
-    public void deleteAll(UserPrincipal principal) {
-        inboxRepository.deleteAllByUserId(principal.getUser().getId());
+    public void deleteAll(Object principal) {
+        Long stationId = stationIdOf(principal);
+        if (stationId != null) {
+            inboxRepository.deleteAllByStationId(stationId);
+            return;
+        }
+        inboxRepository.deleteAllByUserId(userIdOf(principal));
     }
 }

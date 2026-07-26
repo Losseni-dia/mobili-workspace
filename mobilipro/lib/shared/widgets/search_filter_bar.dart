@@ -54,26 +54,29 @@ class SearchFilterBar extends StatelessWidget {
       child: Row(
         children: [
           // Champ recherche
-          Expanded(
+         Expanded(
             child: Container(
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.15),
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: TextField(
                 controller: controller,
                 onChanged: onSearchChanged,
-                style: const TextStyle(color: AppColors.white, fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.mobiliBlueDeep,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: hintText,
-                  hintStyle: TextStyle(
-                    color: AppColors.gray500.withValues(alpha: 0.6),
+                  hintStyle: const TextStyle(
+                    color: AppColors.gray400,
                     fontSize: 13,
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: const Icon(
                     Icons.search_rounded,
-                    color: AppColors.white.withValues(alpha: 0.7),
+                    color: AppColors.mobiliBlue,
                     size: 18,
                   ),
                   border: InputBorder.none,

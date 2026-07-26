@@ -36,7 +36,6 @@ public class RegisterCompanyPublicDTO {
     private String companyName;
 
     @Email(message = "Format d’email invalide pour la société")
-    @NotBlank(message = "L’email officiel de la société est obligatoire")
     private String companyEmail;
 
     @NotBlank(message = "Le téléphone de la société est obligatoire")

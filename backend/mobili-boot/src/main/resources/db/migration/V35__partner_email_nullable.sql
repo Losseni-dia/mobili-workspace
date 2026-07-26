@@ -1,0 +1,1 @@
+ALTER TABLE partners ALTER COLUMN email DROP NOT NULL;

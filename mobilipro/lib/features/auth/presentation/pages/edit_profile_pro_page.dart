@@ -25,8 +25,11 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
   late final TextEditingController _emailCtrl;
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _passwordCtrl;
+  late final TextEditingController _passwordConfirmCtrl;
   File? _avatarFile;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   String? _error;
 
   @override
@@ -38,6 +41,7 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
     _emailCtrl = TextEditingController(text: profile?.email ?? '');
     _phoneCtrl = TextEditingController(text: profile?.phone ?? '');
     _passwordCtrl = TextEditingController();
+    _passwordConfirmCtrl = TextEditingController();
   }
 
   @override
@@ -47,6 +51,7 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
+    _passwordConfirmCtrl.dispose();
     super.dispose();
   }
 
@@ -236,12 +241,46 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
                 Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 14),
+            const SizedBox(height: 14),
               _buildField(
                 _passwordCtrl,
                 'Nouveau mot de passe (facultatif)',
                 Icons.lock_outline_rounded,
-                obscureText: true,
+                obscureText: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildField(
+                _passwordConfirmCtrl,
+                'Confirmer le nouveau mot de passe',
+                Icons.lock_outline_rounded,
+                obscureText: _obscureConfirm,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirm
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                ),
+                validator: (v) {
+                  if (_passwordCtrl.text.isEmpty) return null;
+                  if (v != _passwordCtrl.text) {
+                    return 'Les mots de passe ne correspondent pas';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 28),
 
@@ -282,13 +321,14 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
     );
   }
 
-  Widget _buildField(
+Widget _buildField(
     TextEditingController ctrl,
     String label,
     IconData icon, {
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     bool obscureText = false,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,6 +349,7 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
           obscureText: obscureText,
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 20, color: const Color(0xFF9CA3AF)),
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: const Color(0xFFF9FAFB),
             contentPadding: const EdgeInsets.symmetric(

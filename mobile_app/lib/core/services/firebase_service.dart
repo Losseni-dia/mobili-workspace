@@ -5,6 +5,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobili/core/network/api_client.dart';
 
 // Handler pour les messages en background (top-level function obligatoire)
 @pragma('vm:entry-point')
@@ -61,6 +62,15 @@ class FirebaseService {
     _messaging.onTokenRefresh.listen((newToken) async {
       await _safeWrite('fcm_token', newToken);
       debugPrint('[FCM] Token rafraîchi et stocké');
+      try {
+        await ApiClient.instance.dio.patch(
+          '/auth/me/fcm-token',
+          data: {'fcmToken': newToken},
+        );
+        debugPrint('[FCM] Token rafraîchi renvoyé au backend');
+      } catch (e) {
+        debugPrint('[FCM] Erreur renvoi token rafraîchi: $e');
+      }
     });
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {

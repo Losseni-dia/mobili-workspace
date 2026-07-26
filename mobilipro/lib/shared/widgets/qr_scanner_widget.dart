@@ -18,8 +18,10 @@ class QrScanResult {
     this.arrivalCity,
     this.status,
     this.message,
+    this.transportPrice,
+    this.extraHoldBags = 0,
+    this.luggageFee = 0,
   });
-
   final bool valid;
   final String ticketNumber;
   final String? passengerName;
@@ -28,10 +30,13 @@ class QrScanResult {
   final String? arrivalCity;
   final String? status;
   final String? message;
-
+  final double? transportPrice;
+  final int extraHoldBags;
+  final double luggageFee;
   String get route => (departureCity != null && arrivalCity != null)
       ? '$departureCity → $arrivalCity'
       : '';
+  double get totalPaid => (transportPrice ?? 0) + luggageFee;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,7 +112,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
           '/tickets/verify/$ticketNumber',
         );
         final data = res.data!;
-        result = QrScanResult(
+       result = QrScanResult(
           valid: true,
           ticketNumber: ticketNumber,
           passengerName: data['passengerFullName'] as String?,
@@ -115,6 +120,9 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
           departureCity: data['departureCity'] as String?,
           arrivalCity: data['arrivalCity'] as String?,
           status: data['status'] as String?,
+          transportPrice: (data['transportPrice'] as num?)?.toDouble(),
+          extraHoldBags: (data['extraHoldBags'] as num?)?.toInt() ?? 0,
+          luggageFee: (data['luggageFee'] as num?)?.toDouble() ?? 0,
         );
       } else {
         final res = await ApiClient.instance.dio.get<Map<String, dynamic>>(
@@ -122,7 +130,7 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
         );
         final data = res.data!;
         final status = data['status'] as String? ?? '';
-        result = QrScanResult(
+       result = QrScanResult(
           valid: status == 'CONFIRMED' || status == 'USED',
           ticketNumber: ticketNumber,
           passengerName: data['passengerFullName'] as String?,
@@ -130,6 +138,9 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
           departureCity: data['departureCity'] as String?,
           arrivalCity: data['arrivalCity'] as String?,
           status: status,
+          transportPrice: (data['transportPrice'] as num?)?.toDouble(),
+          extraHoldBags: (data['extraHoldBags'] as num?)?.toInt() ?? 0,
+          luggageFee: (data['luggageFee'] as num?)?.toDouble() ?? 0,
         );
       }
     } catch (e) {
@@ -397,11 +408,32 @@ class QrScanResultOverlay extends StatelessWidget {
                           label: 'Statut',
                           value: result.status!,
                         ),
-                      _Row(
+                    _Row(
                         icon: Icons.qr_code_rounded,
                         label: 'N° ticket',
                         value: result.ticketNumber,
                       ),
+                      if (isValid && result.transportPrice != null) ...[
+                        const SizedBox(height: 4),
+                        _Row(
+                          icon: Icons.directions_bus_rounded,
+                          label: 'Transport',
+                          value:
+                              '${result.transportPrice!.toStringAsFixed(0)} FCFA',
+                        ),
+                        if (result.extraHoldBags > 0)
+                          _Row(
+                            icon: Icons.luggage_rounded,
+                            label: 'Bagages (${result.extraHoldBags})',
+                            value:
+                                '${result.luggageFee.toStringAsFixed(0)} FCFA',
+                          ),
+                        _Row(
+                          icon: Icons.payments_rounded,
+                          label: 'Total payé',
+                          value: '${result.totalPaid.toStringAsFixed(0)} FCFA',
+                        ),
+                      ],
                       if (!isValid && result.message != null) ...[
                         const SizedBox(height: 8),
                         Container(

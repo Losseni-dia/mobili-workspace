@@ -23,6 +23,7 @@ public enum MobiliNotificationType {
     COV_KYC_EXPIRED,
     /** Annonce / information envoyée par l’équipe Mobili (espace admin) au dirigeant partenaire. */
     MOBILI_ADMIN_INFO_PARTNER,
+    PARTNER_SUBMISSION_PENDING,
             
     /** Réservation annulée. */
     BOOKING_CANCELLED,

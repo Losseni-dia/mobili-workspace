@@ -30,6 +30,15 @@ public class TripChannelMessage extends AbstractEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
+    /**
+     * Renseigné si le message a été posté par une connexion gare (StationPrincipal)
+     * :
+     * l'auteur affiché doit alors être la gare, pas le dirigeant technique en base.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "station_id")
+    private com.mobili.backend.module.station.entity.Station station;
+
     @Column(nullable = false, length = 2000)
     private String body;
 }

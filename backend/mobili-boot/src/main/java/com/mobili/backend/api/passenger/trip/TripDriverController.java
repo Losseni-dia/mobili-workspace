@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/trips/{tripId}/driver")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
 public class TripDriverController {
 
     private final TripService tripService;

@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../dashboard/presentation/pages/gare_detail_page.dart';
+import 'gare_detail_page.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODÈLES

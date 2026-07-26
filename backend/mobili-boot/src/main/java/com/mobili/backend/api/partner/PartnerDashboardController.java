@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,11 +31,14 @@ public class PartnerDashboardController {
     @GetMapping("/stats")
     public ResponseEntity<PartnerDashboardResponse> getStats(
             @RequestParam(required = false) Long stationId,
-            @AuthenticationPrincipal UserPrincipal principal) {
+            org.springframework.security.core.Authentication authentication) {
         // 1. Récupère le partenaire actuel (Entité)
         Partner partner = partnerService.getCurrentPartnerForOperations();
-        if (principal.getStationId() != null) {
-            stationId = principal.getStationId();
+        Object rawPrincipal = authentication.getPrincipal();
+        if (rawPrincipal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            stationId = sp.getStationId();
+        } else if (rawPrincipal instanceof UserPrincipal up && up.getStationId() != null) {
+            stationId = up.getStationId();
         }
 
         // 2. Récupère les données (Map d'objets métier)

@@ -1,13 +1,16 @@
 // lib/features/auth/providers/auth_provider.dart
 
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobilipro/core/network/api_client.dart';
 import 'package:mobilipro/core/services/firebase_service.dart';
-import 'dart:io';
+import 'package:mobilipro/features/notifications/providers/notification_provider.dart';
+
+import '../../../core/models/auth_response.dart';
 import '../../../core/models/mobili_error.dart'; // Pour choper MobiliException
 import '../data/auth_service.dart';
 import '../domain/models/profile_dto.dart';
-import '../../../core/models/auth_response.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
@@ -78,18 +81,45 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
     }
   }
 
-  Future<bool> login({required String login, required String password}) async {
+  Future<void> refreshProfile() async {
+    try {
+      final profile = await _service.getMe();
+      if (state.hasValue) {
+        state = AsyncData(
+          state.requireValue.copyWith(
+            status: AuthStatus.authenticated,
+            profile: profile,
+          ),
+        );
+      }
+    } catch (_) {
+      // Ignore silencieusement — l'appelant peut retenter plus tard.
+    }
+  }
+
+Future<bool> login({required String login, required String password}) async {
+    if (state.valueOrNull?.isLoading == true) return false;
     state = AsyncData(state.requireValue.asLoading());
     try {
-      final authResponse =
-          await _service.login(login: login, password: password);
+      final authResponse = await _service.login(
+        login: login,
+        password: password,
+      );
       final profile = await _service.getMe();
-      state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        profile: profile,
-        authResponse: authResponse,
-      ));
-      await FirebaseService.sendTokenToBackend(ApiClient.instance.dio);
+      state = AsyncData(
+        AuthState(
+          status: AuthStatus.authenticated,
+          profile: profile,
+          authResponse: authResponse,
+        ),
+      );
+    ref.invalidate(notificationsProvider);
+      ref.invalidate(unreadCountProvider);
+      final isStation = profile.roles.contains('STATION');
+      await FirebaseService.sendTokenToBackend(
+        ApiClient.instance.dio,
+        isStation: isStation,
+      );
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -103,10 +133,13 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
       return false;
     }
   }
-  Future<void> logout() async {
+
+Future<void> logout() async {
     state = AsyncData(state.requireValue.asLoading());
     await _service.logout();
     state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
+    ref.invalidate(notificationsProvider);
+    ref.invalidate(unreadCountProvider);
   }
 
 Future<bool> register({
@@ -117,6 +150,7 @@ Future<bool> register({
     required String password,
     File? avatarFile,
   }) async {
+    if (state.valueOrNull?.isLoading == true) return false;
     state = AsyncData(state.requireValue.asLoading());
     try {
       final profile = await _service.register(
@@ -127,10 +161,17 @@ Future<bool> register({
         password: password,
         avatarFile: avatarFile,
       );
-      state = AsyncData(AuthState(
-        status: AuthStatus.authenticated,
-        profile: profile,
-      ));
+state = AsyncData(
+        AuthState(
+          status: AuthStatus.authenticated,
+          profile: profile,
+          authResponse: null,
+        ),
+      );
+      ;
+      ref.invalidate(notificationsProvider);
+      ref.invalidate(unreadCountProvider);
+      await FirebaseService.sendTokenToBackend(ApiClient.instance.dio);
       return true;
     } on MobiliException catch (e) {
       state = AsyncData(
@@ -147,15 +188,20 @@ Future<bool> register({
 
   /// Inscription "dirigeant société" — connecte automatiquement (le backend
   /// renvoie un token), contrairement à la candidature covoiturage.
-  Future<bool> registerCompany({
+Future<bool> registerCompany({
     required Map<String, dynamic> companyData,
     File? logoFile,
+    required File kycFrontFile,
+    required File kycBackFile,
   }) async {
+    if (state.valueOrNull?.isLoading == true) return false;
     state = AsyncData(state.requireValue.asLoading());
     try {
       final authResponse = await _service.registerCompany(
         companyData: companyData,
         logoFile: logoFile,
+        kycFrontFile: kycFrontFile,
+        kycBackFile: kycBackFile,
       );
       final profile = await _service.getMe();
       state = AsyncData(AuthState(
@@ -219,6 +265,11 @@ void setProfile(ProfileDto profile) {
         state.requireValue.copyWith(status: AuthStatus.unauthenticated),
       );
     }
+  }
+
+  void clearFieldErrors() {
+    if (!state.hasValue) return;
+    state = AsyncData(state.requireValue.copyWith(fieldErrors: const {}));
   }
 }
 

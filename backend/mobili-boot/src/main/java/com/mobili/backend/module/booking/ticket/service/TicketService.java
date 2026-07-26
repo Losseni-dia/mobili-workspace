@@ -39,12 +39,13 @@ public class TicketService {
     private final TripRunService tripRunService;
     private final InboxNotificationService inboxNotificationService;
 
-
     @Transactional(readOnly = true)
     public List<Ticket> findAllByTripId(Long tripId) {
         List<Ticket> tickets = ticketRepository.findAllByTripIdOrderBySeatNumberAsc(tripId);
-        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de la
-        // transaction, car le mapping vers TicketResponseDTO se fait hors session (dans le controller).
+        // ASTUCE : on force Hibernate à charger ces associations lazy avant la fin de
+        // la
+        // transaction, car le mapping vers TicketResponseDTO se fait hors session (dans
+        // le controller).
         for (Ticket t : tickets) {
             if (t.getTrip() != null) {
                 t.getTrip().getDepartureCity();
@@ -57,7 +58,7 @@ public class TicketService {
         }
         return tickets;
     }
-    
+
     @Transactional
     public Ticket create(Long tripId, Long userId) {
         Trip trip = tripService.findById(tripId);
@@ -172,12 +173,13 @@ public class TicketService {
                     "Ce ticket a expiré car la date du voyage est passée.");
         }
 
-        UserPrincipal principal = getAuthenticatedPrincipal();
-        if (hasAuthority(principal, "ROLE_GARE")) {
+        Object principal = getAuthenticatedPrincipal();
+        if (hasAuthority(principal, "ROLE_GARE") || hasAuthority(principal, "ROLE_STATION")) {
             Trip trip = ticket.getTrip();
+            Long principalStationId = stationIdOf(principal);
             if (trip.getStation() == null
-                    || principal.getStationId() == null
-                    || !trip.getStation().getId().equals(principal.getStationId())) {
+                    || principalStationId == null
+                    || !trip.getStation().getId().equals(principalStationId)) {
                 throw new MobiliException(
                         MobiliErrorCode.ACCESS_DENIED,
                         "Ce billet ne correspond pas à l’embarquement géré par votre gare.");
@@ -186,13 +188,15 @@ public class TicketService {
                 && hasAuthority(principal, "ROLE_CHAUFFEUR")) {
             Trip trip = ticket.getTrip();
             if (trip.getCovoiturageOrganizer() != null) {
-                if (!trip.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
+                Long chauffeurUserId = userIdOf(principal);
+                if (chauffeurUserId == null
+                        || !trip.getCovoiturageOrganizer().getId().equals(chauffeurUserId)) {
                     throw new MobiliException(
                             MobiliErrorCode.ACCESS_DENIED,
                             "Ce billet n’est pas lié à un de vos trajets covoiturage.");
                 }
             } else {
-                Long userPartnerId = principal.getPartnerId();
+                Long userPartnerId = partnerIdOf(principal);
                 if (userPartnerId == null || !userPartnerId.equals(trip.getPartner().getId())) {
                     throw new MobiliException(
                             MobiliErrorCode.ACCESS_DENIED,
@@ -209,7 +213,8 @@ public class TicketService {
     }
 
     /**
-     * Confirmation de descente par le chauffeur : libère le siège sur les tronçons suivants.
+     * Confirmation de descente par le chauffeur : libère le siège sur les tronçons
+     * suivants.
      */
     @Transactional
     public Ticket confirmPassengerAlightedAtStop(Long tripId, String ticketNumber, Integer stopIndexOrNull) {
@@ -257,52 +262,86 @@ public class TicketService {
     }
 
     private void enforceCanReadUserTickets(Long userId) {
-        UserPrincipal principal = getAuthenticatedPrincipal();
-        if (hasAuthority(principal, "ROLE_ADMIN")) {
+        Object principal = getAuthenticatedPrincipal();
+        if (hasAuthority(principal, "ROLE_ADMIN") || hasAuthority(principal, "ROLE_STATION")) {
             return;
         }
-        if (!userId.equals(principal.getUser().getId())) {
+        Long principalUserId = userIdOf(principal);
+        if (principalUserId == null || !userId.equals(principalUserId)) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                     "Vous ne pouvez pas consulter les tickets d'un autre utilisateur");
         }
     }
 
     private void enforceCanAccessTicket(Ticket ticket) {
-        UserPrincipal principal = getAuthenticatedPrincipal();
+        Object principal = getAuthenticatedPrincipal();
         if (hasAuthority(principal, "ROLE_ADMIN")) {
             return;
         }
-        if (ticket.getPassenger() != null && principal.getUser().getId().equals(ticket.getPassenger().getId())) {
+        Long principalUserId = userIdOf(principal);
+        if (ticket.getPassenger() != null && principalUserId != null
+                && principalUserId.equals(ticket.getPassenger().getId())) {
             return;
         }
         if (hasAuthority(principal, "ROLE_PARTNER")
                 && ticket.getTrip() != null
                 && ticket.getTrip().getPartner() != null
                 && ticket.getTrip().getPartner().getOwner() != null
-                && principal.getUser().getId().equals(ticket.getTrip().getPartner().getOwner().getId())) {
+                && principalUserId != null
+                && principalUserId.equals(ticket.getTrip().getPartner().getOwner().getId())) {
             return;
         }
-        if (hasAuthority(principal, "ROLE_GARE")
+        if ((hasAuthority(principal, "ROLE_GARE") || hasAuthority(principal, "ROLE_STATION"))
                 && ticket.getTrip() != null
                 && ticket.getTrip().getStation() != null
-                && principal.getStationId() != null
-                && ticket.getTrip().getStation().getId().equals(principal.getStationId())) {
+                && stationIdOf(principal) != null
+                && ticket.getTrip().getStation().getId().equals(stationIdOf(principal))) {
             return;
         }
         throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                 "Vous ne pouvez pas annuler ce ticket");
     }
 
-    private UserPrincipal getAuthenticatedPrincipal() {
+    private Object getAuthenticatedPrincipal() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
+        if (authentication == null || authentication.getPrincipal() == null) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Session invalide ou expirée");
         }
-        return principal;
+        return authentication.getPrincipal();
     }
 
-    private boolean hasAuthority(UserPrincipal principal, String authority) {
-        return principal.getAuthorities().stream()
-                .anyMatch(granted -> authority.equals(granted.getAuthority()));
+    private boolean hasAuthority(Object principal, String authority) {
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails ud) {
+            return ud.getAuthorities().stream()
+                    .anyMatch(granted -> authority.equals(granted.getAuthority()));
+        }
+        return false;
+    }
+
+    private static Long stationIdOf(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return sp.getStationId();
+        }
+        if (principal instanceof UserPrincipal up) {
+            return up.getStationId();
+        }
+        return null;
+    }
+
+    private static Long userIdOf(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getUser().getId();
+        }
+        return null;
+    }
+
+    private static Long partnerIdOf(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal sp) {
+            return sp.getPartnerId();
+        }
+        if (principal instanceof UserPrincipal up) {
+            return up.getPartnerId();
+        }
+        return null;
     }
 }

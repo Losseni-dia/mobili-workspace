@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -63,54 +62,6 @@ La plateforme est accessible via :
 En utilisant Mobili, vous acceptez sans réserve les présentes Conditions Générales d'Utilisation (CGU).""",
             ),
 
-            const _Section(
-              number: "2",
-              title: "Définitions",
-              content:
-                  """Dans les présentes CGU, les termes suivants ont les définitions ci-après :
-
-• "Mobili" ou "la Plateforme" : l'ensemble des services numériques proposés par Mobili SAS.
-• "Utilisateur" ou "Passager" : toute personne physique utilisant la plateforme pour rechercher, réserver ou acheter des billets de transport.
-• "Partenaire" : toute société de transport ou compagnie de bus ayant conclu un accord avec Mobili pour distribuer ses billets via la plateforme.
-• "Conducteur" : toute personne proposant des trajets de covoiturage via la plateforme après validation de son dossier.
-• "Billet" : le titre de transport électronique généré à l'issue d'une réservation confirmée et payée.
-• "Trajet" : tout déplacement proposé par un Partenaire ou un Conducteur sur la plateforme.""",
-            ),
-
-            const _Section(
-              number: "3",
-              title: "Création de compte et conditions d'accès",
-              content: """3.1 Conditions d'éligibilité
-Pour créer un compte Mobili, vous devez :
-• Être une personne physique âgée d'au moins 18 ans ou être accompagné d'un représentant légal.
-• Disposer d'un numéro de téléphone valide en Afrique subsaharienne ou ailleurs.
-• Fournir des informations exactes, complètes et à jour lors de l'inscription.
-
-3.2 Responsabilité du compte
-Vous êtes seul(e) responsable de la confidentialité de votre identifiant et de votre mot de passe. Toute action effectuée depuis votre compte est réputée avoir été effectuée par vous. En cas de perte ou de vol de vos identifiants, vous devez immédiatement contacter le support Mobili.
-
-3.3 Unicité du compte
-Chaque utilisateur ne peut disposer que d'un seul compte actif sur la plateforme. La création de comptes multiples est strictement interdite et peut entraîner la suspension de l'ensemble des comptes concernés.
-
-3.4 Suspension et résiliation
-Mobili se réserve le droit de suspendre ou de supprimer tout compte en cas de violation des présentes CGU, de comportement frauduleux, ou de mise en danger des autres utilisateurs ou partenaires.""",
-            ),
-
-            const _Section(
-              number: "4",
-              title: "Services proposés",
-              content: """4.1 Réservation de billets
-Mobili permet aux utilisateurs de consulter les trajets disponibles proposés par les compagnies partenaires, de sélectionner leurs sièges, et de procéder au paiement en ligne via mobile money (Orange Money, MTN Mobile Money, Wave, Moov, etc.) ou par carte bancaire.
-
-4.2 Covoiturage
-Mobili propose également un service de covoiturage permettant à des particuliers vérifiés (conducteurs validés KYC) de proposer des trajets entre particuliers. Ce service est soumis à une vérification préalable du conducteur (pièce d'identité, photo, immatriculation du véhicule).
-
-4.3 Billet électronique
-À l'issue de chaque réservation payée, un billet électronique comportant un code QR unique est généré. Ce billet est nominatif et doit être présenté au moment de l'embarquement.
-
-4.4 Disponibilité
-Mobili s'efforce de maintenir la plateforme accessible 24h/24 et 7j/7, mais ne peut garantir une disponibilité continue. Des interruptions pour maintenance peuvent survenir sans préavis.""",
-            ),
 
             const _Section(
               number: "5",
@@ -123,9 +74,29 @@ Le paiement est effectué au moment de la réservation, via les solutions de pai
 
 5.3 Confirmation
 La réservation n'est confirmée qu'après validation du paiement. En cas d'échec du paiement, aucune réservation n'est créée.
-
 5.4 Annulation et remboursement
-Les conditions d'annulation et de remboursement dépendent de la politique de chaque compagnie partenaire. Pour les trajets covoiturage, des conditions spécifiques s'appliquent. Mobili facilite les demandes de remboursement mais ne peut être tenu responsable des décisions prises par les compagnies partenaires.
+
+a) Annulation à l'initiative du Passager
+Le Passager peut annuler sa réservation depuis la section « Mes réservations » de l'application, tant que le trajet n'a pas eu lieu. Le montant remboursé dépend du délai entre l'annulation et l'heure de départ prévue :
+- Plus de 24 heures avant le départ : remboursement de 90% du prix du transport.
+- Entre 6 heures et 24 heures avant le départ : remboursement de 50% du prix du transport.
+- Moins de 6 heures avant le départ, ou après le départ : aucun remboursement.
+Les frais de service (frais de réservation forfaitaires appliqués lors de l'achat) ne sont remboursables dans aucun cas, sauf annulation à l'initiative de la compagnie (voir point b). En cas de bagages supplémentaires payants, ceux-ci suivent le même taux de remboursement que le prix du transport.
+
+b) Annulation à l'initiative de la compagnie partenaire
+Si un trajet est annulé, supprimé ou rendu impossible par la compagnie de transport (panne, surbooking, annulation de service), le Passager est remboursé intégralement, y compris les frais de service, sous un délai de 5 jours ouvrés. Une solution de report gratuit vers un trajet équivalent peut également être proposée en alternative au remboursement.
+
+c) Non-présentation du Passager
+Le Passager doit se présenter au point d'embarquement au moins 30 minutes avant l'heure de départ prévue. Passé un délai de grâce de 10 minutes après l'heure de départ, le Passager est considéré absent (« no-show ») et sa réservation est annulée sans droit à remboursement.
+
+d) Covoiturage
+Pour les trajets de covoiturage, l'annulation est gratuite tant que le Conducteur n'a pas accepté la demande, ou entre l'acceptation et la confirmation du paiement. Une fois le paiement confirmé, le barème de remboursement décrit au point (a) s'applique, avec des seuils pouvant être ajustés pour tenir compte du caractère non-professionnel du service. Si le Conducteur annule après avoir accepté une réservation payée, le Passager est remboursé intégralement et immédiatement.
+
+e) Utilisation abusive
+Mobili se réserve le droit de restreindre temporairement l'accès aux fonctionnalités de réservation d'un compte ayant procédé à des annulations répétées et abusives (au-delà de 3 annulations sur une même semaine), afin de protéger la disponibilité des sièges pour l'ensemble des utilisateurs.
+
+f) Modalités de remboursement
+Tout remboursement est effectué sur le moyen de paiement d'origine (mobile money ou carte bancaire), dans un délai indicatif de 3 à 5 jours ouvrés, sous réserve des délais propres à chaque opérateur de paiement.
 
 5.5 Commission
 Mobili perçoit une commission sur chaque transaction effectuée via la plateforme. Cette commission est incluse dans le prix affiché à l'utilisateur.""",

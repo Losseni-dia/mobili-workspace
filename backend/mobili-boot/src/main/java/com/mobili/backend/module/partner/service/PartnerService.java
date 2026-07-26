@@ -2,6 +2,7 @@ package com.mobili.backend.module.partner.service;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.notification.entity.MobiliNotificationType;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.dto.PartnerRegisterDTO;
 import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
@@ -55,6 +57,17 @@ public class PartnerService {
     public Partner getCurrentPartner() {
         Object principal = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal stationPrincipal) {
+            Long partnerId = stationPrincipal.getPartnerId();
+            if (partnerId == null) {
+                throw new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                        "Cette gare n'est rattachée à aucune compagnie.");
+            }
+            return partenaireRepository.findById(partnerId)
+                    .orElseThrow(
+                            () -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Partenaire non trouvé"));
+        }
 
         if (!(principal instanceof UserPrincipal)) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Non authentifié");
@@ -115,7 +128,24 @@ public class PartnerService {
     }
 
     /**
-     * Dirigeant (propriétaire fiche) ou compte gare rattaché à une gare de la compagnie (ex. enregistrer des chauffeurs).
+     * Variante acceptant aussi une connexion "gare" (StationPrincipal) : la gare
+     * elle-même
+     * appartient forcément à sa compagnie, donc toujours autorisée ici.
+     */
+    public void requireDirigeantOuGareDeLaCompagnie(Object principal) {
+        if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal) {
+            return;
+        }
+        if (principal instanceof UserPrincipal up) {
+            requireDirigeantOuGareDeLaCompagnie(up);
+            return;
+        }
+        throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Non authentifié");
+    }
+
+    /**
+     * Dirigeant (propriétaire fiche) ou compte gare rattaché à une gare de la
+     * compagnie (ex. enregistrer des chauffeurs).
      */
     public void requireDirigeantOuGareDeLaCompagnie(UserPrincipal principal) {
         User u = principal.getUser();
@@ -169,10 +199,30 @@ public class PartnerService {
      * même logique métier que {@link #save} sans JWT.
      */
     @Transactional
-    public Partner createPartnerForOwner(User owner, PartnerRegisterDTO dto, MultipartFile logoFile) {
+    public Partner createPartnerForOwner(User owner, PartnerRegisterDTO dto, MultipartFile logoFile,
+            MultipartFile kycFrontFile, MultipartFile kycBackFile) {
         if (owner == null || owner.getId() == null) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Utilisateur invalide pour la société.");
         }
+        if (dto.getPhone() != null) {
+            boolean exists = partenaireRepository.existsByPhone(dto.getPhone().trim());
+            if (exists) {
+                throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                        "Ce numéro de téléphone est déjà utilisé par une autre société.",
+                        Map.of("companyPhone", "Ce numéro est déjà utilisé par une autre société."));
+            }
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()
+                && partenaireRepository.existsByEmailIgnoreCase(dto.getEmail().trim())) {
+            throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                    "Cet email est déjà utilisé par une autre société.",
+                    Map.of("companyEmail", "Cet email est déjà utilisé par une autre société."));
+        }
+        if (kycFrontFile == null || kycFrontFile.isEmpty() || kycBackFile == null || kycBackFile.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso de la carte d'identité du gérant sont obligatoires.");
+        }
+
         Partner partenaire = partnerMapper.toEntity(dto);
         partenaire.setOwner(owner);
 
@@ -181,6 +231,7 @@ public class PartnerService {
         userRepository.save(owner);
 
         handleLogoUpload(partenaire, logoFile);
+        handleKycUpload(partenaire, kycFrontFile, kycBackFile);
 
         if (partenaire.getRegistrationCode() == null || partenaire.getRegistrationCode().isBlank()) {
             partenaire.setRegistrationCode(generateUniqueRegistrationCode());
@@ -192,6 +243,12 @@ public class PartnerService {
 
     @Transactional
     public Partner save(Partner partenaire, MultipartFile logoFile, UserPrincipal principal) {
+        return save(partenaire, logoFile, null, null, principal);
+    }
+
+    @Transactional
+    public Partner save(Partner partenaire, MultipartFile logoFile, MultipartFile kycFrontFile,
+            MultipartFile kycBackFile, UserPrincipal principal) {
         if (partenaire.getId() == null) {
             User user = userRepository.findByLogin(principal.getUsername())
                     .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "User non trouvé"));
@@ -201,17 +258,46 @@ public class PartnerService {
             dto.setEmail(partenaire.getEmail());
             dto.setPhone(partenaire.getPhone());
             dto.setBusinessNumber(partenaire.getBusinessNumber());
-            return createPartnerForOwner(user, dto, logoFile);
+            return createPartnerForOwner(user, dto, logoFile, kycFrontFile, kycBackFile);
         }
 
         return partenaireRepository.findById(partenaire.getId())
                 .map(existing -> {
+                    if (partenaire.getPhone() != null
+                            && !partenaire.getPhone().equals(existing.getPhone())
+                            && partenaireRepository.existsByPhone(partenaire.getPhone().trim())) {
+                        throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                                "Ce numéro de téléphone est déjà utilisé par une autre société.",
+                                Map.of("phone", "Ce numéro est déjà utilisé par une autre société."));
+                    }
+                    if (partenaire.getEmail() != null && !partenaire.getEmail().isBlank()
+                            && !partenaire.getEmail().equalsIgnoreCase(existing.getEmail())
+                            && partenaireRepository.existsByEmailIgnoreCase(partenaire.getEmail().trim())) {
+                        throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE,
+                                "Cet email est déjà utilisé par une autre société.",
+                                Map.of("email", "Cet email est déjà utilisé par une autre société."));
+                    }
+
                     existing.setName(partenaire.getName());
                     existing.setEmail(partenaire.getEmail());
                     existing.setPhone(partenaire.getPhone());
                     existing.setBusinessNumber(partenaire.getBusinessNumber());
 
                     handleLogoUpload(existing, logoFile);
+                    handleKycUpload(existing, kycFrontFile, kycBackFile);
+
+                    // Resoumission après rejet : repasse en attente, motif effacé.
+                    if (existing
+                            .getApprovalStatus() == com.mobili.backend.module.partner.entity.PartnerApprovalStatus.REJECTED) {
+                        existing.setApprovalStatus(
+                                com.mobili.backend.module.partner.entity.PartnerApprovalStatus.PENDING);
+                        existing.setRejectionReason(null);
+                        inboxNotificationService.notifyAdmins(
+                                "Dossier corrigé et resoumis",
+                                "« " + existing.getName() + " » a corrigé son dossier et le resoumet pour approbation.",
+                                com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_SUBMISSION_PENDING,
+                                existing);
+                    }
 
                     return partenaireRepository.save(existing);
                 })
@@ -236,6 +322,15 @@ public class PartnerService {
         if (file != null && !file.isEmpty()) {
             String path = uploadService.saveImage(file, "partners");
             partner.setLogoUrl(path);
+        }
+    }
+
+    private void handleKycUpload(Partner partner, MultipartFile front, MultipartFile back) {
+        if (front != null && !front.isEmpty()) {
+            partner.setKycFrontUrl(uploadService.saveImage(front, "partners/kyc"));
+        }
+        if (back != null && !back.isEmpty()) {
+            partner.setKycBackUrl(uploadService.saveImage(back, "partners/kyc"));
         }
     }
 
@@ -298,18 +393,21 @@ public class PartnerService {
     }
 
     @Transactional
-    public void rejectPartner(Long id) {
+    public void rejectPartner(Long id, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le motif de rejet est obligatoire.");
+        }
         Partner p = findById(id);
         p.setApprovalStatus(com.mobili.backend.module.partner.entity.PartnerApprovalStatus.REJECTED);
         p.setEnabled(false);
+        p.setRejectionReason(reason.trim());
         partenaireRepository.save(p);
         if (p.getOwner() != null) {
             inboxNotificationService.notifyUser(
                     p.getOwner(),
                     "Compagnie rejetée",
-                    "Votre compagnie « " + p.getName()
-                            + " » n'a pas pu être validée. Contactez le support Mobili pour plus d'informations.",
-                    com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_REJECTED);
+                    "Votre compagnie « " + p.getName() + " » n'a pas pu être validée. Motif : " + reason.trim(),
+                    MobiliNotificationType.PARTNER_REJECTED);
         }
     }
 

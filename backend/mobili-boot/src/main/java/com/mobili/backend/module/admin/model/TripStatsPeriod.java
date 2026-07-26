@@ -6,5 +6,6 @@ package com.mobili.backend.module.admin.model;
 public enum TripStatsPeriod {
     DAY,
     WEEK,
-    MONTH
+    MONTH,
+    CUSTOM
 }
