@@ -1,0 +1,52 @@
+name: Deploy Mobili Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build user image
+        working-directory: frontend
+        run: docker build -f Dockerfile.prod.user -t mobili-frontend-user:prod --build-arg MOBILI_API_BASE_URL=https://www.my-mobili.com .
+
+      - name: Build business image
+        working-directory: frontend
+        run: docker build -f Dockerfile.prod.business -t mobili-frontend-business:prod --build-arg MOBILI_API_BASE_URL=https://business.my-mobili.com .
+
+      - name: Save images
+        working-directory: frontend
+        run: |
+          docker save mobili-frontend-user:prod | gzip > user-frontend.tar.gz
+          docker save mobili-frontend-business:prod | gzip > business-frontend.tar.gz
+
+      - name: Copy images to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend/user-frontend.tar.gz,frontend/business-frontend.tar.gz"
+          target: "/home/ec2-user/"
+          strip_components: 1
+
+      - name: Load and restart containers
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker load < /home/ec2-user/user-frontend.tar.gz
+            docker load < /home/ec2-user/business-frontend.tar.gz
+            docker stop mobili-frontend-user mobili-frontend-business || true
+            docker rm mobili-frontend-user mobili-frontend-business || true
+            docker run -d --name mobili-frontend-user -p 3000:80 --add-host=host.docker.internal:host-gateway --restart unless-stopped mobili-frontend-user:prod
+            docker run -d --name mobili-frontend-business -p 3001:81 --add-host=host.docker.internal:host-gateway --restart unless-stopped mobili-frontend-business:prod
+            rm /home/ec2-user/user-frontend.tar.gz /home/ec2-user/business-frontend.tar.gz
