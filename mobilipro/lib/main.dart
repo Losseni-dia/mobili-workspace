@@ -10,7 +10,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiClient.init();
   await initializeDateFormatting('fr_FR', null);
- await FirebaseService.initialize();
+
+  // Firebase : lancé en arrière-plan, SANS bloquer l'affichage du premier
+  // écran. Les notifications push s'activeront quelques instants après
+  // le démarrage, sans faire attendre l'utilisateur.
+  // ignore: unawaited_futures
+  FirebaseService.initialize();
+
   runApp(const ProviderScope(child: MobiliProApp()));
 }
 
