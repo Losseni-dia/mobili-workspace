@@ -34,68 +34,78 @@ class FirebaseService {
 
   static Future<void> initialize() async {
     await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    debugPrint('[FCM] Permission: ${settings.authorizationStatus}');
+    // Tout ce qui suit dépend de Firebase Cloud Messaging, un service tiers
+    // qui peut échouer (réseau, config manquante, quota...). On ne doit
+    // JAMAIS laisser une panne FCM bloquer le démarrage de l'app.
+    try {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_channel);
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      debugPrint('[FCM] Permission: ${settings.authorizationStatus}');
 
-    const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
-    );
-    await _localNotifications.initialize(initSettings);
+      await _localNotifications.resolvePlatformSpecificImplementation;
+      AndroidFlutterLocalNotificationsPlugin 
+          ()?.createNotificationChannel(_channel);
 
-  final token = await _messaging.getToken();
-    if (token != null) {
-      await _safeWrite('fcm_token', token);
-      debugPrint('[FCM] Token stocké: ${token.substring(0, 20)}...');
-    }
+      const initSettings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+      );
+      await _localNotifications.initialize(initSettings);
 
-    _messaging.onTokenRefresh.listen((newToken) async {
-      await _safeWrite('fcm_token', newToken);
-      debugPrint('[FCM] Token rafraîchi et stocké');
-      try {
-        await ApiClient.instance.dio.patch(
-          '/auth/me/fcm-token',
-          data: {'fcmToken': newToken},
-        );
-        debugPrint('[FCM] Token rafraîchi renvoyé au backend');
-      } catch (e) {
-        debugPrint('[FCM] Erreur renvoi token rafraîchi: $e');
+      final token = await _messaging.getToken();
+      if (token != null) {
+        await _safeWrite('fcm_token', token);
+        debugPrint('[FCM] Token stocké: ${token.substring(0, 20)}...');
       }
-    });
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      final android = message.notification?.android;
-      if (notification != null && android != null) {
-        _localNotifications.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              _channel.id,
-              _channel.name,
-              channelDescription: _channel.description,
-              importance: Importance.high,
-              priority: Priority.high,
-              icon: '@mipmap/launcher',
+      _messaging.onTokenRefresh.listen((newToken) async {
+        await _safeWrite('fcm_token', newToken);
+        debugPrint('[FCM] Token rafraîchi et stocké');
+        try {
+          await ApiClient.instance.dio.patch(
+            '/auth/me/fcm-token',
+            data: {'fcmToken': newToken},
+          );
+          debugPrint('[FCM] Token rafraîchi renvoyé au backend');
+        } catch (e) {
+          debugPrint('[FCM] Erreur renvoi token rafraîchi: $e');
+        }
+      });
+
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final notification = message.notification;
+        final android = message.notification?.android;
+        if (notification != null && android != null) {
+          _localNotifications.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              android: AndroidNotificationDetails(
+                _channel.id,
+                _channel.name,
+                channelDescription: _channel.description,
+                importance: Importance.high,
+                priority: Priority.high,
+                icon: '@mipmap/launcher',
+              ),
             ),
-          ),
-        );
-      }
-    });
+          );
+        }
+      });
 
-    debugPrint('[FCM] Initialisé avec succès');
+      debugPrint('[FCM] Initialisé avec succès');
+    } catch (e) {
+      // Ne jamais bloquer le démarrage de l'app si FCM échoue
+      // (réseau, config Firebase manquante, quota, FIS_AUTH_ERROR, etc.)
+      debugPrint(
+          '[FCM] Initialisation échouée, app continue sans notifications push: $e');
+    }
   }
 
   /// Envoie le token FCM stocké au backend — à appeler après login
@@ -143,5 +153,4 @@ class FirebaseService {
       return null;
     }
   }
-
 }
