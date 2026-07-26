@@ -16,6 +16,17 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-mobilipro-${{ hashFiles('mobilipro/android/**/*.gradle*', 'mobilipro/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-mobilipro-
 
       - name: Decode keystore
         run: echo "${{ secrets.MOBILIPRO_KEYSTORE_BASE64 }}" | base64 --decode > mobilipro/android/app/release-keystore.jks
