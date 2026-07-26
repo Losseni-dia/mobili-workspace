@@ -16,7 +16,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Build
-        working-directory: backend/mobili-boot
+        working-directory: backend
         run: mvn clean package -DskipTests
       - name: Deploy to staging
         uses: appleboy/scp-action@v0.1.7
