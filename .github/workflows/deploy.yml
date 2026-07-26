@@ -16,6 +16,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Build
+        working-directory: backend/mobili-boot
         run: mvn clean package -DskipTests
       - name: Deploy to staging
         uses: appleboy/scp-action@v0.1.7
@@ -23,9 +24,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "target/application.jar"
+          source: "backend/mobili-boot/target/application.jar"
           target: "/home/ec2-user/"
-          strip_components: 1
+          strip_components: 3
       - name: Restart staging service
         uses: appleboy/ssh-action@v1.0.3
         with:
