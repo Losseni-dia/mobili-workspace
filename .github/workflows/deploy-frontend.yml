@@ -21,6 +21,22 @@ jobs:
         working-directory: frontend
         run: docker build -f Dockerfile.prod.business -t mobili-frontend-business:prod --build-arg MOBILI_API_BASE_URL=https://business.my-mobili.com .
 
+      - name: Scan user image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mobili-frontend-user:prod'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan business image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mobili-frontend-business:prod'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
       - name: Save images
         working-directory: frontend
         run: |
