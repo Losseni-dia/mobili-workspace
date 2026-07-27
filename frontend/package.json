@@ -35,7 +35,7 @@
     "@angular/compiler": "^21.1.0",
     "@angular/core": "^21.1.0",
     "@angular/forms": "^21.1.0",
-    "@angular/platform-browser": "^21.1.0",
+    "@angular/platform-browser": "^22.0.8",
     "@angular/router": "^21.1.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@techiediaries/ngx-qrcode": "^9.1.0",
