@@ -30,4 +30,7 @@ node_modules/
 dist/
 .angular/
 .vscode/
-npm-debug.log*
+npm-debug.log**.jks
+*.b64
+*.jks
+*.b64
