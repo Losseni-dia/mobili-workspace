@@ -42,3 +42,7 @@ fedapay:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:
     secret: ${FEDAPAY_WEBHOOK_SECRET}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
