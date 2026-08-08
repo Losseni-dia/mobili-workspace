@@ -91,6 +91,17 @@ fedapay:
   webhook:
     secret: ${FEDAPAY_WEBHOOK_SECRET}
 
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+payment:
+  exchange:
+    # Taux fixe EUR/XOF (traité BCEAO / Trésor français), pas une approximation.
+    # Valeur par défaut fournie car non sensible (donnée publique) — contrairement aux
+    # secrets ci-dessus, surchargeable via PAYMENT_EXCHANGE_XOF_EUR_RATE si besoin.
+    xof-eur-rate: ${PAYMENT_EXCHANGE_XOF_EUR_RATE:655.957}
+
 # ---------------------------------------------------------------------------
 # Actuator
 # ---------------------------------------------------------------------------
