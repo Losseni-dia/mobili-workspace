@@ -27,9 +27,25 @@ public class PaymentStatusUpdateService {
     @Transactional
     public void markAsSuccessWithReference(Long bookingId, String externalReference) {
         log.info("🔄 Tentative de passage à SUCCESS pour Booking #{} avec référence: {}", bookingId, externalReference);
-        
-        Payment payment = paymentRepository.findByBookingIdAndExternalReference(bookingId, externalReference)
-                .orElseThrow(() -> new IllegalArgumentException("Paiement non trouvé pour le booking : " + bookingId));
+
+        // 1. D'abord par externalReference : couvre le rejeu d'un webhook déjà
+        //    traité (Stripe/FedaPay peuvent renvoyer le même événement plusieurs
+        //    fois) — le Payment porte alors déjà cette référence depuis le premier
+        //    passage, et on retombe naturellement sur la garde "déjà SUCCESS"
+        //    ci-dessous.
+        // 2. Sinon (premier passage, externalReference jamais écrite nulle part
+        //    — c'est justement ce qu'on s'apprête à faire ci-dessous), on retrouve
+        //    le paiement par bookingId + PENDING, garanti unique tous providers
+        //    confondus (PaymentCreationService refuse un deuxième PENDING pour la
+        //    même réservation). Sans ce repli, le tout premier passage du webhook
+        //    ne trouvait jamais rien et échouait systématiquement (incident
+        //    bookingId=213) — appelée aussi bien par StripeWebhookController que
+        //    FedaPayCallbackController, donc pas de filtre sur le provider ici.
+        Payment payment = paymentRepository
+                .findByBookingIdAndExternalReference(bookingId, externalReference)
+                .or(() -> paymentRepository.findByBookingIdAndStatus(bookingId, PaymentStatus.PENDING))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Paiement introuvable pour le booking : " + bookingId));
 
         if (payment.getStatus() == PaymentStatus.SUCCESS) {
             log.warn("⚠️ Webhook doublon détecté : Le paiement pour Booking #{} est déjà au statut SUCCESS.", bookingId);
