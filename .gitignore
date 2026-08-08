@@ -34,3 +34,6 @@ npm-debug.log**.jks
 *.b64
 *.jks
 *.b64
+AI_CONTEXT/
+DEPLOYMENT_REPORT.md
+DEV-LOCAL.md
