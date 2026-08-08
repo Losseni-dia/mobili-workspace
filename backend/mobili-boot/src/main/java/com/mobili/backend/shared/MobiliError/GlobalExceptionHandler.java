@@ -15,11 +15,14 @@ import com.mobili.backend.shared.mobiliError.exception.ErrorDetails;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     private final AnalyticsEventService analyticsEventService;
@@ -95,10 +98,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
-    // 4. FALLBACK (Erreurs imprévues) — n'inclut pas le message (PII / JSON fragile).
+    // 4. FALLBACK (Erreurs imprévues) — n'inclut pas le message dans la réponse HTTP
+    // (PII / JSON fragile), mais DOIT apparaître dans les logs serveur avec sa stack
+    // trace complète : c'est le seul filet de sécurité pour toute exception non
+    // gérée explicitement ailleurs (ex. webhook Stripe échouant silencieusement —
+    // voir l'incident bookingId=213, où cette méthode n'avait jamais loggé l'erreur,
+    // seulement un événement analytics invisible dans journalctl).
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobal(Exception ex, WebRequest request) {
         String safeEx = ex.getClass().getName().replace("\"", "");
+        log.error("💥 Exception non gérée sur {} : {}",
+                request.getDescription(false).replace("uri=", ""), ex.getMessage(), ex);
         String payload = String.format("{\"exception\":\"%s\"}", safeEx);
         analyticsEventService.record(AnalyticsEventType.SERVER_ERROR, null, payload);
         return buildResponse(MobiliErrorCode.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
