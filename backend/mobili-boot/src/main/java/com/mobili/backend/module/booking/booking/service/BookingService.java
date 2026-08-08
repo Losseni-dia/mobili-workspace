@@ -2,6 +2,7 @@ package com.mobili.backend.module.booking.booking.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,7 +24,10 @@ import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
+import com.mobili.backend.module.coupon.service.CouponService;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
+import com.mobili.backend.module.payment.repository.PaymentRepository;
+import com.mobili.backend.module.payment.service.PaymentRefundService;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.trip.entity.Trip;
@@ -55,6 +59,9 @@ public class BookingService {
     private final TripRunService tripRunService;
     private final TripPricingService tripPricingService;
     private final AnalyticsEventService analyticsEventService;
+    private final CouponService couponService;
+    private final com.mobili.backend.module.payment.service.PaymentRefundService paymentRefundService;
+    private final com.mobili.backend.module.payment.repository.PaymentRepository paymentRepository;
     private final InboxNotificationService inboxNotificationService;
 
 
@@ -78,6 +85,30 @@ public class BookingService {
 
     
     @Transactional
+    public void cancelBooking(Long bookingId) {
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
+        
+        // Vérifier si la réservation peut être annulée
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            log.warn("⚠️ Réservation {} déjà annulée.", bookingId);
+            return;
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        // Déclencher le remboursement pour Stripe uniquement (comme requis par le flux)
+        // La méthode refundPayment dans PaymentRefundService gère la logique de remboursement
+        paymentRepository.findByBookingIdAndProvider(bookingId, com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE)
+            .ifPresent(payment -> {
+                log.info("💳 Remboursement automatique pour Booking #{}", bookingId);
+                paymentRefundService.refund(payment.getExternalReference());
+            });
+            
+        log.info("✅ Réservation #{} annulée et processus de remboursement initié", bookingId);
+    }
+
     public Booking create(BookingRequestDTO request) {
         Trip trip = tripService.findById(request.getTripId());
         User user = userService.findById(request.getUserId());
@@ -103,6 +134,11 @@ public class BookingService {
         }
 
         double perSeatPrice = tripPricingService.resolvePricePerSeat(trip, boarding, alighting);
+        double totalPrice = perSeatPrice * requestedSeats;
+
+        if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
+            totalPrice = couponService.applyCoupon(request.getCouponCode(), BigDecimal.valueOf(totalPrice)).doubleValue();
+        }
 
         int extraBags = request.getExtraHoldBags() != null ? request.getExtraHoldBags() : 0;
         if (extraBags < 0) {
@@ -378,7 +414,7 @@ public class BookingService {
     }
 
     @Transactional
-    public void confirmFedaPayPayment(Long bookingId) {
+    public void confirmBookingAfterPayment(Long bookingId) {
         // 1. Récupération
         Booking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
@@ -399,7 +435,7 @@ public class BookingService {
         }
 
         // 3. LOGIQUE DE PAIEMENT EXTERNE (On ne touche pas au wallet ici)
-        // L'argent est déjà chez FedaPay. On valide juste la commande.
+        // L'argent est déjà chez le provider. On valide juste la commande.
 
         // 4. VALIDATION DE LA RÉSERVATION
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -422,14 +458,14 @@ public class BookingService {
         tripRunService.refreshTripAvailableSeatsCounter(fresh);
         tripRepository.save(fresh);
 
-        log.info("✅ Paiement FedaPay confirmé pour le Booking ID: {}", bookingId);
+        log.info("✅ Paiement confirmé pour le Booking ID: {}", bookingId);
 
         inboxNotificationService.notifyPartnerOnPaidBooking(booking);
 
         analyticsEventService.record(
                 AnalyticsEventType.BOOKING_PAID,
                 booking.getCustomer().getId(),
-                String.format("{\"bookingId\":%d,\"source\":\"FEDAPAY\"}", bookingId));
+                String.format("{\"bookingId\":%d,\"source\":\"PROVIDER\"}", bookingId));
     }
 
     @Transactional(readOnly = true)
