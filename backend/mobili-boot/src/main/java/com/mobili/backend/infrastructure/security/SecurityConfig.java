@@ -96,7 +96,15 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS,
                                                                 MobiliApiPaths.TRIPS_GLOB)
                                                 .permitAll()
-                                                .requestMatchers(MobiliApiPaths.PAYMENTS_CALLBACK).permitAll()
+                                                .requestMatchers(MobiliApiPaths.PAYMENTS_STRIPE_WEBHOOK,
+                                                                MobiliApiPaths.PAYMENTS_FEDAPAY_CALLBACK)
+                                                .permitAll()
+                                                // Remboursement : action financière sensible, admin uniquement.
+                                                // Doit être déclaré AVANT le catch-all .anyRequest().authenticated()
+                                                // (sinon n'importe quel utilisateur connecté pourrait rembourser
+                                                // n'importe quel paiement — faille corrigée ici).
+                                                .requestMatchers(MobiliApiPaths.PAYMENTS_REFUND)
+                                                .hasAnyAuthority("ROLE_ADMIN")
                                                 .requestMatchers(MobiliApiPaths.AUTH_REGISTRATION).permitAll()
                                                 // Canal : hors GET public (reste de /trips/** ci-dessus)
                                                 .requestMatchers(HttpMethod.GET,

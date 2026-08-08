@@ -23,8 +23,17 @@ public final class MobiliApiPaths {
     public static final String TRIPS_WILD_CHANNEL_MESSAGES = TRIPS + "/*/channel/messages";
     public static final String TRIPS_MY_TRIPS = TRIPS + "/my-trips";
 
-    /** Paiement (callback gateway). */
-    public static final String PAYMENTS_CALLBACK = "/payments/callback";
+    /**
+     * Paiement — webhooks/callbacks serveur-à-serveur (Stripe, FedaPay) : pas de
+     * JWT MOBILI côté appelant, doivent rester {@code permitAll()} (l'authenticité
+     * est vérifiée par signature Stripe / secret partagé FedaPay dans le contrôleur
+     * lui-même, pas par Spring Security).
+     */
+    public static final String PAYMENTS_STRIPE_WEBHOOK = "/payments/stripe/webhook";
+    public static final String PAYMENTS_FEDAPAY_CALLBACK = "/payments/fedapay/callback";
+
+    /** Remboursement : action sensible, réservée aux admins. */
+    public static final String PAYMENTS_REFUND = "/payments/refund/**";
 
     /** Espace compagnie / partenaire (préfixe API aligné sur les routes front {@code /partenaire/…}). */
     public static final String PARTENAIRE = "/partenaire";
