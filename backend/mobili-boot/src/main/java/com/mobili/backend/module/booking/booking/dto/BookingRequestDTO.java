@@ -38,6 +38,8 @@ public class BookingRequestDTO {
     @Min(0)
     private Integer extraHoldBags;
 
+    private String couponCode;
+
     @Data
     public static class SeatSelectionDTO {
         private String passengerName;

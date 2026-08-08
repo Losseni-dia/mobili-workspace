@@ -1,21 +1,27 @@
 package com.mobili.backend.api.passenger.payment;
 
-import com.mobili.backend.module.booking.booking.service.BookingService;
-import com.mobili.backend.module.payment.fedaPay.dto.PaymentVerifyResponse;
-import com.mobili.backend.module.payment.fedaPay.service.FedaPayService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
+import com.mobili.backend.module.booking.booking.service.BookingService;
+import com.mobili.backend.module.payment.dto.PaymentRequest;
+import com.mobili.backend.module.payment.dto.PaymentResponse;
+import com.mobili.backend.module.payment.enums.PaymentProvider;
+import com.mobili.backend.module.payment.fedaPay.dto.PaymentVerifyResponse;
+import com.mobili.backend.module.payment.fedaPay.service.FedaPayService;
+import com.mobili.backend.module.payment.service.ExchangeRateService;
+import com.mobili.backend.module.payment.service.PaymentCreationService;
+import com.mobili.backend.module.payment.service.PaymentGatewayResolver;
+import com.mobili.backend.module.payment.service.PaymentService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
@@ -23,26 +29,61 @@ import java.util.Map;
 @Slf4j
 public class PaymentController {
 
-    @Value("${FEDAPAY_WEBHOOK_SECRET}")
-    private String webhookSecret;
-
     private final BookingService bookingService;
     private final FedaPayService fedaPayService;
+    private final PaymentGatewayResolver paymentGatewayResolver;
+    private final PaymentCreationService paymentCreationService;
+    private final ExchangeRateService exchangeRateService;
 
+@PostMapping("/checkout/{bookingId}")
+public ResponseEntity<PaymentResponse> createCheckout(
+        @PathVariable("bookingId") Long bookingId,
+        @RequestBody PaymentRequest request) {
+    log.info("🚀 Requête de paiement reçue pour le Booking ID: {} via {}", bookingId, request.provider());
 
-    @PostMapping("/checkout/{bookingId}")
-    public ResponseEntity<Map<String, String>> createCheckout(@PathVariable("bookingId") Long bookingId) {
-        log.info("🚀 Requête de paiement reçue pour le Booking ID: {}", bookingId);
+    // Récupérer le montant métier en XOF (réel)
+    var booking = bookingService.findById(bookingId);
+    Long bookingAmountXof = Math.round(booking.getTotalPrice());
 
-        var booking = bookingService.findById(bookingId);
+    // Calculer la devise cible en fonction du provider (Stripe=EUR, FedaPay=XOF)
+    String targetCurrency = PaymentProvider.FEDAPAY.equals(request.provider()) ? "XOF" : "EUR";
 
-        var session = fedaPayService.createPaymentSession(
-                booking.getTotalPrice(),
-                booking.getCustomer().getEmail(),
-                bookingId);
-        bookingService.recordFedaPayTransactionId(bookingId, session.transactionId());
-        return ResponseEntity.ok(Map.of("url", session.paymentUrl()));
-    }
+    // Calculer montant réel dans la devise du provider
+    var exchangeResult = exchangeRateService.convert(bookingAmountXof, "XOF", targetCurrency);
+    Long providerAmount = exchangeResult.convertedAmount().longValue();
+
+    // 1. Enregistrer le paiement en attente
+    var payment = paymentCreationService.createPayment(
+            bookingId,
+            request.provider(),
+            providerAmount,
+            targetCurrency,
+            bookingAmountXof,
+            "XOF",
+            exchangeResult.exchangeRate()
+    );
+
+    // 2. Résoudre le service de paiement approprié
+    PaymentService paymentService = paymentGatewayResolver.resolve(request.provider());
+
+    // 3. Créer la session
+    String url = paymentService.createPaymentSession(
+            bookingId,
+            providerAmount,
+            targetCurrency,
+            request.customerEmail());
+
+    return ResponseEntity.ok(new PaymentResponse(
+            payment.getId(),
+            bookingId,
+            payment.getProvider(),
+            payment.getStatus(),
+            url,
+            null,
+            providerAmount,
+            targetCurrency
+    ));
+}
 
     /**
      * Appel côté client après retour FedaPay (le webhook n'atteint souvent pas localhost en dev).
@@ -69,65 +110,9 @@ public class PaymentController {
             return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
         }
         if (fedaPayService.isTransactionApprovedForBooking(txId)) {
-            bookingService.confirmFedaPayPayment(bookingId);
+            bookingService.confirmBookingAfterPayment(bookingId);
             return ResponseEntity.ok(new PaymentVerifyResponse(true, BookingStatus.CONFIRMED.name()));
         }
         return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
-    }
-
-    @PostMapping("/callback")
-    public ResponseEntity<Void> handleWebhook(
-            @RequestBody Map<String, Object> payload,
-            @RequestHeader(value = "X-Webhook-Secret", required = false) String secret) {
-
-        if (!secureEquals(webhookSecret, secret)) {
-            log.error("❌ Secret Webhook incorrect !");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        try {
-            Map<String, Object> entity = asStringObjectMap(payload.get("entity"));
-            if (entity == null)
-                return ResponseEntity.ok().build();
-
-            String status = (String) entity.get("status");
-
-            if ("approved".equals(status)) {
-                Map<String, Object> metadata = asStringObjectMap(entity.get("custom_metadata"));
-                if (metadata != null && metadata.containsKey("booking_id")) {
-
-                    // Extraction sécurisée de l'ID
-                    Long bookingId = Long.valueOf(metadata.get("booking_id").toString());
-
-                    // ✅ APPEL AU SERVICE POUR VALIDER ET GÉNÉRER LES TICKETS
-                    bookingService.confirmFedaPayPayment(bookingId);
-                }
-            }
-            return ResponseEntity.ok().build();
-
-        } catch (Exception e) {
-            log.error("💥 Erreur Webhook: {}", e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    private boolean secureEquals(String expected, String provided) {
-        if (expected == null || provided == null) {
-            return false;
-        }
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                provided.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private Map<String, Object> asStringObjectMap(Object source) {
-        if (!(source instanceof Map<?, ?> rawMap)) {
-            return null;
-        }
-        return rawMap.entrySet().stream()
-                .filter(entry -> entry.getKey() instanceof String)
-                .collect(java.util.stream.Collectors.toMap(
-                        entry -> (String) entry.getKey(),
-                        Map.Entry::getValue));
     }
 }
