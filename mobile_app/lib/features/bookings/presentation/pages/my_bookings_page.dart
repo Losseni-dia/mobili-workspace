@@ -11,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../../bookings/data/booking_service.dart';
 import '../../../bookings/domain/models/booking_detail.dart';
+import '../../../bookings/domain/models/payment_request.dart';
 
 final _bookingsDetailProvider = FutureProvider.autoDispose
     .family<List<BookingDetail>, int>((ref, userId) async {
@@ -986,65 +987,87 @@ class _BookingCard extends StatelessWidget {
   }
 
  Future<void> _payNow(BuildContext context) async {
-    try {
-      final service = BookingService();
-      final url = await service.checkout(booking.id);
-      if (context.mounted) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PaymentWebViewPage(
-              paymentUrl: url,
-              onSuccess: () async {
-                // Comme pour un trajet public : on vérifie/confirme le
-                // paiement au retour, sans quoi la réservation reste
-                // indéfiniment "en attente" même si le paiement a réussi.
-                try {
-                  final result = await service.pollUntilConfirmed(
-                    booking.id,
-                    maxAttempts: 5,
-                    interval: const Duration(seconds: 2),
-                  );
-                  if (context.mounted) {
-                    if (result.success) {
-                      _showPaymentConfirmed(context);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Paiement non confirmé. Réessayez ou contactez le support.'),
-                          backgroundColor: AppColors.warning,
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Erreur de vérification : $e'),
-                        backgroundColor: AppColors.danger,
-                      ),
-                    );
-                  }
-                }
-              },
-              onCancel: () {},
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors du paiement : $e'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
-  }
+   // 1. Choix du provider via une dialog simple
+   final provider = await showDialog<String>(
+     context: context,
+     builder: (ctx) => SimpleDialog(
+       title: const Text('Choisir un moyen de paiement'),
+       children: [
+         SimpleDialogOption(
+           onPressed: () => Navigator.pop(ctx, 'FEDAPAY'),
+           child: const ListTile(
+             leading: Icon(Icons.money, color: AppColors.mobiliBlue),
+             title: Text('FedaPay (XOF)'),
+           ),
+         ),
+         SimpleDialogOption(
+           onPressed: () => Navigator.pop(ctx, 'STRIPE'),
+           child: const ListTile(
+             leading: Icon(Icons.credit_card, color: AppColors.mobiliBlue),
+             title: Text('Carte bancaire (Stripe)'),
+           ),
+         ),
+       ],
+     ),
+   );
+
+   if (provider == null) return; // Annulé
+
+   try {
+     final service = BookingService();
+     final request = PaymentRequest(provider: provider);
+     final response = await service.checkout(booking.id, request);
+     if (context.mounted) {
+       await Navigator.push(
+         context,
+         MaterialPageRoute(
+           builder: (_) => PaymentWebViewPage(
+             paymentUrl: response.paymentUrl,
+             onSuccess: () async {
+               try {
+                 final result = await service.pollUntilConfirmed(
+                   booking.id,
+                 );
+                 if (context.mounted) {
+                   if (result.confirmed) {
+                     _showPaymentConfirmed(context);
+                   } else {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       const SnackBar(
+                         content: Text(
+                             'Paiement non confirmé. Réessayez ou contactez le support.'),
+                         backgroundColor: AppColors.warning,
+                       ),
+                     );
+                   }
+                 }
+               } catch (e) {
+                 if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                     SnackBar(
+                       content: Text('Erreur de vérification : $e'),
+                       backgroundColor: AppColors.danger,
+                     ),
+                   );
+                 }
+               }
+             },
+             onCancel: () {},
+           ),
+         ),
+       );
+     }
+   } catch (e) {
+     if (context.mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+           content: Text('Erreur lors du paiement : $e'),
+           backgroundColor: AppColors.danger,
+         ),
+       );
+     }
+   }
+ }
 
   void _showPaymentConfirmed(BuildContext context) {
     showDialog<void>(

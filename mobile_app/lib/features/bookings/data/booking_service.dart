@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:mobili/features/bookings/domain/models/payment_request.dart';
+import 'package:mobili/features/bookings/domain/models/payment_response.dart';
+import 'package:mobili/features/bookings/domain/models/payment_verification_response.dart';
 import 'package:mobili/features/bookings/domain/models/booking_detail.dart';
 
 import '../../../core/network/api_client.dart';
@@ -75,32 +78,29 @@ class BookingService {
     return _parseList(response.data);
   }
 
-  Future<String> checkout(int bookingId) async {
+  Future<PaymentResponse> checkout(int bookingId, PaymentRequest request) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/checkout/$bookingId',
+      data: request.toJson(),
     );
-    final url = response.data?['url'] as String?;
-    if (url == null || url.isEmpty) {
-      throw StateError('checkout: missing url in response');
-    }
-    return url;
+    return PaymentResponse.fromJson(response.data!);
   }
 
-  Future<PaymentResult> verifyPayment(int bookingId) async {
+  Future<PaymentVerificationResponse> verifyPayment(int bookingId) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/verify/$bookingId',
     );
-    return PaymentResult.fromJson(response.data!);
+    return PaymentVerificationResponse.fromJson(response.data!);
   }
 
-  Future<PaymentResult> pollUntilConfirmed(
+  Future<PaymentVerificationResponse> pollUntilConfirmed(
     int bookingId, {
     int maxAttempts = 5,
     Duration interval = const Duration(seconds: 2),
   }) async {
     for (var i = 0; i < maxAttempts; i++) {
       final result = await verifyPayment(bookingId);
-      if (result.success) return result;
+      if (result.confirmed) return result;
       if (i < maxAttempts - 1) await Future<void>.delayed(interval);
     }
     return verifyPayment(bookingId);
@@ -145,6 +145,7 @@ class CreateBookingRequest {
     required this.boardingStopIndex,
     required this.alightingStopIndex,
     this.extraHoldBags = 0,
+    this.couponCode,
   });
 
   final int tripId;
@@ -154,6 +155,7 @@ class CreateBookingRequest {
   final int boardingStopIndex;
   final int alightingStopIndex;
   final int extraHoldBags;
+  final String? couponCode;
 
   Map<String, dynamic> toJson() => {
         'tripId': tripId,
@@ -163,5 +165,6 @@ class CreateBookingRequest {
         'boardingStopIndex': boardingStopIndex,
         'alightingStopIndex': alightingStopIndex,
         'extraHoldBags': extraHoldBags,
+        if (couponCode != null) 'couponCode': couponCode,
       };
 }
