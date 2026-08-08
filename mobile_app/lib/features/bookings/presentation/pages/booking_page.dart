@@ -34,6 +34,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
   final _scrollController = ScrollController();
   final _passengerSectionKey = GlobalKey();
+  final _couponController = TextEditingController();
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     for (final c in _passengerCtrls) {
       c.dispose();
     }
+    _couponController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -292,6 +294,23 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                     ),
                     const SizedBox(height: 16),
                   ],
+                  
+                  // ── Coupon ────────────────────────────
+                  if (_selectedSeats.isNotEmpty) ...[
+                    const _SectionTitle(
+                        icon: Icons.confirmation_number_outlined,
+                        label: 'Code promo'),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _couponController,
+                      decoration: const InputDecoration(
+                        hintText: 'Entrez votre code',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   const SizedBox(height: 80),
                 ],
@@ -331,6 +350,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 boardingStopIndex: _boardingIndex,
                 alightingStopIndex: _alightingIndex,
                 extraHoldBags: _extraBags,
+                couponCode: _couponController.text.trim().isNotEmpty ? _couponController.text.trim() : null,
               );
 
             // ── Covoiturage : demande au chauffeur, pas de paiement immédiat ──
@@ -357,7 +377,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
               await ref
                   .read(bookingNotifierProvider.notifier)
-                  .createAndPay(request);
+                  .createAndPay(request, customerEmail: profile.email);
               final state = ref.read(bookingNotifierProvider);
               if (state.paymentUrl != null && mounted) {
                 await Navigator.push(

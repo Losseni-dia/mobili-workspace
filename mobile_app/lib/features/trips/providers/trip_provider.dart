@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../bookings/data/booking_service.dart';
 import '../data/trip_service.dart';
 import '../../bookings/domain/models/booking.dart';
+import '../../bookings/domain/models/payment_request.dart';
+import '../../bookings/domain/models/payment_verification_response.dart';
 import '../domain/models/trip.dart';
 import '../domain/models/trip_stop.dart';
 
@@ -177,7 +179,7 @@ class BookingState {
   final BookingStep step;
   final Booking? booking;
   final String? paymentUrl;
-  final PaymentResult? result;
+  final PaymentVerificationResponse? result;
   final String? errorMessage;
 
   bool get isLoading =>
@@ -187,7 +189,7 @@ class BookingState {
     BookingStep? step,
     Booking? booking,
     String? paymentUrl,
-    PaymentResult? result,
+    PaymentVerificationResponse? result,
     String? errorMessage,
   }) =>
       BookingState(
@@ -204,15 +206,24 @@ class BookingNotifier extends StateNotifier<BookingState> {
 
   final BookingService _service;
 
-  Future<void> createAndPay(CreateBookingRequest request) async {
+  /// [customerEmail] : reçu de paiement Stripe/FedaPay — optionnel, transmis
+  /// tel quel au backend. Ce flux (booking_page.dart) ne propose que FedaPay
+  /// (voir le libellé du bouton "via FedaPay"), le provider est donc fixe ici.
+  Future<void> createAndPay(
+    CreateBookingRequest request, {
+    String? customerEmail,
+  }) async {
     state = state.copyWith(step: BookingStep.creating);
     try {
       final booking = await _service.createBooking(request);
-      final url = await _service.checkout(booking.id);
+      final response = await _service.checkout(
+        booking.id,
+        PaymentRequest(provider: 'FEDAPAY', customerEmail: customerEmail),
+      );
       state = state.copyWith(
         step: BookingStep.awaitingPayment,
         booking: booking,
-        paymentUrl: url,
+        paymentUrl: response.paymentUrl,
       );
     } catch (e) {
       state = state.copyWith(
@@ -229,8 +240,8 @@ Future<void> verifyAfterReturn() async {
     state = state.copyWith(step: BookingStep.verifying);
     try {
       final result = await _service.verifyPayment(bookingId);
-      print('🔍 verifyPayment result: ${result.success} / ${result.status}');
-      if (result.success) {
+      print('🔍 verifyPayment result: ${result.confirmed} / ${result.status}');
+      if (result.confirmed) {
         state = state.copyWith(step: BookingStep.done, result: result);
         return;
       }
@@ -240,11 +251,11 @@ Future<void> verifyAfterReturn() async {
         interval: const Duration(seconds: 2),
       );
       print(
-          '🔍 pollUntilConfirmed result: ${polled.success} / ${polled.status}');
+          '🔍 pollUntilConfirmed result: ${polled.confirmed} / ${polled.status}');
       state = state.copyWith(
-        step: polled.success ? BookingStep.done : BookingStep.error,
+        step: polled.confirmed ? BookingStep.done : BookingStep.error,
         result: polled,
-        errorMessage: polled.success ? null : 'Paiement non confirmé.',
+        errorMessage: polled.confirmed ? null : 'Paiement non confirmé.',
       );
     } catch (e) {
       print('🔍 verifyAfterReturn error: $e');
