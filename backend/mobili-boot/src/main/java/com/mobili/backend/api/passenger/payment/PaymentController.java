@@ -105,7 +105,12 @@ public ResponseEntity<PaymentResponse> createCheckout(
         }
         String txId = booking.getFedapayTransactionId();
         if (txId == null || txId.isBlank()) {
-            log.warn("Vérification FedaPay impossible : pas d'ID transaction enregistré (bookingId={})",
+            // Neutre : ce champ n'est renseigné que pour un paiement FedaPay — son
+            // absence est normale pour un paiement Stripe (confirmé par webhook,
+            // pas par vérification active ici). Ne pas nommer "FedaPay" comme si
+            // c'était systématiquement le provider utilisé.
+            log.info("Pas d'ID transaction FedaPay enregistré pour bookingId={} — "
+                            + "vérification active non applicable (normal hors paiement FedaPay)",
                     bookingId);
             return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
         }
