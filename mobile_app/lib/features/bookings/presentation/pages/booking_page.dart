@@ -32,11 +32,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _extraBags = 0;
   late List<String> _stopLabels;
 
-  // Mobile Money présélectionné : comportement le plus proche de l'existant
-  // (FedaPay était le seul choix jusqu'ici). L'utilisateur peut basculer sur
-  // Carte bancaire via le sélecteur affiché plus bas.
-  String _selectedPaymentProvider = 'FEDAPAY';
-
   final _scrollController = ScrollController();
   final _passengerSectionKey = GlobalKey();
   final _couponController = TextEditingController();
@@ -317,20 +312,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                     const SizedBox(height: 16),
                   ],
 
-                  // ── Moyen de paiement ──────────────────
-                  if (_selectedSeats.isNotEmpty && !widget.trip.isCovoiturage) ...[
-                    const _SectionTitle(
-                        icon: Icons.payment_rounded,
-                        label: 'Moyen de paiement'),
-                    const SizedBox(height: 10),
-                    _PaymentMethodSelector(
-                      selected: _selectedPaymentProvider,
-                      onChanged: (v) =>
-                          setState(() => _selectedPaymentProvider = v),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
                   const SizedBox(height: 80),
                 ],
               ),
@@ -394,11 +375,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                 price: _totalPrice(),
               );
 
-              await ref.read(bookingNotifierProvider.notifier).createAndPay(
-                    request,
-                    provider: _selectedPaymentProvider,
-                    customerEmail: profile.email,
-                  );
+              await ref
+                  .read(bookingNotifierProvider.notifier)
+                  .createAndPay(request, customerEmail: profile.email);
               final state = ref.read(bookingNotifierProvider);
               if (state.paymentUrl != null && mounted) {
                 await Navigator.push(
@@ -406,9 +385,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                   MaterialPageRoute(
                     builder: (_) => PaymentWebViewPage(
                       paymentUrl: state.paymentUrl!,
-                      providerLabel: _selectedPaymentProvider == 'STRIPE'
-                          ? 'Carte bancaire'
-                          : 'Mobile Money',
                       onSuccess: () {
                         ref
                             .read(bookingNotifierProvider.notifier)
@@ -913,96 +889,6 @@ class _BaggageSelector extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sélecteur moyen de paiement (Mobile Money / Carte bancaire)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _PaymentMethodSelector extends StatelessWidget {
-  const _PaymentMethodSelector({
-    required this.selected,
-    required this.onChanged,
-  });
-
-  /// 'FEDAPAY' (Mobile Money) ou 'STRIPE' (carte bancaire).
-  final String selected;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _PaymentMethodCard(
-            icon: Icons.phone_android_rounded,
-            label: 'Mobile Money',
-            selected: selected == 'FEDAPAY',
-            onTap: () => onChanged('FEDAPAY'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _PaymentMethodCard(
-            icon: Icons.credit_card_rounded,
-            label: 'Carte bancaire',
-            selected: selected == 'STRIPE',
-            onTap: () => onChanged('STRIPE'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PaymentMethodCard extends StatelessWidget {
-  const _PaymentMethodCard({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.mobiliBlueFog : AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.mobiliBlue : AppColors.gray200,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon,
-                size: 22,
-                color:
-                    selected ? AppColors.mobiliBlue : AppColors.gray400),
-            const SizedBox(height: 6),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: selected
-                      ? AppColors.mobiliBlueDeep
-                      : AppColors.gray500,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 13,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CountBtn extends StatelessWidget {
   const _CountBtn({required this.icon, this.onTap});
   final IconData icon;
@@ -1123,7 +1009,7 @@ class _PriceBar extends StatelessWidget {
             label: isValid
                 ? (isCovoiturage
                     ? 'Envoyer la demande au conducteur'
-                    : 'Payer ${total.toStringAsFixed(0)} FCFA')
+                    : 'Payer ${total.toStringAsFixed(0)} FCFA via FedaPay')
                 : selectedCount == 0
                     ? 'Sélectionnez un siège'
                     : 'Renseignez les noms des passagers',

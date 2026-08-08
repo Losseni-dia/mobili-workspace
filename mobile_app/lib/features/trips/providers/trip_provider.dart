@@ -207,11 +207,10 @@ class BookingNotifier extends StateNotifier<BookingState> {
   final BookingService _service;
 
   /// [customerEmail] : reçu de paiement Stripe/FedaPay — optionnel, transmis
-  /// tel quel au backend. [provider] : 'FEDAPAY' (Mobile Money) ou 'STRIPE'
-  /// (carte bancaire), choisi par l'utilisateur sur l'écran de réservation.
+  /// tel quel au backend. Ce flux (booking_page.dart) ne propose que FedaPay
+  /// (voir le libellé du bouton "via FedaPay"), le provider est donc fixe ici.
   Future<void> createAndPay(
     CreateBookingRequest request, {
-    required String provider,
     String? customerEmail,
   }) async {
     state = state.copyWith(step: BookingStep.creating);
@@ -219,7 +218,7 @@ class BookingNotifier extends StateNotifier<BookingState> {
       final booking = await _service.createBooking(request);
       final response = await _service.checkout(
         booking.id,
-        PaymentRequest(provider: provider, customerEmail: customerEmail),
+        PaymentRequest(provider: 'FEDAPAY', customerEmail: customerEmail),
       );
       state = state.copyWith(
         step: BookingStep.awaitingPayment,

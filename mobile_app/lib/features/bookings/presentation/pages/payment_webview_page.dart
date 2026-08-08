@@ -10,18 +10,11 @@ class PaymentWebViewPage extends StatefulWidget {
     required this.paymentUrl,
     required this.onSuccess,
     required this.onCancel,
-    this.providerLabel = 'Mobile Money',
   });
 
   final String paymentUrl;
   final VoidCallback onSuccess;
   final VoidCallback onCancel;
-
-  /// Nom affiché dans l'AppBar ('Mobile Money' ou 'Carte bancaire' selon le
-  /// moyen de paiement choisi par l'utilisateur) — cette page sert les deux
-  /// flux (FedaPay et Stripe restent des détails d'implémentation internes,
-  /// jamais montrés à l'utilisateur).
-  final String providerLabel;
 
   @override
   State<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
@@ -56,11 +49,6 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
               widget.onSuccess();
               return NavigationDecision.prevent;
             }
-            if (_isCancelUrl(url)) {
-              Navigator.pop(context);
-              widget.onCancel();
-              return NavigationDecision.prevent;
-            }
             return NavigationDecision.navigate;
           },
           onWebResourceError: (error) {
@@ -78,12 +66,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   bool _isSuccessUrl(String url) {
     return url.contains('my-mobili.com/payment/success') ||
         url.contains('my-mobili.com/v1/payments/callback') ||
-        url.contains('my-mobili.com/v1/payments/stripe/success') ||
         url.contains('mobili.app/payment/success');
-  }
-
-  bool _isCancelUrl(String url) {
-    return url.contains('my-mobili.com/v1/payments/stripe/cancel');
   }
 
   void _checkSuccessUrl(String url) {
@@ -92,13 +75,6 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         if (mounted) {
           Navigator.pop(context);
           widget.onSuccess();
-        }
-      });
-    } else if (_isCancelUrl(url)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.pop(context);
-          widget.onCancel();
         }
       });
     }
@@ -132,7 +108,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
                 const Icon(Icons.lock_rounded,
                     color: AppColors.mobiliYellow, size: 14),
                 const SizedBox(width: 4),
-                Text(widget.providerLabel,
+                Text('FedaPay',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.white.withValues(alpha: 0.8),
                       fontSize: 11,
