@@ -997,14 +997,14 @@ class _BookingCard extends StatelessWidget {
            onPressed: () => Navigator.pop(ctx, 'FEDAPAY'),
            child: const ListTile(
              leading: Icon(Icons.money, color: AppColors.mobiliBlue),
-             title: Text('FedaPay (XOF)'),
+             title: Text('Mobile Money'),
            ),
          ),
          SimpleDialogOption(
            onPressed: () => Navigator.pop(ctx, 'STRIPE'),
            child: const ListTile(
              leading: Icon(Icons.credit_card, color: AppColors.mobiliBlue),
-             title: Text('Carte bancaire (Stripe)'),
+             title: Text('Carte bancaire'),
            ),
          ),
        ],
@@ -1023,6 +1023,7 @@ class _BookingCard extends StatelessWidget {
          MaterialPageRoute(
            builder: (_) => PaymentWebViewPage(
              paymentUrl: response.paymentUrl,
+             providerLabel: provider == 'STRIPE' ? 'Carte bancaire' : 'Mobile Money',
              onSuccess: () async {
                try {
                  final result = await service.pollUntilConfirmed(
