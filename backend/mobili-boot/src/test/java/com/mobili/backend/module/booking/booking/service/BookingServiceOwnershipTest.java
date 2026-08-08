@@ -22,9 +22,12 @@ import com.mobili.backend.module.analytics.service.AnalyticsEventService;
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
+import com.mobili.backend.module.coupon.service.CouponService;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
+import com.mobili.backend.module.payment.repository.PaymentRepository;
+import com.mobili.backend.module.payment.service.PaymentRefundService;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.service.TripPricingService;
@@ -63,6 +66,12 @@ class BookingServiceOwnershipTest {
     private AnalyticsEventService analyticsEventService;
     @Mock
     private InboxNotificationService inboxNotificationService;
+    @Mock
+    private CouponService couponService;
+    @Mock
+    private PaymentRefundService paymentRefundService;
+    @Mock
+    private PaymentRepository paymentRepository;
 
     private BookingService bookingService;
 
@@ -79,6 +88,9 @@ class BookingServiceOwnershipTest {
                 tripRunService,
                 tripPricingService,
                 analyticsEventService,
+                couponService,
+                paymentRefundService,
+                paymentRepository,
                 inboxNotificationService);
     }
 
