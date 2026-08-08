@@ -395,24 +395,6 @@ public class BookingService {
         return new ArrayList<>(union).stream().sorted().collect(Collectors.toList());
     }
 
-    // Dans BookingService.java
-
-    @Transactional
-    public void recordFedaPayTransactionId(Long bookingId, String fedapayTransactionId) {
-        if (fedapayTransactionId == null || fedapayTransactionId.isBlank()) {
-            return;
-        }
-        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
-                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
-        enforceCanAccessBooking(booking);
-        if (booking.getStatus() != BookingStatus.PENDING
-                && booking.getStatus() != BookingStatus.AWAITING_PAYMENT) {
-            return;
-        }
-        booking.setFedapayTransactionId(fedapayTransactionId);
-        bookingRepository.save(booking);
-    }
-
     @Transactional
     public void confirmBookingAfterPayment(Long bookingId) {
         // 1. Récupération
