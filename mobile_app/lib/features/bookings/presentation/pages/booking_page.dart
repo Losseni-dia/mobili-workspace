@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/core/services/analytics_service.dart';
 import 'package:mobili/features/auth/providers/auth_provider.dart';
+import 'package:mobili/features/bookings/presentation/pages/my_tickets_page.dart';
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 import 'package:mobili/features/notifications/providers/notification_provider.dart';
 
@@ -435,42 +436,29 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       seats: _selectedSeats.length,
       amount: _totalPrice(),
     );
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded,
-                color: AppColors.stationGreen, size: 28),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text('Réservation confirmée !',
-                  style: TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-        content: const Text('Votre réservation est validée. Bon voyage !'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              ref.invalidate(unreadCountProvider);
-              ref.invalidate(notificationsProvider);
-              context.go('/tickets');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.mobiliBlue,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Voir mes billets',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
+    ref.invalidate(unreadCountProvider);
+    ref.invalidate(notificationsProvider);
+    // MyTicketsPage vit dans un StatefulShellRoute.indexedStack : l'onglet
+    // reste monté en arrière-plan en changeant d'onglet, donc ticketsProvider
+    // (FutureProvider.autoDispose) ne se redéclenche jamais tout seul —
+    // sans cette invalidation explicite, le ticket fraîchement créé
+    // n'apparaît pas (liste mise en cache depuis la dernière visite).
+    final profile = ref.read(authProvider).valueOrNull?.profile;
+    if (profile != null) {
+      ref.invalidate(ticketsProvider(profile.id));
+    }
+    // Redirection immédiate vers l'onglet Mes tickets — le ticket vient
+    // d'être créé, pas besoin d'un tap supplémentaire sur un dialogue pour
+    // le voir. SnackBar affiché avant la navigation (contexte encore monté
+    // ici avec certitude) pour confirmer ce qui vient de se passer.
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Réservation confirmée ! Bon voyage 🎉'),
+        backgroundColor: AppColors.stationGreen,
+        behavior: SnackBarBehavior.floating,
       ),
     );
+    context.go('/tickets');
   }
 
   void _showRequestSent() {

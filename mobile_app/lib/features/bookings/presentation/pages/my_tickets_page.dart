@@ -14,7 +14,13 @@ import '../../../auth/providers/auth_provider.dart';
 import '../../../bookings/data/booking_service.dart';
 import '../../../bookings/domain/models/ticket.dart';
 
-final _ticketsProvider =
+// Public (pas de préfixe _) : doit pouvoir être invalidé depuis d'autres
+// écrans (ex. booking_page.dart après un paiement confirmé) — MyTicketsPage
+// vit dans un StatefulShellRoute.indexedStack, donc reste monté en arrière-
+// plan en changeant d'onglet ; ce FutureProvider.autoDispose ne se
+// redéclenche donc jamais tout seul, il faut l'invalider explicitement pour
+// voir apparaître un ticket fraîchement créé.
+final ticketsProvider =
     FutureProvider.autoDispose.family<List<Ticket>, int>((ref, userId) async {
   return BookingService().getTicketsForUser(userId);
 });
@@ -54,7 +60,7 @@ class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
       );
     }
 
-    final ticketsAsync = ref.watch(_ticketsProvider(profile.id));
+    final ticketsAsync = ref.watch(ticketsProvider(profile.id));
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
