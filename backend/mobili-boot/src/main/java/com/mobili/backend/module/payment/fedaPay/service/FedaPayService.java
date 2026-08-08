@@ -97,6 +97,20 @@ public class FedaPayService {
         FedaPay.setEnvironement("sandbox");
     }
 
+    /**
+     * Remboursement FedaPay : LIMITATION CONNUE côté FedaPay, pas une implémentation
+     * manquante côté MOBILI. Vérifié sur leur documentation officielle
+     * (docs-v1.fedapay.com/payments/refunding, docs.fedapay.com/dashboard/fr/refunds-fr) :
+     * FedaPay n'expose aucune route API de remboursement. Les remboursements ne sont
+     * possibles que manuellement, depuis le dashboard marchand FedaPay, et uniquement pour
+     * les paiements MTN Mobile Money au statut "Approved". Rien à implémenter côté MOBILI
+     * tant que FedaPay n'ajoute pas cette fonctionnalité à son SDK/API.
+     */
+    public String refund(String transactionId) {
+        throw new UnsupportedOperationException(
+                "FedaPay ne propose pas de remboursement via API (uniquement depuis le dashboard marchand FedaPay, MTN Mobile Money uniquement). Traitez ce remboursement manuellement sur dashboard.fedapay.com.");
+    }
+
     private static boolean isApprovedOrTransferred(String status) {
         if (status == null) {
             return false;
