@@ -1,11 +1,14 @@
 package com.mobili.backend.module.payment.fedaPay.service;
 
+import com.mobili.backend.module.booking.booking.entity.BookingStatus;
+import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.payment.dto.RefundResult;
 import com.mobili.backend.module.payment.enums.PaymentProvider;
 import com.mobili.backend.module.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -13,8 +16,13 @@ import org.springframework.stereotype.Service;
 public class FedaPayPaymentService implements PaymentService {
 
     private final FedaPayService fedaPayService;
+    // Injection du repository (et non de BookingService) pour éviter un cycle
+    // de beans : BookingService dépend déjà de PaymentRefundService, qui
+    // dépend de List<PaymentService> — donc de FedaPayPaymentService lui-même.
+    private final BookingRepository bookingRepository;
 
     @Override
+    @Transactional
     public String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail) {
         log.info("🚀 Délégation création session FedaPay pour Booking #{}", bookingId);
 
@@ -25,7 +33,26 @@ public class FedaPayPaymentService implements PaymentService {
                 bookingId
         );
 
+        // Persistance de l'ID transaction FedaPay, indispensable à la vérification
+        // ultérieure (POST /payments/verify/{bookingId}) — contrat PaymentService
+        // inchangé : cet ID ne remonte pas au-delà de ce service.
+        recordTransactionId(bookingId, result.transactionId());
+
         return result.paymentUrl();
+    }
+
+    private void recordTransactionId(Long bookingId, String transactionId) {
+        if (transactionId == null || transactionId.isBlank()) {
+            return;
+        }
+        bookingRepository.findById(bookingId).ifPresent(booking -> {
+            if (booking.getStatus() != BookingStatus.PENDING
+                    && booking.getStatus() != BookingStatus.AWAITING_PAYMENT) {
+                return;
+            }
+            booking.setFedapayTransactionId(transactionId);
+            bookingRepository.save(booking);
+        });
     }
 
     @Override
