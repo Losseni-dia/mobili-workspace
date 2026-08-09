@@ -293,11 +293,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Résumé trajet ──────────────────────
-                  _TripSummary(trip: widget.trip),
-                  const SizedBox(height: 16),
-
                   // ── Segment embarquement/descente ──────
+                  // (Le résumé trajet a été retiré : déjà affiché sur la
+                  // page précédente — trip_detail_page.dart — même carte,
+                  // redondant ici.)
                   if (_stopLabels.length > 2) ...[
                     const _SectionTitle(
                         icon: Icons.route_rounded, label: 'Votre tronçon'),
@@ -635,90 +634,6 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             ),
             child: const Text('Voir mes réservations',
                 style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Résumé trajet
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _TripSummary extends StatelessWidget {
-  const _TripSummary({required this.trip});
-  final Trip trip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(trip.departureCity,
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w800,
-                          )),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.arrow_forward_rounded,
-                          color: AppColors.mobiliYellow, size: 16),
-                    ),
-                    Flexible(
-                      child: Text(trip.arrivalCity,
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w800,
-                          )),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(trip.formattedDepartureFull,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.75),
-                    )),
-                if (trip.partnerName != null) ...[
-                  const SizedBox(height: 2),
-                  Text(trip.partnerName!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.mobiliYellow.withValues(alpha: 0.9),
-                        fontSize: 11,
-                      )),
-                ],
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.mobiliYellow,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '${trip.availableSeats} places',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.mobiliBlueDeep,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-              ),
-            ),
           ),
         ],
       ),
