@@ -410,27 +410,31 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        SizedBox(
-                          height: 44,
-                          child: ElevatedButton(
-                            onPressed: _couponLoading ? null : _applyCoupon,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.mobiliBlue,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: _couponLoading
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Appliquer',
-                                    style: TextStyle(color: Colors.white)),
+                        // Pas de SizedBox(height:...) englobant sans largeur
+                        // fixe ici : placé tel quel dans un Row (largeur non
+                        // bornée), ça forçait une largeur infinie sur
+                        // l'ElevatedButton et cassait tout le layout de la
+                        // page ("BoxConstraints forces an infinite width").
+                        // La hauteur se règle via minimumSize du style.
+                        ElevatedButton(
+                          onPressed: _couponLoading ? null : _applyCoupon,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.mobiliBlue,
+                            minimumSize: const Size(0, 44),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
+                          child: _couponLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Appliquer',
+                                  style: TextStyle(color: Colors.white)),
                         ),
                       ],
                     ),
