@@ -164,7 +164,13 @@ public class BookingService {
         booking.setTrip(trip);
         booking.setCustomer(user);
         booking.setNumberOfSeats(requestedSeats);
-        booking.setTotalPrice(perSeatPrice * requestedSeats + luggageFee);
+        // totalPrice (pas perSeatPrice * requestedSeats) : inclut la remise
+        // coupon déjà appliquée plus haut (ligne ~140) — recalculer depuis
+        // perSeatPrice * requestedSeats ici l'ignorait silencieusement, le
+        // prix final (et donc le montant facturé via Stripe/FedaPay,
+        // PaymentController.createCheckout) restait au prix plein malgré un
+        // coupon valide.
+        booking.setTotalPrice(totalPrice + luggageFee);
         booking.setExtraHoldBags(extraBags);
         booking.setBoardingStopIndex(boarding);
         booking.setAlightingStopIndex(alighting);
