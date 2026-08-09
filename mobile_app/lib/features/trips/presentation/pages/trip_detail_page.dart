@@ -357,48 +357,11 @@ class _TripDetailContent extends StatelessWidget {
                     ),
                   ),
 
-                // ── Escales ──────────────────────────────
-                if (trip.moreInfo != null && trip.moreInfo!.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurface : AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.gray200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Villes desservies',
-                            style: AppTextStyles.titleLarge),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: trip.moreInfo!
-                              .split(',')
-                              .map((s) => s.trim())
-                              .where((s) => s.isNotEmpty)
-                              .map((stop) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border:
-                                          Border.all(color: AppColors.gray200),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(stop,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                            color: AppColors.gray600)),
-                                  ))
-                              .toList(),
-                        ),
-                      ],
-                    ),
-                  ),
-
                 // ── Arrêts et horaires ────────────────────
+                // (La section "Villes desservies" — simple liste de badges
+                // avec les mêmes villes — a été retirée : redondante avec
+                // celle-ci, qui affiche les mêmes arrêts avec les horaires
+                // en plus.)
                 Container(
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                   padding: const EdgeInsets.all(16),
@@ -423,70 +386,7 @@ class _TripDetailContent extends StatelessWidget {
                                 style: AppTextStyles.bodyMedium
                                     .copyWith(color: AppColors.gray400));
                           }
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: stops.length,
-                            separatorBuilder: (_, __) => const Divider(
-                                height: 1, color: AppColors.gray100),
-                            itemBuilder: (_, i) {
-                              final stop = stops[i];
-                              final isFirst = i == 0;
-                              final isLast = i == stops.length - 1;
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        color: isFirst || isLast
-                                            ? AppColors.mobiliBlue
-                                            : AppColors.mobiliBlueFog,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        isFirst
-                                            ? Icons.trip_origin_rounded
-                                            : isLast
-                                                ? Icons.location_on_rounded
-                                                : Icons
-                                                    .radio_button_checked_rounded,
-                                        color: isFirst || isLast
-                                            ? AppColors.white
-                                            : AppColors.mobiliBlue,
-                                        size: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        stop.cityName,
-                                        style:
-                                            AppTextStyles.titleMedium.copyWith(
-                                          fontWeight: isFirst || isLast
-                                              ? FontWeight.w700
-                                              : FontWeight.w500,
-                                          color: isFirst || isLast
-                                              ? AppColors.mobiliBlueDeep
-                                              : AppColors.gray700,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      stop.formattedTime,
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.mobiliBlue,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
+                          return _StopsTimeline(stops: stops);
                         },
                       ),
                     ],
@@ -509,15 +409,144 @@ class _TripDetailContent extends StatelessWidget {
             ),
           ],
         ),
-        child: MobiliButton(
-          label: trip.availableSeats > 0 ? 'Réserver ce trajet' : 'Complet',
-          enabled: trip.availableSeats > 0,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute<void>(builder: (_) => BookingPage(trip: trip)),
-          ),
+        child: Row(
+          children: [
+            if (trip.availableSeats > 0) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'à partir de',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.gray400, fontSize: 10),
+                  ),
+                  Text(
+                    trip.formattedPrice,
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: AppColors.mobiliBlueDeep,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+            ],
+            Expanded(
+              child: MobiliButton(
+                label:
+                    trip.availableSeats > 0 ? 'Réserver ce trajet' : 'Complet',
+                enabled: trip.availableSeats > 0,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                      builder: (_) => BookingPage(trip: trip)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Timeline arrêts — ligne verticale connectant les points, style FlixBus/
+// BlaBlaCar, plutôt que des points isolés séparés par de simples dividers.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StopsTimeline extends StatelessWidget {
+  const _StopsTimeline({required this.stops});
+  final List<dynamic> stops;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(stops.length, (i) {
+        final stop = stops[i];
+        final isFirst = i == 0;
+        final isLast = i == stops.length - 1;
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: 28,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: isFirst
+                          ? const SizedBox()
+                          : Center(
+                              child: Container(
+                                width: 2,
+                                color: AppColors.mobiliBlue
+                                    .withValues(alpha: 0.25),
+                              ),
+                            ),
+                    ),
+                    Container(
+                      width: isFirst || isLast ? 16 : 10,
+                      height: isFirst || isLast ? 16 : 10,
+                      decoration: BoxDecoration(
+                        color: isFirst || isLast
+                            ? AppColors.mobiliBlue
+                            : AppColors.white,
+                        shape: BoxShape.circle,
+                        border: isFirst || isLast
+                            ? null
+                            : Border.all(
+                                color: AppColors.mobiliBlue, width: 2),
+                      ),
+                    ),
+                    Expanded(
+                      child: isLast
+                          ? const SizedBox()
+                          : Center(
+                              child: Container(
+                                width: 2,
+                                color: AppColors.mobiliBlue
+                                    .withValues(alpha: 0.25),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          stop.cityName as String,
+                          style: AppTextStyles.titleMedium.copyWith(
+                            fontWeight: isFirst || isLast
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isFirst || isLast
+                                ? AppColors.mobiliBlueDeep
+                                : AppColors.gray700,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        stop.formattedTime as String,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.mobiliBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
