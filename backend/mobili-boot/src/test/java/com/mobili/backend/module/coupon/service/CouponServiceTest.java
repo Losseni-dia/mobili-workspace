@@ -1,11 +1,15 @@
 package com.mobili.backend.module.coupon.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.mobili.backend.module.coupon.entity.Coupon;
 import com.mobili.backend.module.coupon.enums.CouponType;
 import com.mobili.backend.module.coupon.repository.CouponRepository;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 @ExtendWith(MockitoExtension.class)
 class CouponServiceTest {
@@ -76,6 +81,44 @@ class CouponServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> couponService.applyCoupon("INCONNU", new BigDecimal("10000")));
+    }
+
+    @Test
+    void createCoupon_savesActiveCouponWithUppercasedCode() {
+        when(couponRepository.save(any(Coupon.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Coupon created = couponService.createCoupon(
+                "  promo20  ", CouponType.PERCENTAGE, new BigDecimal("20"), null);
+
+        assertEquals("PROMO20", created.getCode());
+        assertTrue(created.isActive());
+    }
+
+    @Test
+    void listCoupons_delegatesToRepositoryFindAll() {
+        List<Coupon> all = List.of(coupon(CouponType.PERCENTAGE, "5", null));
+        when(couponRepository.findAll()).thenReturn(all);
+
+        assertEquals(all, couponService.listCoupons());
+    }
+
+    @Test
+    void deactivateCoupon_flipsActiveFlagAndSaves() {
+        Coupon existing = coupon(CouponType.FIXED_AMOUNT, "1000", null);
+        existing.setActive(true);
+        when(couponRepository.findById(7L)).thenReturn(Optional.of(existing));
+        when(couponRepository.save(existing)).thenReturn(existing);
+
+        Coupon result = couponService.deactivateCoupon(7L);
+
+        assertFalse(result.isActive());
+    }
+
+    @Test
+    void deactivateCoupon_unknownIdThrowsMobiliException() {
+        when(couponRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(MobiliException.class, () -> couponService.deactivateCoupon(99L));
     }
 
     private Coupon coupon(CouponType type, String value, LocalDateTime expiresAt) {
