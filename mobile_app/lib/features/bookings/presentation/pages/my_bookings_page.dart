@@ -948,37 +948,38 @@ class _BookingCard extends StatelessWidget {
     );
   }
 
+  // L'annulation en libre-service (avec remboursement automatique) n'existe
+  // pas côté app : seul un endpoint admin existe pour l'instant
+  // (POST /admin/bookings/{id}/cancel — voir MobiliPro, AdminRefundsPage).
+  // Construire une vraie file d'attente self-service (nouveau statut de
+  // réservation, notification admin, écran de traitement) est un chantier
+  // à part entière, hors périmètre de cette session. En attendant, on
+  // remplace le faux bouton ("Annulation bientôt disponible", qui ne
+  // faisait jamais rien) par un message honnête qui redirige vers le
+  // support — plutôt que de laisser croire à une fonctionnalité qui
+  // n'existe pas.
   Future<void> _confirmCancel(BuildContext context) async {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Annuler cette réservation ?'),
-        content:
-            Text('Voulez-vous annuler la réservation ${booking.reference} ?'),
+        title: const Text('Annuler cette réservation'),
+        content: Text(
+          'L\'annulation en ligne n\'est pas encore disponible. '
+          'Contactez notre support à support@my-mobili.com avec votre '
+          'référence (${booking.reference}) pour demander une annulation '
+          'et, si applicable, un remboursement.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Non'),
-          ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Annulation bientôt disponible'),
-                  backgroundColor: AppColors.warning,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onPressed: () => Navigator.pop(ctx),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: AppColors.mobiliBlue,
               elevation: 0,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Annuler la réservation',
+            child: const Text('Compris',
                 style: TextStyle(color: Colors.white)),
           ),
         ],
