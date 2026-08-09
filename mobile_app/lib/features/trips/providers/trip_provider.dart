@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../bookings/data/booking_service.dart';
 import '../data/trip_service.dart';
 import '../../bookings/domain/models/booking.dart';
@@ -270,6 +272,11 @@ Future<void> verifyAfterReturn() async {
   void reset() => state = const BookingState();
 
   String _extractMessage(Object e) {
+    // DioException.toString() n'expose pas forcément le message métier réel
+    // (ex. "Coupon invalide ou inactif") — asMobili le récupère depuis
+    // l'exception MobiliException déjà normalisée par l'intercepteur
+    // d'erreurs (voir ApiClient._ErrorInterceptor).
+    if (e is DioException) return e.asMobili.message;
     if (e is Exception) return e.toString();
     return 'Une erreur est survenue';
   }

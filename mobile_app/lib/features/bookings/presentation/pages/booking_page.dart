@@ -183,6 +183,19 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
     ref.listen<BookingState>(bookingNotifierProvider, (_, next) {
       if (next.step == BookingStep.done) _showSuccess();
+      // Sans ce cas, un coupon invalide/expiré (ou toute autre erreur de
+      // création de réservation — 400 côté backend) échouait en silence :
+      // le bouton "Payer" ne faisait plus rien, sans aucun message. Même
+      // schéma que le flux covoiturage ci-dessous, qui gérait déjà ce cas.
+      if (next.step == BookingStep.error && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage ?? 'Erreur lors de la réservation.'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
 
     ref.listen<CovoiturageRequestState>(covoiturageRequestNotifierProvider,
