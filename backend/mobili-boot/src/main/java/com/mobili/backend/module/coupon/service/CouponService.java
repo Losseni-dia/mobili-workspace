@@ -51,12 +51,21 @@ public class CouponService {
         return saved;
     }
 
+    /**
+     * IllegalArgumentException (nu) était auparavant levée ici pour un
+     * coupon invalide/expiré : GlobalExceptionHandler la route vers son
+     * fallback générique (500, MOB-001), et le message serveur réel était
+     * alors ignoré côté app mobile (MobiliException._localizeCode("MOB-001", ...)
+     * affiche un texte générique, pas le message serveur). MobiliException
+     * avec VALIDATION_ERROR (400, MOB-003) fait remonter le vrai message
+     * ("Coupon invalide ou inactif" / "Coupon expiré") jusqu'à l'utilisateur.
+     */
     public BigDecimal applyCoupon(String code, BigDecimal originalPrice) {
         Coupon coupon = couponRepository.findByCodeAndActiveTrue(code)
-                .orElseThrow(() -> new IllegalArgumentException("Coupon invalide ou inactif"));
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Coupon invalide ou inactif"));
 
         if (coupon.getExpiresAt() != null && coupon.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Coupon expiré");
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Coupon expiré");
         }
 
         BigDecimal discount = BigDecimal.ZERO;

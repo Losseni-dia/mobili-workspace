@@ -71,16 +71,21 @@ class CouponServiceTest {
         when(couponRepository.findByCodeAndActiveTrue("PERIME"))
                 .thenReturn(Optional.of(coupon(CouponType.PERCENTAGE, "10", LocalDateTime.now().minusDays(1))));
 
-        assertThrows(IllegalArgumentException.class,
+        // MobiliException (VALIDATION_ERROR/400) et non IllegalArgumentException nu :
+        // le message doit atteindre l'app mobile tel quel (voir commentaire sur
+        // applyCoupon) plutôt que d'être avalé par le fallback générique 500.
+        MobiliException ex = assertThrows(MobiliException.class,
                 () -> couponService.applyCoupon("PERIME", new BigDecimal("10000")));
+        assertEquals("Coupon expiré", ex.getMessage());
     }
 
     @Test
     void applyCoupon_notFoundOrInactiveRejected() {
         when(couponRepository.findByCodeAndActiveTrue("INCONNU")).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        MobiliException ex = assertThrows(MobiliException.class,
                 () -> couponService.applyCoupon("INCONNU", new BigDecimal("10000")));
+        assertEquals("Coupon invalide ou inactif", ex.getMessage());
     }
 
     @Test
