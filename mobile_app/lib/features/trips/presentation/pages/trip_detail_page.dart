@@ -409,41 +409,17 @@ class _TripDetailContent extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            if (trip.availableSeats > 0) ...[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'à partir de',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.gray400, fontSize: 10),
-                  ),
-                  Text(
-                    trip.formattedPrice,
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.mobiliBlueDeep,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-            ],
-            Expanded(
-              child: MobiliButton(
-                label:
-                    trip.availableSeats > 0 ? 'Réserver ce trajet' : 'Complet',
-                enabled: trip.availableSeats > 0,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                      builder: (_) => BookingPage(trip: trip)),
-                ),
-              ),
-            ),
-          ],
+        // Redevenu un simple MobiliButton (comme à l'origine) : l'ajout du
+        // prix via Row+Column+Expanded ici est suspecté d'être la cause du
+        // rendu cassé constaté en test réel (contenu de la page invisible,
+        // bouton flottant) — retiré le temps de confirmer par isolation.
+        child: MobiliButton(
+          label: trip.availableSeats > 0 ? 'Réserver ce trajet' : 'Complet',
+          enabled: trip.availableSeats > 0,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => BookingPage(trip: trip)),
+          ),
         ),
       ),
     );
@@ -459,33 +435,39 @@ class _StopsTimeline extends StatelessWidget {
   const _StopsTimeline({required this.stops});
   final List<dynamic> stops;
 
+  static const double _railWidth = 28;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(stops.length, (i) {
-        final stop = stops[i];
-        final isFirst = i == 0;
-        final isLast = i == stops.length - 1;
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: 28,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: isFirst
-                          ? const SizedBox()
-                          : Center(
-                              child: Container(
-                                width: 2,
-                                color: AppColors.mobiliBlue
-                                    .withValues(alpha: 0.25),
-                              ),
-                            ),
-                    ),
-                    Container(
+    // Une seule ligne continue en fond (Positioned dans un Stack), plutôt
+    // que des segments Expanded par ligne dans une Column enveloppée par
+    // IntrinsicHeight — cette dernière combinaison (Expanded imbriqué dans
+    // un contexte de hauteur intrinsèque) est un piège Flutter connu qui
+    // peut faire planter tout le layout de la page ("BoxConstraints forces
+    // an infinite width" / erreurs de layout en cascade).
+    return Stack(
+      children: [
+        Positioned(
+          left: _railWidth / 2 - 1,
+          top: 10,
+          bottom: 10,
+          child: Container(
+            width: 2,
+            color: AppColors.mobiliBlue.withValues(alpha: 0.25),
+          ),
+        ),
+        Column(
+          children: List.generate(stops.length, (i) {
+            final stop = stops[i];
+            final isFirst = i == 0;
+            final isLast = i == stops.length - 1;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: _railWidth,
+                  child: Center(
+                    child: Container(
                       width: isFirst || isLast ? 16 : 10,
                       height: isFirst || isLast ? 16 : 10,
                       decoration: BoxDecoration(
@@ -499,54 +481,43 @@ class _StopsTimeline extends StatelessWidget {
                                 color: AppColors.mobiliBlue, width: 2),
                       ),
                     ),
-                    Expanded(
-                      child: isLast
-                          ? const SizedBox()
-                          : Center(
-                              child: Container(
-                                width: 2,
-                                color: AppColors.mobiliBlue
-                                    .withValues(alpha: 0.25),
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          stop.cityName as String,
-                          style: AppTextStyles.titleMedium.copyWith(
-                            fontWeight: isFirst || isLast
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: isFirst || isLast
-                                ? AppColors.mobiliBlueDeep
-                                : AppColors.gray700,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        stop.formattedTime as String,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.mobiliBlue,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      }),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            stop.cityName as String,
+                            style: AppTextStyles.titleMedium.copyWith(
+                              fontWeight: isFirst || isLast
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isFirst || isLast
+                                  ? AppColors.mobiliBlueDeep
+                                  : AppColors.gray700,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          stop.formattedTime as String,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.mobiliBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ],
     );
   }
 }
