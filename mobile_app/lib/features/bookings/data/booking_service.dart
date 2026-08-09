@@ -78,6 +78,18 @@ class BookingService {
     return _parseList(response.data);
   }
 
+  /// Aperçu du prix remisé, sans créer de réservation — GET /coupons/{code}/validate,
+  /// déjà exposé côté backend mais jamais appelé depuis l'app jusqu'ici.
+  /// [seatSubtotal] : prix des sièges seuls, AVANT bagages — même base que
+  /// BookingService.applyCoupon() côté serveur (perSeatPrice * requestedSeats).
+  Future<double> validateCoupon(String code, double seatSubtotal) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/coupons/$code/validate',
+      queryParameters: {'price': seatSubtotal},
+    );
+    return (response.data!['finalPrice'] as num).toDouble();
+  }
+
   Future<PaymentResponse> checkout(int bookingId, PaymentRequest request) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/checkout/$bookingId',

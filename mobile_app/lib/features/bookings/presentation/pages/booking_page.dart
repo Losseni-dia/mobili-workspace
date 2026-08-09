@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:mobili/features/bookings/presentation/pages/my_tickets_page.dart
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
 import 'package:mobili/features/notifications/providers/notification_provider.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/mobili_app_bar.dart';
@@ -41,6 +43,16 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   final _scrollController = ScrollController();
   final _passengerSectionKey = GlobalKey();
   final _couponController = TextEditingController();
+
+  // État du coupon : la remise n'est calculée par le backend qu'au moment
+  // où on appuie sur "Appliquer" (GET /coupons/{code}/validate) — jamais
+  // automatiquement en tapant, pour ne pas spammer l'API à chaque frappe.
+  // _couponAppliedCode doit correspondre au texte actuel du champ, sinon la
+  // remise est considérée périmée (voir _invalidateCoupon).
+  String? _couponAppliedCode;
+  double? _couponDiscountedSeatSubtotal;
+  bool _couponLoading = false;
+  String? _couponError;
 
   @override
   void initState() {
@@ -114,8 +126,61 @@ class _BookingPageState extends ConsumerState<BookingPage> {
 
   double _luggageFee() => _extraBags * (widget.trip.extraHoldBagPrice ?? 0);
 
-  double _totalPrice() =>
-      _selectedSeats.length * _pricePerSeat() + _luggageFee();
+  // Sous-total sièges seuls, avant bagages — même base que
+  // BookingService.create() côté backend (perSeatPrice * requestedSeats),
+  // sur laquelle le coupon est appliqué avant d'ajouter les bagages.
+  double _seatSubtotal() => _selectedSeats.length * _pricePerSeat();
+
+  double _totalPrice() {
+    final couponStillValid = _couponAppliedCode != null &&
+        _couponAppliedCode == _couponController.text.trim() &&
+        _couponDiscountedSeatSubtotal != null;
+    final seatPart =
+        couponStillValid ? _couponDiscountedSeatSubtotal! : _seatSubtotal();
+    return seatPart + _luggageFee();
+  }
+
+  /// La remise appliquée n'est plus fiable dès que les sièges, le tronçon,
+  /// ou le code lui-même changent — mieux vaut forcer un nouveau clic sur
+  /// "Appliquer" que d'afficher un montant obsolète.
+  void _invalidateCoupon() {
+    if (_couponAppliedCode != null || _couponError != null) {
+      setState(() {
+        _couponAppliedCode = null;
+        _couponDiscountedSeatSubtotal = null;
+        _couponError = null;
+      });
+    }
+  }
+
+  Future<void> _applyCoupon() async {
+    final code = _couponController.text.trim();
+    if (code.isEmpty) return;
+    setState(() {
+      _couponLoading = true;
+      _couponError = null;
+    });
+    try {
+      final discounted = await ref
+          .read(bookingServiceProvider)
+          .validateCoupon(code, _seatSubtotal());
+      if (!mounted) return;
+      setState(() {
+        _couponAppliedCode = code;
+        _couponDiscountedSeatSubtotal = discounted;
+        _couponLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _couponAppliedCode = null;
+        _couponDiscountedSeatSubtotal = null;
+        _couponError =
+            e is DioException ? e.asMobili.message : 'Coupon invalide.';
+        _couponLoading = false;
+      });
+    }
+  }
 
   int _maxExtraBags() =>
       _selectedSeats.length * widget.trip.maxExtraHoldBagsPerPassenger;
@@ -139,6 +204,9 @@ class _BookingPageState extends ConsumerState<BookingPage> {
       }
       if (_extraBags > _maxExtraBags()) _extraBags = _maxExtraBags();
     });
+    // Le nombre de sièges change le sous-total sur lequel la remise a été
+    // calculée — une remise déjà appliquée n'est plus fiable.
+    _invalidateCoupon();
 
     // Dès qu'on sélectionne le premier siège, on scroll automatiquement
     // vers la section "Noms des passagers" pour éviter d'avoir à remonter
@@ -239,12 +307,17 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       boardingIndex: _boardingIndex,
                       alightingIndex: _alightingIndex,
                       pricePerSeat: _pricePerSeat(),
-                      onBoardingChanged: (i) => setState(() {
-                        _boardingIndex = i;
-                        if (_alightingIndex <= i) _alightingIndex = i + 1;
-                      }),
-                      onAlightingChanged: (i) =>
-                          setState(() => _alightingIndex = i),
+                      onBoardingChanged: (i) {
+                        setState(() {
+                          _boardingIndex = i;
+                          if (_alightingIndex <= i) _alightingIndex = i + 1;
+                        });
+                        _invalidateCoupon();
+                      },
+                      onAlightingChanged: (i) {
+                        setState(() => _alightingIndex = i);
+                        _invalidateCoupon();
+                      },
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -320,14 +393,67 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                         icon: Icons.confirmation_number_outlined,
                         label: 'Code promo'),
                     const SizedBox(height: 10),
-                    TextField(
-                      controller: _couponController,
-                      decoration: const InputDecoration(
-                        hintText: 'Entrez votre code',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _couponController,
+                            textCapitalization: TextCapitalization.characters,
+                            onChanged: (_) => _invalidateCoupon(),
+                            decoration: const InputDecoration(
+                              hintText: 'Entrez votre code',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: _couponLoading ? null : _applyCoupon,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.mobiliBlue,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: _couponLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Appliquer',
+                                    style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      ],
                     ),
+                    if (_couponAppliedCode != null &&
+                        _couponAppliedCode == _couponController.text.trim() &&
+                        _couponDiscountedSeatSubtotal != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Coupon appliqué : -${(_seatSubtotal() - _couponDiscountedSeatSubtotal!).toStringAsFixed(0)} FCFA',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.stationGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    if (_couponError != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        _couponError!,
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.danger),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                   ],
 
