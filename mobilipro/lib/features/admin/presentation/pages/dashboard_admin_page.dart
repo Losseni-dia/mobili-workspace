@@ -16,6 +16,8 @@ import 'trips_list_page.dart';
 import 'tickets_list_page.dart';
 import 'covoiturage_stats_page.dart';
 import 'login_stats_page.dart';
+import 'admin_refunds_page.dart';
+import 'admin_coupons_page.dart';
 
 
 String _currentMonthLabel() {
@@ -380,6 +382,46 @@ class AdminDashboardPage extends ConsumerWidget {
                       ),
                       const SizedBox(width: 10),
                       const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const AdminSectionTitle(title: 'Gestion'),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminRefundsPage(),
+                            ),
+                          ),
+                          child: const KpiCard(
+                            icon: Icons.assignment_return_rounded,
+                            label: 'Annulations / Remb.',
+                            value: 'Gérer',
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminCouponsPage(),
+                            ),
+                          ),
+                          child: const KpiCard(
+                            icon: Icons.local_offer_rounded,
+                            label: 'Coupons',
+                            value: 'Gérer',
+                            color: AppColors.proGold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
