@@ -90,8 +90,10 @@ public class InboxNotificationService {
         if (partner != null && partner.getOwner() != null) {
             ownerId = partner.getOwner().getId();
             User owner = userService.getReference(ownerId);
+            // Réservation attachée (pas seulement le trajet) : permet au dirigeant d'ouvrir
+            // directement la bonne réservation plutôt que la liste des trajets.
             saveOne(owner, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip,
-                    null);
+                    null, booking);
         }
 
         // Trajet covoiturage particulier : pas de partenaire/gare réels derrière
@@ -100,7 +102,7 @@ public class InboxNotificationService {
         if (trip.getCovoiturageOrganizer() != null) {
             User organizer = userService.getReference(trip.getCovoiturageOrganizer().getId());
             saveOne(organizer, MobiliNotificationType.PARTNER_NEW_BOOKING, "Nouvelle réservation payée", details, trip,
-                    null);
+                    null, booking);
         }
 
         if (trip.getStation() != null) {
@@ -394,6 +396,26 @@ public class InboxNotificationService {
         n.setTitle(title);
         n.setBody(body);
         n.setClaim(claim);
+        inboxRepository.save(n);
+        eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(user.getId())));
+        if (user.getFcmToken() != null) {
+            fcmService.sendToToken(user.getFcmToken(), title, body);
+        }
+    }
+
+    /**
+     * Société concernée : permet au dirigeant d'ouvrir directement la fiche (approbation,
+     * rejet, réactivation/suspension) — même schéma que la surcharge Claim ci-dessus.
+     */
+    @Transactional
+    public void notifyUser(User user, String title, String body, MobiliNotificationType type,
+            com.mobili.backend.module.partner.entity.Partner partner) {
+        MobiliInboxNotification n = new MobiliInboxNotification();
+        n.setUser(user);
+        n.setType(type);
+        n.setTitle(title);
+        n.setBody(body);
+        n.setPartner(partner);
         inboxRepository.save(n);
         eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(user.getId())));
         if (user.getFcmToken() != null) {

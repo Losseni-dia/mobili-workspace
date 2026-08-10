@@ -98,6 +98,36 @@ factory InboxNotification.fromJson(Map<String, dynamic> json) =>
       );
 }
 
+/// Libellé du bouton d'action de la modale — un par destination réelle, pas de texte
+/// générique quand une notification pointe vers quelque chose de précis.
+String _ctaLabel(InboxNotification notif) {
+  switch (notif.type) {
+    case 'TICKET_ISSUED':
+      return 'Voir le billet';
+    case 'BOOKING_CONFIRMED':
+    case 'BOOKING_CANCELLED':
+    case 'COVOITURAGE_BOOKING_ACCEPTED':
+    case 'COVOITURAGE_BOOKING_REJECTED':
+    case 'COVOITURAGE_BOOKING_NO_RESPONSE':
+    case 'COVOITURAGE_BOOKING_PAYMENT_EXPIRED':
+      return 'Voir la réservation';
+    case 'CLAIM_STATUS_UPDATED':
+    case 'CLAIM_SUBMITTED':
+      return 'Voir ma réclamation';
+    case 'COV_KYC_EXPIRING_SOON':
+    case 'COV_KYC_EXPIRED':
+    case 'COV_KYC_APPROVED':
+    case 'COV_KYC_REJECTED':
+      return 'Voir mon profil covoiturage';
+    case 'TRIP_CHANNEL_MESSAGE':
+    case 'TRIP_DELAY':
+    case 'TRIP_GATE_CHANGE':
+      return 'Voir mes réservations';
+    default:
+      return notif.bookingId != null ? 'Voir la réservation' : 'Voir le trajet';
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Service
 // ─────────────────────────────────────────────────────────────────────────────
@@ -471,7 +501,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               Text(notif.formattedDate,
                                   style: AppTextStyles.bodySmall
                                       .copyWith(color: AppColors.gray400)),
-                              if (notif.tripId != null || notif.claimId != null) ...[
+                              if (notif.tripId != null ||
+                                  notif.claimId != null ||
+                                  notif.bookingId != null) ...[
                                 const SizedBox(height: 16),
                                 SizedBox(
                                   width: double.infinity,
@@ -483,6 +515,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                             '/tickets?tripId=${notif.tripId}');
                                       } else if (notif.type ==
                                               'BOOKING_CONFIRMED' ||
+                                          notif.type == 'BOOKING_CANCELLED' ||
                                           notif.type ==
                                               'COVOITURAGE_BOOKING_ACCEPTED' ||
                                           notif.type ==
@@ -500,6 +533,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                           notif.type == 'TRIP_GATE_CHANGE') {
                                         context.go('/my-bookings');
                                       } else if (notif.type ==
+                                              'COV_KYC_EXPIRING_SOON' ||
+                                          notif.type == 'COV_KYC_EXPIRED' ||
+                                          notif.type == 'COV_KYC_APPROVED' ||
+                                          notif.type == 'COV_KYC_REJECTED') {
+                                        // Concerne toujours le compte destinataire lui-même
+                                        // (son propre dossier KYC covoiturage) — pas besoin
+                                        // d'ID, on ouvre directement son profil covoiturage.
+                                        context.push('/covoiturage/profile');
+                                      } else if (notif.type ==
                                               'MOBILI_ADMIN_INFO_PARTNER' ||
                                           notif.type ==
                                               'MOBILI_ADMIN_INFO_SUPPORT') {
@@ -515,6 +557,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                             ),
                                           ),
                                         );
+                                      } else if (notif.bookingId != null) {
+                                        context.go(
+                                            '/my-bookings?bookingId=${notif.bookingId}');
                                       } else if (notif.tripId != null) {
                                         context.go('/trips/${notif.tripId}');
                                       }
@@ -530,25 +575,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                               : Icons.directions_bus_rounded,
                                       size: 16,
                                     ),
-                                    label: Text(
-                                      notif.type == 'TICKET_ISSUED'
-                                          ? 'Voir le billet'
-                                          : notif.type == 'BOOKING_CONFIRMED'
-                                              ? 'Voir la réservation'
-                                              : (notif.type ==
-                                                          'CLAIM_STATUS_UPDATED' ||
-                                                      notif.type ==
-                                                          'CLAIM_SUBMITTED')
-                                                  ? 'Voir ma réclamation'
-                                                  : (notif.type ==
-                                                              'TRIP_CHANNEL_MESSAGE' ||
-                                                          notif.type ==
-                                                              'TRIP_DELAY' ||
-                                                          notif.type ==
-                                                              'TRIP_GATE_CHANGE')
-                                                      ? 'Voir mes réservations'
-                                                      : 'Voir le trajet',
-                                    ),
+                                    label: Text(_ctaLabel(notif)),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.mobiliBlue,
                                       foregroundColor: AppColors.white,
@@ -767,6 +794,13 @@ class _NotifCard extends StatelessWidget {
       case 'CLAIM_SUBMITTED':
       case 'CLAIM_STATUS_UPDATED':
         return (Icons.report_problem_outlined, AppColors.mobiliBlue);
+      case 'COV_KYC_EXPIRING_SOON':
+        return (Icons.badge_outlined, AppColors.warning);
+      case 'COV_KYC_EXPIRED':
+      case 'COV_KYC_REJECTED':
+        return (Icons.badge_outlined, AppColors.danger);
+      case 'COV_KYC_APPROVED':
+        return (Icons.badge_outlined, AppColors.stationGreen);
       default:
         return (Icons.notifications_rounded, AppColors.mobiliBlue);
     }

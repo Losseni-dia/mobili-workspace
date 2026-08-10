@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobilipro/features/admin/presentation/pages/admin_claims_page.dart';
 import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page_v2.dart';
 import 'package:mobilipro/features/admin/presentation/pages/partner_stats_page.dart';
 import 'package:mobilipro/features/partnergarecom/presentation/pages/partner_gare_com_page.dart';
@@ -171,6 +172,80 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   },
                   icon: const Icon(Icons.business_rounded, size: 16),
                   label: const Text('Voir la fiche société'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if ((notif.type == 'PARTNER_APPROVED' ||
+                    notif.type == 'PARTNER_REJECTED') &&
+                notif.partnerId != null) ...[
+              // Même mécanisme que PARTNER_SUBMISSION_PENDING ci-dessus : la
+              // société concernée par l'approbation/le rejet, pas une liste
+              // generique.
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(sheetCtx).pop();
+                    try {
+                      final partners = await ref.read(
+                        adminPartnersProvider.future,
+                      );
+                      final partner = partners.firstWhere(
+                        (p) => p.id == notif.partnerId,
+                      );
+                      if (context.mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => PartnerDetailPage(partner: partner),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PartnerStatsDetailPage(),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.business_rounded, size: 16),
+                  label: const Text('Voir la fiche société'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (notif.type == 'CLAIM_SUBMITTED' &&
+                notif.claimId != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AdminClaimsPage(
+                          highlightClaimId: notif.claimId,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.report_problem_outlined, size: 16),
+                  label: const Text('Voir la réclamation'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.mobiliBlue,
                     foregroundColor: AppColors.white,
@@ -687,6 +762,13 @@ class _NotifCard extends StatelessWidget {
         return (Icons.chat_rounded, AppColors.mobiliBlue);
       case 'TICKET_ISSUED':
         return (Icons.confirmation_number_rounded, AppColors.stationGreen);
+      case 'PARTNER_APPROVED':
+        return (Icons.verified_rounded, AppColors.stationGreen);
+      case 'PARTNER_REJECTED':
+        return (Icons.block_rounded, AppColors.danger);
+      case 'CLAIM_SUBMITTED':
+      case 'CLAIM_STATUS_UPDATED':
+        return (Icons.report_problem_outlined, AppColors.mobiliBlue);
       default:
         return (Icons.notifications_rounded, AppColors.mobiliBlue);
     }

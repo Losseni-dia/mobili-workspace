@@ -247,7 +247,10 @@ GoRouter goRouter(GoRouterRef ref) {
               GoRoute(
                 path: AppRoutes.tickets,
                 name: 'myTicketsTab',
-                builder: (_, __) => const MyTicketsPage(),
+                builder: (_, state) {
+                  final tripIdParam = state.uri.queryParameters['tripId'];
+                  return MyTicketsPage(filterTripId: int.tryParse(tripIdParam ?? ''));
+                },
               ),
             ],
           ),

@@ -16,6 +16,8 @@ class InboxNotification {
     this.channelMessageId,
     this.partnerGareComThreadId,
     this.partnerId,
+    this.bookingId,
+    this.claimId,
   });
 
   final int id;
@@ -29,6 +31,8 @@ class InboxNotification {
   final int? channelMessageId;
   final int? partnerGareComThreadId;
   final int? partnerId;
+  final int? bookingId;
+  final int? claimId;
 
   String get formattedDate {
     final now = DateTime.now();
@@ -73,8 +77,15 @@ class InboxNotification {
         channelMessageId: json['channelMessageId'] as int?,
        partnerGareComThreadId: json['partnerGareComThreadId'] as int?,
         partnerId: json['partnerId'] as int?,
+        bookingId: json['bookingId'] as int?,
+        claimId: json['claimId'] as int?,
       );
 
+  // BUG corrigé : partnerId (et bookingId/claimId) n'étaient pas recopiés ici —
+  // dès qu'une notification est marquée lue (ce qui arrive automatiquement au
+  // tap, avant l'ouverture de la modale), ces liens disparaissaient
+  // silencieusement de l'état en mémoire, cassant la navigation au rebuild
+  // suivant.
   InboxNotification copyWith({bool? read}) => InboxNotification(
     id: id,
     type: type,
@@ -86,5 +97,8 @@ class InboxNotification {
     tripRoute: tripRoute,
     channelMessageId: channelMessageId,
     partnerGareComThreadId: partnerGareComThreadId,
+    partnerId: partnerId,
+    bookingId: bookingId,
+    claimId: claimId,
   );
 }
