@@ -24,6 +24,9 @@ class ClaimBookingSummary {
       );
 }
 
+/// Vue passager — reflète PassengerClaimResponse côté backend, qui n'expose jamais
+/// adminNote (note interne). resolutionMessage est en revanche le message de clôture
+/// rédigé par l'admin, destiné à être lu par le passager.
 class Claim {
   const Claim({
     required this.id,
@@ -32,7 +35,7 @@ class Claim {
     required this.message,
     required this.createdAt,
     this.booking,
-    this.adminNote,
+    this.resolutionMessage,
     this.resolvedAt,
   });
 
@@ -41,7 +44,7 @@ class Claim {
   final String status;
   final ClaimBookingSummary? booking;
   final String message;
-  final String? adminNote;
+  final String? resolutionMessage;
   final DateTime createdAt;
   final DateTime? resolvedAt;
 
@@ -53,7 +56,7 @@ class Claim {
             ? ClaimBookingSummary.fromJson(j['booking'] as Map<String, dynamic>)
             : null,
         message: j['message'] as String? ?? '',
-        adminNote: j['adminNote'] as String?,
+        resolutionMessage: j['resolutionMessage'] as String?,
         createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
         resolvedAt: j['resolvedAt'] != null
             ? DateTime.tryParse(j['resolvedAt'] as String)

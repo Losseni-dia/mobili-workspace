@@ -117,6 +117,15 @@ final _monthlyTicketsCountProvider = FutureProvider.autoDispose<int>((
   return (res.data ?? []).length;
 });
 
+/// Total de réclamations jamais créées (pas seulement "en attente") — même
+/// convention que les autres compteurs de _cardWithBadge : un total qui ne
+/// fait que croître, pour que badge = currentTotal - lastSeen se comporte
+/// comme partout ailleurs ("combien de nouvelles depuis ma dernière visite").
+final _claimsCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final res = await ApiClient.instance.dio.get<List<dynamic>>('/admin/claims');
+  return (res.data ?? []).length;
+});
+
 class AdminDashboardPage extends ConsumerWidget {
   const AdminDashboardPage({super.key});
 
@@ -426,19 +435,22 @@ class AdminDashboardPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AdminClaimsPage(),
-                      ),
-                    ),
-                    child: const KpiCard(
-                      icon: Icons.report_problem_rounded,
-                      label: 'Réclamations',
-                      value: 'Gérer',
-                      color: AppColors.mobiliBlue,
-                    ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final claimsCountAsync = ref.watch(_claimsCountProvider);
+                      final claimsCount = claimsCountAsync.valueOrNull ?? 0;
+                      return _cardWithBadge(
+                        context,
+                        ref,
+                        icon: Icons.report_problem_rounded,
+                        label: 'Réclamations',
+                        value: '$claimsCount',
+                        color: AppColors.mobiliBlue,
+                        seenKey: 'claims_total_v1',
+                        currentTotal: claimsCount,
+                        destination: const AdminClaimsPage(),
+                      );
+                    },
                   ),
                 ],
               ),

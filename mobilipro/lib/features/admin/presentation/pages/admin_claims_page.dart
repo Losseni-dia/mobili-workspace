@@ -46,6 +46,7 @@ class AdminClaim {
     required this.createdAt,
     this.booking,
     this.adminNote,
+    this.resolutionMessage,
     this.resolvedAt,
   });
 
@@ -56,6 +57,7 @@ class AdminClaim {
   final String message;
   final Map<String, String> details;
   final String? adminNote;
+  final String? resolutionMessage;
   final DateTime createdAt;
   final DateTime? resolvedAt;
 
@@ -70,6 +72,7 @@ class AdminClaim {
         details: (j['details'] as Map<String, dynamic>? ?? {})
             .map((k, v) => MapEntry(k, v.toString())),
         adminNote: j['adminNote'] as String?,
+        resolutionMessage: j['resolutionMessage'] as String?,
         createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
         resolvedAt:
             j['resolvedAt'] != null ? DateTime.tryParse(j['resolvedAt'] as String) : null,
@@ -361,19 +364,24 @@ class _ClaimDetailSheet extends StatefulWidget {
 class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
   late String _status;
   late final TextEditingController _noteCtrl;
+  late final TextEditingController _resolutionCtrl;
   bool _saving = false;
   bool _cancelling = false;
+
+  bool get _isClosingStatus => _status == 'RESOLVED' || _status == 'REJECTED';
 
   @override
   void initState() {
     super.initState();
     _status = widget.claim.status;
     _noteCtrl = TextEditingController(text: widget.claim.adminNote ?? '');
+    _resolutionCtrl = TextEditingController(text: widget.claim.resolutionMessage ?? '');
   }
 
   @override
   void dispose() {
     _noteCtrl.dispose();
+    _resolutionCtrl.dispose();
     super.dispose();
   }
 
@@ -385,6 +393,8 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
         data: {
           'status': _status,
           if (_noteCtrl.text.trim().isNotEmpty) 'adminNote': _noteCtrl.text.trim(),
+          if (_isClosingStatus && _resolutionCtrl.text.trim().isNotEmpty)
+            'resolutionMessage': _resolutionCtrl.text.trim(),
         },
       );
       widget.onChanged();
@@ -533,12 +543,31 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
               controller: _noteCtrl,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Note interne (optionnelle)',
+                hintText: 'Note interne (optionnelle, jamais vue par le passager)',
                 filled: true,
                 fillColor: AppColors.gray50,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
+            // Distinct de la note interne : ce message est envoyé au passager (corps de
+            // la notification de clôture, voir InboxNotificationService.notifyUser côté
+            // backend) — affiché seulement quand le statut choisi clôture la réclamation.
+            if (_isClosingStatus) ...[
+              const SizedBox(height: 10),
+              const Text('Message pour le passager',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.gray500)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _resolutionCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Ce message sera envoyé au passager par notification…',
+                  filled: true,
+                  fillColor: AppColors.mobiliBlueFog,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             if (claim.booking != null)
               Padding(

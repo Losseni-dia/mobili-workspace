@@ -52,4 +52,12 @@ enum ClaimReasonType {
           true,
         ClaimReasonType.lostItem || ClaimReasonType.other => false,
       };
+
+  /// Retrouve le type de présentation à partir de la valeur brute renvoyée par le backend
+  /// (ex. dans Claim.reason) — utilisé par l'écran "Mes réclamations" pour afficher le bon
+  /// libellé/icône sans dupliquer le mapping.
+  static ClaimReasonType fromApiValue(String value) => ClaimReasonType.values.firstWhere(
+        (r) => r.apiValue == value,
+        orElse: () => ClaimReasonType.other,
+      );
 }

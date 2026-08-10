@@ -47,4 +47,9 @@ public enum MobiliNotificationType {
     /** Le délai de paiement de 30 min après acceptation est dépassé : destiné au passager. */
     COVOITURAGE_BOOKING_PAYMENT_EXPIRED,
 
+    /** Nouvelle réclamation soumise par un passager : destiné aux comptes admin. */
+    CLAIM_SUBMITTED,
+    /** Réclamation passée à RESOLVED ou REJECTED : destiné au passager auteur. */
+    CLAIM_STATUS_UPDATED,
+
 }

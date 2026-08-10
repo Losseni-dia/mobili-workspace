@@ -6,9 +6,12 @@ import com.mobili.backend.module.booking.booking.service.BookingService;
 import com.mobili.backend.module.claim.dto.BookingSummaryResponse;
 import com.mobili.backend.module.claim.dto.ClaimResponse;
 import com.mobili.backend.module.claim.dto.CreateClaimRequest;
+import com.mobili.backend.module.claim.dto.PassengerClaimResponse;
 import com.mobili.backend.module.claim.entity.Claim;
 import com.mobili.backend.module.claim.enums.ClaimStatus;
 import com.mobili.backend.module.claim.repository.ClaimRepository;
+import com.mobili.backend.module.notification.entity.MobiliNotificationType;
+import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
@@ -40,9 +43,12 @@ public class ClaimService {
     // ici (contrairement au cas FedaPayPaymentService/BookingService vu la veille) — le
     // module claim est neuf, rien dans booking ne dépend de claim.
     private final BookingService bookingService;
+    // Même mécanisme de notification que PartnerService/UserService (notifyAdmins) et
+    // rejectPartner (notifyUser) — rien de nouveau inventé ici, voir InboxNotificationService.
+    private final InboxNotificationService inboxNotificationService;
 
     @Transactional
-    public ClaimResponse createClaim(Long userId, CreateClaimRequest request) {
+    public PassengerClaimResponse createClaim(Long userId, CreateClaimRequest request) {
         if (request.reason() == null) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le motif de la réclamation est obligatoire.");
         }
@@ -75,13 +81,26 @@ public class ClaimService {
 
         Claim saved = claimRepository.save(claim);
         log.info("📋 Réclamation #{} créée (motif={}, userId={})", saved.getId(), saved.getReason(), user.getId());
-        return toResponse(saved);
+
+        // Notifie tous les comptes admin — même appel que PartnerService/UserService pour
+        // "nouvelle soumission à examiner" (PARTNER_SUBMISSION_PENDING), pas de système
+        // parallèle. Résumé court, pas le message brut complet (cohérent avec le style des
+        // notifications existantes).
+        String bookingContext = saved.getBooking() != null
+                ? " — réservation " + saved.getBooking().getReference()
+                : "";
+        inboxNotificationService.notifyAdmins(
+                "Nouvelle réclamation",
+                saved.getReason() + bookingContext + " — " + fullName(user),
+                MobiliNotificationType.CLAIM_SUBMITTED);
+
+        return toPassengerResponse(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<ClaimResponse> listMyClaims(Long userId) {
+    public List<PassengerClaimResponse> listMyClaims(Long userId) {
         return claimRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::toResponse)
+                .map(this::toPassengerResponse)
                 .toList();
     }
 
@@ -94,7 +113,7 @@ public class ClaimService {
     }
 
     @Transactional
-    public ClaimResponse updateStatus(Long claimId, ClaimStatus newStatus, String adminNote) {
+    public ClaimResponse updateStatus(Long claimId, ClaimStatus newStatus, String adminNote, String resolutionMessage) {
         if (newStatus == null) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Le nouveau statut est obligatoire.");
         }
@@ -105,12 +124,31 @@ public class ClaimService {
         if (adminNote != null && !adminNote.isBlank()) {
             claim.setAdminNote(adminNote.trim());
         }
-        if (newStatus == ClaimStatus.RESOLVED || newStatus == ClaimStatus.REJECTED) {
+
+        boolean isClosing = newStatus == ClaimStatus.RESOLVED || newStatus == ClaimStatus.REJECTED;
+        if (isClosing) {
             claim.setResolvedAt(LocalDateTime.now());
+            if (resolutionMessage != null && !resolutionMessage.isBlank()) {
+                claim.setResolutionMessage(resolutionMessage.trim());
+            }
         }
 
         Claim saved = claimRepository.save(claim);
         log.info("📋 Réclamation #{} passée à {}", saved.getId(), newStatus);
+
+        // Notification de clôture uniquement — pas de bruit à chaque changement de statut
+        // intermédiaire (ex. RECEIVED → IN_PROGRESS). Même appel que
+        // PartnerService.rejectPartner (notifyUser avec le message rédigé par l'admin).
+        if (isClosing) {
+            String title = newStatus == ClaimStatus.RESOLVED ? "Réclamation traitée ✅" : "Réclamation rejetée";
+            String body = saved.getResolutionMessage() != null
+                    ? saved.getResolutionMessage()
+                    : (newStatus == ClaimStatus.RESOLVED
+                            ? "Votre réclamation a été traitée."
+                            : "Votre réclamation a été rejetée.");
+            inboxNotificationService.notifyUser(saved.getUser(), title, body, MobiliNotificationType.CLAIM_STATUS_UPDATED);
+        }
+
         return toResponse(saved);
     }
 
@@ -123,8 +161,32 @@ public class ClaimService {
                 claim.getMessage(),
                 fromJson(claim.getDetailsJson()),
                 claim.getAdminNote(),
+                claim.getResolutionMessage(),
                 claim.getCreatedAt(),
                 claim.getResolvedAt());
+    }
+
+    private PassengerClaimResponse toPassengerResponse(Claim claim) {
+        return new PassengerClaimResponse(
+                claim.getId(),
+                claim.getReason(),
+                claim.getStatus(),
+                claim.getBooking() != null ? BookingSummaryResponse.from(claim.getBooking()) : null,
+                claim.getMessage(),
+                fromJson(claim.getDetailsJson()),
+                claim.getResolutionMessage(),
+                claim.getCreatedAt(),
+                claim.getResolvedAt());
+    }
+
+    private String fullName(User u) {
+        if (u == null) {
+            return "utilisateur";
+        }
+        String first = u.getFirstname() != null ? u.getFirstname().trim() : "";
+        String last = u.getLastname() != null ? u.getLastname().trim() : "";
+        String name = (first + " " + last).trim();
+        return name.isEmpty() ? "utilisateur #" + u.getId() : name;
     }
 
     private String toJson(Map<String, String> details) {
