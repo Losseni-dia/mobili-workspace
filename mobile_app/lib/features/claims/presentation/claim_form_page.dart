@@ -55,6 +55,12 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
   bool _submitting = false;
   String? _error;
 
+  /// Tant qu'aucune réservation n'est choisie, la liste reste dépliée ; dès
+  /// qu'on en sélectionne une, elle se replie pour ne montrer que celle-ci
+  /// (sinon la liste peut être longue si l'utilisateur a beaucoup de
+  /// réservations) — un "Changer" permet de la rouvrir.
+  bool _bookingListExpanded = true;
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +91,7 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
           _selectedBooking =
               bookings.where((b) => b.id == preselectId).cast<BookingDetail?>().firstOrNull;
           _selectedBookingId = _selectedBooking?.id ?? preselectId;
+          _bookingListExpanded = false;
         }
       });
     } catch (_) {
@@ -100,6 +107,7 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
       _reason = reason;
       _selectedBookingId = null;
       _selectedBooking = null;
+      _bookingListExpanded = true;
     });
     if (reason.requiresBooking && _myBookings == null) {
       _loadBookings();
@@ -187,10 +195,13 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
               selectedId: _selectedBookingId,
               locked: widget.initialBookingId != null,
               lockedBooking: _selectedBooking,
+              expanded: _bookingListExpanded,
               onSelected: (b) => setState(() {
                 _selectedBookingId = b.id;
                 _selectedBooking = b;
+                _bookingListExpanded = false;
               }),
+              onChangeRequested: () => setState(() => _bookingListExpanded = true),
             ),
             const SizedBox(height: 20),
           ],
@@ -329,7 +340,9 @@ class _BookingPicker extends StatelessWidget {
     required this.selectedId,
     required this.locked,
     required this.lockedBooking,
+    required this.expanded,
     required this.onSelected,
+    required this.onChangeRequested,
   });
 
   final bool loading;
@@ -337,7 +350,11 @@ class _BookingPicker extends StatelessWidget {
   final int? selectedId;
   final bool locked;
   final BookingDetail? lockedBooking;
+
+  /// false = liste repliée, seule la réservation choisie est affichée.
+  final bool expanded;
   final ValueChanged<BookingDetail> onSelected;
+  final VoidCallback onChangeRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -383,6 +400,27 @@ class _BookingPicker extends StatelessWidget {
         child: Text('Aucune réservation trouvée.',
             style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500)),
       );
+    }
+
+    // Une réservation est choisie et la liste est repliée : on n'affiche
+    // que celle-ci, avec un lien pour revenir sur la liste complète.
+    if (!expanded && selectedId != null) {
+      final selected = bookings.where((b) => b.id == selectedId).cast<BookingDetail?>().firstOrNull;
+      if (selected != null) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _BookingCard(booking: selected, selected: true, onTap: null),
+            TextButton(
+              onPressed: onChangeRequested,
+              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+              child: Text('Changer de réservation',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.mobiliBlue, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        );
+      }
     }
 
     return Column(
