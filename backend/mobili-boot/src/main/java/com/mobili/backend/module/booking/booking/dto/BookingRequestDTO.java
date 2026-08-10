@@ -2,6 +2,9 @@ package com.mobili.backend.module.booking.booking.dto;
 
 import java.util.List;
 
+import com.mobili.backend.module.pricing.PricingConstants;
+
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +26,8 @@ public class BookingRequestDTO {
 
     @NotNull(message = "Le nombre de places est obligatoire")
     @Min(value = 1)
+    @Max(value = PricingConstants.MAX_TICKETS_PER_BOOKING, message = "Maximum "
+            + PricingConstants.MAX_TICKETS_PER_BOOKING + " tickets par réservation")
     private Integer numberOfSeats;
 
     /** Optionnel : 0 = premier arrêt du voyage (défaut). */

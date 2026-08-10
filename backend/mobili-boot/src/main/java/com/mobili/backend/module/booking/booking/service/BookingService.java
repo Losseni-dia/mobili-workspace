@@ -30,6 +30,10 @@ import com.mobili.backend.module.payment.repository.PaymentRepository;
 import com.mobili.backend.module.payment.service.PaymentRefundService;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
+import com.mobili.backend.module.pricing.dto.CommissionResult;
+import com.mobili.backend.module.pricing.service.BookingFeeService;
+import com.mobili.backend.module.pricing.service.CompanyCommissionService;
+import com.mobili.backend.module.pricing.service.PartnerMonthlyVolumeService;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.service.TripPricingService;
@@ -63,6 +67,9 @@ public class BookingService {
     private final com.mobili.backend.module.payment.service.PaymentRefundService paymentRefundService;
     private final com.mobili.backend.module.payment.repository.PaymentRepository paymentRepository;
     private final InboxNotificationService inboxNotificationService;
+    private final BookingFeeService bookingFeeService;
+    private final CompanyCommissionService companyCommissionService;
+    private final PartnerMonthlyVolumeService partnerMonthlyVolumeService;
 
 
     public List<Booking> findConfirmedByTripId(Long tripId) {
@@ -97,6 +104,17 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+
+        // Libération immédiate du siège : seatsOccupiedOnLeg() (TripRunService) exclut déjà
+        // les réservations CANCELLED de l'occupation réelle — un nouveau client peut donc déjà
+        // re-réserver ce siège dès l'instant présent. Le seul trou : availableSeats (compteur
+        // caché affiché aux clients) n'était pas rafraîchi ici, contrairement à
+        // confirmBookingAfterPayment/confirmPayment qui le font déjà — même pattern appliqué ici.
+        Trip trip = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+        tripRunService.ensureStops(trip);
+        tripRunService.refreshTripAvailableSeatsCounter(trip);
+        tripRepository.save(trip);
 
         // Déclencher le remboursement pour Stripe uniquement (comme requis par le flux)
         // La méthode refundPayment dans PaymentRefundService gère la logique de remboursement
@@ -160,17 +178,26 @@ public class BookingService {
         double unitBagPrice = trip.getExtraHoldBagPrice() != null ? trip.getExtraHoldBagPrice() : 0.0;
         double luggageFee = extraBags * unitBagPrice;
 
+        // Forfait client : calculé UNE SEULE FOIS par réservation, sur la base de la somme
+        // des prix de tickets (totalPrice ici, post-coupon, AVANT le forfait lui-même et
+        // AVANT les bagages) — jamais sur le total bagages inclus. Calculé à la création (pas
+        // à la confirmation du paiement) car le passager doit le voir avant de payer.
+        double ticketsTotalAmount = totalPrice;
+        int serviceFee = bookingFeeService.calculateBookingFee(ticketsTotalAmount);
+
         Booking booking = new Booking();
         booking.setTrip(trip);
         booking.setCustomer(user);
         booking.setNumberOfSeats(requestedSeats);
+        booking.setTicketsTotalAmount(ticketsTotalAmount);
+        booking.setServiceFee(serviceFee);
         // totalPrice (pas perSeatPrice * requestedSeats) : inclut la remise
         // coupon déjà appliquée plus haut (ligne ~140) — recalculer depuis
         // perSeatPrice * requestedSeats ici l'ignorait silencieusement, le
         // prix final (et donc le montant facturé via Stripe/FedaPay,
         // PaymentController.createCheckout) restait au prix plein malgré un
         // coupon valide.
-        booking.setTotalPrice(totalPrice + luggageFee);
+        booking.setTotalPrice(ticketsTotalAmount + serviceFee + luggageFee);
         booking.setExtraHoldBags(extraBags);
         booking.setBoardingStopIndex(boarding);
         booking.setAlightingStopIndex(alighting);
@@ -320,23 +347,14 @@ public class BookingService {
         booking.setPaidAt(LocalDateTime.now());
         booking = bookingRepository.save(booking);
 
-        // 5. GÉNÉRATION SÉCURISÉE DES TICKETS
-        // Pour éviter que les noms et sièges ne se mélangent :
-        List<String> names = new ArrayList<>(booking.getPassengerNames());
-        List<String> seats = new ArrayList<>(booking.getSeatNumbers());
-
-        // ✅ Optionnel mais recommandé : Tri pour garder une cohérence si les listes
-        // ont été créées dans l'ordre alphabétique
-        Collections.sort(names);
-        Collections.sort(seats);
-
-        for (int i = 0; i < names.size(); i++) {
-            // Cette méthode crée le ticket physique que Maya scannera
-            ticketService.createFromBooking(booking, names.get(i), seats.get(i));
-        }
-
+        // Trip récupéré ici (avec Partner) pour permettre le calcul de la commission
+        // compagnie pendant la génération des tickets ci-dessous.
         Trip fresh = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+
+        // 5. GÉNÉRATION SÉCURISÉE DES TICKETS (+ commission compagnie par ticket)
+        generateTicketsWithCommission(booking, fresh.getPartner());
+
         tripRunService.ensureStops(fresh);
         tripRunService.refreshTripAvailableSeatsCounter(fresh);
         tripRepository.save(fresh);
@@ -367,6 +385,42 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findAll();
         bookings.forEach(this::initLazyCollections);
         return bookings;
+    }
+
+    /**
+     * Génère les tickets d'une réservation confirmée, avec commission compagnie par ticket —
+     * partagé entre confirmPayment() (wallet) et confirmBookingAfterPayment() (Stripe/FedaPay),
+     * les deux seuls points où un paiement est effectivement confirmé.
+     *
+     * La commission (voir CompanyCommissionService) est calculée sur transportFare + baggageFee
+     * de CHAQUE ticket (jamais amountPaid, qui inclurait le forfait client — jamais reversé à
+     * la compagnie). Le compteur mensuel (voir PartnerMonthlyVolumeService) n'avance qu'ici,
+     * au moment de la confirmation du paiement — jamais à la simple création de la réservation.
+     */
+    private void generateTicketsWithCommission(Booking booking, Partner partner) {
+        List<String> names = new ArrayList<>(booking.getPassengerNames());
+        List<String> seats = new ArrayList<>(booking.getSeatNumbers());
+        Collections.sort(names);
+        Collections.sort(seats);
+
+        int numberOfSeats = booking.getNumberOfSeats();
+        double ticketsTotalAmount = booking.getTicketsTotalAmount() != null ? booking.getTicketsTotalAmount() : 0.0;
+        int serviceFee = booking.getServiceFee() != null ? booking.getServiceFee() : 0;
+        // luggageFee dérivé des champs déjà figés sur la réservation (pas recalculé depuis
+        // trip.getExtraHoldBagPrice(), qui pourrait avoir changé depuis la création).
+        double luggageFee = booking.getTotalPrice() - ticketsTotalAmount - serviceFee;
+
+        double transportFarePerTicket = ticketsTotalAmount / numberOfSeats;
+        double baggageFeePerTicket = luggageFee / numberOfSeats;
+
+        List<Long> positions = partnerMonthlyVolumeService.reserveNextPositions(partner.getId(), names.size());
+
+        for (int i = 0; i < names.size(); i++) {
+            CommissionResult commission = companyCommissionService.calculateCommission(
+                    transportFarePerTicket + baggageFeePerTicket, positions.get(i));
+            ticketService.createFromBooking(booking, names.get(i), seats.get(i),
+                    transportFarePerTicket, baggageFeePerTicket, commission, positions.get(i));
+        }
     }
 
     /** Force l'initialisation des collections lazy avant la fermeture de la session. */
@@ -430,18 +484,14 @@ public class BookingService {
         booking.setPaidAt(LocalDateTime.now());
         booking = bookingRepository.save(booking);
 
-        // 5. GÉNÉRATION DES TICKETS (Réutilisation de ta logique existante)
-        List<String> names = new ArrayList<>(booking.getPassengerNames());
-        List<String> seats = new ArrayList<>(booking.getSeatNumbers());
-        Collections.sort(names);
-        Collections.sort(seats);
-
-        for (int i = 0; i < names.size(); i++) {
-            ticketService.createFromBooking(booking, names.get(i), seats.get(i));
-        }
-
+        // Trip récupéré ici (avec Partner) pour permettre le calcul de la commission
+        // compagnie pendant la génération des tickets ci-dessous.
         Trip fresh = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+
+        // 5. GÉNÉRATION DES TICKETS (+ commission compagnie par ticket)
+        generateTicketsWithCommission(booking, fresh.getPartner());
+
         tripRunService.ensureStops(fresh);
         tripRunService.refreshTripAvailableSeatsCounter(fresh);
         tripRepository.save(fresh);

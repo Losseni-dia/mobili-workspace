@@ -2,11 +2,12 @@ package com.mobili.backend.module.booking.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,15 +17,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
-import com.mobili.backend.module.booking.booking.dto.BookingRequestDTO;
 import com.mobili.backend.module.booking.booking.entity.Booking;
+import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
 import com.mobili.backend.module.coupon.service.CouponService;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
+import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.payment.repository.PaymentRepository;
 import com.mobili.backend.module.payment.service.PaymentRefundService;
+import com.mobili.backend.module.pricing.entity.PartnerMonthlyTicketCounter;
+import com.mobili.backend.module.pricing.repository.PartnerMonthlyTicketCounterRepository;
 import com.mobili.backend.module.pricing.service.BookingFeeService;
 import com.mobili.backend.module.pricing.service.CompanyCommissionService;
 import com.mobili.backend.module.pricing.service.PartnerMonthlyVolumeService;
@@ -38,14 +42,15 @@ import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
 
 /**
- * Couvre la régression : create() calculait bien la remise coupon (variable
- * locale totalPrice), mais booking.setTotalPrice() recalculait ensuite depuis
- * perSeatPrice * requestedSeats + luggageFee, jetant la remise. Le montant
- * final de la réservation (et donc facturé via Stripe/FedaPay) restait au
- * prix plein malgré un coupon valide.
+ * Scénario de la spec : compagnie à 498 tickets vendus ce mois-ci, réservation de 4 tickets
+ * qui chevauche la frontière 500 — les tickets n°499/500 doivent sortir à 9%, les n°501/502
+ * à 7%. CompanyCommissionService et PartnerMonthlyVolumeService sont utilisés RÉELLEMENT ici
+ * (pas mockés) — seul le dépôt du compteur (PartnerMonthlyTicketCounterRepository) et les
+ * dépendances externes à BookingService sont mockés — pour vérifier que l'orchestration réelle
+ * (positions attribuées dans l'ordre, prix transmis correctement) fonctionne de bout en bout.
  */
 @ExtendWith(MockitoExtension.class)
-class BookingServiceCouponPricingTest {
+class BookingServiceCommissionIntegrationTest {
 
     @Mock
     private BookingRepository bookingRepository;
@@ -78,14 +83,15 @@ class BookingServiceCouponPricingTest {
     @Mock
     private BookingFeeService bookingFeeService;
     @Mock
-    private CompanyCommissionService companyCommissionService;
-    @Mock
-    private PartnerMonthlyVolumeService partnerMonthlyVolumeService;
+    private PartnerMonthlyTicketCounterRepository counterRepository;
 
     private BookingService bookingService;
 
     @BeforeEach
     void setUp() {
+        CompanyCommissionService realCommissionService = new CompanyCommissionService();
+        PartnerMonthlyVolumeService realVolumeService = new PartnerMonthlyVolumeService(counterRepository);
+
         bookingService = new BookingService(
                 bookingRepository,
                 tripService,
@@ -102,49 +108,60 @@ class BookingServiceCouponPricingTest {
                 paymentRepository,
                 inboxNotificationService,
                 bookingFeeService,
-                companyCommissionService,
-                partnerMonthlyVolumeService);
+                realCommissionService,
+                realVolumeService);
     }
 
     @Test
-    void create_appliesCouponDiscountToFinalBookingTotalPrice() {
+    void bookingOfFourTickets_atCompanyPosition498_splitsAcrossTwoCommissionRates() {
+        Partner partner = new Partner();
+        partner.setId(7L);
+
         Trip trip = new Trip();
         trip.setId(10L);
+        trip.setPartner(partner);
+
         User customer = new User();
-        customer.setId(1L);
+        customer.setId(42L);
 
-        when(tripService.findById(10L)).thenReturn(trip);
-        when(userService.findById(1L)).thenReturn(customer);
-        when(tripRunService.lastStopIndex(trip)).thenReturn(1);
-        when(tripRunService.minFreeSeatsOnSegment(eq(trip), eq(0), eq(1))).thenReturn(2);
-        when(tripPricingService.resolvePricePerSeat(trip, 0, 1)).thenReturn(10_000.0);
+        Booking booking = new Booking();
+        booking.setId(1L);
+        booking.setCustomer(customer);
+        booking.setTrip(trip);
+        booking.setNumberOfSeats(4);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setTicketsTotalAmount(20_000.0); // 4 tickets à 5000 FCFA chacun
+        booking.setServiceFee(300);
+        booking.setTotalPrice(20_000.0 + 300); // pas de bagage
+        booking.setPassengerNames(new HashSet<>(java.util.List.of("A", "B", "C", "D")));
+        booking.setSeatNumbers(new HashSet<>(java.util.List.of("1", "2", "3", "4")));
 
-        // Coupon 20% : 10 000 -> 8 000
-        when(couponService.applyCoupon(eq("PROMO20"), eq(BigDecimal.valueOf(10_000.0))))
-                .thenReturn(BigDecimal.valueOf(8_000.0));
-
+        when(bookingRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
         when(tripRepository.findByIdWithPartnerAndStops(10L)).thenReturn(Optional.of(trip));
-        // 8000 >= 7000 -> forfait 300 (palier haut).
-        when(bookingFeeService.calculateBookingFee(8_000.0)).thenReturn(300);
 
-        BookingRequestDTO.SeatSelectionDTO seat = new BookingRequestDTO.SeatSelectionDTO();
-        seat.setSeatNumber("1A");
-        seat.setPassengerName("Test Passager");
+        PartnerMonthlyTicketCounter counter = new PartnerMonthlyTicketCounter();
+        counter.setPartnerId(7L);
+        counter.setTicketCount(498);
+        when(counterRepository.findByPartnerIdAndYearMonthForUpdate(eq(7L), anyString()))
+                .thenReturn(Optional.of(counter));
+        when(counterRepository.save(any(PartnerMonthlyTicketCounter.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        BookingRequestDTO request = new BookingRequestDTO();
-        request.setTripId(10L);
-        request.setUserId(1L);
-        request.setNumberOfSeats(1);
-        request.setSelections(List.of(seat));
-        request.setCouponCode("PROMO20");
+        bookingService.confirmBookingAfterPayment(1L);
 
-        Booking result = bookingService.create(request);
+        // 4 tickets à 5000 FCFA (transport pur, pas de bagage) : positions 499,500 -> 9%,
+        // positions 501,502 -> 7%.
+        verify(ticketService, org.mockito.Mockito.times(2))
+                .createFromBooking(any(), anyString(), anyString(), eq(5000.0), eq(0.0),
+                        argThatRate(0.09), any());
+        verify(ticketService, org.mockito.Mockito.times(2))
+                .createFromBooking(any(), anyString(), anyString(), eq(5000.0), eq(0.0),
+                        argThatRate(0.07), any());
 
-        // 8 000 (prix remisé) + 300 (forfait, palier haut) + 0 (pas de bagage) — pas
-        // 10 000 (prix plein recalculé, le bug avant correctif).
-        assertEquals(8_300.0, result.getTotalPrice());
-        assertEquals(8_000.0, result.getTicketsTotalAmount());
-        assertEquals(300, result.getServiceFee());
+        assertEquals(502, counter.getTicketCount());
+    }
+
+    private com.mobili.backend.module.pricing.dto.CommissionResult argThatRate(double rate) {
+        return org.mockito.ArgumentMatchers.argThat(c -> c != null && c.rate() == rate);
     }
 }
