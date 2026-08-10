@@ -54,11 +54,12 @@ public class CovoiturageKycExpiryJob {
                     userRepository.save(u);
                     String name = fullName(u);
                     inboxNotificationService.notifyCovoiturageKycExpired(u, end);
-                    inboxNotificationService.notifyAdmins(
+                    inboxNotificationService.notifyAdminsAboutUser(
                             "CNI expirée (covoiturage)",
                             "Le chauffeur " + name + " (id " + u.getId() + ") : pièce d'identité expirée le "
                                     + end.format(FR) + ".",
-                            MobiliNotificationType.COV_KYC_EXPIRED);
+                            MobiliNotificationType.COV_KYC_EXPIRED,
+                            u);
                     log.info("Covoiturage KYC expiré — userId={} fin={}", u.getId(), end);
                 }
                 continue;
@@ -70,11 +71,12 @@ public class CovoiturageKycExpiryJob {
                     userRepository.save(u);
                     String name = fullName(u);
                     inboxNotificationService.notifyCovoiturageKycExpiringSoon(u, end);
-                    inboxNotificationService.notifyAdmins(
+                    inboxNotificationService.notifyAdminsAboutUser(
                             "CNI covoiturage : expiration dans moins d'un mois",
                             "Chauffeur " + name + " (id " + u.getId() + ") — fin de validité le " + end.format(FR)
                                     + " (" + days + " jour(s)).",
-                            MobiliNotificationType.COV_KYC_EXPIRING_SOON);
+                            MobiliNotificationType.COV_KYC_EXPIRING_SOON,
+                            u);
                     log.info("Alerte CNI covoiturage 30j — userId={} jours={} fin={}", u.getId(), days, end);
                 }
             }

@@ -85,6 +85,15 @@ public class MobiliInboxNotification extends AbstractEntity {
     @JoinColumn(name = "claim_id")
     private com.mobili.backend.module.claim.entity.Claim claim;
 
+    /**
+     * Distinct de {@link #user} (destinataire) : le compte concerné par la notification
+     * quand ce n'est pas celui qui la reçoit (ex. alerte KYC covoiturage envoyée aux
+     * admins à propos d'un chauffeur précis).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_user_id")
+    private User subjectUser;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
