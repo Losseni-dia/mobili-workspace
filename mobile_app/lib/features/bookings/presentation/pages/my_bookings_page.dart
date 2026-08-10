@@ -12,6 +12,8 @@ import '../../../auth/providers/auth_provider.dart';
 import '../../../bookings/data/booking_service.dart';
 import '../../../bookings/domain/models/booking_detail.dart';
 import '../../../bookings/domain/models/payment_request.dart';
+import '../../../claims/domain/models/claim_reason.dart';
+import '../../../claims/presentation/claim_form_page.dart';
 
 final _bookingsDetailProvider = FutureProvider.autoDispose
     .family<List<BookingDetail>, int>((ref, userId) async {
@@ -951,38 +953,18 @@ class _BookingCard extends StatelessWidget {
   // L'annulation en libre-service (avec remboursement automatique) n'existe
   // pas côté app : seul un endpoint admin existe pour l'instant
   // (POST /admin/bookings/{id}/cancel — voir MobiliPro, AdminRefundsPage).
-  // Construire une vraie file d'attente self-service (nouveau statut de
-  // réservation, notification admin, écran de traitement) est un chantier
-  // à part entière, hors périmètre de cette session. En attendant, on
-  // remplace le faux bouton ("Annulation bientôt disponible", qui ne
-  // faisait jamais rien) par un message honnête qui redirige vers le
-  // support — plutôt que de laisser croire à une fonctionnalité qui
-  // n'existe pas.
+  // On passe donc par le système de réclamation générique : motif et
+  // réservation sont pré-remplis, l'admin traite la demande côté MobiliPro
+  // et déclenche l'annulation/remboursement lui-même après review.
   Future<void> _confirmCancel(BuildContext context) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Annuler cette réservation'),
-        content: Text(
-          'L\'annulation en ligne n\'est pas encore disponible. '
-          'Contactez notre support à support@my-mobili.com avec votre '
-          'référence (${booking.reference}) pour demander une annulation '
-          'et, si applicable, un remboursement.',
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClaimFormPage(
+          initialReason: ClaimReasonType.cancellation,
+          initialBookingId: booking.id,
+          lockReason: true,
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.mobiliBlue,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Compris',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
