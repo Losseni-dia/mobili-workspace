@@ -128,7 +128,12 @@ final claimsListProvider =
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AdminClaimsPage extends ConsumerStatefulWidget {
-  const AdminClaimsPage({super.key});
+  const AdminClaimsPage({super.key, this.highlightClaimId});
+
+  /// Arrivée depuis une notification CLAIM_SUBMITTED — ouvre automatiquement
+  /// le détail de cette réclamation dès que la liste est chargée, plutôt que
+  /// de laisser l'admin la rechercher dans la liste.
+  final int? highlightClaimId;
 
   @override
   ConsumerState<AdminClaimsPage> createState() => _AdminClaimsPageState();
@@ -136,6 +141,7 @@ class AdminClaimsPage extends ConsumerStatefulWidget {
 
 class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
   String? _statusFilter;
+  bool _autoOpened = false;
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +189,16 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
             loading: () => const AdminLoadingCard(),
             error: (e, _) => AdminErrorCard(message: '$e'),
             data: (claims) {
+              if (widget.highlightClaimId != null && !_autoOpened) {
+                _autoOpened = true;
+                final matches = claims.where((c) => c.id == widget.highlightClaimId);
+                if (matches.isNotEmpty) {
+                  final target = matches.first;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _openDetail(target);
+                  });
+                }
+              }
               if (claims.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(20),
