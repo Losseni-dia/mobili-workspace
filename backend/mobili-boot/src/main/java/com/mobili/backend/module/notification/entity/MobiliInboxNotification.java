@@ -77,6 +77,14 @@ public class MobiliInboxNotification extends AbstractEntity {
     @JoinColumn(name = "partner_id")
     private com.mobili.backend.module.partner.entity.Partner partner;
 
+    /**
+     * Réclamation concernée (soumission côté admin, clôture côté passager) : pour
+     * ouvrir directement la bonne réclamation plutôt que la liste entière.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "claim_id")
+    private com.mobili.backend.module.claim.entity.Claim claim;
+
     @Column(name = "read_at")
     private LocalDateTime readAt;
 

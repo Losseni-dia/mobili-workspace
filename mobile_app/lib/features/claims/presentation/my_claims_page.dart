@@ -17,11 +17,52 @@ final _myClaimsProvider = FutureProvider.autoDispose.family<List<Claim>, int>((r
 /// Historique des réclamations du passager, avec la timeline de statut pour chacune —
 /// réutilise GET /claims/mine/{userId}, déjà exposé par ClaimService (Flutter) depuis la
 /// soumission du formulaire, aucun nouvel appel réseau à construire.
-class MyClaimsPage extends ConsumerWidget {
-  const MyClaimsPage({super.key});
+///
+/// [highlightClaimId] : arrivée depuis une notification de clôture — scrolle et met en
+/// évidence la réclamation concernée, même pattern que _highlightedBookingId dans
+/// my_bookings_page.dart.
+class MyClaimsPage extends ConsumerStatefulWidget {
+  const MyClaimsPage({super.key, this.highlightClaimId});
+
+  final int? highlightClaimId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyClaimsPage> createState() => _MyClaimsPageState();
+}
+
+class _MyClaimsPageState extends ConsumerState<MyClaimsPage> {
+  int? _highlightedClaimId;
+  final Map<int, GlobalKey> _cardKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _highlightedClaimId = widget.highlightClaimId;
+  }
+
+  GlobalKey _keyFor(int claimId) => _cardKeys.putIfAbsent(claimId, () => GlobalKey());
+
+  void _scrollToHighlighted() {
+    final id = _highlightedClaimId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        );
+      }
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _highlightedClaimId = null);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(authProvider).valueOrNull?.profile;
 
     if (profile == null) {
@@ -76,13 +117,23 @@ class MyClaimsPage extends ConsumerWidget {
               ),
             );
           }
+
+          _scrollToHighlighted();
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: claims.length,
-            itemBuilder: (context, i) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _ClaimCard(claim: claims[i]),
-            ),
+            itemBuilder: (context, i) {
+              final claim = claims[i];
+              return Padding(
+                key: _keyFor(claim.id),
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _ClaimCard(
+                  claim: claim,
+                  isHighlighted: claim.id == _highlightedClaimId,
+                ),
+              );
+            },
           );
         },
       ),
@@ -91,8 +142,9 @@ class MyClaimsPage extends ConsumerWidget {
 }
 
 class _ClaimCard extends StatelessWidget {
-  const _ClaimCard({required this.claim});
+  const _ClaimCard({required this.claim, this.isHighlighted = false});
   final Claim claim;
+  final bool isHighlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +154,19 @@ class _ClaimCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.gray200),
+        border: Border.all(
+          color: isHighlighted ? AppColors.mobiliBlue : AppColors.gray200,
+          width: isHighlighted ? 2 : 1,
+        ),
+        boxShadow: isHighlighted
+            ? [
+                BoxShadow(
+                  color: AppColors.mobiliBlue.withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

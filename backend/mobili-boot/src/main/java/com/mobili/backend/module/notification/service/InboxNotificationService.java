@@ -338,12 +338,25 @@ public class InboxNotificationService {
      */
     @Transactional
     public void notifyAdmins(String title, String body, MobiliNotificationType type) {
-        notifyAdmins(title, body, type, null);
+        notifyAdmins(title, body, type, null, null);
     }
 
     @Transactional
     public void notifyAdmins(String title, String body, MobiliNotificationType type,
             com.mobili.backend.module.partner.entity.Partner partner) {
+        notifyAdmins(title, body, type, partner, null);
+    }
+
+    /** Réclamation concernée : permet à l'admin d'ouvrir directement la bonne. */
+    @Transactional
+    public void notifyAdmins(String title, String body, MobiliNotificationType type,
+            com.mobili.backend.module.claim.entity.Claim claim) {
+        notifyAdmins(title, body, type, null, claim);
+    }
+
+    private void notifyAdmins(String title, String body, MobiliNotificationType type,
+            com.mobili.backend.module.partner.entity.Partner partner,
+            com.mobili.backend.module.claim.entity.Claim claim) {
         List<User> admins = userRepository.findUsersWithAdminRole();
         Set<Long> adminIds = new HashSet<>();
         for (User a : admins) {
@@ -353,6 +366,7 @@ public class InboxNotificationService {
             n.setTitle(title);
             n.setBody(body);
             n.setPartner(partner);
+            n.setClaim(claim);
             inboxRepository.save(n);
             adminIds.add(a.getId());
             if (a.getFcmToken() != null) {
@@ -364,10 +378,27 @@ public class InboxNotificationService {
         }
     }
 
-    
+
     @Transactional
     public void notifyUser(User user, String title, String body, MobiliNotificationType type) {
         saveOne(user, type, title, body, null, null);
+    }
+
+    /** Réclamation concernée : permet au passager d'ouvrir directement la bonne. */
+    @Transactional
+    public void notifyUser(User user, String title, String body, MobiliNotificationType type,
+            com.mobili.backend.module.claim.entity.Claim claim) {
+        MobiliInboxNotification n = new MobiliInboxNotification();
+        n.setUser(user);
+        n.setType(type);
+        n.setTitle(title);
+        n.setBody(body);
+        n.setClaim(claim);
+        inboxRepository.save(n);
+        eventPublisher.publishEvent(new InboxRefreshEvent(Set.of(user.getId())));
+        if (user.getFcmToken() != null) {
+            fcmService.sendToToken(user.getFcmToken(), title, body);
+        }
     }
 
     /**
@@ -498,6 +529,7 @@ public class InboxNotificationService {
                 .partnerGareComThreadId(
                         n.getPartnerGareComThread() == null ? null : n.getPartnerGareComThread().getId())
                 .partnerId(n.getPartner() == null ? null : n.getPartner().getId())
+                .claimId(n.getClaim() == null ? null : n.getClaim().getId())
                 .build();
     }
 

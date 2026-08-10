@@ -27,4 +27,7 @@ public class InboxNotificationResponseDTO {
      * d'ouvrir la fiche.
      */
     Long partnerId;
+
+    /** Réclamation concernée : permet d'ouvrir directement la bonne réclamation. */
+    Long claimId;
 }

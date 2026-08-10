@@ -92,7 +92,8 @@ public class ClaimService {
         inboxNotificationService.notifyAdmins(
                 "Nouvelle réclamation",
                 saved.getReason() + bookingContext + " — " + fullName(user),
-                MobiliNotificationType.CLAIM_SUBMITTED);
+                MobiliNotificationType.CLAIM_SUBMITTED,
+                saved);
 
         return toPassengerResponse(saved);
     }
@@ -146,7 +147,7 @@ public class ClaimService {
                     : (newStatus == ClaimStatus.RESOLVED
                             ? "Votre réclamation a été traitée."
                             : "Votre réclamation a été rejetée.");
-            inboxNotificationService.notifyUser(saved.getUser(), title, body, MobiliNotificationType.CLAIM_STATUS_UPDATED);
+            inboxNotificationService.notifyUser(saved.getUser(), title, body, MobiliNotificationType.CLAIM_STATUS_UPDATED, saved);
         }
 
         return toResponse(saved);
