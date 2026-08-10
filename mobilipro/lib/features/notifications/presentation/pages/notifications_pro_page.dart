@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mobilipro/features/admin/presentation/pages/admin_claims_page.dart';
 import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page_v2.dart';
 import 'package:mobilipro/features/admin/presentation/pages/partner_stats_page.dart';
+import 'package:mobilipro/features/partner/presentation/pages/partner_bookings_list_page.dart';
 import 'package:mobilipro/features/partnergarecom/presentation/pages/partner_gare_com_page.dart';
+import 'package:mobilipro/features/trips/presentation/pages/trips_gare_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import 'package:mobilipro/features/auth/providers/auth_provider.dart';
@@ -255,6 +257,37 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   ),
                 ),
               ),
+            ] else if ((notif.type == 'COV_KYC_EXPIRING_SOON' ||
+                    notif.type == 'COV_KYC_EXPIRED') &&
+                notif.subjectUserId != null) ...[
+              // Alerte KYC covoiturage reçue par les admins : concerne un chauffeur
+              // précis (subjectUserId), distinct du destinataire de la notification.
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UserDetailPage(
+                          userId: notif.subjectUserId!,
+                          displayName: notif.subjectUserName ?? '',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.badge_outlined, size: 16),
+                  label: const Text('Voir le chauffeur'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             ] else if (notif.partnerGareComThreadId != null) ...[
               const SizedBox(height: 16),
               SizedBox(
@@ -317,7 +350,61 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   ),
                 ),
               ),
-            ]else if (notif.tripId != null) ...[
+            ] else if (notif.type == 'PARTNER_NEW_BOOKING' &&
+                notif.bookingId != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PartnerBookingsListPage(
+                          highlightBookingId: notif.bookingId,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.bookmark_add_rounded, size: 16),
+                  label: const Text('Voir la réservation'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (notif.type == 'GARE_STATION_NEW_BOOKING' &&
+                notif.tripId != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => TripsGarePage(
+                          highlightTripId: notif.tripId,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions_bus_rounded, size: 16),
+                  label: const Text('Voir le trajet'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (notif.tripId != null) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

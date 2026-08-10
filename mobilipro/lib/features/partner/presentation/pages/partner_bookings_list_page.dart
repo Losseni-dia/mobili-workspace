@@ -64,7 +64,13 @@ final partnerBookingsRangeProvider = FutureProvider.autoDispose
     );
 
 class PartnerBookingsListPage extends ConsumerStatefulWidget {
-  const PartnerBookingsListPage({super.key});
+  const PartnerBookingsListPage({super.key, this.highlightBookingId});
+
+  /// Arrivée depuis une notification PARTNER_NEW_BOOKING — surligne et
+  /// scrolle vers cette réservation précise (période élargie automatiquement
+  /// pour être sûr qu'elle apparaisse, quelle que soit sa date).
+  final int? highlightBookingId;
+
   @override
   ConsumerState<PartnerBookingsListPage> createState() =>
       _PartnerBookingsListPageState();
@@ -72,8 +78,48 @@ class PartnerBookingsListPage extends ConsumerStatefulWidget {
 
 class _PartnerBookingsListPageState
     extends ConsumerState<PartnerBookingsListPage> {
-  PartnerPeriod _period = PartnerPeriod.week;
+  late PartnerPeriod _period;
   int? _stationId;
+  int? _highlightedBookingId;
+  final Map<int, GlobalKey> _cardKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _highlightedBookingId = widget.highlightBookingId;
+    if (widget.highlightBookingId != null) {
+      final now = DateTime.now();
+      _period = PartnerPeriod(
+        mode: PartnerPeriodMode.custom,
+        customFrom: now.subtract(const Duration(days: 365)),
+        customTo: now.add(const Duration(days: 90)),
+      );
+    } else {
+      _period = PartnerPeriod.week;
+    }
+  }
+
+  GlobalKey _keyFor(int bookingId) =>
+      _cardKeys.putIfAbsent(bookingId, () => GlobalKey());
+
+  void _scrollToHighlighted() {
+    final id = _highlightedBookingId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        );
+      }
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _highlightedBookingId = null);
+      });
+    });
+  }
 
   Future<void> _exportCsv(List<PartnerBookingItem> bookings) async {
     final rows = [
@@ -192,7 +238,9 @@ class _PartnerBookingsListPageState
                   style: const TextStyle(color: AppColors.danger),
                 ),
               ),
-              data: (bookings) => bookings.isEmpty
+              data: (bookings) {
+                _scrollToHighlighted();
+                return bookings.isEmpty
                   ? const Center(
                       child: Text(
                         'Aucune réservation sur cette période',
@@ -244,12 +292,20 @@ class _PartnerBookingsListPageState
                         const SizedBox(height: 8),
                         ...bookings.map(
                           (b) => Container(
+                            key: _keyFor(b.id),
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.white,
+                              color: b.id == _highlightedBookingId
+                                  ? AppColors.mobiliBlueFog
+                                  : AppColors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.gray200),
+                              border: Border.all(
+                                color: b.id == _highlightedBookingId
+                                    ? AppColors.mobiliBlue
+                                    : AppColors.gray200,
+                                width: b.id == _highlightedBookingId ? 2 : 1,
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -296,7 +352,8 @@ class _PartnerBookingsListPageState
                           ),
                         ),
                       ],
-                    ),
+                    );
+              },
             ),
           ),
         ],

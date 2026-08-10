@@ -30,4 +30,11 @@ public class InboxNotificationResponseDTO {
 
     /** Réclamation concernée : permet d'ouvrir directement la bonne réclamation. */
     Long claimId;
+
+    /**
+     * Compte concerné (distinct du destinataire) : ex. le chauffeur dont le KYC covoiturage
+     * expire, pour une alerte envoyée aux admins.
+     */
+    Long subjectUserId;
+    String subjectUserName;
 }

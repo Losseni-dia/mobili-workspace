@@ -380,6 +380,33 @@ public class InboxNotificationService {
         }
     }
 
+    /**
+     * Notifie les admins à propos d'un compte précis (ex. alerte KYC covoiturage) — nom
+     * de méthode distinct de notifyAdmins(...) plutôt qu'une énième surcharge, pour éviter
+     * toute ambiguïté avec un 4ᵉ paramètre `null` (déjà rencontré avec Partner/Claim).
+     */
+    @Transactional
+    public void notifyAdminsAboutUser(String title, String body, MobiliNotificationType type, User subjectUser) {
+        List<User> admins = userRepository.findUsersWithAdminRole();
+        Set<Long> adminIds = new HashSet<>();
+        for (User a : admins) {
+            MobiliInboxNotification n = new MobiliInboxNotification();
+            n.setUser(a);
+            n.setType(type);
+            n.setTitle(title);
+            n.setBody(body);
+            n.setSubjectUser(subjectUser);
+            inboxRepository.save(n);
+            adminIds.add(a.getId());
+            if (a.getFcmToken() != null) {
+                fcmService.sendToToken(a.getFcmToken(), title, body);
+            }
+        }
+        if (!adminIds.isEmpty()) {
+            eventPublisher.publishEvent(new InboxRefreshEvent(adminIds));
+        }
+    }
+
 
     @Transactional
     public void notifyUser(User user, String title, String body, MobiliNotificationType type) {
@@ -552,6 +579,8 @@ public class InboxNotificationService {
                         n.getPartnerGareComThread() == null ? null : n.getPartnerGareComThread().getId())
                 .partnerId(n.getPartner() == null ? null : n.getPartner().getId())
                 .claimId(n.getClaim() == null ? null : n.getClaim().getId())
+                .subjectUserId(n.getSubjectUser() == null ? null : n.getSubjectUser().getId())
+                .subjectUserName(n.getSubjectUser() == null ? null : fullName(n.getSubjectUser()))
                 .build();
     }
 
