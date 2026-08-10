@@ -35,6 +35,7 @@ public class AdminClaimController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ClaimResponse> updateStatus(
             @PathVariable Long id, @RequestBody UpdateClaimStatusRequest request) {
-        return ResponseEntity.ok(claimService.updateStatus(id, request.status(), request.adminNote()));
+        return ResponseEntity.ok(claimService.updateStatus(
+                id, request.status(), request.adminNote(), request.resolutionMessage()));
     }
 }

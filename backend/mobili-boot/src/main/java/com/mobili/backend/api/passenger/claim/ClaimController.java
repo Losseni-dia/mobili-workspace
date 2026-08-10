@@ -1,7 +1,7 @@
 package com.mobili.backend.api.passenger.claim;
 
-import com.mobili.backend.module.claim.dto.ClaimResponse;
 import com.mobili.backend.module.claim.dto.CreateClaimRequest;
+import com.mobili.backend.module.claim.dto.PassengerClaimResponse;
 import com.mobili.backend.module.claim.service.ClaimService;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.service.UserService;
@@ -33,7 +33,7 @@ public class ClaimController {
     // corps de la requête — on ne fait jamais confiance au client pour dire qui il est.
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ClaimResponse> createClaim(
+    public ResponseEntity<PassengerClaimResponse> createClaim(
             @RequestBody CreateClaimRequest request, Principal principal) {
         User user = userService.findByLogin(principal.getName());
         return ResponseEntity.ok(claimService.createClaim(user.getId(), request));
@@ -44,7 +44,7 @@ public class ClaimController {
     // les réclamations de quelqu'un d'autre juste en changeant l'ID dans l'URL).
     @GetMapping("/mine/{userId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN') or #userId == authentication.principal.user.id")
-    public ResponseEntity<List<ClaimResponse>> myClaims(@PathVariable Long userId) {
+    public ResponseEntity<List<PassengerClaimResponse>> myClaims(@PathVariable Long userId) {
         return ResponseEntity.ok(claimService.listMyClaims(userId));
     }
 }

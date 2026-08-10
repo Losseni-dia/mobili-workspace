@@ -59,6 +59,14 @@ public class Claim extends AbstractEntity {
     @Column(name = "admin_note", length = 2000)
     private String adminNote;
 
+    /**
+     * Message de clôture rédigé par l'admin, visible par le passager (contrairement à
+     * adminNote, qui reste strictement interne) — envoyé aussi dans la notification de
+     * clôture. Renseigné uniquement quand le statut passe à RESOLVED ou REJECTED.
+     */
+    @Column(name = "resolution_message", length = 2000)
+    private String resolutionMessage;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "handled_by_admin_id")
     private User handledBy;
