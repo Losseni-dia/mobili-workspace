@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mobili.backend.module.booking.booking.dto.BookingPricePreviewRequest;
+import com.mobili.backend.module.booking.booking.dto.BookingPricePreviewResponse;
 import com.mobili.backend.module.booking.booking.dto.BookingRequestDTO;
 import com.mobili.backend.module.booking.booking.dto.BookingResponseDTO;
 import com.mobili.backend.module.booking.booking.dto.ManualBlockRequest;
@@ -58,6 +60,18 @@ public class BookingController {
         dto.setUserId(user.getId());
         Booking booking = bookingService.create(dto);
         return bookingMapper.toDto(booking);
+    }
+
+    // Prévisualisation SANS créer de réservation — même séquence de calcul que create()
+    // (BookingService.computePricing, partagée), pour que le passager voie le détail (sous-
+    // total, forfait, bagages, total) avant de payer.
+    @PostMapping("/price-preview")
+    @PreAuthorize("hasRole('USER')")
+    public BookingPricePreviewResponse previewPrice(@RequestBody @Valid BookingPricePreviewRequest dto) {
+        BookingService.PricingBreakdown pricing = bookingService.previewPrice(
+                dto.getTripId(), dto.getNumberOfSeats(), dto.getBoardingStopIndex(),
+                dto.getAlightingStopIndex(), dto.getExtraHoldBags(), dto.getCouponCode());
+        return BookingPricePreviewResponse.from(pricing);
     }
 
     @PatchMapping("/{id}/confirm")

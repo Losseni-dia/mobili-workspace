@@ -151,13 +151,6 @@ public class BookingService {
                     "Places insuffisantes sur une portion du trajet.");
         }
 
-        double perSeatPrice = tripPricingService.resolvePricePerSeat(trip, boarding, alighting);
-        double totalPrice = perSeatPrice * requestedSeats;
-
-        if (request.getCouponCode() != null && !request.getCouponCode().isEmpty()) {
-            totalPrice = couponService.applyCoupon(request.getCouponCode(), BigDecimal.valueOf(totalPrice)).doubleValue();
-        }
-
         int extraBags = request.getExtraHoldBags() != null ? request.getExtraHoldBags() : 0;
         if (extraBags < 0) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Nombre de bagages supplémentaires invalide.");
@@ -175,29 +168,26 @@ public class BookingService {
                             + requestedSeats
                             + " place(s) sur ce service).");
         }
-        double unitBagPrice = trip.getExtraHoldBagPrice() != null ? trip.getExtraHoldBagPrice() : 0.0;
-        double luggageFee = extraBags * unitBagPrice;
 
-        // Forfait client : calculé UNE SEULE FOIS par réservation, sur la base de la somme
-        // des prix de tickets (totalPrice ici, post-coupon, AVANT le forfait lui-même et
-        // AVANT les bagages) — jamais sur le total bagages inclus. Calculé à la création (pas
-        // à la confirmation du paiement) car le passager doit le voir avant de payer.
-        double ticketsTotalAmount = totalPrice;
-        int serviceFee = bookingFeeService.calculateBookingFee(ticketsTotalAmount);
+        // Même séquence de calcul que previewPrice(...) — partagée, jamais dupliquée, pour
+        // que le montant prévisualisé par le passager avant paiement soit garanti identique
+        // au montant réellement facturé ici.
+        PricingBreakdown pricing = computePricing(
+                trip, boarding, alighting, requestedSeats, extraBags, request.getCouponCode());
 
         Booking booking = new Booking();
         booking.setTrip(trip);
         booking.setCustomer(user);
         booking.setNumberOfSeats(requestedSeats);
-        booking.setTicketsTotalAmount(ticketsTotalAmount);
-        booking.setServiceFee(serviceFee);
+        booking.setTicketsTotalAmount(pricing.seatSubtotal());
+        booking.setServiceFee(pricing.serviceFee());
         // totalPrice (pas perSeatPrice * requestedSeats) : inclut la remise
-        // coupon déjà appliquée plus haut (ligne ~140) — recalculer depuis
+        // coupon déjà appliquée plus haut — recalculer depuis
         // perSeatPrice * requestedSeats ici l'ignorait silencieusement, le
         // prix final (et donc le montant facturé via Stripe/FedaPay,
         // PaymentController.createCheckout) restait au prix plein malgré un
         // coupon valide.
-        booking.setTotalPrice(ticketsTotalAmount + serviceFee + luggageFee);
+        booking.setTotalPrice(pricing.total());
         booking.setExtraHoldBags(extraBags);
         booking.setBoardingStopIndex(boarding);
         booking.setAlightingStopIndex(alighting);
@@ -235,6 +225,62 @@ public class BookingService {
         }
 
         return saved;
+    }
+
+    /** Décomposition tarifaire d'une réservation — partagée entre create() et previewPrice(). */
+    public record PricingBreakdown(
+            double perSeatPrice, double seatSubtotal, int serviceFee, double luggageFee, double total) {
+    }
+
+    /**
+     * Séquence de calcul du prix — extraite de create() pour être réutilisée à l'identique par
+     * previewPrice() (aucune divergence possible entre le montant prévisualisé avant paiement
+     * et le montant réellement facturé). N'écrit rien en base, ne fait aucune vérification de
+     * disponibilité de sièges (ce n'est pas son rôle : la disponibilité est vérifiée séparément
+     * dans create(), le preview reste un simple calcul de prix).
+     */
+    private PricingBreakdown computePricing(Trip trip, int boarding, int alighting, int requestedSeats,
+            int extraBags, String couponCode) {
+        double perSeatPrice = tripPricingService.resolvePricePerSeat(trip, boarding, alighting);
+        double seatSubtotal = perSeatPrice * requestedSeats;
+
+        if (couponCode != null && !couponCode.isEmpty()) {
+            seatSubtotal = couponService.applyCoupon(couponCode, BigDecimal.valueOf(seatSubtotal)).doubleValue();
+        }
+
+        // Forfait client : calculé UNE SEULE FOIS par réservation, sur la base de la somme
+        // des prix de tickets (seatSubtotal ici, post-coupon, AVANT le forfait lui-même et
+        // AVANT les bagages) — jamais sur le total bagages inclus.
+        int serviceFee = bookingFeeService.calculateBookingFee(seatSubtotal);
+
+        double unitBagPrice = trip.getExtraHoldBagPrice() != null ? trip.getExtraHoldBagPrice() : 0.0;
+        double luggageFee = extraBags * unitBagPrice;
+
+        double total = seatSubtotal + serviceFee + luggageFee;
+        return new PricingBreakdown(perSeatPrice, seatSubtotal, serviceFee, luggageFee, total);
+    }
+
+    /**
+     * Prévisualisation du prix — mêmes calculs que create() (via computePricing), sans créer
+     * de réservation. Utilisé côté passager pour afficher le détail (sous-total, forfait,
+     * bagages, total) avant paiement.
+     */
+    @Transactional(readOnly = true)
+    public PricingBreakdown previewPrice(Long tripId, int requestedSeats, Integer boardingStopIndex,
+            Integer alightingStopIndex, Integer extraHoldBags, String couponCode) {
+        Trip trip = tripService.findById(tripId);
+        tripRunService.ensureStops(trip);
+        int lastStop = tripRunService.lastStopIndex(trip);
+        int boarding = boardingStopIndex != null ? boardingStopIndex : 0;
+        int alighting = alightingStopIndex != null ? alightingStopIndex : lastStop;
+        tripRunService.validateSegment(trip, boarding, alighting);
+
+        int extraBags = extraHoldBags != null ? extraHoldBags : 0;
+        if (extraBags < 0) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Nombre de bagages supplémentaires invalide.");
+        }
+
+        return computePricing(trip, boarding, alighting, requestedSeats, extraBags, couponCode);
     }
 
     /**
