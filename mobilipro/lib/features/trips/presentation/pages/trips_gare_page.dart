@@ -230,7 +230,12 @@ const _tripFilterItems = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 class TripsGarePage extends ConsumerStatefulWidget {
-  const TripsGarePage({super.key});
+  const TripsGarePage({super.key, this.highlightTripId});
+
+  /// Arrivée depuis une notification GARE_STATION_NEW_BOOKING/PARTNER_NEW_BOOKING —
+  /// surligne et scrolle vers ce trajet précis, quel que soit son statut ou sa date
+  /// (période élargie et filtre de statut ignoré pour ce trajet).
+  final int? highlightTripId;
 
   @override
   ConsumerState<TripsGarePage> createState() => _TripsGarePageState();
@@ -239,10 +244,50 @@ class TripsGarePage extends ConsumerStatefulWidget {
 class _TripsGarePageState extends ConsumerState<TripsGarePage> {
   String _filter = 'EN_COURS';
   String _search = '';
-  PartnerPeriod _period = PartnerPeriod.week;
+  late PartnerPeriod _period;
   final Set<int> _archivedIds = {};
   bool _showArchived = false;
   final _searchCtrl = TextEditingController();
+  int? _highlightedTripId;
+  final Map<int, GlobalKey> _cardKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _highlightedTripId = widget.highlightTripId;
+    if (widget.highlightTripId != null) {
+      final now = DateTime.now();
+      _period = PartnerPeriod(
+        mode: PartnerPeriodMode.custom,
+        customFrom: now.subtract(const Duration(days: 365)),
+        customTo: now.add(const Duration(days: 90)),
+      );
+    } else {
+      _period = PartnerPeriod.week;
+    }
+  }
+
+  GlobalKey _keyFor(int tripId) =>
+      _cardKeys.putIfAbsent(tripId, () => GlobalKey());
+
+  void _scrollToHighlighted() {
+    final id = _highlightedTripId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _cardKeys[id]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.1,
+        );
+      }
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _highlightedTripId = null);
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -482,9 +527,20 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                   return true;
                 }).toList();
 
+                // Le trajet ciblé par la notification doit apparaître même s'il ne
+                // correspond pas au filtre de statut/recherche courant — sinon le
+                // surlignage ne trouverait jamais sa cible.
+                if (_highlightedTripId != null &&
+                    !filtered.any((t) => t.id == _highlightedTripId)) {
+                  final target = trips.where((t) => t.id == _highlightedTripId);
+                  if (target.isNotEmpty) filtered = [...filtered, target.first];
+                }
+
                 filtered.sort(
                   (a, b) => b.departureDateTime.compareTo(a.departureDateTime),
                 );
+
+                _scrollToHighlighted();
 
                 if (filtered.isEmpty) {
                   return Center(
@@ -542,41 +598,63 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                     itemBuilder: (context, index) {
                       final trip = filtered[index];
                       final isArchived = _archivedIds.contains(trip.id);
-                      return _TripCard(
-                        trip: trip,
-                        isArchived: isArchived,
-                        onArchive: () => setState(() {
-                          if (isArchived) {
-                            _archivedIds.remove(trip.id);
-                          } else {
-                            _archivedIds.add(trip.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Trajet masqué'),
-                                behavior: SnackBarBehavior.floating,
-                                action: SnackBarAction(
-                                  label: 'Annuler',
-                                  onPressed: () => setState(
-                                    () => _archivedIds.remove(trip.id),
+                      final isHighlighted = trip.id == _highlightedTripId;
+                      return Container(
+                        key: _keyFor(trip.id),
+                        margin: isHighlighted
+                            ? const EdgeInsets.only(bottom: 2)
+                            : EdgeInsets.zero,
+                        decoration: isHighlighted
+                            ? BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                    color: AppColors.mobiliBlue, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.mobiliBlue
+                                        .withValues(alpha: 0.25),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              )
+                            : null,
+                        child: _TripCard(
+                          trip: trip,
+                          isArchived: isArchived,
+                          onArchive: () => setState(() {
+                            if (isArchived) {
+                              _archivedIds.remove(trip.id);
+                            } else {
+                              _archivedIds.add(trip.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Trajet masqué'),
+                                  behavior: SnackBarBehavior.floating,
+                                  action: SnackBarAction(
+                                    label: 'Annuler',
+                                    onPressed: () => setState(
+                                      () => _archivedIds.remove(trip.id),
+                                    ),
                                   ),
                                 ),
+                              );
+                            }
+                          }),
+                          onShowPassengers: () => _showPassengers(context, trip),
+                          onOfflineSale: () => _showOfflineSale(context, trip),
+                          onCanalTap: () => context.push(
+                            '/gare/trips/canal/${trip.id}?label=${Uri.encodeComponent('${trip.departureCity} → ${trip.arrivalCity}')}',
+                          ),
+                          onEdit: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => EditTripPage(trip: trip),
                               ),
                             );
-                          }
-                        }),
-                        onShowPassengers: () => _showPassengers(context, trip),
-                        onOfflineSale: () => _showOfflineSale(context, trip),
-                        onCanalTap: () => context.push(
-                          '/gare/trips/canal/${trip.id}?label=${Uri.encodeComponent('${trip.departureCity} → ${trip.arrivalCity}')}',
+                            if (result == true) ref.invalidate(_myTripsProvider(_period));
+                          },
                         ),
-                        onEdit: () async {
-                          final result = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => EditTripPage(trip: trip),
-                            ),
-                          );
-                          if (result == true) ref.invalidate(_myTripsProvider(_period));
-                        },
                       );
                     },
                   ),
