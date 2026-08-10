@@ -18,6 +18,8 @@ class InboxNotification {
     this.partnerId,
     this.bookingId,
     this.claimId,
+    this.subjectUserId,
+    this.subjectUserName,
   });
 
   final int id;
@@ -33,6 +35,8 @@ class InboxNotification {
   final int? partnerId;
   final int? bookingId;
   final int? claimId;
+  final int? subjectUserId;
+  final String? subjectUserName;
 
   String get formattedDate {
     final now = DateTime.now();
@@ -79,6 +83,8 @@ class InboxNotification {
         partnerId: json['partnerId'] as int?,
         bookingId: json['bookingId'] as int?,
         claimId: json['claimId'] as int?,
+        subjectUserId: json['subjectUserId'] as int?,
+        subjectUserName: json['subjectUserName'] as String?,
       );
 
   // BUG corrigé : partnerId (et bookingId/claimId) n'étaient pas recopiés ici —
@@ -100,5 +106,7 @@ class InboxNotification {
     partnerId: partnerId,
     bookingId: bookingId,
     claimId: claimId,
+    subjectUserId: subjectUserId,
+    subjectUserName: subjectUserName,
   );
 }

@@ -255,6 +255,37 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   ),
                 ),
               ),
+            ] else if ((notif.type == 'COV_KYC_EXPIRING_SOON' ||
+                    notif.type == 'COV_KYC_EXPIRED') &&
+                notif.subjectUserId != null) ...[
+              // Alerte KYC covoiturage reçue par les admins : concerne un chauffeur
+              // précis (subjectUserId), distinct du destinataire de la notification.
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => UserDetailPage(
+                          userId: notif.subjectUserId!,
+                          displayName: notif.subjectUserName ?? '',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.badge_outlined, size: 16),
+                  label: const Text('Voir le chauffeur'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mobiliBlue,
+                    foregroundColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             ] else if (notif.partnerGareComThreadId != null) ...[
               const SizedBox(height: 16),
               SizedBox(
