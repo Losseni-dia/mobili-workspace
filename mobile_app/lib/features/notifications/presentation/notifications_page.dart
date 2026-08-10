@@ -11,6 +11,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/mobili_app_bar.dart';
 import 'package:dio/dio.dart';
 
+import '../../claims/presentation/my_claims_page.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Modèle
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,6 +28,7 @@ class InboxNotification {
     this.tripId,
     this.tripRoute,
     this.bookingId,
+    this.claimId,
   });
 
   final int id;
@@ -37,6 +40,7 @@ class InboxNotification {
   final int? tripId;
   final String? tripRoute;
   final int? bookingId;
+  final int? claimId;
 
   /// Parse une date UTC venant du backend et la convertit en heure locale
   static DateTime _parseDate(String raw) {
@@ -77,6 +81,7 @@ factory InboxNotification.fromJson(Map<String, dynamic> json) =>
         tripId: json['tripId'] as int?,
         tripRoute: json['tripRoute'] as String?,
         bookingId: json['bookingId'] as int?,
+        claimId: json['claimId'] as int?,
       );
 
   InboxNotification copyWith({bool? read}) => InboxNotification(
@@ -89,6 +94,7 @@ factory InboxNotification.fromJson(Map<String, dynamic> json) =>
         tripId: tripId,
         tripRoute: tripRoute,
         bookingId: bookingId,
+        claimId: claimId,
       );
 }
 
@@ -465,7 +471,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               Text(notif.formattedDate,
                                   style: AppTextStyles.bodySmall
                                       .copyWith(color: AppColors.gray400)),
-                              if (notif.tripId != null) ...[
+                              if (notif.tripId != null || notif.claimId != null) ...[
                                 const SizedBox(height: 16),
                                 SizedBox(
                                   width: double.infinity,
@@ -498,6 +504,17 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                           notif.type ==
                                               'MOBILI_ADMIN_INFO_SUPPORT') {
                                         context.push('/support');
+                                      } else if (notif.type ==
+                                              'CLAIM_STATUS_UPDATED' ||
+                                          notif.type == 'CLAIM_SUBMITTED') {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => MyClaimsPage(
+                                              highlightClaimId: notif.claimId,
+                                            ),
+                                          ),
+                                        );
                                       } else if (notif.tripId != null) {
                                         context.go('/trips/${notif.tripId}');
                                       }
@@ -505,7 +522,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                     icon: Icon(
                                       notif.type == 'TICKET_ISSUED'
                                           ? Icons.confirmation_number_rounded
-                                          : Icons.directions_bus_rounded,
+                                          : (notif.type ==
+                                                      'CLAIM_STATUS_UPDATED' ||
+                                                  notif.type ==
+                                                      'CLAIM_SUBMITTED')
+                                              ? Icons.report_problem_outlined
+                                              : Icons.directions_bus_rounded,
                                       size: 16,
                                     ),
                                     label: Text(
@@ -514,13 +536,18 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                           : notif.type == 'BOOKING_CONFIRMED'
                                               ? 'Voir la réservation'
                                               : (notif.type ==
-                                                          'TRIP_CHANNEL_MESSAGE' ||
+                                                          'CLAIM_STATUS_UPDATED' ||
                                                       notif.type ==
-                                                          'TRIP_DELAY' ||
-                                                      notif.type ==
-                                                          'TRIP_GATE_CHANGE')
-                                                  ? 'Voir mes réservations'
-                                                  : 'Voir le trajet',
+                                                          'CLAIM_SUBMITTED')
+                                                  ? 'Voir ma réclamation'
+                                                  : (notif.type ==
+                                                              'TRIP_CHANNEL_MESSAGE' ||
+                                                          notif.type ==
+                                                              'TRIP_DELAY' ||
+                                                          notif.type ==
+                                                              'TRIP_GATE_CHANGE')
+                                                      ? 'Voir mes réservations'
+                                                      : 'Voir le trajet',
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.mobiliBlue,
@@ -737,6 +764,9 @@ class _NotifCard extends StatelessWidget {
         return (Icons.support_agent_rounded, AppColors.mobiliBlue);
       case 'MOBILI_ADMIN_INFO_SUPPORT':
         return (Icons.support_agent_rounded, AppColors.mobiliBlue);
+      case 'CLAIM_SUBMITTED':
+      case 'CLAIM_STATUS_UPDATED':
+        return (Icons.report_problem_outlined, AppColors.mobiliBlue);
       default:
         return (Icons.notifications_rounded, AppColors.mobiliBlue);
     }

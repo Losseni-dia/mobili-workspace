@@ -69,7 +69,7 @@ class ClaimServiceTest {
         assertNotNull(ex.getMessage());
         verify(bookingService, never()).findById(any());
         verify(claimRepository, never()).save(any());
-        verify(inboxNotificationService, never()).notifyAdmins(anyString(), anyString(), any());
+        verify(inboxNotificationService, never()).notifyAdmins(anyString(), anyString(), any(), any(Claim.class));
     }
 
     @Test
@@ -91,7 +91,7 @@ class ClaimServiceTest {
         assertNotNull(response.booking());
         assertEquals(42L, response.booking().bookingId());
         verify(inboxNotificationService).notifyAdmins(
-                anyString(), anyString(), eq(MobiliNotificationType.CLAIM_SUBMITTED));
+                anyString(), anyString(), eq(MobiliNotificationType.CLAIM_SUBMITTED), any(Claim.class));
     }
 
     @Test
@@ -111,7 +111,7 @@ class ClaimServiceTest {
         assertEquals("Sac à dos noir", response.details().get("lostItemDescription"));
         verify(bookingService, never()).findById(any());
         verify(inboxNotificationService).notifyAdmins(
-                anyString(), anyString(), eq(MobiliNotificationType.CLAIM_SUBMITTED));
+                anyString(), anyString(), eq(MobiliNotificationType.CLAIM_SUBMITTED), any(Claim.class));
     }
 
     @Test
@@ -122,7 +122,7 @@ class ClaimServiceTest {
                 () -> claimService.createClaim(1L, request));
 
         assertEquals(MobiliErrorCode.VALIDATION_ERROR, ex.getErrorCode());
-        verify(inboxNotificationService, never()).notifyAdmins(anyString(), anyString(), any());
+        verify(inboxNotificationService, never()).notifyAdmins(anyString(), anyString(), any(), any(Claim.class));
     }
 
     @Test
@@ -146,7 +146,8 @@ class ClaimServiceTest {
                 eq(user),
                 anyString(),
                 eq("Votre remboursement a été effectué."),
-                eq(MobiliNotificationType.CLAIM_STATUS_UPDATED));
+                eq(MobiliNotificationType.CLAIM_STATUS_UPDATED),
+                any(Claim.class));
     }
 
     @Test
@@ -164,7 +165,7 @@ class ClaimServiceTest {
         assertEquals(ClaimStatus.REJECTED, response.status());
         assertNull(response.resolutionMessage());
         verify(inboxNotificationService).notifyUser(
-                eq(user), anyString(), anyString(), eq(MobiliNotificationType.CLAIM_STATUS_UPDATED));
+                eq(user), anyString(), anyString(), eq(MobiliNotificationType.CLAIM_STATUS_UPDATED), any(Claim.class));
     }
 
     @Test
@@ -177,7 +178,7 @@ class ClaimServiceTest {
         ClaimResponse response = claimService.updateStatus(5L, ClaimStatus.IN_PROGRESS, null, null);
 
         assertNull(response.resolvedAt());
-        verify(inboxNotificationService, never()).notifyUser(any(), anyString(), anyString(), any());
+        verify(inboxNotificationService, never()).notifyUser(any(), anyString(), anyString(), any(), any(Claim.class));
     }
 
     @Test
