@@ -8,6 +8,7 @@ import '../../../features/auth/providers/auth_provider.dart';
 import '../../../features/bookings/data/booking_service.dart';
 import '../../../features/bookings/domain/models/booking.dart';
 import '../../../features/claims/presentation/claim_form_page.dart';
+import '../../../features/claims/presentation/my_claims_page.dart';
 
 final _userBookingsProvider =
     FutureProvider.autoDispose.family<List<Booking>, int>((ref, userId) async {
@@ -295,6 +296,18 @@ class ProfilePage extends ConsumerWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const ClaimFormPage(),
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 1, color: AppColors.gray100),
+                        _ActionRow(
+                          icon: Icons.history_rounded,
+                          iconColor: AppColors.mobiliBlue,
+                          label: 'Mes réclamations',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MyClaimsPage(),
                             ),
                           ),
                         ),
