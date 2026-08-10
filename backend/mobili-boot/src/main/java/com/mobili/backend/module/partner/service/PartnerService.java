@@ -364,14 +364,16 @@ public class PartnerService {
                         "Compagnie réactivée ✅",
                         "Votre compagnie « " + p.getName()
                                 + " » a été réactivée. Vous pouvez à nouveau publier des trajets.",
-                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED);
+                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED,
+                        p);
             } else {
                 inboxNotificationService.notifyUser(
                         p.getOwner(),
                         "Compagnie suspendue",
                         "Votre compagnie « " + p.getName()
                                 + " » a été temporairement suspendue par l'équipe Mobili. Contactez le support pour plus d'informations.",
-                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_REJECTED);
+                        com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_REJECTED,
+                        p);
             }
         }
     }
@@ -388,7 +390,8 @@ public class PartnerService {
                     "Compagnie approuvée ✅",
                     "Votre compagnie « " + p.getName()
                             + " » a été approuvée par l'équipe Mobili. Vous pouvez maintenant publier des trajets.",
-                    com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED);
+                    com.mobili.backend.module.notification.entity.MobiliNotificationType.PARTNER_APPROVED,
+                    p);
         }
     }
 
@@ -407,7 +410,8 @@ public class PartnerService {
                     p.getOwner(),
                     "Compagnie rejetée",
                     "Votre compagnie « " + p.getName() + " » n'a pas pu être validée. Motif : " + reason.trim(),
-                    MobiliNotificationType.PARTNER_REJECTED);
+                    MobiliNotificationType.PARTNER_REJECTED,
+                    p);
         }
     }
 
