@@ -54,6 +54,14 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   bool _couponLoading = false;
   String? _couponError;
 
+  // Aperçu du forfait client — recalculé côté serveur (POST /bookings/price-preview,
+  // même séquence que la création réelle, jamais dupliquée ici) à chaque changement pouvant
+  // affecter le prix. _previewSeq écarte les réponses obsolètes (deux previews en vol, la
+  // plus ancienne revient après la plus récente).
+  int? _serviceFee;
+  double? _previewTotal;
+  int _previewSeq = 0;
+
   @override
   void initState() {
     super.initState();
@@ -170,6 +178,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
         _couponDiscountedSeatSubtotal = discounted;
         _couponLoading = false;
       });
+      _refreshPricePreview();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -185,12 +194,68 @@ class _BookingPageState extends ConsumerState<BookingPage> {
   int _maxExtraBags() =>
       _selectedSeats.length * widget.trip.maxExtraHoldBagsPerPassenger;
 
+  /// Recalcule le forfait client (et le total serveur) après tout changement affectant le
+  /// prix (sièges, tronçon, bagages, coupon). Silencieux en cas d'échec réseau — l'écran
+  /// retombe sur `_totalPrice()` calculé localement (sans forfait) plutôt que de bloquer la
+  /// réservation ; le montant réellement facturé reste de toute façon calculé côté serveur.
+  Future<void> _refreshPricePreview() async {
+    if (_selectedSeats.isEmpty) {
+      setState(() {
+        _serviceFee = null;
+        _previewTotal = null;
+      });
+      return;
+    }
+    final seq = ++_previewSeq;
+    final couponStillValid = _couponAppliedCode != null &&
+        _couponAppliedCode == _couponController.text.trim();
+    try {
+      final preview = await ref.read(bookingServiceProvider).previewPrice(
+            tripId: widget.trip.id,
+            numberOfSeats: _selectedSeats.length,
+            boardingStopIndex: _boardingIndex,
+            alightingStopIndex: _alightingIndex,
+            extraHoldBags: _extraBags,
+            couponCode: couponStillValid ? _couponAppliedCode : null,
+          );
+      if (!mounted || seq != _previewSeq) return;
+      setState(() {
+        _serviceFee = preview.serviceFee;
+        _previewTotal = preview.total;
+      });
+    } catch (_) {
+      if (!mounted || seq != _previewSeq) return;
+      setState(() {
+        _serviceFee = null;
+        _previewTotal = null;
+      });
+    }
+  }
+
+  static const int _maxTicketsPerBooking = 5;
+
   void _onSeatTap(int seatNumber, List<int> occupied) {
     if (occupied.contains(seatNumber) ||
         occupied.contains(seatNumber.toString())) {
       return;
     }
     final seat = '$seatNumber';
+
+    // Limite structurelle (aussi imposée côté backend, @Max sur BookingRequestDTO) — retour
+    // immédiat sans attendre un rejet serveur, l'utilisateur doit savoir tout de suite
+    // pourquoi son tap n'a rien fait.
+    if (!_selectedSeats.contains(seat) &&
+        _selectedSeats.length >= _maxTicketsPerBooking) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Maximum 5 tickets par réservation'),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final wasEmpty = _selectedSeats.isEmpty;
     setState(() {
       if (_selectedSeats.contains(seat)) {
@@ -207,6 +272,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     // Le nombre de sièges change le sous-total sur lequel la remise a été
     // calculée — une remise déjà appliquée n'est plus fiable.
     _invalidateCoupon();
+    _refreshPricePreview();
 
     // Dès qu'on sélectionne le premier siège, on scroll automatiquement
     // vers la section "Noms des passagers" pour éviter d'avoir à remonter
@@ -313,10 +379,12 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                           if (_alightingIndex <= i) _alightingIndex = i + 1;
                         });
                         _invalidateCoupon();
+                        _refreshPricePreview();
                       },
                       onAlightingChanged: (i) {
                         setState(() => _alightingIndex = i);
                         _invalidateCoupon();
+                        _refreshPricePreview();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -382,7 +450,10 @@ class _BookingPageState extends ConsumerState<BookingPage> {
                       extraBags: _extraBags,
                       maxBags: _maxExtraBags(),
                       pricePerBag: widget.trip.extraHoldBagPrice ?? 0,
-                      onChanged: (v) => setState(() => _extraBags = v),
+                      onChanged: (v) {
+                        setState(() => _extraBags = v);
+                        _refreshPricePreview();
+                      },
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -486,7 +557,11 @@ class _BookingPageState extends ConsumerState<BookingPage> {
             selectedCount: _selectedSeats.length,
             pricePerSeat: _pricePerSeat(),
             luggageFee: _luggageFee(),
-            total: _totalPrice(),
+            serviceFee: _serviceFee,
+            // Le total serveur (avec forfait) prime dès qu'il est disponible ; en attendant
+            // sa réponse, on retombe sur le total local (sans forfait) plutôt que d'afficher
+            // un vide — jamais un total opaque, mais une transition sans à-coup.
+            total: _previewTotal ?? _totalPrice(),
             isLoading: widget.trip.isCovoiturage
                 ? covoiturageRequestState.isLoading
                 : bookingState.isLoading,
@@ -1086,6 +1161,7 @@ class _PriceBar extends StatelessWidget {
     required this.isValid,
     required this.onPay,
     this.isCovoiturage = false,
+    this.serviceFee,
   });
 
   final int selectedCount;
@@ -1096,6 +1172,11 @@ class _PriceBar extends StatelessWidget {
   final bool isValid;
   final VoidCallback onPay;
   final bool isCovoiturage;
+
+  /// Forfait client — null tant que la prévisualisation serveur n'a pas encore répondu
+  /// (voir _refreshPricePreview) ; la ligne n'apparaît alors simplement pas plutôt que
+  /// d'afficher un montant faux à 0 FCFA.
+  final int? serviceFee;
 
   @override
   Widget build(BuildContext context) {
@@ -1140,6 +1221,22 @@ class _PriceBar extends StatelessWidget {
                           .copyWith(color: AppColors.gray500)),
                   Text(
                     '${luggageFee.toStringAsFixed(0)} FCFA',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.gray600),
+                  ),
+                ],
+              ),
+            ],
+            if (serviceFee != null) ...[
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Frais de réservation',
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.gray500)),
+                  Text(
+                    '$serviceFee FCFA',
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.gray600),
                   ),
