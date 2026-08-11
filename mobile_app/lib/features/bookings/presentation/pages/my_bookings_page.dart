@@ -456,8 +456,11 @@ class _BookingCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _InfoItem(
-                          label: 'TOTAL',
-                          value: booking.formattedPrice,
+                          // Montant de la réservation seule (tickets), pas le total payé
+                          // (forfait + bagages inclus) — ce détail complet reste visible sur
+                          // le reçu (icône reçu ci-dessus).
+                          label: 'RÉSERVATION',
+                          value: booking.formattedTicketsAmount,
                           valueColor: AppColors.mobiliBlueDeep,
                         ),
                         const SizedBox(height: 10),
