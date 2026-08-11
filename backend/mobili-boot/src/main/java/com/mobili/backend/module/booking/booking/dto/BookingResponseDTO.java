@@ -23,12 +23,21 @@ public class BookingResponseDTO {
     private Integer numberOfSeats;
     private Set<String> seatNumbers;
     private Set<String> passengerNames;
-    /** Montant total de la réservation. */
+    /** Montant total de la réservation (tickets + forfait client + bagages). */
     private Double totalPrice;
     /** Alias de {@link #totalPrice} conservé pour compatibilité avec les écrans partenaire. */
     private Double amount;
     /** Prix pour une seule place (= totalPrice / numberOfSeats). */
     private Double pricePerSeat;
+    /**
+     * Somme des prix de tickets SEULE (hors forfait client, hors bagages) — c'est ce montant
+     * que "Mes réservations" doit afficher, pas totalPrice. Nullable : absent sur les
+     * réservations créées avant l'introduction du forfait client, l'app retombe alors sur
+     * totalPrice (comportement historique, pas de recalcul rétroactif).
+     */
+    private Double ticketsTotalAmount;
+    /** Forfait client appliqué (100/200/300 FCFA) — null sur les réservations antérieures. */
+    private Integer serviceFee;
     /** Index de l'arrêt d'embarquement (0 = ville de départ). */
     private Integer boardingStopIndex;
     /** Index de l'arrêt de descente (dernier = ville d'arrivée). */

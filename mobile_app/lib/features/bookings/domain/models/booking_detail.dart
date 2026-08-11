@@ -22,6 +22,8 @@ class BookingDetail {
     this.paymentDeadline,
     this.extraHoldBags = 0,
     this.luggageFee = 0,
+    this.ticketsTotalAmount,
+    this.serviceFee,
   });
 
   final int id;
@@ -44,6 +46,13 @@ class BookingDetail {
   final String? alightingCity;
   final int extraHoldBags;
   final double luggageFee;
+
+  /// Somme des prix de tickets SEULE (hors forfait client, hors bagages). Null sur les
+  /// réservations créées avant le forfait client — voir [ticketsAmount].
+  final double? ticketsTotalAmount;
+
+  /// Forfait client appliqué (100/200/300 FCFA) — null sur les réservations antérieures.
+  final int? serviceFee;
 
   /// Covoiturage : délai de réponse du chauffeur (24h après la demande).
   final DateTime? driverResponseDeadline;
@@ -72,6 +81,14 @@ class BookingDetail {
   bool get isCovoiturageExpired => status == 'EXPIRED';
 
   String get formattedPrice => '${totalPrice.toStringAsFixed(0)} FCFA';
+
+  /// Montant "réservation" pur — tickets seuls, sans le forfait client ni les bagages.
+  /// C'est ce que "Mes réservations" doit afficher, pas [totalPrice]. Retombe sur
+  /// [totalPrice] si [ticketsTotalAmount] est absent (réservation antérieure au forfait
+  /// client — pas de recalcul rétroactif).
+  double get ticketsAmount => ticketsTotalAmount ?? totalPrice;
+  String get formattedTicketsAmount => '${ticketsAmount.toStringAsFixed(0)} FCFA';
+
   double get transportTotal => totalPrice - luggageFee;
   String get formattedTransportTotal =>
       '${transportTotal.toStringAsFixed(0)} FCFA';
@@ -135,5 +152,7 @@ class BookingDetail {
             : null,
         extraHoldBags: (json['extraHoldBags'] as num?)?.toInt() ?? 0,
         luggageFee: (json['luggageFee'] as num?)?.toDouble() ?? 0,
+        ticketsTotalAmount: (json['ticketsTotalAmount'] as num?)?.toDouble(),
+        serviceFee: (json['serviceFee'] as num?)?.toInt(),
       );
 }
