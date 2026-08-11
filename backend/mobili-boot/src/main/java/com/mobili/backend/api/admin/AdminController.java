@@ -192,6 +192,16 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getBookingList(fromDate, toDate, search));
     }
 
+    // Frais Mobili (forfait), commission prelevee sur la compagnie, et net revenant a la
+    // compagnie, par reservation payee — voir AdminService.getTransactionList.
+    @GetMapping("/stats/transactions/list")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminTransactionResponse>> getTransactionList(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getTransactionList(fromDate, toDate, search));
+    }
+
     @GetMapping("/stats/trips/list")
     public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminTripListItemResponse>> getTripList(
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
