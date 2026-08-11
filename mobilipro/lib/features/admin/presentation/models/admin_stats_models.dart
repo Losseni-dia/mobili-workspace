@@ -270,6 +270,47 @@ class AdminBookingListItem {
       );
 }
 
+/// Une ligne = une réservation payée — décompose ce qui a été encaissé entre frais Mobili
+/// (forfait, jamais reversé), commission prélevée sur la compagnie, et net compagnie.
+class AdminTransaction {
+  const AdminTransaction({
+    required this.bookingId,
+    required this.reference,
+    required this.date,
+    required this.customerName,
+    required this.route,
+    required this.companyName,
+    required this.ticketsAmount,
+    required this.serviceFee,
+    required this.luggageFee,
+    required this.commissionTotal,
+    required this.companyNet,
+    required this.totalPrice,
+    required this.status,
+  });
+
+  final int bookingId, serviceFee, commissionTotal;
+  final String reference, customerName, route, companyName, status;
+  final DateTime date;
+  final double ticketsAmount, luggageFee, companyNet, totalPrice;
+
+  factory AdminTransaction.fromJson(Map<String, dynamic> j) => AdminTransaction(
+        bookingId: (j['bookingId'] as num?)?.toInt() ?? 0,
+        reference: j['reference'] as String? ?? '',
+        date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
+        customerName: j['customerName'] as String? ?? '',
+        route: j['route'] as String? ?? '',
+        companyName: j['companyName'] as String? ?? '',
+        ticketsAmount: (j['ticketsAmount'] as num?)?.toDouble() ?? 0,
+        serviceFee: (j['serviceFee'] as num?)?.toInt() ?? 0,
+        luggageFee: (j['luggageFee'] as num?)?.toDouble() ?? 0,
+        commissionTotal: (j['commissionTotal'] as num?)?.toInt() ?? 0,
+        companyNet: (j['companyNet'] as num?)?.toDouble() ?? 0,
+        totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
+        status: j['status'] as String? ?? '',
+      );
+}
+
 class AdminTripListItem {
   const AdminTripListItem({
     required this.id,
@@ -415,6 +456,25 @@ final bookingListProvider = FutureProvider.autoDispose
       );
       return (res.data ?? [])
           .map((e) => AdminBookingListItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+
+final transactionListProvider = FutureProvider.autoDispose
+    .family<
+      List<AdminTransaction>,
+      ({AdminStatsPeriod period, String search})
+    >((ref, args) async {
+      final f = DateFormat('yyyy-MM-dd');
+      final res = await ApiClient.instance.dio.get<List<dynamic>>(
+        '/admin/stats/transactions/list',
+        queryParameters: {
+          'fromDate': f.format(args.period.fromAsDate),
+          'toDate': f.format(args.period.toAsDate),
+          if (args.search.isNotEmpty) 'search': args.search,
+        },
+      );
+      return (res.data ?? [])
+          .map((e) => AdminTransaction.fromJson(e as Map<String, dynamic>))
           .toList();
     });
 

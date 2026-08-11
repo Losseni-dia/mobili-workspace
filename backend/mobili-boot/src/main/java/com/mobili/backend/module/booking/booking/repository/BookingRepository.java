@@ -230,6 +230,31 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("to") LocalDateTime to,
                         @Param("search") String search);
 
+        /**
+         * Réservations effectivement payées (CONFIRMED/OFFLINE_SALE) — seules celles-ci ont des
+         * tickets avec commission calculée (voir BookingService.generateTicketsWithCommission,
+         * déclenché uniquement à la confirmation du paiement). Tickets fetch-joints pour sommer
+         * transportFare/baggageFee/commissionAmount côté service sans requête supplémentaire.
+         */
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "LEFT JOIN FETCH t.partner " +
+                        "JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.tickets " +
+                        "WHERE b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
+                        "                   com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) " +
+                        "AND b.bookingDate >= :from AND b.bookingDate <= :to " +
+                        "AND (:search IS NULL OR :search = '' " +
+                        "     OR LOWER(b.reference) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "     OR LOWER(c.firstname) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "     OR LOWER(c.lastname) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "     OR LOWER(t.partner.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "ORDER BY b.bookingDate DESC")
+        List<Booking> findConfirmedForAdminTransactions(
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
+                        @Param("search") String search);
+
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "JOIN FETCH b.customer c " +

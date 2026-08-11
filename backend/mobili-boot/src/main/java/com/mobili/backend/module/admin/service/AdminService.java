@@ -243,6 +243,49 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.admin.dto.AdminTransactionResponse> getTransactionList(
+            LocalDate fromDate, LocalDate toDate, String search) {
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        List<com.mobili.backend.module.booking.booking.entity.Booking> bookings = bookingRepository
+                .findConfirmedForAdminTransactions(from, to, search);
+
+        return bookings.stream()
+                .map(b -> {
+                    // Réduction Java sur les tickets déjà fetch-joints (même style que
+                    // PartnerDashboardService) — pas de projection JPQL à GROUP BY, plus simple
+                    // avec autant de colonnes non agrégées.
+                    int commissionTotal = b.getTickets().stream()
+                            .mapToInt(t -> t.getCommissionAmount() != null ? t.getCommissionAmount() : 0)
+                            .sum();
+                    double ticketsAmount = b.getTicketsTotalAmount() != null ? b.getTicketsTotalAmount() : 0.0;
+                    int serviceFee = b.getServiceFee() != null ? b.getServiceFee() : 0;
+                    double luggageFee = b.getExtraHoldBags() != null && b.getExtraHoldBags() > 0
+                            && b.getTrip() != null && b.getTrip().getExtraHoldBagPrice() != null
+                                    ? b.getExtraHoldBags() * b.getTrip().getExtraHoldBagPrice()
+                                    : 0.0;
+                    double companyNet = ticketsAmount + luggageFee - commissionTotal;
+
+                    return new com.mobili.backend.module.admin.dto.AdminTransactionResponse(
+                            b.getId(),
+                            b.getReference(),
+                            b.getBookingDate(),
+                            b.getCustomer().getFirstname() + " " + b.getCustomer().getLastname(),
+                            b.getTrip().getDepartureCity() + " → " + b.getTrip().getArrivalCity(),
+                            b.getTrip().getPartner() != null ? b.getTrip().getPartner().getName() : "—",
+                            ticketsAmount,
+                            serviceFee,
+                            luggageFee,
+                            commissionTotal,
+                            companyNet,
+                            b.getTotalPrice(),
+                            b.getStatus() != null ? b.getStatus().name() : "—");
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<com.mobili.backend.module.admin.dto.AdminTripListItemResponse> getTripList(
             LocalDate fromDate, LocalDate toDate, String search) {
         LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();

@@ -19,6 +19,7 @@ import 'login_stats_page.dart';
 import 'admin_refunds_page.dart';
 import 'admin_coupons_page.dart';
 import 'admin_claims_page.dart';
+import 'admin_transactions_page.dart';
 
 
 String _currentMonthLabel() {
@@ -451,6 +452,21 @@ class AdminDashboardPage extends ConsumerWidget {
                         destination: const AdminClaimsPage(),
                       );
                     },
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminTransactionsPage(),
+                      ),
+                    ),
+                    child: const KpiCard(
+                      icon: Icons.receipt_long_rounded,
+                      label: 'Transactions',
+                      value: 'Voir',
+                      color: AppColors.mobiliBlueDeep,
+                    ),
                   ),
                 ],
               ),

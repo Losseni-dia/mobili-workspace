@@ -165,6 +165,49 @@ Future<void> exportBookingsCsv(
   await shareExportFile(file, 'Export Mobili — Réservations', context);
 }
 
+Future<void> exportTransactionsCsv(
+  List<AdminTransaction> transactions,
+  BuildContext context,
+) async {
+  final rows = [
+    [
+      'Référence',
+      'Client',
+      'Trajet',
+      'Compagnie',
+      'Date',
+      'Montant tickets FCFA',
+      'Frais Mobili FCFA',
+      'Commission FCFA',
+      'Net compagnie FCFA',
+      'Total payé FCFA',
+      'Statut',
+    ],
+    ...transactions.map(
+      (t) => [
+        t.reference,
+        t.customerName,
+        t.route,
+        t.companyName,
+        DateFormat('dd/MM/yyyy HH:mm').format(t.date),
+        t.ticketsAmount.toStringAsFixed(0),
+        '${t.serviceFee}',
+        '${t.commissionTotal}',
+        t.companyNet.toStringAsFixed(0),
+        t.totalPrice.toStringAsFixed(0),
+        t.status,
+      ],
+    ),
+  ];
+  final csv = const ListToCsvConverter().convert(rows);
+  final dir = await getTemporaryDirectory();
+  final file = File(
+    '${dir.path}/transactions_${DateTime.now().millisecondsSinceEpoch}.csv',
+  );
+  await file.writeAsString(csv);
+  await shareExportFile(file, 'Export Mobili — Transactions', context);
+}
+
 Future<void> exportBookingsPdf(
   List<AdminBookingListItem> bookings,
   BuildContext context,
