@@ -28,6 +28,9 @@ import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.payment.repository.PaymentRepository;
 import com.mobili.backend.module.payment.service.PaymentRefundService;
+import com.mobili.backend.module.pricing.service.BookingFeeService;
+import com.mobili.backend.module.pricing.service.CompanyCommissionService;
+import com.mobili.backend.module.pricing.service.PartnerMonthlyVolumeService;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.service.TripPricingService;
@@ -72,6 +75,12 @@ class BookingServiceOwnershipTest {
     private PaymentRefundService paymentRefundService;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private BookingFeeService bookingFeeService;
+    @Mock
+    private CompanyCommissionService companyCommissionService;
+    @Mock
+    private PartnerMonthlyVolumeService partnerMonthlyVolumeService;
 
     private BookingService bookingService;
 
@@ -91,7 +100,10 @@ class BookingServiceOwnershipTest {
                 couponService,
                 paymentRefundService,
                 paymentRepository,
-                inboxNotificationService);
+                inboxNotificationService,
+                bookingFeeService,
+                companyCommissionService,
+                partnerMonthlyVolumeService);
     }
 
     @AfterEach

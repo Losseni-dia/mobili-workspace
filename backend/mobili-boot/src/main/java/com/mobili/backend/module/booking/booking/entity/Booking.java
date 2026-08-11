@@ -109,6 +109,19 @@ public class Booking extends AbstractEntity {
     @Column(name = "payment_deadline")
     private LocalDateTime paymentDeadline;
 
+    /**
+     * Somme des prix de tickets ayant servi de base au calcul du forfait client
+     * (voir BookingFeeService) — hors bagages, avant application du forfait lui-même.
+     * Conservé pour traçabilité même si le barème change plus tard (pas de recalcul
+     * rétroactif à l'affichage) et pour une analyse tarifaire future sur les seuils.
+     */
+    @Column(name = "tickets_total_amount")
+    private Double ticketsTotalAmount;
+
+    /** Forfait client figé au moment du calcul (100/200/300 FCFA) — voir BookingFeeService. */
+    @Column(name = "service_fee")
+    private Integer serviceFee;
+
     @PrePersist
     public void initBooking() {
         this.bookingDate = LocalDateTime.now();

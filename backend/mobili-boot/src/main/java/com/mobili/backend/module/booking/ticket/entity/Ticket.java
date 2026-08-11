@@ -67,6 +67,33 @@ public class Ticket extends AbstractEntity {
 
     private LocalDateTime alightedAt;
 
+    /**
+     * Part transport (post-coupon) de CE ticket — distincte de baggageFee (jamais fusionnées,
+     * nécessaire pour calculer/auditer la commission compagnie sans ambiguïté). Différent de
+     * amountPaid, qui mélange transport + forfait client + bagages pour l'affichage passager.
+     */
+    @Column(name = "transport_fare")
+    private Double transportFare;
+
+    /** Part bagage (répartition égale du luggageFee de la réservation) de CE ticket. */
+    @Column(name = "baggage_fee")
+    private Double baggageFee;
+
+    /** Taux de commission figé appliqué à ce ticket (0.09/0.07/0.05) — voir CompanyCommissionService. */
+    @Column(name = "commission_rate")
+    private Double commissionRate;
+
+    /** Commission figée (FCFA, arrondie au supérieur) appliquée à ce ticket. */
+    @Column(name = "commission_amount")
+    private Integer commissionAmount;
+
+    /**
+     * Position de ce ticket dans le compteur mensuel de la compagnie au moment de la vente
+     * (ex. 499) — explique a posteriori pourquoi ce taux a été choisi, sans recalcul.
+     */
+    @Column(name = "monthly_sequence_number")
+    private Integer monthlySequenceNumber;
+
     @PrePersist
     public void generateTicketNumber() {
         if (this.ticketNumber == null) {

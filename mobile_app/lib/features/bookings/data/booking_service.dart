@@ -90,6 +90,31 @@ class BookingService {
     return (response.data!['finalPrice'] as num).toDouble();
   }
 
+  /// Prévisualisation du prix AVANT paiement — même calcul que la création réelle
+  /// (BookingService.computePricing côté backend, partagé, jamais dupliqué ici), sans créer
+  /// de réservation. Affiché juste avant le bouton "Payer" (voir booking_page.dart).
+  Future<BookingPricePreview> previewPrice({
+    required int tripId,
+    required int numberOfSeats,
+    int? boardingStopIndex,
+    int? alightingStopIndex,
+    int? extraHoldBags,
+    String? couponCode,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/bookings/price-preview',
+      data: {
+        'tripId': tripId,
+        'numberOfSeats': numberOfSeats,
+        if (boardingStopIndex != null) 'boardingStopIndex': boardingStopIndex,
+        if (alightingStopIndex != null) 'alightingStopIndex': alightingStopIndex,
+        if (extraHoldBags != null) 'extraHoldBags': extraHoldBags,
+        if (couponCode != null) 'couponCode': couponCode,
+      },
+    );
+    return BookingPricePreview.fromJson(response.data!);
+  }
+
   Future<PaymentResponse> checkout(int bookingId, PaymentRequest request) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/payments/checkout/$bookingId',
@@ -124,6 +149,32 @@ class BookingService {
         .map((e) => Booking.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BookingPricePreview
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Détail du prix avant paiement — reflète BookingPricePreviewResponse côté backend.
+class BookingPricePreview {
+  const BookingPricePreview({
+    required this.seatSubtotal,
+    required this.serviceFee,
+    required this.luggageFee,
+    required this.total,
+  });
+
+  final double seatSubtotal;
+  final int serviceFee;
+  final double luggageFee;
+  final double total;
+
+  factory BookingPricePreview.fromJson(Map<String, dynamic> j) => BookingPricePreview(
+        seatSubtotal: (j['seatSubtotal'] as num?)?.toDouble() ?? 0,
+        serviceFee: (j['serviceFee'] as num?)?.toInt() ?? 0,
+        luggageFee: (j['luggageFee'] as num?)?.toDouble() ?? 0,
+        total: (j['total'] as num?)?.toDouble() ?? 0,
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

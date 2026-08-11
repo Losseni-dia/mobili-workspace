@@ -7,6 +7,7 @@ import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
+import com.mobili.backend.module.pricing.dto.CommissionResult;
 import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
 import com.mobili.backend.module.user.entity.User;
@@ -90,6 +91,17 @@ public class TicketService {
 
     @Transactional
     public void createFromBooking(Booking booking, String name, String seatNumber) {
+        createFromBooking(booking, name, seatNumber, null, null, null, null);
+    }
+
+    /**
+     * Variante enrichie avec la décomposition tarifaire utilisée pour la commission
+     * compagnie (voir CompanyCommissionService/BookingService.generateTicketsWithCommission) —
+     * transportFare/baggageFee restent des champs distincts, jamais fusionnés dans amountPaid.
+     */
+    @Transactional
+    public void createFromBooking(Booking booking, String name, String seatNumber,
+            Double transportFare, Double baggageFee, CommissionResult commission, Long monthlySequenceNumber) {
         Ticket ticket = new Ticket();
         ticket.setBooking(booking);
         ticket.setTrip(booking.getTrip());
@@ -98,6 +110,15 @@ public class TicketService {
         ticket.setSeatNumber(seatNumber);
         double paid = booking.getTotalPrice() / Math.max(1, booking.getNumberOfSeats());
         ticket.setAmountPaid(paid);
+        ticket.setTransportFare(transportFare);
+        ticket.setBaggageFee(baggageFee);
+        if (commission != null) {
+            ticket.setCommissionRate(commission.rate());
+            ticket.setCommissionAmount(commission.amount());
+        }
+        if (monthlySequenceNumber != null) {
+            ticket.setMonthlySequenceNumber(monthlySequenceNumber.intValue());
+        }
         int last = tripRunService.lastStopIndex(booking.getTrip());
         ticket.setBoardingStopIndex(Optional.ofNullable(booking.getBoardingStopIndex()).orElse(0));
         ticket.setAlightingStopIndex(Optional.ofNullable(booking.getAlightingStopIndex()).orElse(last));

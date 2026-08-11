@@ -1,13 +1,9 @@
 package com.mobili.backend.module.booking.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,8 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
-import com.mobili.backend.module.booking.booking.dto.BookingRequestDTO;
-import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
 import com.mobili.backend.module.coupon.service.CouponService;
@@ -33,19 +27,16 @@ import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.service.TripPricingService;
 import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
-import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
 
 /**
- * Couvre la régression : create() calculait bien la remise coupon (variable
- * locale totalPrice), mais booking.setTotalPrice() recalculait ensuite depuis
- * perSeatPrice * requestedSeats + luggageFee, jetant la remise. Le montant
- * final de la réservation (et donc facturé via Stripe/FedaPay) restait au
- * prix plein malgré un coupon valide.
+ * previewPrice() ne doit RIEN persister (aucun appel à bookingRepository.save) et doit
+ * renvoyer exactement le même détail (sous-total, forfait, bagages, total) que create()
+ * calculerait — même séquence de calcul partagée (computePricing).
  */
 @ExtendWith(MockitoExtension.class)
-class BookingServiceCouponPricingTest {
+class BookingServicePricePreviewTest {
 
     @Mock
     private BookingRepository bookingRepository;
@@ -87,64 +78,34 @@ class BookingServiceCouponPricingTest {
     @BeforeEach
     void setUp() {
         bookingService = new BookingService(
-                bookingRepository,
-                tripService,
-                tripRepository,
-                userService,
-                ticketService,
-                userRepository,
-                partnerService,
-                tripRunService,
-                tripPricingService,
-                analyticsEventService,
-                couponService,
-                paymentRefundService,
-                paymentRepository,
-                inboxNotificationService,
-                bookingFeeService,
-                companyCommissionService,
+                bookingRepository, tripService, tripRepository, userService, ticketService,
+                userRepository, partnerService, tripRunService, tripPricingService,
+                analyticsEventService, couponService, paymentRefundService, paymentRepository,
+                inboxNotificationService, bookingFeeService, companyCommissionService,
                 partnerMonthlyVolumeService);
     }
 
     @Test
-    void create_appliesCouponDiscountToFinalBookingTotalPrice() {
+    void previewPrice_computesBreakdownWithoutPersistingAnything() {
         Trip trip = new Trip();
         trip.setId(10L);
-        User customer = new User();
-        customer.setId(1L);
+        trip.setExtraHoldBagPrice(500.0);
 
         when(tripService.findById(10L)).thenReturn(trip);
-        when(userService.findById(1L)).thenReturn(customer);
         when(tripRunService.lastStopIndex(trip)).thenReturn(1);
-        when(tripRunService.minFreeSeatsOnSegment(eq(trip), eq(0), eq(1))).thenReturn(2);
-        when(tripPricingService.resolvePricePerSeat(trip, 0, 1)).thenReturn(10_000.0);
+        when(tripPricingService.resolvePricePerSeat(trip, 0, 1)).thenReturn(2500.0);
+        when(bookingFeeService.calculateBookingFee(5000.0)).thenReturn(300);
 
-        // Coupon 20% : 10 000 -> 8 000
-        when(couponService.applyCoupon(eq("PROMO20"), eq(BigDecimal.valueOf(10_000.0))))
-                .thenReturn(BigDecimal.valueOf(8_000.0));
+        BookingService.PricingBreakdown pricing = bookingService.previewPrice(
+                10L, 2, null, null, 1, null);
 
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(tripRepository.findByIdWithPartnerAndStops(10L)).thenReturn(Optional.of(trip));
-        // 8000 >= 7000 -> forfait 300 (palier haut).
-        when(bookingFeeService.calculateBookingFee(8_000.0)).thenReturn(300);
+        assertEquals(2500.0, pricing.perSeatPrice());
+        assertEquals(5000.0, pricing.seatSubtotal());
+        assertEquals(300, pricing.serviceFee());
+        assertEquals(500.0, pricing.luggageFee());
+        assertEquals(5800.0, pricing.total());
 
-        BookingRequestDTO.SeatSelectionDTO seat = new BookingRequestDTO.SeatSelectionDTO();
-        seat.setSeatNumber("1A");
-        seat.setPassengerName("Test Passager");
-
-        BookingRequestDTO request = new BookingRequestDTO();
-        request.setTripId(10L);
-        request.setUserId(1L);
-        request.setNumberOfSeats(1);
-        request.setSelections(List.of(seat));
-        request.setCouponCode("PROMO20");
-
-        Booking result = bookingService.create(request);
-
-        // 8 000 (prix remisé) + 300 (forfait, palier haut) + 0 (pas de bagage) — pas
-        // 10 000 (prix plein recalculé, le bug avant correctif).
-        assertEquals(8_300.0, result.getTotalPrice());
-        assertEquals(8_000.0, result.getTicketsTotalAmount());
-        assertEquals(300, result.getServiceFee());
+        verify(bookingRepository, never()).save(org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.verifyNoInteractions(ticketService);
     }
 }
