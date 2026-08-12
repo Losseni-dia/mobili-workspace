@@ -75,15 +75,34 @@ class TicketsGarePage extends ConsumerStatefulWidget {
   ConsumerState<TicketsGarePage> createState() => _TicketsGarePageState();
 }
 
+/// Ticket "confirmé" = tout statut différent de ANNULÉ (VALIDÉ, UTILISÉ, ARRIVÉ).
+/// Seuls ces tickets comptent dans les montants affichés — un ticket annulé ne doit
+/// jamais gonfler les stats de vente de la gare.
+bool _isConfirmed(GareTicketItem t) => t.status.toUpperCase() != 'ANNULÉ';
+
 class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
   PartnerPeriod _period = PartnerPeriod.week;
   String _search = '';
+  String _statusFilter = 'CONFIRME';
   final _searchCtrl = TextEditingController();
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// La recherche texte est déjà appliquée côté serveur (voir gareTicketsRangeProvider) —
+  /// seul le statut se filtre côté client.
+  List<GareTicketItem> _applyStatusFilter(List<GareTicketItem> tickets) {
+    switch (_statusFilter) {
+      case 'CONFIRME':
+        return tickets.where(_isConfirmed).toList();
+      case 'ANNULE':
+        return tickets.where((t) => !_isConfirmed(t)).toList();
+      default: // TOUS
+        return tickets;
+    }
   }
 
   Future<void> _exportCsv(List<GareTicketItem> tickets) async {
@@ -216,6 +235,30 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Row(
+              children: [
+                _StatusFilterChip(
+                  label: 'Confirmé',
+                  selected: _statusFilter == 'CONFIRME',
+                  onTap: () => setState(() => _statusFilter = 'CONFIRME'),
+                ),
+                const SizedBox(width: 8),
+                _StatusFilterChip(
+                  label: 'Annulé',
+                  selected: _statusFilter == 'ANNULE',
+                  onTap: () => setState(() => _statusFilter = 'ANNULE'),
+                ),
+                const SizedBox(width: 8),
+                _StatusFilterChip(
+                  label: 'Tous',
+                  selected: _statusFilter == 'TOUS',
+                  onTap: () => setState(() => _statusFilter = 'TOUS'),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: ticketsAsync.when(
               loading: () => const Center(
@@ -227,16 +270,61 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                   style: const TextStyle(color: AppColors.danger),
                 ),
               ),
-              data: (tickets) => tickets.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Aucun ticket sur cette période',
-                        style: TextStyle(color: AppColors.gray400),
-                      ),
-                    )
-                  : ListView(
+              data: (allTickets) {
+                final tickets = _applyStatusFilter(allTickets);
+                // Montant confirmé — jamais influencé par le filtre de statut affiché :
+                // un ticket annulé ne doit jamais gonfler ce total, même si on est en
+                // train de consulter la liste "Annulé".
+                final confirmedAmount = allTickets
+                    .where(_isConfirmed)
+                    .fold<double>(0, (s, t) => s + t.displayAmount);
+                if (tickets.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'Aucun ticket sur cette période',
+                      style: TextStyle(color: AppColors.gray400),
+                    ),
+                  );
+                }
+                return ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.payments_rounded,
+                                color: AppColors.stationGreen,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${confirmedAmount.toStringAsFixed(0)} F',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.mobiliBlueDeep,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'confirmé',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.gray500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -320,23 +408,82 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  '${t.displayAmount.toStringAsFixed(0)} F',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                    color: AppColors.proGold,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${t.displayAmount.toStringAsFixed(0)} F',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                        color: AppColors.proGold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _TicketStatusBadge(status: t.status),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
                         ),
                       ],
-                    ),
+                    );
+              },
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusFilterChip extends StatelessWidget {
+  const _StatusFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.mobiliBlue : AppColors.gray100,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: selected ? AppColors.white : AppColors.gray600,
+        ),
+      ),
+    ),
+  );
+}
+
+class _TicketStatusBadge extends StatelessWidget {
+  const _TicketStatusBadge({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCancelled = status.toUpperCase() == 'ANNULÉ';
+    final color = isCancelled ? AppColors.danger : AppColors.stationGreen;
+    final bg = isCancelled ? AppColors.dangerSoft : const Color(0xFFD1FAE5);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(
+        isCancelled ? 'Annulé' : 'Confirmé',
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }

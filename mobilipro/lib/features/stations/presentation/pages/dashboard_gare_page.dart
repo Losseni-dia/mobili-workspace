@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobilipro/features/auth/providers/auth_provider.dart';
-import 'package:mobilipro/features/stations/presentation/pages/bookings_gare_page.dart';
 import 'package:mobilipro/features/stations/presentation/pages/gare_transactions_page.dart';
 import 'package:mobilipro/features/stations/presentation/pages/tickets_gare_page.dart';
 import 'package:mobilipro/features/trips/presentation/pages/trips_gare_page.dart';
@@ -152,29 +151,6 @@ final _monthlyActiveTripsCountProvider = FutureProvider.autoDispose<int>((
       .map((e) => TripItem.fromJson(e as Map<String, dynamic>))
       .toList();
   return trips.where((t) => t.status != 'ANNULÉ').length;
-});
-
-final _monthlyBookingsCountProvider = FutureProvider.autoDispose<int>((
-  ref,
-) async {
-  final dio = ApiClient.instance.dio;
-  final now = DateTime.now();
-  final from = DateTime(now.year, now.month, 1);
-  final to = DateTime(
-    now.year,
-    now.month + 1,
-    1,
-  ).subtract(const Duration(seconds: 1));
-  final f = DateFormat('yyyy-MM-dd');
-  final response = await dio.get<List<dynamic>>(
-    '/bookings/partner/my-bookings/range',
-    queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},
-  );
-  final bookings = response.data ?? [];
-  return bookings.where((b) {
-    final status = (b as Map<String, dynamic>)['status'] as String?;
-    return status == 'CONFIRMED' || status == 'OFFLINE_SALE';
-  }).length;
 });
 
 final _monthlyRevenueProvider =
@@ -398,7 +374,7 @@ class DashboardGarePage extends ConsumerWidget {
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const BookingsGarePage(),
+                                builder: (_) => const TicketsGarePage(),
                               ),
                             ),
                             borderRadius: BorderRadius.circular(16),
@@ -496,7 +472,8 @@ class DashboardGarePage extends ConsumerWidget {
                         },
                       ),
                       const SizedBox(height: 12),
-                      // Stats trajets + réservations (données du mois en cours)
+                      // Stats trajets + tickets (données du mois en cours) — pas de
+                      // réservations ici : côté gare, seul le ticket compte au quotidien.
                       Row(
                         children: [
                           Expanded(
@@ -530,24 +507,26 @@ class DashboardGarePage extends ConsumerWidget {
                           Expanded(
                             child: Consumer(
                               builder: (context, ref, _) {
-                                final bookingsCountAsync = ref.watch(
-                                  _monthlyBookingsCountProvider,
+                                final ticketsAsync = ref.watch(
+                                  gareTicketsRangeProvider((
+                                    period: PartnerPeriod.month,
+                                    search: '',
+                                  )),
                                 );
-                                final bookingsCount =
-                                    bookingsCountAsync.valueOrNull ?? 0;
+                                final total = ticketsAsync.valueOrNull?.length ?? 0;
                                 return _GareBadgeCard(
                                   ref: ref,
-                                  icon: Icons.bookmark_rounded,
-                                  label: 'Réservations',
-                                  value: '$bookingsCount',
-                                  color: AppColors.stationGreen,
-                                  seenKey: 'gare_bookings_total',
-                                  currentTotal: bookingsCount,
+                                  icon: Icons.confirmation_number_rounded,
+                                  label: 'Tickets vendus',
+                                  value: '$total',
+                                  color: AppColors.proGold,
+                                  seenKey: 'gare_tickets_total',
+                                  currentTotal: total,
                                   subtitle: _currentMonthLabel(),
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const BookingsGarePage(),
+                                      builder: (_) => const TicketsGarePage(),
                                     ),
                                   ),
                                 );
@@ -557,87 +536,6 @@ class DashboardGarePage extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final ticketsAsync = ref.watch(
-                            gareTicketsRangeProvider((
-                              period: PartnerPeriod.month,
-                              search: '',
-                            )),
-                          );
-                          final total = ticketsAsync.valueOrNull?.length;
-                          if (total == null) {
-                            return InkWell(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const TicketsGarePage(),
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.gray200),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.proGold.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Icon(
-                                        Icons.confirmation_number_rounded,
-                                        color: AppColors.proGold,
-                                        size: 22,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Expanded(
-                                      child: Text(
-                                        'Tickets vendus',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.mobiliBlueDeep,
-                                        ),
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: AppColors.gray300,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-                          return _GareBadgeCard(
-                            ref: ref,
-                            icon: Icons.confirmation_number_rounded,
-                            label: 'Tickets vendus',
-                            value: '$total',
-                            color: AppColors.proGold,
-                            seenKey: 'gare_tickets_total',
-                            currentTotal: total,
-                            subtitle: _currentMonthLabel(),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const TicketsGarePage(),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                       GestureDetector(
                         onTap: () => Navigator.push(
                           context,

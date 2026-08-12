@@ -14,7 +14,7 @@ import '../../features/auth/presentation/pages/register_choice_page.dart';
 import '../../features/auth/presentation/pages/register_company_page.dart';
 import '../../features/auth/presentation/pages/register_carpool_chauffeur_page.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/stations/presentation/pages/bookings_gare_page.dart';
+import '../../features/stations/presentation/pages/tickets_gare_page.dart';
 import '../../features/canal/presentation/pages/canal_trip_page.dart';
 import '../../features/covoiturage/presentation/pages/covoiturage_trip_form_page.dart';
 import '../../features/chauffeurs/presentation/pages/chauffeurs_gare_page.dart';
@@ -159,12 +159,14 @@ GoRouter goRouter(GoRouterRef ref) {
               ),
             ],
           ),
-          // 2 — Réservations
+          // 2 — Tickets (les réservations gare restent accessibles via
+          // BookingsGarePage — code conservé, juste retiré de la navigation
+          // principale : la gare n'a besoin que des tickets au quotidien)
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/gare/bookings',
-                builder: (_, __) => const BookingsGarePage(),
+                path: '/gare/tickets',
+                builder: (_, __) => const TicketsGarePage(),
               ),
             ],
           ),
