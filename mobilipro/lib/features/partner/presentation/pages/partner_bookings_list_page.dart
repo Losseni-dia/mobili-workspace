@@ -21,11 +21,24 @@ class PartnerBookingItem {
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
+    this.ticketsTotalAmount,
+    this.luggageFee = 0,
   });
   final int id, numberOfSeats;
   final String reference, tripRoute, status;
   final DateTime bookingDate;
   final double totalPrice;
+
+  /// Somme des prix de tickets seule (hors forfait client) — null sur les réservations
+  /// antérieures au forfait. Voir [grossAmount].
+  final double? ticketsTotalAmount;
+  final double luggageFee;
+
+  /// Vente brute de la compagnie — JAMAIS totalPrice, qui inclut le forfait client
+  /// (jamais reversé à la compagnie). Même formule que PartnerTransactionResponse.grossAmount
+  /// côté backend, pour que ce chiffre reste toujours aligné avec la page Transactions.
+  double get grossAmount =>
+      ticketsTotalAmount != null ? ticketsTotalAmount! + luggageFee : totalPrice;
 
   factory PartnerBookingItem.fromJson(Map<String, dynamic> j) =>
       PartnerBookingItem(
@@ -42,6 +55,8 @@ class PartnerBookingItem {
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
+        ticketsTotalAmount: (j['ticketsTotalAmount'] as num?)?.toDouble(),
+        luggageFee: (j['luggageFee'] as num?)?.toDouble() ?? 0,
       );
 }
 
@@ -130,7 +145,7 @@ class _PartnerBookingsListPageState
           b.tripRoute,
           DateFormat('dd/MM/yyyy HH:mm').format(b.bookingDate),
           '${b.numberOfSeats}',
-          b.totalPrice.toStringAsFixed(0),
+          b.grossAmount.toStringAsFixed(0),
           b.status,
         ],
       ),
@@ -177,7 +192,7 @@ class _PartnerBookingsListPageState
                     b.tripRoute,
                     DateFormat('dd/MM/yy HH:mm').format(b.bookingDate),
                     '${b.numberOfSeats}',
-                    '${b.totalPrice.toStringAsFixed(0)} F',
+                    '${b.grossAmount.toStringAsFixed(0)} F',
                     b.status,
                   ],
                 )
@@ -340,7 +355,7 @@ class _PartnerBookingsListPageState
                                   ),
                                 ),
                                 Text(
-                                  '${b.totalPrice.toStringAsFixed(0)} F',
+                                  '${b.grossAmount.toStringAsFixed(0)} F',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12,

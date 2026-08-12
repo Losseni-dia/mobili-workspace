@@ -122,6 +122,27 @@ public class Booking extends AbstractEntity {
     @Column(name = "service_fee")
     private Integer serviceFee;
 
+    /**
+     * Vente brute de la compagnie — JAMAIS totalPrice (qui inclut le forfait client, jamais
+     * reversé à la compagnie). Seule implémentation de ce calcul dans tout le backend : tout
+     * code affichant un montant côté partenaire doit passer par cette méthode, jamais
+     * recalculer la formule lui-même (c'est exactement ce qui a fini par diverger — quatre
+     * endroits différents utilisaient totalPrice par erreur avant cette centralisation).
+     */
+    @jakarta.persistence.Transient
+    public double getGrossAmount() {
+        if (ticketsTotalAmount == null) {
+            // Réservation antérieure au forfait client : totalPrice EST déjà la vente brute
+            // (le forfait n'existait pas encore), pas de recalcul rétroactif.
+            return totalPrice;
+        }
+        double luggageFee = extraHoldBags != null && extraHoldBags > 0
+                && trip != null && trip.getExtraHoldBagPrice() != null
+                        ? extraHoldBags * trip.getExtraHoldBagPrice()
+                        : 0.0;
+        return ticketsTotalAmount + luggageFee;
+    }
+
     @PrePersist
     public void initBooking() {
         this.bookingDate = LocalDateTime.now();

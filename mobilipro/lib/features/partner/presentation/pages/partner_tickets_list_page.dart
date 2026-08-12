@@ -24,6 +24,7 @@ class PartnerTicketItem {
     required this.status,
     required this.seatNumber,
     required this.scanned,
+    this.grossAmount,
   });
   final int id;
   final String ticketNumber,
@@ -33,8 +34,18 @@ class PartnerTicketItem {
       status,
       seatNumber;
   final DateTime bookingDate;
+
+  /// Part du prix global (transport + forfait client + bagages) — jamais affiché côté
+  /// partenaire (voir [displayAmount]), la compagnie n'a jamais reçu le forfait dilué ici.
   final double amountPaid;
   final bool scanned;
+
+  /// Vente brute pour CE ticket (transport + bagages, jamais le forfait) — null sur les
+  /// tickets antérieurs à la décomposition tarifaire.
+  final double? grossAmount;
+
+  /// Montant à afficher côté partenaire — JAMAIS amountPaid directement.
+  double get displayAmount => grossAmount ?? amountPaid;
 
   factory PartnerTicketItem.fromJson(Map<String, dynamic> j) =>
       PartnerTicketItem(
@@ -47,6 +58,7 @@ class PartnerTicketItem {
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
         amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
+        grossAmount: (j['grossAmount'] as num?)?.toDouble(),
         status: j['status'] as String? ?? '',
         seatNumber: j['seatNumber'] as String? ?? '',
         scanned: j['scanned'] as bool? ?? false,
@@ -113,7 +125,7 @@ class _PartnerTicketsListPageState
           t.route,
           t.stationName,
           DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
-          t.amountPaid.toStringAsFixed(0),
+          t.displayAmount.toStringAsFixed(0),
           t.status,
           t.seatNumber,
           t.scanned ? 'Oui' : 'Non',
@@ -164,7 +176,7 @@ class _PartnerTicketsListPageState
                     t.route,
                     t.stationName,
                     DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
-                    '${t.amountPaid.toStringAsFixed(0)} F',
+                    '${t.displayAmount.toStringAsFixed(0)} F',
                     t.status,
                   ],
                 )
@@ -341,7 +353,7 @@ class _PartnerTicketsListPageState
                                   ),
                                 ),
                                 Text(
-                                  '${t.amountPaid.toStringAsFixed(0)} F',
+                                  '${t.displayAmount.toStringAsFixed(0)} F',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12,

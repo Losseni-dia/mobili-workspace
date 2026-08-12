@@ -16,7 +16,7 @@ public class RecentBookingDTO {
     private String customerName; // Sera mappé via MapStruct
     private String tripRoute; // Sera mappé via MapStruct (Départ -> Arrivée)
     private LocalDateTime date; // Mappé depuis createdAt
-    private double amount; // Mappé depuis totalPrice
+    private double amount; // Vente brute (Booking.getGrossAmount()) — jamais totalPrice
     private String status; // Mappé depuis l'Enum status
     private List<String> passengerNames; // Noms des passagers
     private List<String> seatNumbers; // Numéros de sièges

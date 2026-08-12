@@ -617,12 +617,9 @@ public class BookingService {
                     int commissionTotal = b.getTickets().stream()
                             .mapToInt(t -> t.getCommissionAmount() != null ? t.getCommissionAmount() : 0)
                             .sum();
-                    double ticketsAmount = b.getTicketsTotalAmount() != null ? b.getTicketsTotalAmount() : 0.0;
-                    double luggageFee = b.getExtraHoldBags() != null && b.getExtraHoldBags() > 0
-                            && b.getTrip() != null && b.getTrip().getExtraHoldBagPrice() != null
-                                    ? b.getExtraHoldBags() * b.getTrip().getExtraHoldBagPrice()
-                                    : 0.0;
-                    double grossAmount = ticketsAmount + luggageFee;
+                    // Seule implémentation de ce calcul dans tout le backend — voir
+                    // Booking.getGrossAmount().
+                    double grossAmount = b.getGrossAmount();
                     double companyNet = grossAmount - commissionTotal;
 
                     return new com.mobili.backend.module.booking.booking.dto.PartnerTransactionResponse(
