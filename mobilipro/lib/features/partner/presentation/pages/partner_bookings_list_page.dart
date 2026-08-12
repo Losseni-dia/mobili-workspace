@@ -91,12 +91,34 @@ class PartnerBookingsListPage extends ConsumerStatefulWidget {
       _PartnerBookingsListPageState();
 }
 
+/// Réservation "confirmée" = vente effective (en ligne ou au guichet) — exclut PENDING
+/// (pas encore payée) et CANCELLED. Seules ces réservations comptent dans les montants
+/// affichés, même formule que _monthlyRevenueProvider (dashboard partenaire).
+bool _isConfirmedBooking(PartnerBookingItem b) =>
+    b.status == 'CONFIRMED' || b.status == 'OFFLINE_SALE';
+bool _isCancelledBooking(PartnerBookingItem b) => b.status == 'CANCELLED';
+
 class _PartnerBookingsListPageState
     extends ConsumerState<PartnerBookingsListPage> {
   late PartnerPeriod _period;
   int? _stationId;
+  String _statusFilter = 'CONFIRME';
   int? _highlightedBookingId;
   final Map<int, GlobalKey> _cardKeys = {};
+
+  /// Filtre de statut appliqué à l'affichage — indépendant du montant confirmé affiché
+  /// en tête de liste, qui lui reste toujours calculé sur les seules réservations
+  /// confirmées quel que soit le filtre actif.
+  List<PartnerBookingItem> _applyStatusFilter(List<PartnerBookingItem> bookings) {
+    switch (_statusFilter) {
+      case 'CONFIRME':
+        return bookings.where(_isConfirmedBooking).toList();
+      case 'ANNULE':
+        return bookings.where(_isCancelledBooking).toList();
+      default: // TOUS
+        return bookings;
+    }
+  }
 
   @override
   void initState() {
@@ -242,6 +264,30 @@ class _PartnerBookingsListPageState
             selectedStationId: _stationId,
             onChanged: (id) => setState(() => _stationId = id),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Row(
+              children: [
+                _StatusFilterChip(
+                  label: 'Confirmé',
+                  selected: _statusFilter == 'CONFIRME',
+                  onTap: () => setState(() => _statusFilter = 'CONFIRME'),
+                ),
+                const SizedBox(width: 8),
+                _StatusFilterChip(
+                  label: 'Annulé',
+                  selected: _statusFilter == 'ANNULE',
+                  onTap: () => setState(() => _statusFilter = 'ANNULE'),
+                ),
+                const SizedBox(width: 8),
+                _StatusFilterChip(
+                  label: 'Tous',
+                  selected: _statusFilter == 'TOUS',
+                  onTap: () => setState(() => _statusFilter = 'TOUS'),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: bookingsAsync.when(
               loading: () => const Center(
@@ -253,8 +299,14 @@ class _PartnerBookingsListPageState
                   style: const TextStyle(color: AppColors.danger),
                 ),
               ),
-              data: (bookings) {
+              data: (allBookings) {
                 _scrollToHighlighted();
+                final bookings = _applyStatusFilter(allBookings);
+                // Montant confirmé — toujours calculé sur l'ensemble des réservations
+                // récupérées, jamais influencé par le filtre de statut affiché.
+                final confirmedAmount = allBookings
+                    .where(_isConfirmedBooking)
+                    .fold<double>(0, (s, b) => s + b.grossAmount);
                 return bookings.isEmpty
                   ? const Center(
                       child: Text(
@@ -265,6 +317,42 @@ class _PartnerBookingsListPageState
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.payments_rounded,
+                                color: AppColors.stationGreen,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${confirmedAmount.toStringAsFixed(0)} F',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.mobiliBlueDeep,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'confirmé',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.gray500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -375,4 +463,35 @@ class _PartnerBookingsListPageState
       ),
     );
   }
+}
+
+class _StatusFilterChip extends StatelessWidget {
+  const _StatusFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.mobiliBlue : AppColors.gray100,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: selected ? AppColors.white : AppColors.gray600,
+        ),
+      ),
+    ),
+  );
 }
