@@ -3,10 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/status_filter_chip.dart';
 import '../models/admin_stats_models.dart';
 import '../widgets/admin_common_widgets.dart';
 import '../widgets/admin_export_helpers.dart';
 import '../widgets/admin_period_selector.dart';
+
+/// Ticket "confirmé" = tout statut différent de ANNULÉ (VALIDÉ, UTILISÉ, ARRIVÉ).
+/// Seuls ces tickets comptent dans le montant affiché — un ticket annulé ne doit
+/// jamais gonfler les stats de vente.
+bool _isConfirmedTicket(AdminTicketListItem t) =>
+    t.status.toUpperCase() != 'ANNULÉ';
 
 class TicketStatsDetailPage extends ConsumerStatefulWidget {
   const TicketStatsDetailPage({super.key});
@@ -18,6 +25,7 @@ class TicketStatsDetailPage extends ConsumerStatefulWidget {
 class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
   AdminStatsPeriod _period = kPeriodMonth;
   String _search = '';
+  String _statusFilter = 'CONFIRME';
   int _pageSize = 20;
   final _searchCtrl = TextEditingController();
 
@@ -26,6 +34,11 @@ class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
     _searchCtrl.dispose();
     super.dispose();
   }
+
+  List<AdminTicketListItem> _applyStatusFilter(List<AdminTicketListItem> tickets) =>
+      _statusFilter == 'CONFIRME'
+          ? tickets.where(_isConfirmedTicket).toList()
+          : tickets.where((t) => !_isConfirmedTicket(t)).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -137,6 +150,28 @@ class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      StatusFilterChip(
+                        label: 'Confirmé',
+                        selected: _statusFilter == 'CONFIRME',
+                        onTap: () => setState(() {
+                          _statusFilter = 'CONFIRME';
+                          _pageSize = 20;
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      StatusFilterChip(
+                        label: 'Annulé',
+                        selected: _statusFilter == 'ANNULE',
+                        onTap: () => setState(() {
+                          _statusFilter = 'ANNULE';
+                          _pageSize = 20;
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   listAsync.when(
                     loading: () => const Padding(
                       padding: EdgeInsets.all(20),
@@ -150,7 +185,12 @@ class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
                       'Erreur liste : $e',
                       style: const TextStyle(color: AppColors.danger),
                     ),
-                    data: (list) {
+                    data: (allTickets) {
+                      final list = _applyStatusFilter(allTickets);
+                      // Montant confirmé — jamais influencé par le filtre affiché.
+                      final confirmedAmount = allTickets
+                          .where(_isConfirmedTicket)
+                          .fold<double>(0, (s, t) => s + t.amountPaid);
                       if (list.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(20),
@@ -166,6 +206,42 @@ class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
                       final hasMore = list.length > _pageSize;
                       return Column(
                         children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.gray200),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.payments_rounded,
+                                  color: AppColors.stationGreen,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${confirmedAmount.toStringAsFixed(0)} F',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.mobiliBlueDeep,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'confirmé',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
