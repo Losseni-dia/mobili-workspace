@@ -27,11 +27,14 @@ class CancelBookingResult {
     required this.provider,
     required this.autoRefunded,
     required this.message,
+    required this.refundedAmount,
   });
   final int bookingId;
   final String? provider;
   final bool autoRefunded;
   final String message;
+  /// FCFA, jamais le forfait de service — null si aucun paiement réussi trouvé.
+  final double? refundedAmount;
 
   factory CancelBookingResult.fromJson(Map<String, dynamic> j) =>
       CancelBookingResult(
@@ -39,6 +42,7 @@ class CancelBookingResult {
         provider: j['provider'] as String?,
         autoRefunded: j['autoRefunded'] as bool? ?? false,
         message: j['message'] as String? ?? '',
+        refundedAmount: (j['refundedAmount'] as num?)?.toDouble(),
       );
 }
 
