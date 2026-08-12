@@ -1,6 +1,6 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Observable, tap, switchMap, map, of, throwError, catchError, finalize } from 'rxjs';
+import { Observable, tap, switchMap, map, of, catchError, finalize } from 'rxjs';
 
 import { skipAuthRefreshRetry } from '../../http/auth-refresh.context';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
@@ -65,37 +65,8 @@ export interface RegisterCompanyPublicPayload {
   businessNumber?: string;
 }
 
-export interface GarePreviewStation {
-  id: number;
-  name: string;
-  city: string;
-}
-
-export interface GarePreviewResponse {
-  partnerName: string;
-  partnerId: number;
-  stations: GarePreviewStation[];
-}
-
-export interface GareSelfRegisterRequest {
-  partnerCode: string;
-  stationId?: number | null;
-  newStationName?: string;
-  newStationCity?: string;
-  login: string;
-  email: string;
-  password: string;
-  firstname: string;
-  lastname: string;
-}
-
 /** Corps minimal renvoyé par l’API à l’inscription (aligné sur login). */
 type BackendAuthResponse = { token: string; login: string; userId: number; id?: number };
-
-/** Résultat d’inscription gare (compte actif connecté, ou inactif en attente du partenaire). */
-export type GareRegisterOutcome =
-  | { status: 'activated'; user: AuthResponse }
-  | { status: 'awaiting_approval'; login: string; userId: number };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -281,55 +252,6 @@ export class AuthService {
     formData.append('driverPhoto', driverPhoto);
     formData.append('vehiclePhoto', vehiclePhoto);
     return this.http.post('/auth/register-carpool-chauffeur', formData);
-  }
-
-  /** Aperçu compagnie + gares pour auto-inscription responsable (code partenaire). */
-  previewGareRegistration(code: string): Observable<GarePreviewResponse> {
-    const q = encodeURIComponent(code.trim().toUpperCase());
-    return this.http.get<GarePreviewResponse>(`/auth/registration/gare/preview?code=${q}`);
-  }
-
-  /**
-   * Inscription gare : compte actif (connexion) ou
-   * `awaiting_approval` si le partenaire doit valider la gare (compte inactif, pas de token).
-   */
-  registerGare(req: GareSelfRegisterRequest): Observable<GareRegisterOutcome> {
-    return this.http
-      .post<{
-        token: string | null;
-        login: string;
-        userId: number;
-        id?: number;
-        accountPending?: boolean | null;
-      }>('/auth/registration/gare', req)
-      .pipe(
-        switchMap((r) => {
-          const id = (r as { id?: number }).id ?? r.userId;
-          if (r.accountPending) {
-            return of({ status: 'awaiting_approval' as const, login: r.login, userId: id });
-          }
-          if (r.token == null || id == null) {
-            return throwError(
-              () => new Error("Réponse d'inscription gare inattendue (token ou identifiant manquant)."),
-            );
-          }
-          const base: AuthResponse = {
-            token: r.token,
-            login: r.login,
-            id,
-            firstname: '',
-            lastname: '',
-            email: '',
-            phone: '',
-            avatarUrl: '',
-            roles: [],
-          };
-          this.saveUser(base);
-          return this.fetchUserProfile().pipe(
-            map((u) => ({ status: 'activated' as const, user: u })),
-          );
-        }),
-      );
   }
 
   // Dans auth.service.ts

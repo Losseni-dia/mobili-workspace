@@ -15,7 +15,4 @@ export class BusinessPortalComponent {
   private configuration = inject(ConfigurationService);
 
   readonly travelerSiteUrl = `${this.configuration.getTravelerWebBaseUrl()}`;
-
-  /** Inscription responsable gare (code compagnie) : uniquement sur l’appli voyageurs, route `/auth/register-gare`. */
-  readonly travelerRegisterGareUrl = `${this.configuration.getTravelerWebBaseUrl()}/auth/register-gare`;
 }

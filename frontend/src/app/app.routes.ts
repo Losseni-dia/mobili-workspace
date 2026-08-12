@@ -37,13 +37,6 @@ export const routes: Routes = [
       import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
-    path: 'auth/register-gare',
-    loadComponent: () =>
-      import('./features/auth/register-gare/register-gare.component').then(
-        (m) => m.RegisterGareComponent,
-      ),
-  },
-  {
     path: 'auth/register-carpool-chauffeur',
     loadComponent: () =>
       import('./features/auth/register-carpool-chauffeur/register-carpool-chauffeur.component').then(

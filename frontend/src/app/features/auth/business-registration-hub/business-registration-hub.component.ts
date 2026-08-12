@@ -15,7 +15,4 @@ export class BusinessRegistrationHubComponent {
   private configuration = inject(ConfigurationService);
 
   readonly travelerRegisterCarpoolUrl = `${this.configuration.getTravelerWebBaseUrl()}/auth/register-carpool-chauffeur`;
-
-  /** Auto-inscription gare avec code — conservée sur l’appli voyageurs (parcours voyageur « code »). */
-  readonly travelerSiteUrlAuthGare = `${this.configuration.getTravelerWebBaseUrl()}/auth/register-gare`;
 }

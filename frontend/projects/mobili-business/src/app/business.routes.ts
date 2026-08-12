@@ -39,14 +39,6 @@ export const businessRoutes: Routes = [
       ),
   },
   {
-    path: 'auth/register-gare',
-    loadComponent: () =>
-      import('@mobili-app/features/auth/traveler-shell-redirect/traveler-route-redirect.component').then(
-        (m) => m.TravelerRouteRedirectComponent,
-      ),
-    data: { travelerPath: '/auth/register-gare' },
-  },
-  {
     path: 'auth/register-carpool-chauffeur',
     loadComponent: () =>
       import('@mobili-app/features/auth/traveler-shell-redirect/traveler-route-redirect.component').then(
