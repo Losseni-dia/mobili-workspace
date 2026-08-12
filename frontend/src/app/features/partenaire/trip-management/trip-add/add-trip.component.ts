@@ -96,7 +96,9 @@ export class AddTripComponent implements OnInit {
     /** Premier → dernier arrêt, obligatoire quand 2+ tronçons. */
     originDestinationPrice: [null as number | null, [Validators.min(0)]],
     availableSeats: [18, [Validators.required, Validators.min(1)]],
-    vehicleType: ['Massa normal', Validators.required],
+    // Clé enum (aligné sur les options du <select>, [value]="o.name"), pas le libellé
+    // affiché — sinon le select ne pré-sélectionne aucune option au chargement.
+    vehicleType: ['MASSA_NORMAL', Validators.required],
     stationId: [null as number | null],
     /** Chauffeur salarié pour ce service (optionnel à la création). */
     assignedChauffeurId: [null as number | null],

@@ -32,7 +32,9 @@ export class PartnerEditComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
-    businessNumber: ['', [Validators.required]],
+    // Optionnel, comme à l'inscription (PartnerRegisterDTO/PartnerProfileDTO backend n'ont
+    // aucune contrainte sur ce champ) — required ici était un oubli, pas une règle métier.
+    businessNumber: [''],
   });
 
   private location = inject(Location);
