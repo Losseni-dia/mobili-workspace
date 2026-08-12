@@ -30,17 +30,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "ORDER BY b.bookingDate DESC")
         List<Booking> findAllByTripIdWithDetails(@Param("tripId") Long tripId);
 
+        // LEFT JOIN FETCH b.tickets : cancelBooking/cancelTickets (annulation, cascade vers les
+        // tickets) et getGrossAmount() en ont besoin sans lazy-load.
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.station " +
                         "JOIN FETCH b.customer " +
                         "LEFT JOIN FETCH b.passengerNames " +
                         "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.tickets " +
                         "WHERE b.id = :id")
         Optional<Booking> findByIdWithDetails(@Param("id") Long id);
 
+        // LEFT JOIN FETCH b.tickets : TripRunService.seatsOccupiedOnLeg() doit savoir si une
+        // réservation a déjà des tickets générés pour ne pas compter en double avec la boucle
+        // ticket (seule source fiable une fois les tickets émis, notamment après une
+        // annulation partielle — voir son Javadoc).
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.tickets " +
                         "WHERE b.trip.id = :tripId " +
                         "AND b.status != com.mobili.backend.module.booking.booking.entity.BookingStatus.CANCELLED")
         List<Booking> findByTripIdWithSeats(@Param("tripId") Long tripId);
@@ -69,8 +77,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "WHERE b.trip.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findTop5RecentBookingsByPartner(@Param("partnerId") Long partnerId);
 
+        // LEFT JOIN FETCH b.tickets : Booking.getGrossAmount() (appelée par PartnerMapper sur
+        // cette liste) lit les tickets pour exclure ceux ANNULÉ — sans ce fetch, chaque appel
+        // déclencherait un lazy-load N+1 par réservation.
         @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer " +
-                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers LEFT JOIN FETCH b.tickets " +
                         "WHERE t.partner.id = :partnerId AND t.station.id = :stationId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartnerAndStation(
                         @Param("partnerId") Long partnerId,
@@ -82,14 +93,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.trip.partner.id = :partnerId AND b.trip.station.id = :stationId AND b.status = 'CONFIRMED'")
         Double calculateRevenueByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
+        // LEFT JOIN FETCH b.tickets : voir findRecentBookingsByPartnerAndStation.
         @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
-                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers LEFT JOIN FETCH b.tickets " +
                         "WHERE t.partner.id = :partnerId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartner(@Param("partnerId") Long partnerId);
 
         /** Dashboard conducteur covoiturage : réservations sur SES trajets, jamais ceux du pool entier. */
         @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
-                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers " +
+                        "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers LEFT JOIN FETCH b.tickets " +
                         "WHERE t.covoiturageOrganizer.id = :organizerId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByCovoiturageOrganizer(@Param("organizerId") Long organizerId);
 
@@ -255,11 +267,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("to") LocalDateTime to,
                         @Param("search") String search);
 
+        // LEFT JOIN FETCH b.tickets : voir findRecentBookingsByPartnerAndStation — alimente
+        // BookingMapper.toDto (champ amount = booking.getGrossAmount()).
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "JOIN FETCH b.customer c " +
                         "LEFT JOIN FETCH b.seatNumbers " +
                         "LEFT JOIN FETCH b.passengerNames " +
+                        "LEFT JOIN FETCH b.tickets " +
                         "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) " +
                         "AND b.createdAt >= :from AND b.createdAt <= :to " +
                         "ORDER BY b.createdAt DESC")

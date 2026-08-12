@@ -253,18 +253,17 @@ public class AdminService {
 
         return bookings.stream()
                 .map(b -> {
-                    // Réduction Java sur les tickets déjà fetch-joints (même style que
-                    // PartnerDashboardService) — pas de projection JPQL à GROUP BY, plus simple
-                    // avec autant de colonnes non agrégées.
+                    // Exclut les tickets ANNULÉ individuellement (annulation partielle) — voir
+                    // Booking.getActiveTicketsAmount()/getActiveLuggageFee(), seule
+                    // implémentation de ce calcul dans tout le backend (même formule que
+                    // BookingService.findMyPartnerTransactionsInRange côté partenaire).
                     int commissionTotal = b.getTickets().stream()
+                            .filter(t -> t.getStatus() != com.mobili.backend.module.booking.ticket.entity.TicketStatus.ANNULÉ)
                             .mapToInt(t -> t.getCommissionAmount() != null ? t.getCommissionAmount() : 0)
                             .sum();
-                    double ticketsAmount = b.getTicketsTotalAmount() != null ? b.getTicketsTotalAmount() : 0.0;
+                    double ticketsAmount = b.getActiveTicketsAmount();
                     int serviceFee = b.getServiceFee() != null ? b.getServiceFee() : 0;
-                    double luggageFee = b.getExtraHoldBags() != null && b.getExtraHoldBags() > 0
-                            && b.getTrip() != null && b.getTrip().getExtraHoldBagPrice() != null
-                                    ? b.getExtraHoldBags() * b.getTrip().getExtraHoldBagPrice()
-                                    : 0.0;
+                    double luggageFee = b.getActiveLuggageFee();
                     double companyNet = ticketsAmount + luggageFee - commissionTotal;
 
                     return new com.mobili.backend.module.admin.dto.AdminTransactionResponse(

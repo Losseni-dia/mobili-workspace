@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 
 @Data
 public class TicketResponseDTO {
+    /** Utilisé pour cibler l'annulation partielle d'une réservation multi-sièges (Claim.detailsJson). */
+    private Long id;
+    /** Idem : permet de regrouper les tickets d'une même réservation côté app. */
+    private Long bookingId;
     private Long tripId;
     private String ticketNumber;
     private String passengerFullName; // firstName + lastName

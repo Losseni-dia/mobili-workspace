@@ -23,7 +23,18 @@ public class PaymentRefundService {
 
     @Transactional
     public RefundResult refund(String externalReference) {
-        log.info("💳 Début de la procédure de remboursement pour référence: {}", externalReference);
+        return refund(externalReference, null);
+    }
+
+    /**
+     * @param amount FCFA, null = remboursement intégral (comportement historique). Non-null =
+     *               remboursement partiel — voir Booking.cancelTickets/cancelBooking pour le
+     *               calcul (jamais le forfait client, quel que soit total ou partiel).
+     */
+    @Transactional
+    public RefundResult refund(String externalReference, Long amount) {
+        log.info("💳 Début de la procédure de remboursement pour référence: {} (montant={})",
+                externalReference, amount == null ? "intégral" : amount);
 
         Payment payment = paymentRepository.findByExternalReference(externalReference)
                 .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable : " + externalReference));
@@ -38,7 +49,9 @@ public class PaymentRefundService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Aucun service trouvé pour le provider : " + payment.getProvider()));
 
-        RefundResult result = paymentService.refundPayment(externalReference);
+        RefundResult result = amount != null
+                ? paymentService.refundPayment(externalReference, amount)
+                : paymentService.refundPayment(externalReference);
 
         if (result.success()) {
             payment.setStatus(PaymentStatus.REFUNDED);

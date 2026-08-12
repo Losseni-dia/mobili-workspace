@@ -13,8 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Expose BookingService.cancelBooking() (déjà existante et testée, non
@@ -42,28 +45,64 @@ public class AdminBookingController {
                 .map(Payment::getProvider)
                 .orElse(null);
 
-        bookingService.cancelBooking(bookingId);
+        double refunded = bookingService.cancelBooking(bookingId);
 
         boolean autoRefunded = provider == PaymentProvider.STRIPE;
-        String message;
-        if (provider == PaymentProvider.STRIPE) {
-            message = "Réservation annulée. Remboursement Stripe déclenché automatiquement.";
-        } else if (provider == PaymentProvider.FEDAPAY) {
-            message = "Réservation annulée. Remboursement FedaPay à traiter manuellement "
-                    + "depuis le dashboard FedaPay (dashboard.fedapay.com) — aucune API de "
-                    + "remboursement disponible chez ce prestataire.";
-        } else {
-            message = "Réservation annulée. Aucun paiement réussi trouvé pour cette "
-                    + "réservation, aucun remboursement à effectuer.";
-        }
+        String message = buildRefundMessage(provider, "Réservation annulée.", refunded);
 
-        log.info("🛑 Annulation admin Booking #{} (provider={}, autoRefunded={})",
-                bookingId, provider, autoRefunded);
+        log.info("🛑 Annulation admin Booking #{} (provider={}, autoRefunded={}, montant={})",
+                bookingId, provider, autoRefunded, refunded);
 
         return ResponseEntity.ok(new CancelBookingResponse(
                 bookingId,
                 provider != null ? provider.name() : null,
                 autoRefunded,
-                message));
+                message,
+                refunded));
+    }
+
+    /**
+     * Annulation ciblée de tickets d'UNE réservation (annulation partielle demandée via
+     * réclamation, exécutée après review admin — voir Claim.detailsJson côté ClaimService).
+     * Le forfait client n'est jamais remboursé, ni ici ni sur /cancel — voir
+     * BookingService.computeRefundableAmount.
+     */
+    @PostMapping("/{bookingId}/cancel-tickets")
+    public ResponseEntity<CancelBookingResponse> cancelTickets(
+            @PathVariable Long bookingId, @RequestBody List<Long> ticketIds) {
+        PaymentProvider provider = paymentRepository
+                .findByBookingIdAndStatus(bookingId, PaymentStatus.SUCCESS)
+                .map(Payment::getProvider)
+                .orElse(null);
+
+        double refunded = bookingService.cancelTickets(bookingId, ticketIds);
+
+        boolean autoRefunded = provider == PaymentProvider.STRIPE && refunded > 0;
+        String message = buildRefundMessage(
+                provider, ticketIds.size() + " ticket(s) annulé(s).", refunded);
+
+        log.info("🛑 Annulation admin tickets {} (Booking #{}, provider={}, autoRefunded={}, montant={})",
+                ticketIds, bookingId, provider, autoRefunded, refunded);
+
+        return ResponseEntity.ok(new CancelBookingResponse(
+                bookingId,
+                provider != null ? provider.name() : null,
+                autoRefunded,
+                message,
+                refunded));
+    }
+
+    private String buildRefundMessage(PaymentProvider provider, String prefix, double refunded) {
+        if (provider == PaymentProvider.STRIPE) {
+            return prefix + " Remboursement Stripe de " + Math.round(refunded)
+                    + " FCFA déclenché automatiquement (forfait de service exclu).";
+        } else if (provider == PaymentProvider.FEDAPAY) {
+            return prefix + " Remboursement FedaPay de " + Math.round(refunded)
+                    + " FCFA à traiter manuellement depuis le dashboard FedaPay "
+                    + "(dashboard.fedapay.com) — aucune API de remboursement disponible chez "
+                    + "ce prestataire. Forfait de service exclu de ce montant.";
+        }
+        return prefix + " Aucun paiement réussi trouvé pour cette réservation, aucun "
+                + "remboursement à effectuer.";
     }
 }

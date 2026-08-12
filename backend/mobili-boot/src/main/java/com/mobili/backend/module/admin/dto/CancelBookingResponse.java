@@ -13,5 +13,7 @@ public record CancelBookingResponse(
         Long bookingId,
         String provider,
         boolean autoRefunded,
-        String message) {
+        String message,
+        /** FCFA, jamais le forfait client — null si aucun paiement réussi trouvé. */
+        Double refundedAmount) {
 }

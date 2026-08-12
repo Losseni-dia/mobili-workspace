@@ -33,6 +33,24 @@ public class StripePaymentService implements PaymentService {
         }
     }
 
+    /**
+     * Remboursement partiel — montant en FCFA (même unité que createPaymentSession), converti
+     * en centimes ici avec la même conversion *100, jamais dupliquée ailleurs.
+     */
+    @Override
+    public RefundResult refundPayment(String externalReference, Long amount) {
+        log.info("💳 Appel remboursement partiel Stripe pour référence: {} ({} FCFA)",
+                externalReference, amount);
+        try {
+            Long amountInCents = amount != null ? amount * 100 : null;
+            String refundId = stripeService.refundPayment(externalReference, amountInCents);
+            return new RefundResult(true, refundId, "Remboursement Stripe réussi");
+        } catch (Exception e) {
+            log.error("💥 Erreur remboursement Stripe : {}", e.getMessage());
+            return new RefundResult(false, null, e.getMessage());
+        }
+    }
+
     @Override
     public PaymentProvider getPaymentProvider() {
         return PaymentProvider.STRIPE;

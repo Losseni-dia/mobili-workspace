@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.mobili.backend.module.booking.ticket.entity.Ticket;
+import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.shared.abstractEntity.AbstractEntity;
@@ -128,19 +129,55 @@ public class Booking extends AbstractEntity {
      * code affichant un montant côté partenaire doit passer par cette méthode, jamais
      * recalculer la formule lui-même (c'est exactement ce qui a fini par diverger — quatre
      * endroits différents utilisaient totalPrice par erreur avant cette centralisation).
+     *
+     * Dès que des tickets existent avec la scission transportFare/baggageFee (post-chantier
+     * commission), le calcul se base sur les tickets ENCORE ACTIFS uniquement (statut
+     * différent de ANNULÉ) — sinon un ticket annulé individuellement continuait de peser
+     * dans la vente affichée partout (dashboard, Transactions...), sans jamais être
+     * recalculé : exactement le décalage remonté en production. Pas de recalcul rétroactif
+     * en revanche pour les réservations sans tickets ou antérieures à cette scission : on
+     * retombe sur le total figé à la création (ticketsTotalAmount/totalPrice), comme avant.
      */
     @jakarta.persistence.Transient
     public double getGrossAmount() {
-        if (ticketsTotalAmount == null) {
-            // Réservation antérieure au forfait client : totalPrice EST déjà la vente brute
-            // (le forfait n'existait pas encore), pas de recalcul rétroactif.
-            return totalPrice;
+        return getActiveTicketsAmount() + getActiveLuggageFee();
+    }
+
+    /** Part transport de {@link #getGrossAmount()} — voir son Javadoc pour la logique complète. */
+    @jakarta.persistence.Transient
+    public double getActiveTicketsAmount() {
+        if (hasActiveTicketFareSplit()) {
+            return tickets.stream()
+                    .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
+                    .mapToDouble(t -> t.getTransportFare() != null ? t.getTransportFare() : 0.0)
+                    .sum();
         }
-        double luggageFee = extraHoldBags != null && extraHoldBags > 0
+        // Réservation antérieure au forfait client : totalPrice EST déjà la vente brute
+        // (le forfait n'existait pas encore), pas de recalcul rétroactif.
+        return ticketsTotalAmount == null ? totalPrice : ticketsTotalAmount;
+    }
+
+    /** Part bagage de {@link #getGrossAmount()} — voir son Javadoc pour la logique complète. */
+    @jakarta.persistence.Transient
+    public double getActiveLuggageFee() {
+        if (hasActiveTicketFareSplit()) {
+            return tickets.stream()
+                    .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
+                    .mapToDouble(t -> t.getBaggageFee() != null ? t.getBaggageFee() : 0.0)
+                    .sum();
+        }
+        if (ticketsTotalAmount == null) {
+            return 0.0;
+        }
+        return extraHoldBags != null && extraHoldBags > 0
                 && trip != null && trip.getExtraHoldBagPrice() != null
                         ? extraHoldBags * trip.getExtraHoldBagPrice()
                         : 0.0;
-        return ticketsTotalAmount + luggageFee;
+    }
+
+    private boolean hasActiveTicketFareSplit() {
+        return tickets != null && !tickets.isEmpty()
+                && tickets.stream().anyMatch(t -> t.getTransportFare() != null);
     }
 
     @PrePersist
