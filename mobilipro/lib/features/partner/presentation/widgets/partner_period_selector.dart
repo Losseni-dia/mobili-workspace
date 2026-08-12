@@ -5,6 +5,11 @@ import '../../../../core/theme/app_colors.dart';
 
 enum PartnerPeriodMode { today, week, month, custom }
 
+bool _isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+enum _CalendarChoice { range, single }
+
 class PartnerPeriod {
   const PartnerPeriod({required this.mode, this.customFrom, this.customTo});
 
@@ -28,6 +33,7 @@ class PartnerPeriod {
   String label() {
     if (isCustom && customFrom != null && customTo != null) {
       final f = DateFormat('dd/MM/yy');
+      if (_isSameDay(customFrom!, customTo!)) return f.format(customFrom!);
       return '${f.format(customFrom!)} → ${f.format(customTo!)}';
     }
     return switch (mode) {
@@ -95,6 +101,75 @@ class PartnerPeriodSelector extends StatelessWidget {
     }
   }
 
+  Future<void> _pickSingleDate(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(now.year - 3),
+      lastDate: now,
+      initialDate: selected.isCustom && selected.customFrom != null
+          ? selected.customFrom!
+          : now,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: Theme.of(
+            ctx,
+          ).colorScheme.copyWith(primary: AppColors.mobiliBlue),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      onChanged(
+        PartnerPeriod(
+          mode: PartnerPeriodMode.custom,
+          customFrom: picked,
+          customTo: picked,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickCalendar(BuildContext context) async {
+    final choice = await showModalBottomSheet<_CalendarChoice>(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(
+                Icons.date_range_rounded,
+                color: AppColors.mobiliBlue,
+              ),
+              title: const Text('Intervalle de dates'),
+              onTap: () => Navigator.pop(ctx, _CalendarChoice.range),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.today_rounded,
+                color: AppColors.mobiliBlue,
+              ),
+              title: const Text('Une date précise'),
+              onTap: () => Navigator.pop(ctx, _CalendarChoice.single),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || choice == null) return;
+    if (choice == _CalendarChoice.range) {
+      await _pickRange(context);
+    } else {
+      await _pickSingleDate(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chips = <Widget>[
@@ -117,7 +192,7 @@ class PartnerPeriodSelector extends StatelessWidget {
         label: selected.isCustom ? selected.label() : 'Calendrier',
         selected: selected.isCustom,
         icon: Icons.calendar_month_rounded,
-        onTap: () => _pickRange(context),
+        onTap: () => _pickCalendar(context),
       ),
     ];
     return Container(
