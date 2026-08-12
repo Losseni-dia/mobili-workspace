@@ -199,10 +199,18 @@ final _monthlyRevenueProvider =
         for (final b in bookings) {
           final map = b as Map<String, dynamic>;
           final status = map['status'] as String?;
-          final amount =
-              (map['amount'] as num?)?.toDouble() ??
-              (map['totalPrice'] as num?)?.toDouble() ??
-              0;
+          // Vente brute — JAMAIS amount/totalPrice seuls, qui incluent le forfait client
+          // (jamais reversé à la compagnie). Même formule que PartnerTransactionResponse/
+          // PartnerBookingItem.grossAmount, pour que ce chiffre reste toujours aligné avec
+          // les pages Transactions et Mes réservations.
+          final ticketsTotalAmount =
+              (map['ticketsTotalAmount'] as num?)?.toDouble();
+          final luggageFee = (map['luggageFee'] as num?)?.toDouble() ?? 0;
+          final amount = ticketsTotalAmount != null
+              ? ticketsTotalAmount + luggageFee
+              : (map['amount'] as num?)?.toDouble() ??
+                  (map['totalPrice'] as num?)?.toDouble() ??
+                  0;
           if (status == 'CONFIRMED') online += amount;
           if (status == 'OFFLINE_SALE') offline += amount;
         }
