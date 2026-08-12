@@ -12,7 +12,7 @@ SPA du projet **Mobili**. Le détail produit, le **suivi des fonctionnalités** 
 - **Chauffeur** : page pleine page `/chauffeur` (`driver-console`), garde `chauffeurGuard`.
 - **Covoiturage (conducteur particulier)** : shell `covoiturage-shell` — accueil, publication, **même** `driver-console` en *piloter*, **scanner** **`/covoiturage/scan`**, notifications (routes sous **`/covoiturage/...`**) ; garde **`covoiturageSoloGuard`**. Même **composant** de scan que la gare (`TicketScannerComponent`).
 - **Admin** : shell `admin-shell` — dashboard, analytics app, vue métier, utilisateurs, partenaires, **annonces** → **`/admin/communication`** (envoi d’informations vers inbox dirigeants / ciblage, selon règles backend).
-- **Auth** : `/auth/inscription` (choix de parcours), `/auth/register-gare` (inscription responsable gare avec code compagnie).
+- **Auth** : `/auth/inscription` (choix de parcours). Les gares sont créées par le partenaire depuis son tableau de bord (`/partenaire/gares`), pas d'auto-inscription responsable gare (flux retiré, l'endpoint backend correspondant n'a jamais existé).
 
 ## Styles & i18n
 

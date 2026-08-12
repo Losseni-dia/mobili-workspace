@@ -5,7 +5,7 @@ import { ConfigurationService } from '../../../configurations/services/configura
 
 /**
  * Redirection navigateur vers l’URL de l’appli voyageurs (`travelerWebBase` + chemin depuis `route.data`).
- * Ex. `{ data: { travelerPath: '/auth/register-gare' } }`
+ * Ex. `{ data: { travelerPath: '/auth/register-carpool-chauffeur' } }`
  */
 @Component({
   selector: 'app-traveler-route-redirect',
