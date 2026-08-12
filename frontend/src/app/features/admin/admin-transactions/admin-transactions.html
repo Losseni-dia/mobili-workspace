@@ -1,0 +1,94 @@
+<section class="kpi-row">
+    <div class="kpi-chip">
+        <span class="chip-label">Frais Mobili</span>
+        <strong>{{ totalServiceFee() | number }} FCFA</strong>
+    </div>
+    <div class="kpi-chip">
+        <span class="chip-label">Commission</span>
+        <strong>{{ totalCommission() | number }} FCFA</strong>
+    </div>
+    <div class="kpi-chip">
+        <span class="chip-label">Net compagnies</span>
+        <strong>{{ totalCompanyNet() | number }} FCFA</strong>
+    </div>
+    <div class="kpi-chip kpi-chip--accent">
+        <span class="chip-label">CA total</span>
+        <strong>{{ totalRevenue() | number }} FCFA</strong>
+    </div>
+</section>
+
+<section class="toolbar">
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); load()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); load()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Référence, client, compagnie…">
+        </label>
+    </div>
+</section>
+<p class="range-hint">Sans dates, les 30 derniers jours sont affichés par défaut. Seules les réservations payées (confirmées ou vente à la gare) apparaissent ici.</p>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Transactions</h2>
+            <p>Frais Mobili, commission prélevée et net revenant à chaque compagnie, par réservation.</p>
+        </div>
+        <span class="count-chip">{{ filtered().length }} résultats</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des transactions…</div>
+    } @else if (errorMessage()) {
+        <div class="empty">
+            <div class="empty-icon">⚠️</div>
+            <strong>{{ errorMessage() }}</strong>
+        </div>
+    } @else if (filtered().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Client</th>
+                        <th>Compagnie</th>
+                        <th>Trajet</th>
+                        <th>Date</th>
+                        <th class="right">Frais Mobili</th>
+                        <th class="right">Commission</th>
+                        <th class="right">Net compagnie</th>
+                        <th class="right">Total payé</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (t of filtered(); track t.bookingId) {
+                        <tr>
+                            <td class="mono">#{{ t.reference }}</td>
+                            <td>{{ t.customerName }}</td>
+                            <td>{{ t.companyName }}</td>
+                            <td>{{ t.route }}</td>
+                            <td class="mono">{{ t.date | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="right">{{ t.serviceFee | number }} FCFA</td>
+                            <td class="right">{{ t.commissionTotal | number }} FCFA</td>
+                            <td class="right amount">{{ t.companyNet | number }} FCFA</td>
+                            <td class="right">{{ t.totalPrice | number }} FCFA</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">💳</div>
+            <strong>Aucune transaction trouvée</strong>
+            <p>Modifie tes filtres pour élargir la recherche.</p>
+        </div>
+    }
+</section>

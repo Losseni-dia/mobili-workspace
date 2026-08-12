@@ -189,6 +189,23 @@ export const routes: Routes = [
             (m) => m.AdminCommunication,
           ),
       },
+      {
+        path: 'tickets',
+        loadComponent: () =>
+          import('./features/admin/admin-tickets/admin-tickets').then((m) => m.AdminTickets),
+      },
+      {
+        path: 'bookings',
+        loadComponent: () =>
+          import('./features/admin/admin-bookings/admin-bookings').then((m) => m.AdminBookings),
+      },
+      {
+        path: 'transactions',
+        loadComponent: () =>
+          import('./features/admin/admin-transactions/admin-transactions').then(
+            (m) => m.AdminTransactions,
+          ),
+      },
     ],
   },
 

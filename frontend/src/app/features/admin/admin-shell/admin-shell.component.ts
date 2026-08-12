@@ -30,6 +30,9 @@ export class AdminShellComponent {
     { label: 'Annonces', icon: '📣', path: '/admin/communication' },
     { label: 'Utilisateurs', icon: '👥', path: '/admin/users' },
     { label: 'Partenaires', icon: '🏢', path: '/admin/partners' },
+    { label: 'Tickets', icon: '🎫', path: '/admin/tickets' },
+    { label: 'Réservations', icon: '📋', path: '/admin/bookings' },
+    { label: 'Transactions', icon: '💳', path: '/admin/transactions' },
   ];
 
   pageTitle = computed(() => {
@@ -39,6 +42,9 @@ export class AdminShellComponent {
     if (url.includes('communication')) return 'Annonces partenaires';
     if (url.includes('users')) return 'Utilisateurs';
     if (url.includes('partners')) return 'Partenaires';
+    if (url.includes('tickets')) return 'Tickets';
+    if (url.includes('bookings')) return 'Réservations';
+    if (url.includes('transactions')) return 'Transactions';
     return 'Vue d’ensemble';
   });
 
@@ -55,6 +61,9 @@ export class AdminShellComponent {
     }
     if (url.includes('users')) return 'Activer ou suspendre des comptes.';
     if (url.includes('partners')) return 'Fiches compagnies et comptes chauffeurs covoiturage (particuliers).';
+    if (url.includes('tickets')) return 'Tous les billets, toutes compagnies confondues.';
+    if (url.includes('bookings')) return 'Toutes les réservations, toutes compagnies confondues.';
+    if (url.includes('transactions')) return 'Frais Mobili, commission et net compagnie, par réservation payée.';
     return 'Chiffres clés et raccourcis vers les vues détaillées.';
   });
 
