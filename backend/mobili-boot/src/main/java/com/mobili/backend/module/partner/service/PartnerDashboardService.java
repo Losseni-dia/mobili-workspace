@@ -36,14 +36,14 @@ public class PartnerDashboardService {
 
         double revenueOnline = 0;
         double revenueOffline = 0;
-        
+
         if (bookings != null) {
             revenueOnline = bookings.stream()
                     .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
-                    .mapToDouble(Booking::getTotalPrice).sum();
+                    .mapToDouble(Booking::getGrossAmount).sum();
             revenueOffline = bookings.stream()
                     .filter(b -> b.getStatus() == BookingStatus.OFFLINE_SALE)
-                    .mapToDouble(Booking::getTotalPrice).sum();
+                    .mapToDouble(Booking::getGrossAmount).sum();
         }
         long confirmedCount = bookings != null ? bookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.CONFIRMED
@@ -71,10 +71,10 @@ public class PartnerDashboardService {
 
         double revenueOnline = bookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
-                .mapToDouble(Booking::getTotalPrice).sum();
+                .mapToDouble(Booking::getGrossAmount).sum();
         double revenueOffline = bookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.OFFLINE_SALE)
-                .mapToDouble(Booking::getTotalPrice).sum();
+                .mapToDouble(Booking::getGrossAmount).sum();
         long confirmedCount = bookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.CONFIRMED
                         || b.getStatus() == BookingStatus.OFFLINE_SALE)

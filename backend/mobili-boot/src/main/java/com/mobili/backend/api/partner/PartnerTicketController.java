@@ -39,6 +39,12 @@ public class PartnerTicketController {
                         t.getTrip().getStation() != null ? t.getTrip().getStation().getName() : "—",
                         t.getBookingDate(),
                         t.getAmountPaid(),
+                        // Vente brute côté compagnie — jamais amountPaid, qui dilue le forfait
+                        // client sur chaque siège. Null (ticket antérieur) -> le front retombe
+                        // sur amountPaid.
+                        t.getTransportFare() != null
+                                ? t.getTransportFare() + (t.getBaggageFee() != null ? t.getBaggageFee() : 0.0)
+                                : null,
                         t.getStatus() != null ? t.getStatus().name() : "—",
                         t.getSeatNumber(),
                         t.isScanned()))

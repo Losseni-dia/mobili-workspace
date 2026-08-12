@@ -32,7 +32,10 @@ public interface PartnerMapper {
     @Mapping(target = "customerName", expression = "java(booking.getCustomer().getFirstname() + \" \" + booking.getCustomer().getLastname())")
     @Mapping(target = "tripRoute", expression = "java(booking.getTrip().getDepartureCity() + \" -> \" + booking.getTrip().getArrivalCity())")
     @Mapping(target = "date", source = "createdAt")
-    @Mapping(target = "amount", source = "totalPrice")
+    // JAMAIS totalPrice directement : inclut le forfait client, jamais reversé à la
+    // compagnie. Booking.getGrossAmount() est la seule implémentation de ce calcul dans
+    // tout le backend (voir son Javadoc) — ne pas le recalculer ici.
+    @Mapping(target = "amount", expression = "java(booking.getGrossAmount())")
     @Mapping(target = "status", expression = "java(booking.getStatus().name())")
     @Mapping(target = "passengerNames", expression = "java(booking.getPassengerNames() != null ? new java.util.ArrayList<>(booking.getPassengerNames()) : java.util.Collections.emptyList())")
     @Mapping(target = "seatNumbers", expression = "java(booking.getSeatNumbers() != null ? new java.util.ArrayList<>(booking.getSeatNumbers()) : java.util.Collections.emptyList())")
