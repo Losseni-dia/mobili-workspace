@@ -10,7 +10,6 @@ export interface SeatSelection {
 
 export interface BookingRequest {
   tripId: number;
-  userId: number;
   numberOfSeats: number;
   selections: SeatSelection[];
   /** Index de l'arrêt d'embarquement (0 = ville de départ). */
