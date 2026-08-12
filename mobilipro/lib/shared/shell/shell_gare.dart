@@ -48,8 +48,8 @@ class ShellGare extends ConsumerWidget {
             label: 'Trajets',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_rounded),
-            label: 'Réservations',
+            icon: Icon(Icons.confirmation_number_rounded),
+            label: 'Tickets',
           ),
         const BottomNavigationBarItem(
             icon: Icon(Icons.people_rounded),
