@@ -85,7 +85,7 @@
                                     {{ b.status }}
                                 </span>
                             </td>
-                            <td class="right amount">{{ (b.totalPrice || b.amount) | number: '1.0-0' }} FCFA</td>
+                            <td class="right amount">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
                         </tr>
                     }
                 </tbody>

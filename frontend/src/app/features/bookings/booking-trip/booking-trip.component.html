@@ -131,6 +131,12 @@
                             <strong>{{ luggageFeeAmount() | number: '1.0-0' }} FCFA</strong>
                         </div>
                     }
+                    @if (serviceFee(); as fee) {
+                        <div class="summary-line">
+                            <span>Frais de service :</span>
+                            <strong>{{ fee | number: '1.0-0' }} FCFA</strong>
+                        </div>
+                    }
                     <div class="summary-line total">
                         <span>Total à payer :</span>
                         <strong>

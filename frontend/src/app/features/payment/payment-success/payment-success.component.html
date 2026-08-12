@@ -34,6 +34,11 @@
                 </span>
             </div>
 
+            <div class="info-line" *ngIf="bookingDetails.serviceFee">
+                <span class="label">Dont frais de service</span>
+                <span class="value">{{bookingDetails.serviceFee | number}} FCFA</span>
+            </div>
+
             <div class="info-line border-0 mt-3">
                 <span class="label">Total payé</span>
                 <span class="price-tag">{{bookingDetails.totalPrice | number}} FCFA</span>
