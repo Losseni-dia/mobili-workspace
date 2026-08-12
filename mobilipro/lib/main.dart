@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobilipro/core/services/firebase_service.dart';
 import 'package:mobilipro/core/theme/app_theme.dart';
@@ -30,6 +31,16 @@ class MobiliProApp extends ConsumerWidget {
       title: 'MobiliPro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Nécessaire pour que les sélecteurs de date natifs (showDatePicker /
+      // showDateRangePicker) s'affichent en français (mois, jours, boutons
+      // OK/Annuler) — sans ça, Flutter retombe sur l'anglais par défaut.
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [Locale('fr', 'FR'), Locale('fr')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: router,
     );
   }

@@ -10,6 +10,13 @@ bool _isSameDay(DateTime a, DateTime b) =>
 
 enum _CalendarChoice { range, single }
 
+/// Bornes du calendrier volontairement très larges — dans le passé pour
+/// retrouver n'importe quelle donnée historique, dans le futur pour filtrer
+/// sur des trajets/réservations pas encore arrivés. Tous les mois de toutes
+/// les années dans cette plage restent sélectionnables.
+final DateTime _kCalendarFirstDate = DateTime(1990);
+DateTime _kCalendarLastDate(DateTime now) => DateTime(now.year + 50);
+
 class PartnerPeriod {
   const PartnerPeriod({required this.mode, this.customFrom, this.customTo});
 
@@ -73,8 +80,9 @@ class PartnerPeriodSelector extends StatelessWidget {
     final now = DateTime.now();
     final range = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(now.year - 3),
-      lastDate: now,
+      firstDate: _kCalendarFirstDate,
+      lastDate: _kCalendarLastDate(now),
+      locale: const Locale('fr', 'FR'),
       initialDateRange: selected.isCustom && selected.customFrom != null
           ? DateTimeRange(start: selected.customFrom!, end: selected.customTo!)
           : DateTimeRange(
@@ -105,8 +113,9 @@ class PartnerPeriodSelector extends StatelessWidget {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 3),
-      lastDate: now,
+      firstDate: _kCalendarFirstDate,
+      lastDate: _kCalendarLastDate(now),
+      locale: const Locale('fr', 'FR'),
       initialDate: selected.isCustom && selected.customFrom != null
           ? selected.customFrom!
           : now,
