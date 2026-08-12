@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobilipro/features/auth/providers/auth_provider.dart';
 import 'package:mobilipro/features/stations/presentation/pages/bookings_gare_page.dart';
+import 'package:mobilipro/features/stations/presentation/pages/gare_transactions_page.dart';
 import 'package:mobilipro/features/stations/presentation/pages/tickets_gare_page.dart';
 import 'package:mobilipro/features/trips/presentation/pages/trips_gare_page.dart';
 
@@ -637,6 +638,59 @@ class DashboardGarePage extends ConsumerWidget {
                           );
                         },
                       ),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const GareTransactionsPage(),
+                          ),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.gray200),
+                            boxShadow: AppColors.shadowSm,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: AppColors.mobiliBlueDeep.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: AppColors.mobiliBlueDeep,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Transactions',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.mobiliBlueDeep,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.gray300,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
