@@ -3,10 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/status_filter_chip.dart';
 import '../models/admin_stats_models.dart';
 import '../widgets/admin_common_widgets.dart';
 import '../widgets/admin_export_helpers.dart';
 import '../widgets/admin_period_selector.dart';
+
+/// Réservation "confirmée" = vente effective (en ligne ou au guichet) — exclut
+/// PENDING (pas encore payée) et CANCELLED. Même formule que côté partenaire/gare.
+bool _isConfirmedBooking(AdminBookingListItem b) =>
+    b.status == 'CONFIRMED' || b.status == 'OFFLINE_SALE';
 
 class TripStatsDetailPage extends ConsumerStatefulWidget {
   const TripStatsDetailPage({super.key});
@@ -18,6 +24,7 @@ class TripStatsDetailPage extends ConsumerStatefulWidget {
 class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
   AdminStatsPeriod _period = kPeriodWeek;
   String _search = '';
+  String _statusFilter = 'CONFIRME';
   int _pageSize = 20;
   final _searchCtrl = TextEditingController();
 
@@ -26,6 +33,11 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
     _searchCtrl.dispose();
     super.dispose();
   }
+
+  List<AdminBookingListItem> _applyStatusFilter(List<AdminBookingListItem> bookings) =>
+      _statusFilter == 'CONFIRME'
+          ? bookings.where(_isConfirmedBooking).toList()
+          : bookings.where((b) => b.status == 'CANCELLED').toList();
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +182,28 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      StatusFilterChip(
+                        label: 'Confirmé',
+                        selected: _statusFilter == 'CONFIRME',
+                        onTap: () => setState(() {
+                          _statusFilter = 'CONFIRME';
+                          _pageSize = 20;
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      StatusFilterChip(
+                        label: 'Annulé',
+                        selected: _statusFilter == 'ANNULE',
+                        onTap: () => setState(() {
+                          _statusFilter = 'ANNULE';
+                          _pageSize = 20;
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   listAsync.when(
                     loading: () => const Padding(
                       padding: EdgeInsets.all(20),
@@ -183,7 +217,12 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                       'Erreur liste : $e',
                       style: const TextStyle(color: AppColors.danger),
                     ),
-                    data: (list) {
+                    data: (allBookings) {
+                      final list = _applyStatusFilter(allBookings);
+                      // Montant confirmé — jamais influencé par le filtre affiché.
+                      final confirmedAmount = allBookings
+                          .where(_isConfirmedBooking)
+                          .fold<double>(0, (s, b) => s + b.totalPrice);
                       if (list.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(20),
@@ -199,6 +238,42 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                       final hasMore = list.length > _pageSize;
                       return Column(
                         children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.gray200),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.payments_rounded,
+                                  color: AppColors.stationGreen,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${confirmedAmount.toStringAsFixed(0)} F',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.mobiliBlueDeep,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'confirmé',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
