@@ -25,7 +25,10 @@ public class BookingResponseDTO {
     private Set<String> passengerNames;
     /** Montant total de la réservation (tickets + forfait client + bagages). */
     private Double totalPrice;
-    /** Alias de {@link #totalPrice} conservé pour compatibilité avec les écrans partenaire. */
+    /**
+     * Vente brute de la compagnie (Booking.getGrossAmount()) — JAMAIS totalPrice, qui
+     * inclut le forfait client, jamais reversé à la compagnie.
+     */
     private Double amount;
     /** Prix pour une seule place (= totalPrice / numberOfSeats). */
     private Double pricePerSeat;
