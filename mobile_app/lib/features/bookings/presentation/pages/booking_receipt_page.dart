@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -10,13 +11,71 @@ class BookingReceiptPage extends StatelessWidget {
   const BookingReceiptPage({super.key, required this.booking});
   final BookingDetail booking;
 
+  (Color, Color) _statusConfig(String status) {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return (const Color(0xFFD1FAE5), AppColors.stationGreen);
+      case 'COMPLETED':
+        return (AppColors.mobiliBlueFog, AppColors.mobiliBlue);
+      case 'CANCELLED':
+      case 'REJECTED_BY_DRIVER':
+      case 'EXPIRED':
+        return (AppColors.dangerSoft, AppColors.danger);
+      default:
+        return (AppColors.gray100, AppColors.gray500);
+    }
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return 'Confirmée';
+      case 'COMPLETED':
+        return 'Terminée';
+      case 'CANCELLED':
+        return 'Annulée';
+      case 'REJECTED_BY_DRIVER':
+        return 'Refusée';
+      case 'EXPIRED':
+        return 'Expirée';
+      default:
+        return status;
+    }
+  }
+
+  void _share() {
+    final buffer = StringBuffer()
+      ..writeln('Reçu Mobili — ${booking.tripRoute}')
+      ..writeln('Référence : ${booking.reference}')
+      ..writeln('Départ : ${booking.formattedDate}')
+      ..writeln('Montant payé : ${booking.formattedPrice}');
+    if (booking.passengerNames.isNotEmpty) {
+      buffer.writeln('Passagers :');
+      for (final e in booking.passengerNames.asMap().entries) {
+        final seat = e.key < booking.seatNumbers.length
+            ? booking.seatNumbers[e.key]
+            : '—';
+        buffer.writeln('  - ${e.value} (siège $seat)');
+      }
+    }
+    SharePlus.instance.share(ShareParams(text: buffer.toString()));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final statusConfig = _statusConfig(booking.status);
     return Scaffold(
       backgroundColor: AppColors.gray50,
-      appBar: const MobiliAppBar(
+      appBar: MobiliAppBar(
         title: 'Reçu',
         showBackButton: true,
+        actions: [
+          IconButton(
+            onPressed: _share,
+            icon: const Icon(Icons.ios_share_rounded, color: AppColors.white),
+            tooltip: 'Partager',
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -38,6 +97,16 @@ class BookingReceiptPage extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.mobiliBlueFog,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.directions_bus_rounded,
+                          color: AppColors.mobiliBlue, size: 20),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         booking.tripRoute,
@@ -47,9 +116,23 @@ class BookingReceiptPage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusConfig.$1,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(_statusLabel(booking.status),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: statusConfig.$2,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          )),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 Text(
                   booking.formattedDate,
                   style: AppTextStyles.bodyMedium
@@ -65,33 +148,26 @@ class BookingReceiptPage extends StatelessWidget {
                 const _DashedLine(),
                 const SizedBox(height: 16),
 
-                // ── Détail transport ──────────────────────
-               _ReceiptRow(
-                  label:
-                      'Transport (${booking.numberOfSeats} place${booking.numberOfSeats > 1 ? 's' : ''} × ${(booking.transportTotal / booking.numberOfSeats).toStringAsFixed(0)} FCFA)',
-                  value: booking.formattedTransportTotal,
-                ),
-
-                // ── Détail bagages (si présents) ──────────
+                // ── Bagages (si présents) — seul poste à part entière ─────
+                // choisi par le passager, le reste (forfait de service) n'a
+                // pas sa place ici : juste le montant total payé.
                 if (booking.extraHoldBags > 0) ...[
-                  const SizedBox(height: 10),
                   _ReceiptRow(
                     label:
                         'Bagages supplémentaires (${booking.extraHoldBags} bagage${booking.extraHoldBags > 1 ? 's' : ''})',
                     value: booking.formattedLuggageFee,
                   ),
+                  const SizedBox(height: 16),
+                  const _DashedLine(),
+                  const SizedBox(height: 16),
                 ],
-
-                const SizedBox(height: 16),
-                const _DashedLine(),
-                const SizedBox(height: 16),
 
                 // ── Total ──────────────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total payé',
+                      'Montant total',
                       style: AppTextStyles.titleMedium.copyWith(
                         color: AppColors.mobiliBlueDeep,
                         fontWeight: FontWeight.w800,
@@ -105,6 +181,12 @@ class BookingReceiptPage extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${booking.numberOfSeats} place${booking.numberOfSeats > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.gray400),
                 ),
 
                 if (booking.passengerNames.isNotEmpty) ...[

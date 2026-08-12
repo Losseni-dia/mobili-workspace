@@ -403,28 +403,6 @@ class _BookingCard extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                               )),
                         ),
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  BookingReceiptPage(booking: booking),
-                            ),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.receipt_long_rounded,
-                              color: AppColors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -665,6 +643,36 @@ class _BookingCard extends StatelessWidget {
                               backgroundColor: AppColors.mobiliYellow,
                               foregroundColor: AppColors.mobiliBlueDeep,
                               elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Voir reçu — remplace l'icône reçu qui était en haut de la carte,
+                    // plus visible ici comme action à part entière.
+                    if (booking.status == 'CONFIRMED')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    BookingReceiptPage(booking: booking),
+                              ),
+                            ),
+                            icon: const Icon(Icons.receipt_long_rounded,
+                                size: 16),
+                            label: const Text('Voir le reçu'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.mobiliBlue,
+                              side:
+                                  const BorderSide(color: AppColors.mobiliBlue),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
                               padding: const EdgeInsets.symmetric(vertical: 10),
