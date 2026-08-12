@@ -6,6 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ImagePanDirective } from '../../../shared/directives/image-pan.directive';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-register',
@@ -125,16 +126,11 @@ export class RegisterComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
-        const apiMsg = err.error && typeof err.error.message === 'string' ? err.error.message.trim() : '';
-        if (apiMsg) {
-          this.errorMessage.set(apiMsg);
-          return;
-        }
-        if (err.status === 409 || err.status === 400) {
-          this.errorMessage.set('Erreur : Ce login ou cet email est déjà utilisé.');
-          return;
-        }
-        this.errorMessage.set(`Erreur (${err.status}). Réessayez ou contactez le support.`);
+        const fallback =
+          err.status === 409 || err.status === 400
+            ? 'Erreur : Ce login ou cet email est déjà utilisé.'
+            : `Erreur (${err.status}). Réessayez ou contactez le support.`;
+        this.errorMessage.set(extractApiErrorMessage(err, fallback));
       },
     });
   }

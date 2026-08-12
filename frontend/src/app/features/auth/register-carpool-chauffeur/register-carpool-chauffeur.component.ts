@@ -2,7 +2,9 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 /** Miroir de la contrainte backend `RegisterCarpoolChauffeurDTO.idValidUntil` (`@Future`). */
 function futureDateValidator(): ValidatorFn {
@@ -132,14 +134,11 @@ export class RegisterCarpoolChauffeurComponent {
             queryParams: { registered: 'carpool' },
           });
         },
-        error: (err) => {
+        error: (err: HttpErrorResponse) => {
           this.isLoading.set(false);
-          const msg =
-            err?.error?.message ||
-            err?.error?.error ||
-            (typeof err?.error === 'string' ? err.error : null) ||
-            'Inscription impossible. Vérifiez les champs et réessayez.';
-          this.errorMessage.set(String(msg));
+          this.errorMessage.set(
+            extractApiErrorMessage(err, 'Inscription impossible. Vérifiez les champs et réessayez.'),
+          );
         },
       });
   }

@@ -2,9 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-register-partner',
@@ -77,17 +79,12 @@ export class RegisterPartnerComponent {
         next: () => {
           void this.router.navigateByUrl('/partenaire/dashboard');
         },
-        error: (err: unknown) => {
+        error: (err: HttpErrorResponse) => {
           this.isLoading.set(false);
-          const msg =
-            err &&
-            typeof err === 'object' &&
-            'error' in err &&
-            err.error &&
-            typeof err.error === 'object' &&
-            typeof (err.error as { message?: unknown }).message === 'string'
-              ? (err.error as { message: string }).message
-              : 'Inscription impossible. Vérifie tes informations ou réessaie plus tard.';
+          const msg = extractApiErrorMessage(
+            err,
+            'Inscription impossible. Vérifie tes informations ou réessaie plus tard.',
+          );
           this.notification.show(msg, 'error');
           console.error('[register-partner]', err);
         },

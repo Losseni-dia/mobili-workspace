@@ -7,6 +7,7 @@ import { postLoginNavigateUrl } from '../../../core/auth/post-login-redirect.uti
 import { MOBILI_APP_KIND, type MobiliAppKind } from '../../../core/config/mobili-app-kind.token';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-login',
@@ -58,16 +59,11 @@ export class LoginComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);
-        const raw = err.error;
-        const fromApi =
-          typeof raw === 'string'
-            ? raw
-            : raw && typeof raw === 'object' && 'message' in raw
-              ? String((raw as { message: unknown }).message)
-              : '';
         this.errorMessage.set(
-          fromApi.trim() ||
+          extractApiErrorMessage(
+            err,
             'Identifiants incorrects ou compte inactif. Vérifiez vos saisies ou l’état de votre compte.',
+          ),
         );
       },
     });
