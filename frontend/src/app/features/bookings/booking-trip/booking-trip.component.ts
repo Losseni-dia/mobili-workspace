@@ -279,7 +279,6 @@ export class BookingTripComponent implements OnInit {
 
     const payload: BookingRequest = {
       tripId: this.tripId,
-      userId: user.id,
       numberOfSeats: selectedSeats.length,
       selections,
       boardingStopIndex: this.boardingIndex(),
