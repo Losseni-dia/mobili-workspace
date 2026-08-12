@@ -8,6 +8,7 @@ import '../../../shared/widgets/mobili_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../bookings/data/booking_service.dart';
 import '../../bookings/domain/models/booking_detail.dart';
+import '../../bookings/domain/models/ticket.dart';
 import '../data/claim_service.dart';
 import '../domain/models/claim_reason.dart';
 
@@ -55,6 +56,14 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
   bool _submitting = false;
   String? _error;
 
+  /// Uniquement pour le motif "annulation" sur une résa multi-sièges : tickets de la
+  /// réservation sélectionnée, pour permettre de n'en annuler qu'une partie plutôt que
+  /// toute la résa. null tant qu'aucune résa multi-sièges n'est sélectionnée ou que le
+  /// chargement n'a pas encore eu lieu.
+  List<Ticket>? _bookingTickets;
+  bool _loadingTickets = false;
+  Set<int> _selectedTicketIds = {};
+
   /// Tant qu'aucune réservation n'est choisie, la liste reste dépliée ; dès
   /// qu'on en sélectionne une, elle se replie pour ne montrer que celle-ci
   /// (sinon la liste peut être longue si l'utilisateur a beaucoup de
@@ -94,11 +103,56 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
           _bookingListExpanded = false;
         }
       });
+      if (_selectedBooking != null) {
+        _loadTicketsForSelectedBooking();
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _myBookings = []);
     } finally {
       if (mounted) setState(() => _loadingBookings = false);
+    }
+  }
+
+  /// Uniquement utile pour le motif annulation sur une résa multi-sièges — voir
+  /// _bookingTickets. Silencieux en cas d'échec : le pire cas est de retomber sur
+  /// "annuler toute la réservation" (comportement historique), jamais un blocage.
+  Future<void> _loadTicketsForSelectedBooking() async {
+    final booking = _selectedBooking;
+    final userId = ref.read(authProvider).valueOrNull?.profile?.id;
+    if (booking == null || userId == null || _reason != ClaimReasonType.cancellation) {
+      setState(() {
+        _bookingTickets = null;
+        _selectedTicketIds = {};
+      });
+      return;
+    }
+    if (booking.numberOfSeats <= 1) {
+      setState(() {
+        _bookingTickets = null;
+        _selectedTicketIds = {};
+      });
+      return;
+    }
+    setState(() => _loadingTickets = true);
+    try {
+      final allTickets = await BookingService().getTicketsForUser(userId);
+      final tickets = allTickets.where((t) => t.bookingId == booking.id).toList();
+      if (!mounted) return;
+      setState(() {
+        _bookingTickets = tickets;
+        // Tout sélectionné par défaut = "annuler toute la réservation", le
+        // comportement historique — l'utilisateur décoche ce qu'il veut garder.
+        _selectedTicketIds = tickets.where((t) => t.isCancellable).map((t) => t.id!).toSet();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _bookingTickets = null;
+        _selectedTicketIds = {};
+      });
+    } finally {
+      if (mounted) setState(() => _loadingTickets = false);
     }
   }
 
@@ -108,6 +162,8 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
       _selectedBookingId = null;
       _selectedBooking = null;
       _bookingListExpanded = true;
+      _bookingTickets = null;
+      _selectedTicketIds = {};
     });
     if (reason.requiresBooking && _myBookings == null) {
       _loadBookings();
@@ -118,7 +174,23 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
     if (_submitting) return false;
     if (_messageCtrl.text.trim().isEmpty) return false;
     if (_reason.requiresBooking && _selectedBookingId == null) return false;
+    if (_bookingTickets != null && _bookingTickets!.isNotEmpty && _selectedTicketIds.isEmpty) {
+      return false;
+    }
     return true;
+  }
+
+  /// null (résa entière) sauf si l'utilisateur a désélectionné au moins un siège
+  /// annulable — dans ce cas, seuls les tickets encore cochés sont ciblés.
+  Map<String, String>? get _claimDetails {
+    final tickets = _bookingTickets;
+    if (tickets == null || tickets.isEmpty) return null;
+    final cancellableIds = tickets.where((t) => t.isCancellable).map((t) => t.id!).toSet();
+    if (_selectedTicketIds.length >= cancellableIds.length) {
+      // Tout est coché : équivalent à "toute la réservation", pas besoin de le préciser.
+      return null;
+    }
+    return {'ticketIds': _selectedTicketIds.join(',')};
   }
 
   Future<void> _submit() async {
@@ -131,6 +203,7 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
         reason: _reason,
         bookingId: _selectedBookingId,
         message: _messageCtrl.text.trim(),
+        details: _claimDetails,
       );
       if (!mounted) return;
       await showDialog<void>(
@@ -196,13 +269,41 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
               locked: widget.initialBookingId != null,
               lockedBooking: _selectedBooking,
               expanded: _bookingListExpanded,
-              onSelected: (b) => setState(() {
-                _selectedBookingId = b.id;
-                _selectedBooking = b;
-                _bookingListExpanded = false;
-              }),
+              onSelected: (b) {
+                setState(() {
+                  _selectedBookingId = b.id;
+                  _selectedBooking = b;
+                  _bookingListExpanded = false;
+                });
+                _loadTicketsForSelectedBooking();
+              },
               onChangeRequested: () => setState(() => _bookingListExpanded = true),
             ),
+            if (_reason == ClaimReasonType.cancellation &&
+                _selectedBooking != null &&
+                _selectedBooking!.numberOfSeats > 1) ...[
+              const SizedBox(height: 14),
+              const _SectionTitle('Sièges à annuler'),
+              const SizedBox(height: 4),
+              Text(
+                'Décochez les sièges que vous souhaitez garder — par défaut, toute '
+                'la réservation est visée.',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500),
+              ),
+              const SizedBox(height: 8),
+              _TicketSelector(
+                loading: _loadingTickets,
+                tickets: _bookingTickets ?? const [],
+                selectedIds: _selectedTicketIds,
+                onToggle: (id) => setState(() {
+                  if (_selectedTicketIds.contains(id)) {
+                    _selectedTicketIds.remove(id);
+                  } else {
+                    _selectedTicketIds.add(id);
+                  }
+                }),
+              ),
+            ],
             const SizedBox(height: 20),
           ],
           const _SectionTitle('Décrivez votre demande'),
@@ -434,6 +535,104 @@ class _BookingPicker extends StatelessWidget {
                 ),
               ))
           .toList(),
+    );
+  }
+}
+
+class _TicketSelector extends StatelessWidget {
+  const _TicketSelector({
+    required this.loading,
+    required this.tickets,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+
+  final bool loading;
+  final List<Ticket> tickets;
+  final Set<int> selectedIds;
+  final ValueChanged<int> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    if (tickets.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.gray200),
+        ),
+        child: Text('Chargement des sièges…',
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500)),
+      );
+    }
+    return Column(
+      children: tickets.map((t) {
+        final id = t.id;
+        final cancellable = t.isCancellable && id != null;
+        final selected = id != null && selectedIds.contains(id);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: selected ? AppColors.mobiliBlueFog : AppColors.white,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: cancellable ? () => onToggle(id) : null,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? AppColors.mobiliBlue : AppColors.gray200,
+                    width: selected ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      cancellable
+                          ? (selected
+                              ? Icons.check_box_rounded
+                              : Icons.check_box_outline_blank_rounded)
+                          : Icons.block_rounded,
+                      color: cancellable
+                          ? (selected ? AppColors.mobiliBlue : AppColors.gray400)
+                          : AppColors.gray300,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Siège ${t.seatNumber} — ${t.passengerFullName}',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.gray700,
+                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                              )),
+                          if (!cancellable)
+                            Text('Déjà ${t.status.toLowerCase()}, non annulable',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.gray400, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
