@@ -29,10 +29,16 @@ export class GareShellComponent implements OnInit {
     { label: 'Messages compagnie', icon: '💬', path: '/gare/company-messages' },
     { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
     { label: 'Scanner billets', icon: '📷', path: '/gare/scan' },
+    { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
   ];
 
-  /** Mêmes accès compagnie que l’espace partenaire (rôle GARE lié à une compagnie). */
+  /**
+   * Mêmes accès compagnie que l’espace partenaire (rôle GARE lié à une compagnie) — pas de
+   * réservations ici : la gare n’a besoin que des tickets (voir navItems), les réservations
+   * restent un concept compagnie/partenaire (page conservée, juste non mise en avant côté
+   * gare — même principe que côté mobilipro).
+   */
   companyNavItems: GareNavItem[] = [
     { label: 'Tableau de bord', icon: '📊', path: '/partenaire/dashboard' },
     { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
@@ -40,7 +46,6 @@ export class GareShellComponent implements OnInit {
     { label: 'Notifications (compagnie)', icon: '🔔', path: '/partenaire/notifications' },
     { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
     { label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' },
-    { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
     { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
   ];
 
@@ -58,6 +63,13 @@ export class GareShellComponent implements OnInit {
         title: 'Scanner embarquement',
         desc: 'Valide les titres de transport (QR code) à l’embarquement.',
         crumb: 'Scanner',
+      };
+    }
+    if (url.includes('/gare/tickets')) {
+      return {
+        title: 'Tickets',
+        desc: 'Billets vendus sur vos voyages, avec leur statut d’embarquement.',
+        crumb: 'Tickets',
       };
     }
     if (url.includes('/gare/compte')) {
