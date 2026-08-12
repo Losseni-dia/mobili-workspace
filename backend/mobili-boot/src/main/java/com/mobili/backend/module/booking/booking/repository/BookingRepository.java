@@ -268,4 +268,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("stationId") Long stationId,
                         @Param("from") java.time.LocalDateTime from,
                         @Param("to") java.time.LocalDateTime to);
+
+        /**
+         * Réservations payées d'un partenaire (CONFIRMED/OFFLINE_SALE) — même filtre statut que
+         * findConfirmedForAdminTransactions, scopé au partenaire (+ gare optionnelle). Tickets
+         * fetch-joints pour sommer commissionAmount/transportFare/baggageFee côté service.
+         */
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "LEFT JOIN FETCH t.partner " +
+                        "JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.tickets " +
+                        "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) " +
+                        "AND b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
+                        "                 com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) " +
+                        "AND b.bookingDate >= :from AND b.bookingDate <= :to " +
+                        "ORDER BY b.bookingDate DESC")
+        List<Booking> findConfirmedForPartnerTransactions(
+                        @Param("partnerId") Long partnerId,
+                        @Param("stationId") Long stationId,
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to);
 }

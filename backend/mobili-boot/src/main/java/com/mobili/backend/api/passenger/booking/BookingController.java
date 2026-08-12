@@ -131,6 +131,17 @@ public class BookingController {
                 .collect(Collectors.toList());
     }
 
+    // Vente brute (jamais le forfait client), commission prelevee, net a recevoir — voir
+    // BookingService.findMyPartnerTransactionsInRange / PartnerTransactionResponse.
+    @GetMapping("/partner/transactions/range")
+    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
+    public List<com.mobili.backend.module.booking.booking.dto.PartnerTransactionResponse> getPartnerTransactionsInRange(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate,
+            @RequestParam(required = false) Long stationId) {
+        return bookingService.findMyPartnerTransactionsInRange(fromDate, toDate, stationId);
+    }
+
     @PostMapping("/partner/deactivate-seats")
     @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN', 'ROLE_STATION')")
     public ResponseEntity<Void> deactivateSeats(@RequestBody ManualBlockRequest request) {
