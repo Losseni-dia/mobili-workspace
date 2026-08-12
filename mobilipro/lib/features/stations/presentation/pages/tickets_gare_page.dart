@@ -19,6 +19,7 @@ class GareTicketItem {
     required this.route,
     required this.bookingDate,
     required this.amountPaid,
+    required this.grossAmount,
     required this.status,
     required this.seatNumber,
     required this.scanned,
@@ -26,8 +27,13 @@ class GareTicketItem {
   final int id;
   final String ticketNumber, passengerName, route, status, seatNumber;
   final DateTime bookingDate;
+  /// Montant payé par le client (forfait inclus) — JAMAIS affiché côté gare. Voir [displayAmount].
   final double amountPaid;
+  final double? grossAmount;
   final bool scanned;
+
+  /// Montant à afficher côté gare — JAMAIS amountPaid directement.
+  double get displayAmount => grossAmount ?? amountPaid;
 
   factory GareTicketItem.fromJson(Map<String, dynamic> j) => GareTicketItem(
     id: (j['id'] as num?)?.toInt() ?? 0,
@@ -37,6 +43,7 @@ class GareTicketItem {
     bookingDate:
         DateTime.tryParse(j['bookingDate'] as String? ?? '') ?? DateTime.now(),
     amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
+    grossAmount: (j['grossAmount'] as num?)?.toDouble(),
     status: j['status'] as String? ?? '',
     seatNumber: j['seatNumber'] as String? ?? '',
     scanned: j['scanned'] as bool? ?? false,
@@ -97,7 +104,7 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
           t.passengerName,
           t.route,
           DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
-          t.amountPaid.toStringAsFixed(0),
+          t.displayAmount.toStringAsFixed(0),
           t.status,
           t.seatNumber,
           t.scanned ? 'Oui' : 'Non',
@@ -144,7 +151,7 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                     t.passengerName,
                     t.route,
                     DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
-                    '${t.amountPaid.toStringAsFixed(0)} F',
+                    '${t.displayAmount.toStringAsFixed(0)} F',
                     t.status,
                   ],
                 )
@@ -314,7 +321,7 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                                   ),
                                 ),
                                 Text(
-                                  '${t.amountPaid.toStringAsFixed(0)} F',
+                                  '${t.displayAmount.toStringAsFixed(0)} F',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12,
