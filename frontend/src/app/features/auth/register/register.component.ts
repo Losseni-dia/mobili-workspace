@@ -62,7 +62,9 @@ export class RegisterComponent implements OnInit {
     });
   }
 
+  /** Email optionnel côté backend (`RegisterDTO` : @Email seul, pas @NotBlank) — vide accepté. */
   isEmailValid(): boolean {
+    if (!this.user.email.trim()) return true;
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     return emailPattern.test(this.user.email);
   }
