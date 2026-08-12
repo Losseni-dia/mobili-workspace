@@ -34,6 +34,7 @@ export interface BookingResponse {
   numberOfSeats: number;
   seatNumbers: string[];
   passengerNames?: string[];
+  /** Montant total de la réservation (tickets + forfait client + bagages). */
   totalPrice: number;
   /** Alias conservé pour les anciennes vues partenaire. */
   amount?: number;
@@ -46,6 +47,31 @@ export interface BookingResponse {
   bookingDate?: string;
   extraHoldBags?: number;
   luggageFee?: number;
+  /**
+   * Somme des prix de tickets seule (hors forfait client, hors bagages) — à afficher dans
+   * « Mes réservations », jamais `totalPrice`. Absent sur les réservations créées avant le
+   * forfait client : retomber sur `totalPrice` dans ce cas (pas de recalcul rétroactif).
+   */
+  ticketsTotalAmount?: number;
+  /** Forfait client appliqué (100/200/300 FCFA) — absent sur les réservations antérieures. */
+  serviceFee?: number;
+}
+
+export interface BookingPricePreviewRequest {
+  tripId: number;
+  numberOfSeats: number;
+  boardingStopIndex?: number;
+  alightingStopIndex?: number;
+  extraHoldBags?: number;
+  couponCode?: string | null;
+}
+
+/** Détail affichable au passager avant paiement — même calcul que la création réelle. */
+export interface BookingPricePreviewResponse {
+  seatSubtotal: number;
+  serviceFee: number;
+  luggageFee: number;
+  total: number;
 }
 
 export interface PaymentCheckoutResponse {
@@ -89,6 +115,15 @@ export class BookingService {
    */
   createBooking(bookingData: BookingRequest): Observable<BookingResponse> {
     return this.http.post<BookingResponse>(this.API_URL, bookingData);
+  }
+
+  /**
+   * Prévisualise le prix (sous-total, forfait client, bagages, total) sans créer de
+   * réservation — même calcul serveur que `createBooking`, pour afficher le détail avant
+   * paiement plutôt qu'un total local qui omettrait le forfait client.
+   */
+  previewPrice(req: BookingPricePreviewRequest): Observable<BookingPricePreviewResponse> {
+    return this.http.post<BookingPricePreviewResponse>(`${this.API_URL}/price-preview`, req);
   }
 
   confirmPayment(bookingId: number): Observable<void> {

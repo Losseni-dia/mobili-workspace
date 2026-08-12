@@ -74,6 +74,18 @@
                     <span>Nombre de places</span>
                     <strong>×{{ bookingData.numberOfSeats }}</strong>
                 </div>
+                @if (bookingData.luggageFee) {
+                    <div class="price-row">
+                        <span>Supplément bagages</span>
+                        <strong>{{ bookingData.luggageFee | number: '1.0-0' }} FCFA</strong>
+                    </div>
+                }
+                @if (bookingData.serviceFee) {
+                    <div class="price-row">
+                        <span>Frais de service</span>
+                        <strong>{{ bookingData.serviceFee | number: '1.0-0' }} FCFA</strong>
+                    </div>
+                }
                 <div class="price-row total">
                     <span>Total à payer</span>
                     <strong>{{ totalPrice() | number: '1.0-0' }} FCFA</strong>

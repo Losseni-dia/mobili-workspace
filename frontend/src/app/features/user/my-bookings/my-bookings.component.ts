@@ -67,11 +67,19 @@ export class MyBookingsComponent implements OnInit {
   });
 
   totalSpent = computed(() =>
-    this.bookings().reduce((sum, b) => {
-      const v = Number(b.totalPrice ?? b.amount ?? 0);
-      return sum + (Number.isNaN(v) ? 0 : v);
-    }, 0),
+    this.bookings().reduce((sum, b) => sum + this.displayAmount(b), 0),
   );
+
+  /**
+   * Montant à afficher pour une réservation dans « Mes réservations » :
+   * `ticketsTotalAmount` (hors forfait client) — jamais `totalPrice`, qui l'inclut.
+   * Retombe sur `totalPrice`/`amount` pour les réservations créées avant le forfait
+   * client (`ticketsTotalAmount` absent, pas de recalcul rétroactif).
+   */
+  displayAmount(b: BookingResponse): number {
+    const v = Number(b.ticketsTotalAmount ?? b.totalPrice ?? b.amount ?? 0);
+    return Number.isNaN(v) ? 0 : v;
+  }
 
   ngOnInit() {
     const userId = this.authService.currentUser()?.id;

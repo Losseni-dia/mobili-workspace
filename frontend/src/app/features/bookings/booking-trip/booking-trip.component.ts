@@ -8,6 +8,7 @@ import {
   BookingRequest,
   SeatSelection,
 } from '../../../core/services/booking/booking.service';
+import { catchError, of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Trip, TripLegFareResponse, TripService } from '../../../core/services/trip/trip.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
@@ -43,6 +44,16 @@ export class BookingTripComponent implements OnInit {
   alightingIndex = signal<number>(0);
   /** Pour recalculer le plafond bagages quand la sélection de sièges change. */
   selectedSeatCount = signal(0);
+
+  /**
+   * Forfait client (100/200/300 FCFA) et total renvoyés par `/bookings/price-preview` —
+   * même calcul serveur que la création réelle. `null` tant qu'aucun aperçu n'a réussi
+   * (aucun siège choisi, ou appel réseau en échec) : `totalBookingPrice()` retombe alors sur
+   * un total local sans forfait plutôt que de bloquer l'affichage.
+   */
+  serviceFee = signal<number | null>(null);
+  private previewTotal = signal<number | null>(null);
+  private previewSeq = 0;
 
   bookingForm: FormGroup;
   tripId: number = 0;
@@ -105,8 +116,11 @@ export class BookingTripComponent implements OnInit {
         while (this.passengerArray.length) {
           this.passengerArray.removeAt(0);
         }
+        this.refreshPricePreview();
       }
     });
+
+    this.bookingForm.get('extraHoldBags')?.valueChanges.subscribe(() => this.refreshPricePreview());
   }
 
   ngOnInit() {
@@ -185,6 +199,40 @@ export class BookingTripComponent implements OnInit {
     if (!Number.isNaN(cur) && cur > cap) {
       this.bookingForm.patchValue({ extraHoldBags: cap });
     }
+    this.refreshPricePreview();
+  }
+
+  /**
+   * Recalcule le forfait client (et le total serveur) après tout changement affectant le prix
+   * (sièges, tronçon, bagages). Silencieux en cas d'échec réseau — l'affichage retombe alors
+   * sur le total local (sans forfait) plutôt que de bloquer la réservation ; le montant
+   * réellement facturé reste de toute façon recalculé côté serveur à la création.
+   */
+  private refreshPricePreview() {
+    const seats = this.selectedSeatCount();
+    if (seats === 0) {
+      this.serviceFee.set(null);
+      this.previewTotal.set(null);
+      return;
+    }
+    const seq = ++this.previewSeq;
+    let extra = Number(this.bookingForm.get('extraHoldBags')?.value ?? 0);
+    if (Number.isNaN(extra) || extra < 0) extra = 0;
+
+    this.bookingService
+      .previewPrice({
+        tripId: this.tripId,
+        numberOfSeats: seats,
+        boardingStopIndex: this.boardingIndex(),
+        alightingStopIndex: this.alightingIndex(),
+        extraHoldBags: extra,
+      })
+      .pipe(catchError(() => of(null)))
+      .subscribe((preview) => {
+        if (seq !== this.previewSeq) return;
+        this.serviceFee.set(preview?.serviceFee ?? null);
+        this.previewTotal.set(preview?.total ?? null);
+      });
   }
 
   luggageFeeAmount(): number {
@@ -195,7 +243,15 @@ export class BookingTripComponent implements OnInit {
     return e * unit;
   }
 
+  /**
+   * Total à payer : celui renvoyé par le serveur (avec forfait client) dès qu'il est
+   * disponible. En attendant sa réponse (ou en cas d'échec réseau), retombe sur un total
+   * local qui omet le forfait — annoncé comme tel n'importe où ailleurs, jamais utilisé pour
+   * la facturation réelle (recalculée côté serveur à la création).
+   */
   totalBookingPrice(): number {
+    const preview = this.previewTotal();
+    if (preview != null) return preview;
     const n = this.selectedSeatCount();
     return n * this.pricePerSeat() + this.luggageFeeAmount();
   }
