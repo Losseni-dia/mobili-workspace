@@ -516,17 +516,22 @@ List<AdminPartner> _applyFilters(List<AdminPartner> all) {
             (p) =>
                 p.name.toLowerCase().contains(q) ||
                 (p.ownerName ?? '').toLowerCase().contains(q) ||
-                (p.email ?? '').toLowerCase().contains(q),
+                (p.email ?? '').toLowerCase().contains(q) ||
+                (p.phone ?? '').toLowerCase().contains(q) ||
+                (p.businessNumber ?? '').toLowerCase().contains(q),
           )
           .toList();
     }
-    filtered.sort(
-      (a, b) => a.isPending && !b.isPending
-          ? -1
-          : !a.isPending && b.isPending
-          ? 1
-          : 0,
-    );
+    // En attente toujours en tête, puis les autres du plus récent inscrit au plus
+    // ancien (au lieu de l'ordre arbitraire renvoyé par le backend) — les partenaires
+    // sans date d'inscription (comptes historiques) sont relégués en fin de liste.
+    filtered.sort((a, b) {
+      if (a.isPending != b.isPending) return a.isPending ? -1 : 1;
+      if (a.createdAt == null && b.createdAt == null) return 0;
+      if (a.createdAt == null) return 1;
+      if (b.createdAt == null) return -1;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
     return filtered;
   }
 
@@ -652,6 +657,7 @@ List<AdminPartner> _applyFilters(List<AdminPartner> all) {
               onRetry: () => ref.invalidate(adminPartnersProvider),
             ),
             data: (all) {
+              final scoped = all.where((p) => !p.covoiturageSoloPool).toList();
               final filtered = _applyFilters(all);
               final visible = filtered.take(_pageSize).toList();
               final hasMore = filtered.length > _pageSize;
@@ -674,10 +680,17 @@ List<AdminPartner> _applyFilters(List<AdminPartner> all) {
 
               return Column(
                 children: [
+                  // Compteurs — toujours calculés sur l'ensemble des partenaires,
+                  // indépendamment des filtres actifs, pour garder une vue d'ensemble.
+                  _PartnerCountsBar(
+                    pending: scoped.where((p) => p.isPending).length,
+                    active: scoped.where((p) => p.enabled).length,
+                    inactive: scoped.where((p) => !p.enabled).length,
+                  ),
                   // Barre résumé + export
                 _ActionBar(
                     count: filtered.length,
-                    total: all.where((p) => !p.covoiturageSoloPool).length,
+                    total: scoped.length,
                     hasFilters: activeFilters.isNotEmpty,
                     onClear: () => setState(() {
                       _approvalFilter = 'TOUS';
@@ -1262,6 +1275,83 @@ class _CovoiturageTabState extends ConsumerState<_CovoiturageTab> {
 // CARTES
 // ═══════════════════════════════════════════════════════════════════════════
 
+class _PartnerCountsBar extends StatelessWidget {
+  const _PartnerCountsBar({
+    required this.pending,
+    required this.active,
+    required this.inactive,
+  });
+  final int pending, active, inactive;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    color: AppColors.white,
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+    child: Row(
+      children: [
+        Expanded(
+          child: _CountChip(
+            label: 'En attente',
+            value: pending,
+            color: AppColors.warning,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _CountChip(
+            label: 'Actifs',
+            value: active,
+            color: AppColors.stationGreen,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _CountChip(
+            label: 'Inactifs',
+            value: inactive,
+            color: AppColors.gray500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CountChip extends StatelessWidget {
+  const _CountChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$value',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+        Text(label, style: TextStyle(fontSize: 10, color: color)),
+      ],
+    ),
+  );
+}
+
 class _PartnerCard extends StatelessWidget {
   const _PartnerCard({
     required this.partner,
@@ -1358,6 +1448,14 @@ class _PartnerCard extends StatelessWidget {
                           partner.email!,
                           style: const TextStyle(
                             fontSize: 11,
+                            color: AppColors.gray400,
+                          ),
+                        ),
+                      if (partner.createdAt != null)
+                        Text(
+                          'Inscrit le ${DateFormat('dd/MM/yyyy').format(partner.createdAt!)}',
+                          style: const TextStyle(
+                            fontSize: 10,
                             color: AppColors.gray400,
                           ),
                         ),
