@@ -188,3 +188,15 @@ $teal-ring: rgba(13, 148, 136, 0.35);
   background: #f1f5f9;
   border-color: #e2e8f0;
 }
+
+// Colonne "Actions" du tableau compagnies : Approuver + Rejeter côte à côte pour un partenaire
+// en attente.
+td.right .row-btn + .row-btn {
+  margin-left: 0.5rem;
+}
+
+.rejection-reason {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  color: #b91c1c;
+}
