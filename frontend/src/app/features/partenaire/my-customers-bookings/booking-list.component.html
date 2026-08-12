@@ -1,7 +1,13 @@
 <section class="booking-toolbar">
     <div class="revenue-chip">
-        <span class="chip-label">Total filtré</span>
-        <strong>{{ totalRevenue() | number }} FCFA</strong>
+        <span class="chip-label">Montant confirmé</span>
+        <strong>{{ confirmedRevenue() | number }} FCFA</strong>
+    </div>
+
+    <div class="status-filters">
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'CONFIRME'" (click)="setStatusFilter('CONFIRME')">Confirmé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'ANNULE'" (click)="setStatusFilter('ANNULE')">Annulé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'TOUS'" (click)="setStatusFilter('TOUS')">Tous</button>
     </div>
 
     <div class="filters">

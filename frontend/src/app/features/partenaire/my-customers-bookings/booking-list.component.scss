@@ -37,6 +37,29 @@
   }
 }
 
+.status-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.status-chip {
+  padding: 7px 14px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-600;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color variables.$t-base, background variables.$t-base, color variables.$t-base;
+
+  &.active {
+    background: variables.$mobili-blue;
+    border-color: variables.$mobili-blue;
+    color: variables.$white;
+  }
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
