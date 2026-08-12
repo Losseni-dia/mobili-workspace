@@ -76,6 +76,54 @@ export class AdminPartners implements OnInit {
     return m[s] ?? 'kyc-pill--neutral';
   }
 
+  /** PENDING (ou REJECTED, pour permettre un rattrapage) : pas encore approuvé au sens métier. */
+  isPending(p: Partner): boolean {
+    return p.approvalStatus === 'PENDING' || p.approvalStatus === 'REJECTED';
+  }
+
+  /**
+   * Approuve un partenaire en attente. Distinct de `togglePartner` : seul ce bouton met
+   * `approvalStatus` à APPROVED — brancher « Approuver » sur `togglePartnerStatus` laissait
+   * un partenaire `enabled=true` mais `approvalStatus=PENDING` en base (bug corrigé ici).
+   */
+  approvePartner(id: number) {
+    if (!window.confirm('Approuver ce partenaire ? Il pourra publier des trajets immédiatement.')) {
+      return;
+    }
+    this.adminService.approvePartner(id).subscribe({
+      next: () => {
+        this.partners.update((list) =>
+          list.map((p) =>
+            p.id === id ? { ...p, enabled: true, approvalStatus: 'APPROVED', rejectionReason: null } : p,
+          ),
+        );
+      },
+      error: (err) => console.error("Erreur lors de l'approbation du partenaire", err),
+    });
+  }
+
+  rejectPartner(id: number) {
+    const reason = window.prompt('Motif du rejet (obligatoire, communiqué au partenaire) :');
+    if (reason == null) return; // annulé
+    if (!reason.trim()) {
+      window.alert('Le motif de rejet est obligatoire.');
+      return;
+    }
+    this.adminService.rejectPartner(id, reason.trim()).subscribe({
+      next: () => {
+        this.partners.update((list) =>
+          list.map((p) =>
+            p.id === id
+              ? { ...p, enabled: false, approvalStatus: 'REJECTED', rejectionReason: reason.trim() }
+              : p,
+          ),
+        );
+      },
+      error: (err) => console.error('Erreur lors du rejet du partenaire', err),
+    });
+  }
+
+  /** Suspendre / réactiver un partenaire DÉJÀ approuvé — ne touche jamais approvalStatus. */
   togglePartner(id: number) {
     this.adminService.togglePartnerStatus(id).subscribe({
       next: () => {

@@ -49,20 +49,40 @@
                   </td>
                   <td class="mono">{{ p.email }}</td>
                   <td>
-                    <span class="status-pill" [class.active]="p.enabled" [class.warn]="!p.enabled">
+                    <span
+                      class="status-pill"
+                      [class.active]="p.approvalStatus === 'APPROVED' && p.enabled"
+                      [class.warn]="isPending(p)"
+                    >
                       <span class="dot"></span>
-                      {{ p.enabled ? 'Actif' : 'En attente' }}
+                      @if (p.approvalStatus === 'REJECTED') {
+                        Rejeté
+                      } @else if (isPending(p)) {
+                        En attente
+                      } @else {
+                        {{ p.enabled ? 'Actif' : 'Suspendu' }}
+                      }
                     </span>
+                    @if (p.approvalStatus === 'REJECTED' && p.rejectionReason) {
+                      <p class="rejection-reason">Motif : {{ p.rejectionReason }}</p>
+                    }
                   </td>
                   <td class="right">
-                    <button
-                      class="row-btn"
-                      [class.danger]="p.enabled"
-                      [class.success]="!p.enabled"
-                      (click)="togglePartner(p.id)"
-                    >
-                      {{ p.enabled ? 'Suspendre' : 'Approuver' }}
-                    </button>
+                    @if (isPending(p)) {
+                      <button class="row-btn success" (click)="approvePartner(p.id)">Approuver</button>
+                      @if (p.approvalStatus === 'PENDING') {
+                        <button class="row-btn danger" (click)="rejectPartner(p.id)">Rejeter</button>
+                      }
+                    } @else {
+                      <button
+                        class="row-btn"
+                        [class.danger]="p.enabled"
+                        [class.success]="!p.enabled"
+                        (click)="togglePartner(p.id)"
+                      >
+                        {{ p.enabled ? 'Suspendre' : 'Réactiver' }}
+                      </button>
+                    }
                   </td>
                 </tr>
               }

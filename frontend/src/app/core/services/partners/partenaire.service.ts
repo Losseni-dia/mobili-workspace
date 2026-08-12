@@ -20,6 +20,10 @@ export interface Partner {
    * Renseigné sur les réponses admin.
    */
   covoiturageSoloPool?: boolean;
+  /** PENDING / APPROVED / REJECTED — renseigné sur les réponses admin (GET /admin/partners). */
+  approvalStatus?: string;
+  /** Motif de rejet le plus récent, renseigné uniquement si approvalStatus = REJECTED. */
+  rejectionReason?: string | null;
 }
 
 export interface PartnerDashboard {

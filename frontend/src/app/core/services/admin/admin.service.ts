@@ -188,7 +188,24 @@ export class AdminService {
   }
 
   /**
-   * Active ou désactive un partenaire (Droit de publication)
+   * Approuve un partenaire en attente : passe `approvalStatus` à APPROVED et active le
+   * compte. Distinct de `togglePartnerStatus` (qui ne fait que basculer `enabled`, sans
+   * jamais toucher `approvalStatus` — utiliser `toggle` uniquement pour suspendre/réactiver
+   * un partenaire déjà approuvé).
+   */
+  approvePartner(id: number): Observable<void> {
+    return this.http.patch<void>(`/admin/partners/${id}/approve`, {});
+  }
+
+  /** Rejette un partenaire en attente — motif obligatoire côté backend. */
+  rejectPartner(id: number, reason: string): Observable<void> {
+    return this.http.patch<void>(`/admin/partners/${id}/reject`, { reason });
+  }
+
+  /**
+   * Active ou désactive un partenaire (Droit de publication) — suspendre/réactiver un
+   * partenaire déjà approuvé. Ne touche jamais `approvalStatus` : pour approuver un
+   * partenaire en attente, utiliser `approvePartner`.
    */
   togglePartnerStatus(id: number): Observable<void> {
     return this.http.patch<void>(`/admin/partners/${id}/toggle`, {});
