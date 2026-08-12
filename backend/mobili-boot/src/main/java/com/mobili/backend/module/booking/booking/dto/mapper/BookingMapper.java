@@ -26,7 +26,11 @@ public interface BookingMapper {
     @Mapping(source = "customer.avatarUrl", target = "customerAvatarUrl")
     @Mapping(target = "tripRoute", expression = "java(booking.getTrip().getDepartureCity() + \" -> \" + booking.getTrip().getArrivalCity())")
     @Mapping(source = "totalPrice", target = "totalPrice")
-    @Mapping(source = "totalPrice", target = "amount")
+    // JAMAIS totalPrice : inclut le forfait client, jamais reversé à la compagnie.
+    // Booking.getGrossAmount() est la seule implémentation de ce calcul dans tout le
+    // backend (voir son Javadoc) — champ lu directement par les écrans gare/partenaire
+    // qui n'ont pas encore leur propre calcul client-side (ex. BookingItem.amount côté gare).
+    @Mapping(target = "amount", expression = "java(booking.getGrossAmount())")
     @Mapping(source = "createdAt", target = "date")
     @Mapping(source = "extraHoldBags", target = "extraHoldBags")
     BookingResponseDTO toDto(Booking booking);
