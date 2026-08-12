@@ -54,9 +54,12 @@
       <h2>Pièce d’identité</h2>
       <label>
         <span>Date de fin de validité</span>
-        <input type="date" formControlName="idValidUntil" />
+        <input type="date" formControlName="idValidUntil" [min]="minIdValidUntilDate" />
       </label>
       <p class="hint">La date doit être <strong>ultérieure à aujourd’hui</strong> (pièce encore valide).</p>
+      @if (form.get('idValidUntil')?.touched && form.get('idValidUntil')?.hasError('notFuture')) {
+        <p class="error">La date doit être postérieure à aujourd’hui.</p>
+      }
 
       <div class="row two files">
         <label class="file">

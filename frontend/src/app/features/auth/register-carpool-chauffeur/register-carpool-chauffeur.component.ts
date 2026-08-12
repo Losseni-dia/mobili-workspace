@@ -1,8 +1,19 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
+
+/** Miroir de la contrainte backend `RegisterCarpoolChauffeurDTO.idValidUntil` (`@Future`). */
+function futureDateValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const value = new Date(control.value);
+    return value > today ? null : { notFuture: true };
+  };
+}
 
 @Component({
   selector: 'app-register-carpool-chauffeur',
@@ -19,6 +30,13 @@ export class RegisterCarpoolChauffeurComponent {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
 
+  /** Pour l'attribut `min` de l'input date — demain au plus tôt (miroir de `@Future`). */
+  readonly minIdValidUntilDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
   idFront: File | null = null;
   idBack: File | null = null;
   driverPhoto: File | null = null;
@@ -32,7 +50,7 @@ export class RegisterCarpoolChauffeurComponent {
     phone: ['', [Validators.required, Validators.maxLength(20)]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', [Validators.required]],
-    idValidUntil: ['', [Validators.required]],
+    idValidUntil: ['', [Validators.required, futureDateValidator()]],
     vehicleBrand: ['', [Validators.required, Validators.maxLength(80)]],
     vehiclePlate: ['', [Validators.required, Validators.maxLength(32)]],
     vehicleColor: ['', [Validators.required, Validators.maxLength(40)]],
