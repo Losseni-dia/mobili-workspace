@@ -592,6 +592,52 @@ public class BookingService {
         return bookings;
     }
 
+    /**
+     * Transactions payées du partenaire connecté : vente brute (jamais le forfait client, qui
+     * n'appartient jamais à la compagnie), commission prélevée par Mobili, net qui lui revient.
+     * Même résolution de partenaire/gare que findMyPartnerBookingsInRange, réutilisée telle
+     * quelle — seule la requête change (statuts payés + tickets fetch-joints).
+     */
+    @Transactional(readOnly = true)
+    public List<com.mobili.backend.module.booking.booking.dto.PartnerTransactionResponse> findMyPartnerTransactionsInRange(
+            LocalDate fromDate, LocalDate toDate, Long filterStationId) {
+        Partner partner = partenaireService.getCurrentPartnerForOperations();
+        Object p = getAuthenticatedPrincipal();
+        Long principalStationId = stationIdOf(p);
+        Long effectiveStationId = principalStationId != null ? principalStationId : filterStationId;
+
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+
+        List<Booking> bookings = bookingRepository.findConfirmedForPartnerTransactions(
+                partner.getId(), effectiveStationId, from, to);
+
+        return bookings.stream()
+                .map(b -> {
+                    int commissionTotal = b.getTickets().stream()
+                            .mapToInt(t -> t.getCommissionAmount() != null ? t.getCommissionAmount() : 0)
+                            .sum();
+                    double ticketsAmount = b.getTicketsTotalAmount() != null ? b.getTicketsTotalAmount() : 0.0;
+                    double luggageFee = b.getExtraHoldBags() != null && b.getExtraHoldBags() > 0
+                            && b.getTrip() != null && b.getTrip().getExtraHoldBagPrice() != null
+                                    ? b.getExtraHoldBags() * b.getTrip().getExtraHoldBagPrice()
+                                    : 0.0;
+                    double grossAmount = ticketsAmount + luggageFee;
+                    double companyNet = grossAmount - commissionTotal;
+
+                    return new com.mobili.backend.module.booking.booking.dto.PartnerTransactionResponse(
+                            b.getId(),
+                            b.getReference(),
+                            b.getBookingDate(),
+                            b.getTrip().getDepartureCity() + " → " + b.getTrip().getArrivalCity(),
+                            grossAmount,
+                            commissionTotal,
+                            companyNet,
+                            b.getStatus() != null ? b.getStatus().name() : "—");
+                })
+                .toList();
+    }
+
     @Transactional
     public void deactivateSeatsManually(ManualBlockRequest request) {
         Partner partner = partenaireService.getCurrentPartnerForOperations();
