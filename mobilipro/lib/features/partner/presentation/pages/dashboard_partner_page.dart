@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/providers/auth_provider.dart';
 import '../../providers/partner_shared_providers.dart';
 import 'partner_bookings_list_page.dart';
+import 'partner_transactions_page.dart';
 import 'partner_tickets_list_page.dart';
 import 'partner_trips_list_page.dart';
 import 'package:mobilipro/features/admin/presentation/widgets/admin_seen_tracker.dart';
@@ -651,6 +652,59 @@ class DashboardPartnerPage extends ConsumerWidget {
                                       ) ??
                                       const SizedBox.shrink(),
                                 ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.gray300,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PartnerTransactionsPage(),
+                        ),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.gray200),
+                          boxShadow: AppColors.shadowSm,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.mobiliBlueDeep.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.receipt_long_rounded,
+                                color: AppColors.mobiliBlueDeep,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Transactions',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.mobiliBlueDeep,
+                                ),
                               ),
                             ),
                             const Icon(
