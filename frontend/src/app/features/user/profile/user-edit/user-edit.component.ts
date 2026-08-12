@@ -31,6 +31,7 @@ export class UserEditComponent implements OnInit {
     lastname: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     login: ['', [Validators.required]],
+    phone: [''],
     password: [''],
   });
 
@@ -41,6 +42,7 @@ export class UserEditComponent implements OnInit {
         lastname: this.user.lastname,
         email: this.user.email,
         login: this.user.login,
+        phone: this.user.phone,
       });
 
       if (this.user.avatarUrl) {
@@ -82,6 +84,7 @@ export class UserEditComponent implements OnInit {
       lastname: rawValues.lastname,
       email: rawValues.email,
       login: rawValues.login,
+      phone: rawValues.phone,
       password: rawValues.password && rawValues.password.trim() !== '' ? rawValues.password : null,
     };
 
