@@ -25,6 +25,7 @@ export class RegisterComponent implements OnInit {
   user = {
     login: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     firstname: '',
@@ -65,6 +66,12 @@ export class RegisterComponent implements OnInit {
     return emailPattern.test(this.user.email);
   }
 
+  /** Miroir de la contrainte backend `RegisterDTO.phone` : 8 à 15 caractères. */
+  isPhoneValid(): boolean {
+    const len = this.user.phone.trim().length;
+    return len >= 8 && len <= 15;
+  }
+
   passwordsMatch(): boolean {
     return this.user.password.length >= 6 && this.user.password === this.user.confirmPassword;
   }
@@ -96,7 +103,13 @@ export class RegisterComponent implements OnInit {
   }
 
   onRegister() {
-    if (!this.passwordsMatch() || !this.isEmailValid() || this.user.login.length < 3) return;
+    if (
+      !this.passwordsMatch() ||
+      !this.isEmailValid() ||
+      !this.isPhoneValid() ||
+      this.user.login.length < 3
+    )
+      return;
 
     this.isLoading.set(true);
     this.errorMessage.set(null);

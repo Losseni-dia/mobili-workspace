@@ -62,6 +62,15 @@
             </div>
 
             <div class="form-group">
+                <label>Téléphone</label>
+                <input type="tel" name="phone" [(ngModel)]="user.phone" #phoneField="ngModel" required
+                    minlength="8" maxlength="15" placeholder="0102030405">
+                @if (phoneField.touched && phoneField.invalid) {
+                <small class="text-error">Le numéro doit contenir entre 8 et 15 caractères.</small>
+                }
+            </div>
+
+            <div class="form-group">
                 <label>Mot de passe</label>
                 <div class="input-wrapper">
                     <input [type]="showPassword() ? 'text' : 'password'" name="password" [(ngModel)]="user.password"
