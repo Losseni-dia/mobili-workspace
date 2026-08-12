@@ -1,0 +1,85 @@
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AdminService, AdminBookingListItem } from '../../../core/services/admin/admin.service';
+
+type StatusFilter = 'CONFIRME' | 'ANNULE';
+
+/** Confirmé = argent réellement acquis (CONFIRMED ou vente à la gare OFFLINE_SALE). */
+function isConfirmed(status: string | undefined): boolean {
+  const s = (status || '').toUpperCase();
+  return s === 'CONFIRMED' || s === 'OFFLINE_SALE';
+}
+
+function isCancelled(status: string | undefined): boolean {
+  return (status || '').toUpperCase() === 'CANCELLED';
+}
+
+/**
+ * Vue admin des réservations, toutes compagnies confondues — parité avec mobilipro
+ * (bookings_stats_page.dart), consomme GET /admin/stats/bookings/list.
+ */
+@Component({
+  selector: 'app-admin-bookings',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './admin-bookings.html',
+  styleUrl: './admin-bookings.scss',
+})
+export class AdminBookings implements OnInit {
+  private adminService = inject(AdminService);
+
+  bookings = signal<AdminBookingListItem[]>([]);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
+
+  fromDate = signal('');
+  toDate = signal('');
+  search = signal('');
+  statusFilter = signal<StatusFilter>('CONFIRME');
+
+  filtered = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const status = this.statusFilter();
+    return this.bookings().filter((b) => {
+      const matchSearch =
+        !term ||
+        (b.reference || '').toLowerCase().includes(term) ||
+        (b.customerName || '').toLowerCase().includes(term) ||
+        (b.partnerName || '').toLowerCase().includes(term) ||
+        (b.route || '').toLowerCase().includes(term);
+      const matchStatus = status === 'CONFIRME' ? isConfirmed(b.status) : isCancelled(b.status);
+      return matchSearch && matchStatus;
+    });
+  });
+
+  confirmedAmount = computed(() =>
+    this.bookings()
+      .filter((b) => isConfirmed(b.status))
+      .reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+  );
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.adminService.getBookingList(this.fromDate() || undefined, this.toDate() || undefined).subscribe({
+      next: (data) => {
+        this.bookings.set(data || []);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur chargement réservations (admin)', err);
+        this.errorMessage.set('Impossible de charger les réservations pour le moment.');
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  setStatusFilter(f: StatusFilter): void {
+    this.statusFilter.set(f);
+  }
+}

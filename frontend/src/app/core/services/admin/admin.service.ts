@@ -128,6 +128,54 @@ export interface CovoiturageSoloDriverAdminItem {
   covoiturageDriverPhotoUrl: string | null;
 }
 
+/** Aligné sur AdminTicketListItemResponse (backend). */
+export interface AdminTicketListItem {
+  id: number;
+  ticketNumber: string;
+  passengerName: string;
+  route: string;
+  partnerName: string;
+  bookingDate: string;
+  amountPaid: number;
+  status: string;
+  seatNumber: string;
+  scanned: boolean;
+}
+
+/** Aligné sur AdminBookingListItemResponse (backend). */
+export interface AdminBookingListItem {
+  id: number;
+  reference: string;
+  customerName: string;
+  route: string;
+  partnerName: string;
+  bookingDate: string;
+  numberOfSeats: number;
+  totalPrice: number;
+  status: string;
+}
+
+/**
+ * Une ligne = une réservation payée (CONFIRMED/OFFLINE_SALE) — aligné sur
+ * AdminTransactionResponse (backend). serviceFee/commissionTotal valent 0 sur les
+ * réservations antérieures au forfait/à la commission (pas de recalcul rétroactif).
+ */
+export interface AdminTransaction {
+  bookingId: number;
+  reference: string;
+  date: string;
+  customerName: string;
+  route: string;
+  companyName: string;
+  ticketsAmount: number;
+  serviceFee: number;
+  luggageFee: number;
+  commissionTotal: number;
+  companyNet: number;
+  totalPrice: number;
+  status: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private http = inject(HttpClient);
@@ -222,6 +270,34 @@ export class AdminService {
   // Pour l'admin : Activer/Désactiver
   toggleStatus(id: number): Observable<void> {
     return this.http.patch<void>(`/admin/partners/${id}/toggle`, {});
+  }
+
+  private dateRangeParams(fromDate?: string, toDate?: string, search?: string): HttpParams {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    if (search) params = params.set('search', search);
+    return params;
+  }
+
+  /** Sans fromDate/toDate, le backend retombe sur les 30 derniers jours. */
+  getTicketList(fromDate?: string, toDate?: string, search?: string): Observable<AdminTicketListItem[]> {
+    return this.http.get<AdminTicketListItem[]>('/admin/stats/tickets/list', {
+      params: this.dateRangeParams(fromDate, toDate, search),
+    });
+  }
+
+  getBookingList(fromDate?: string, toDate?: string, search?: string): Observable<AdminBookingListItem[]> {
+    return this.http.get<AdminBookingListItem[]>('/admin/stats/bookings/list', {
+      params: this.dateRangeParams(fromDate, toDate, search),
+    });
+  }
+
+  /** Frais Mobili, commission prélevée et net compagnie, par réservation payée. */
+  getTransactionList(fromDate?: string, toDate?: string, search?: string): Observable<AdminTransaction[]> {
+    return this.http.get<AdminTransaction[]>('/admin/stats/transactions/list', {
+      params: this.dateRangeParams(fromDate, toDate, search),
+    });
   }
 
   /**

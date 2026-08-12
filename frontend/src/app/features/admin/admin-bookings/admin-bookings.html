@@ -1,0 +1,88 @@
+<section class="toolbar">
+    <div class="revenue-chip">
+        <span class="chip-label">Montant confirmé</span>
+        <strong>{{ confirmedAmount() | number }} FCFA</strong>
+    </div>
+
+    <div class="status-filters">
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'CONFIRME'" (click)="setStatusFilter('CONFIRME')">Confirmé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'ANNULE'" (click)="setStatusFilter('ANNULE')">Annulé</button>
+    </div>
+
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); load()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); load()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Référence, client, compagnie…">
+        </label>
+    </div>
+</section>
+<p class="range-hint">Sans dates, les 30 derniers jours sont affichés par défaut.</p>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Réservations</h2>
+            <p>Toutes les réservations, toutes compagnies confondues.</p>
+        </div>
+        <span class="count-chip">{{ filtered().length }} résultats</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des réservations…</div>
+    } @else if (errorMessage()) {
+        <div class="empty">
+            <div class="empty-icon">⚠️</div>
+            <strong>{{ errorMessage() }}</strong>
+        </div>
+    } @else if (filtered().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Référence</th>
+                        <th>Client</th>
+                        <th>Compagnie</th>
+                        <th>Trajet</th>
+                        <th>Date</th>
+                        <th>Sièges</th>
+                        <th>Statut</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (b of filtered(); track b.id) {
+                        <tr>
+                            <td class="mono">#{{ b.reference }}</td>
+                            <td>{{ b.customerName }}</td>
+                            <td>{{ b.partnerName }}</td>
+                            <td>{{ b.route }}</td>
+                            <td class="mono">{{ b.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td>{{ b.numberOfSeats }}</td>
+                            <td>
+                                <span class="status-pill" [class.active]="b.status !== 'CANCELLED'" [class.warn]="b.status === 'CANCELLED'">
+                                    <span class="dot"></span>
+                                    {{ b.status }}
+                                </span>
+                            </td>
+                            <td class="right amount">{{ b.totalPrice | number }} FCFA</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">🔎</div>
+            <strong>Aucune réservation trouvée</strong>
+            <p>Modifie tes filtres pour élargir la recherche.</p>
+        </div>
+    }
+</section>
