@@ -20,6 +20,17 @@ public interface PaymentService {
     RefundResult refundPayment(String externalReference);
 
     /**
+     * Remboursement partiel — montant en FCFA, jamais le forfait client (frais
+     * irrécupérables côté agrégateur, jamais reversés). Implémentation par défaut : les
+     * providers qui ne savent pas faire de remboursement partiel (ex. FedaPay, sans API de
+     * remboursement du tout — voir FedaPayPaymentService, jamais modifié pour ce chantier)
+     * retombent simplement sur le comportement existant, montant ignoré.
+     */
+    default RefundResult refundPayment(String externalReference, Long amount) {
+        return refundPayment(externalReference);
+    }
+
+    /**
      * Retourne le provider supporté par cette implémentation.
      */
     PaymentProvider getPaymentProvider();

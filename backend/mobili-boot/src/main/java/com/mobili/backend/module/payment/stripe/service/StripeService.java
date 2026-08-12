@@ -57,12 +57,24 @@ public class StripeService {
     }
 
     public String refundPayment(String paymentIntentId) {
-        log.info("💳 Tentative de remboursement Stripe pour PaymentIntent: {}", paymentIntentId);
+        return refundPayment(paymentIntentId, null);
+    }
+
+    /**
+     * @param amountInCents null = remboursement intégral (comportement historique) ; sinon
+     *                      remboursement partiel, déjà converti dans l'unité mineure Stripe
+     *                      (même conversion *100 que StripePaymentService.createPaymentSession).
+     */
+    public String refundPayment(String paymentIntentId, Long amountInCents) {
+        log.info("💳 Tentative de remboursement Stripe pour PaymentIntent: {} (montant={})",
+                paymentIntentId, amountInCents == null ? "intégral" : amountInCents);
         try {
-            RefundCreateParams params = RefundCreateParams.builder()
-                    .setPaymentIntent(paymentIntentId)
-                    .build();
-            Refund refund = Refund.create(params);
+            RefundCreateParams.Builder builder = RefundCreateParams.builder()
+                    .setPaymentIntent(paymentIntentId);
+            if (amountInCents != null) {
+                builder.setAmount(amountInCents);
+            }
+            Refund refund = Refund.create(builder.build());
             log.info("✅ Remboursement Stripe réussi: {}", refund.getId());
             return refund.getId();
         } catch (Exception e) {

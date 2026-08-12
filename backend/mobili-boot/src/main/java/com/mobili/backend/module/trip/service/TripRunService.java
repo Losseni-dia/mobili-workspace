@@ -269,6 +269,15 @@ public class TripRunService {
 
     /**
      * Sièges occupés sur le tronçon (arrêt legIndex → legIndex+1).
+     *
+     * Deux sources : les tickets (émis après paiement confirmé, seule source fiable au
+     * niveau du SIÈGE puisqu'un ticket peut être annulé individuellement — voir
+     * TicketService.cancelTicket) et, pour les réservations sans ticket encore émis
+     * (PENDING avant paiement), les sièges bruts de la réservation. Une fois les tickets
+     * émis pour une réservation, on ne retombe JAMAIS sur booking.getSeatNumbers() pour
+     * elle : cet ensemble reste figé à la vente d'origine et ne reflète pas l'annulation
+     * d'un seul ticket parmi plusieurs — le compter en plus des tickets aurait occupé un
+     * siège déjà libéré individuellement (siège fantôme, jamais revendable).
      */
     public Set<String> seatsOccupiedOnLeg(Long tripId, int legIndex, int defaultAlightingStopIndex) {
         Set<String> seats = new HashSet<>();
@@ -290,6 +299,12 @@ public class TripRunService {
         List<Booking> bookings = bookingRepository.findByTripIdWithSeats(tripId);
         for (Booking b : bookings) {
             if (b.getStatus() == BookingStatus.CANCELLED) {
+                continue;
+            }
+            // Une fois les tickets émis pour cette réservation, la boucle ticket ci-dessus
+            // fait déjà foi pour ses sièges (à jour siège par siège) — la compter ici aussi
+            // recompterait un siège déjà libéré par une annulation partielle.
+            if (b.getTickets() != null && !b.getTickets().isEmpty()) {
                 continue;
             }
             if (b.getStatus() != BookingStatus.PENDING

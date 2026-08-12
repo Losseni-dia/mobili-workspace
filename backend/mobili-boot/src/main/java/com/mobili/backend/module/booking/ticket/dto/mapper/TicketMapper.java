@@ -12,6 +12,7 @@ import com.mobili.backend.module.booking.ticket.entity.Ticket;
 public interface TicketMapper {
 
     @Mapping(source = "passengerName", target = "passengerFullName")
+    @Mapping(source = "booking.id", target = "bookingId")
     @Mapping(source = "trip.id", target = "tripId")
     @Mapping(source = "ticketNumber", target = "qrCodeData")
     @Mapping(source = "trip.departureCity", target = "departureCity")

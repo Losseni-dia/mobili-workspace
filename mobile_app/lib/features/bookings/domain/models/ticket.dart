@@ -1,5 +1,7 @@
 class Ticket {
   const Ticket({
+    this.id,
+    this.bookingId,
     required this.ticketNumber,
     required this.qrCodeData,
     required this.departureCity,
@@ -20,6 +22,10 @@ class Ticket {
     this.bookingDate,
   });
 
+  /// Utilisé pour cibler une annulation partielle (voir ClaimFormPage) — absent des
+  /// écrans "Mes billets" historiques, donc nullable plutôt que de forcer un défaut.
+  final int? id;
+  final int? bookingId;
   final String ticketNumber;
   final String qrCodeData;
   final String departureCity;
@@ -69,6 +75,10 @@ class Ticket {
       !_isArrivedStatus &&
       (_isBoardedStatus || departureDateTime.isAfter(DateTime.now()));
 
+  /// Utilisé par le sélecteur d'annulation partielle (ClaimFormPage) : un ticket déjà
+  /// annulé ou déjà scanné à l'embarquement ne peut pas être (re)proposé à l'annulation.
+  bool get isCancellable => !_isCancelledStatus && !_isBoardedStatus;
+
 static const _monthLabels = [
     '',
     'jan',
@@ -103,6 +113,8 @@ static const _monthLabels = [
   }
 
   factory Ticket.fromJson(Map<String, dynamic> json) => Ticket(
+        id: (json['id'] as num?)?.toInt(),
+        bookingId: (json['bookingId'] as num?)?.toInt(),
         ticketNumber: json['ticketNumber'] as String? ?? '',
         qrCodeData: json['qrCodeData'] as String? ?? '',
         departureCity: json['departureCity'] as String? ?? '',

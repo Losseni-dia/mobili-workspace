@@ -23,6 +23,8 @@ import com.mobili.backend.module.booking.booking.dto.ManualBlockRequest;
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
+import com.mobili.backend.module.booking.ticket.entity.Ticket;
+import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
 import com.mobili.backend.module.coupon.service.CouponService;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
@@ -91,18 +93,32 @@ public class BookingService {
     }
 
     
+    /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket actif n'a été annulé. */
     @Transactional
-    public void cancelBooking(Long bookingId) {
+    public double cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
-        
+
         // Vérifier si la réservation peut être annulée
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             log.warn("⚠️ Réservation {} déjà annulée.", bookingId);
-            return;
+            return 0;
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+
+        // Cascade vers les tickets : sans ça, un ticket restait VALIDÉ alors que sa
+        // réservation passait CANCELLED — décalage constaté côté partenaire/gare/admin (le
+        // ticket ne "passait" jamais dans la liste des annulés). On laisse UTILISÉ tel quel :
+        // un ticket déjà scanné à l'embarquement ne peut pas être rétroactivement invalidé.
+        List<Ticket> justCancelled = new ArrayList<>();
+        for (Ticket t : booking.getTickets()) {
+            if (t.getStatus() == TicketStatus.VALIDÉ) {
+                t.setStatus(TicketStatus.ANNULÉ);
+                justCancelled.add(t);
+            }
+        }
+
         bookingRepository.save(booking);
 
         // Libération immédiate du siège : seatsOccupiedOnLeg() (TripRunService) exclut déjà
@@ -116,15 +132,106 @@ public class BookingService {
         tripRunService.refreshTripAvailableSeatsCounter(trip);
         tripRepository.save(trip);
 
-        // Déclencher le remboursement pour Stripe uniquement (comme requis par le flux)
-        // La méthode refundPayment dans PaymentRefundService gère la logique de remboursement
-        paymentRepository.findByBookingIdAndProvider(bookingId, com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE)
-            .ifPresent(payment -> {
-                log.info("💳 Remboursement automatique pour Booking #{}", bookingId);
-                paymentRefundService.refund(payment.getExternalReference());
-            });
-            
+        double refundable = computeRefundableAmount(justCancelled);
+        triggerRefund(bookingId, refundable);
+
         log.info("✅ Réservation #{} annulée et processus de remboursement initié", bookingId);
+        return refundable;
+    }
+
+    /**
+     * Annulation ciblée d'un sous-ensemble des tickets d'UNE réservation (ex. 1 siège sur 3) —
+     * demandée via réclamation passager, exécutée par un admin (voir AdminBookingController).
+     * Si tous les tickets encore actifs de la réservation finissent annulés par cet appel, la
+     * réservation elle-même bascule CANCELLED (même cascade que cancelBooking, pas de double
+     * remboursement puisqu'on ne rembourse ici que les tickets qu'on vient d'annuler).
+     */
+    /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket ciblé n'a été annulé. */
+    @Transactional
+    public double cancelTickets(Long bookingId, List<Long> ticketIds) {
+        if (ticketIds == null || ticketIds.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Aucun ticket sélectionné.");
+        }
+        Booking booking = bookingRepository.findByIdWithDetails(bookingId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            log.warn("⚠️ Réservation {} déjà annulée.", bookingId);
+            return 0;
+        }
+
+        Set<Long> targetIds = new HashSet<>(ticketIds);
+        List<Ticket> justCancelled = new ArrayList<>();
+        for (Ticket t : booking.getTickets()) {
+            if (!targetIds.contains(t.getId())) {
+                continue;
+            }
+            if (t.getStatus() == TicketStatus.VALIDÉ) {
+                t.setStatus(TicketStatus.ANNULÉ);
+                justCancelled.add(t);
+            }
+        }
+
+        if (justCancelled.isEmpty()) {
+            log.warn("⚠️ Aucun ticket VALIDÉ parmi {} pour la réservation {} — rien à annuler.",
+                    ticketIds, bookingId);
+            return 0;
+        }
+
+        boolean anyStillActive = booking.getTickets().stream()
+                .anyMatch(t -> t.getStatus() == TicketStatus.VALIDÉ);
+        if (!anyStillActive) {
+            // Dernier ticket actif annulé : la réservation suit, comme cancelBooking().
+            booking.setStatus(BookingStatus.CANCELLED);
+        }
+        bookingRepository.save(booking);
+
+        Trip trip = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+        tripRunService.ensureStops(trip);
+        tripRunService.refreshTripAvailableSeatsCounter(trip);
+        tripRepository.save(trip);
+
+        double refundable = computeRefundableAmount(justCancelled);
+        triggerRefund(bookingId, refundable);
+
+        log.info("✅ {} ticket(s) annulé(s) sur la réservation #{} ({})",
+                justCancelled.size(), bookingId,
+                anyStillActive ? "résa toujours active" : "résa entièrement annulée");
+        return refundable;
+    }
+
+    /** Déclenche le remboursement Stripe (seul provider avec remboursement automatique). */
+    private void triggerRefund(Long bookingId, double amount) {
+        if (amount <= 0) {
+            return;
+        }
+        paymentRepository.findByBookingIdAndProvider(bookingId, com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE)
+                .ifPresent(payment -> {
+                    log.info("💳 Remboursement de {} FCFA pour Booking #{}", Math.round(amount), bookingId);
+                    paymentRefundService.refund(payment.getExternalReference(), Math.round(amount));
+                });
+    }
+
+    /**
+     * Montant remboursable pour CES tickets — JAMAIS le forfait client (frais irrécupérables
+     * chez l'agrégateur de paiement in/out, jamais reversés à Mobili elle-même, donc jamais
+     * remboursables au passager). Repose sur transportFare/baggageFee, figés par ticket à la
+     * vente. Pour un ticket antérieur à cette scission (les deux null), on retombe sur
+     * amountPaid en meilleur effort — inclut alors une part de forfait qu'on ne peut plus
+     * isoler rétroactivement, comme partout ailleurs dans ce fichier pour les données
+     * historiques.
+     */
+    private double computeRefundableAmount(List<Ticket> tickets) {
+        double total = 0;
+        for (Ticket t : tickets) {
+            if (t.getTransportFare() != null) {
+                total += t.getTransportFare() + (t.getBaggageFee() != null ? t.getBaggageFee() : 0.0);
+            } else if (t.getAmountPaid() != null) {
+                total += t.getAmountPaid();
+            }
+        }
+        return total;
     }
 
     public Booking create(BookingRequestDTO request) {
@@ -475,6 +582,10 @@ public class BookingService {
         if (b.getSeatNumbers() != null) b.getSeatNumbers().size();
         if (b.getPassengerNames() != null) b.getPassengerNames().size();
         if (b.getTrip() != null) b.getTrip().getDepartureCity();
+        // Booking.getGrossAmount() lit les tickets pour exclure ceux ANNULÉ — sans ce
+        // chargement ici (dans la transaction), l'appel plus tard (mapper/DTO) déclencherait
+        // un LazyInitializationException ou un lazy-load hors session selon le contexte.
+        if (b.getTickets() != null) b.getTickets().size();
     }
 
     @Transactional(readOnly = true)
@@ -614,7 +725,11 @@ public class BookingService {
 
         return bookings.stream()
                 .map(b -> {
+                    // Exclut les tickets ANNULÉ individuellement (annulation partielle) : sinon
+                    // la commission d'un ticket annulé restait comptée alors que grossAmount
+                    // (ci-dessous) ne le compte plus — décalage entre les deux colonnes.
                     int commissionTotal = b.getTickets().stream()
+                            .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
                             .mapToInt(t -> t.getCommissionAmount() != null ? t.getCommissionAmount() : 0)
                             .sum();
                     // Seule implémentation de ce calcul dans tout le backend — voir

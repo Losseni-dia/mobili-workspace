@@ -386,6 +386,21 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
 
   bool get _isClosingStatus => _status == 'RESOLVED' || _status == 'REJECTED';
 
+  /// Tickets visés par une demande d'annulation partielle — voir mobile_app,
+  /// ClaimFormPage : quand le passager ne sélectionne que certains tickets d'une résa
+  /// multi-sièges, leurs IDs sont stockés en CSV dans details['ticketIds'] (Claim.detailsJson
+  /// reste Map<String,String> côté backend, pas de nouveau champ de schéma). Absent ou vide =
+  /// demande d'annulation de toute la réservation (comportement historique).
+  List<int> get _requestedTicketIds {
+    final raw = widget.claim.details['ticketIds'];
+    if (raw == null || raw.trim().isEmpty) return const [];
+    return raw
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -463,6 +478,63 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     try {
       final res = await ApiClient.instance.dio
           .post<Map<String, dynamic>>('/admin/bookings/${booking.bookingId}/cancel');
+      final result = CancelBookingResult.fromJson(res.data!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message), backgroundColor: AppColors.stationGreen),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _cancelling = false);
+    }
+  }
+
+  // Même principe que _cancelAndRefund, mais ne touche qu'aux tickets demandés — la
+  // réservation elle-même ne bascule CANCELLED côté backend que si ça finit par être TOUS
+  // ses tickets encore actifs (voir BookingService.cancelTickets).
+  Future<void> _cancelSelectedTickets() async {
+    final booking = widget.claim.booking;
+    final ticketIds = _requestedTicketIds;
+    if (booking == null || ticketIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Annuler les tickets sélectionnés ?'),
+        content: Text(
+          '${booking.reference} — ${booking.route}\n'
+          '${ticketIds.length} ticket(s) sur cette réservation.\n\n'
+          'Le remboursement Stripe (si applicable) sera déclenché automatiquement, '
+          'hors forfait de service.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Confirmer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    try {
+      final res = await ApiClient.instance.dio.post<Map<String, dynamic>>(
+        '/admin/bookings/${booking.bookingId}/cancel-tickets',
+        data: ticketIds,
+      );
       final result = CancelBookingResult.fromJson(res.data!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -585,7 +657,31 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
               ),
             ],
             const SizedBox(height: 16),
-            if (claim.booking != null)
+            if (claim.booking != null) ...[
+              if (_requestedTicketIds.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _cancelling ? null : _cancelSelectedTickets,
+                      icon: _cancelling
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.event_seat_rounded, size: 16),
+                      label: Text(
+                          'Annuler ${_requestedTicketIds.length} ticket(s) sélectionné(s)'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: const BorderSide(color: AppColors.danger),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: SizedBox(
@@ -598,7 +694,9 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.assignment_return_rounded, size: 16),
-                    label: const Text('Annuler la réservation & rembourser'),
+                    label: Text(_requestedTicketIds.isNotEmpty
+                        ? 'Annuler toute la réservation & rembourser'
+                        : 'Annuler la réservation & rembourser'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.danger,
                       side: const BorderSide(color: AppColors.danger),
@@ -608,6 +706,7 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
                   ),
                 ),
               ),
+            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
