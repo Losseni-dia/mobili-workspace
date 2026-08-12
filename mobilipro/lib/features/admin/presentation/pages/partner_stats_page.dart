@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:mobilipro/features/admin/presentation/pages/admin_gestion_page.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -376,17 +377,17 @@ class _PartnerStatsDetailPageState
                       style: const TextStyle(color: AppColors.danger),
                     ),
                   data: (all) {
-                      var filtered = all
+                      // La période (chip Aujourd'hui/7j/1 mois/Calendrier) ne pilote que le
+                      // graphique "Historique" ci-dessus — elle ne doit JAMAIS filtrer cette
+                      // liste : un partenaire en attente d'approbation doit rester visible et
+                      // approuvable quelle que soit sa date d'inscription. Ce couplage était
+                      // le bug qui rendait "Approuver" inopérant en pratique (le partenaire
+                      // pouvait être invisible car hors de la période par défaut de 30 jours,
+                      // voire définitivement invisible s'il n'avait pas de createdAt du tout).
+                      final scoped = all
                           .where((p) => !p.covoiturageSoloPool)
                           .toList();
-                      filtered = filtered
-                          .where(
-                            (p) =>
-                                p.createdAt != null &&
-                                !p.createdAt!.isBefore(_period.fromAsDate) &&
-                                !p.createdAt!.isAfter(_period.toAsDate),
-                          )
-                          .toList();
+                      var filtered = scoped;
                       if (_approvalFilter != 'TOUS') {
                         filtered = filtered
                             .where((p) => p.approvalStatus == _approvalFilter)
@@ -404,17 +405,24 @@ class _PartnerStatsDetailPageState
                             .where(
                               (p) =>
                                   p.name.toLowerCase().contains(q) ||
-                                  (p.ownerName ?? '').toLowerCase().contains(q),
+                                  (p.ownerName ?? '').toLowerCase().contains(q) ||
+                                  (p.email ?? '').toLowerCase().contains(q) ||
+                                  (p.phone ?? '').toLowerCase().contains(q) ||
+                                  (p.businessNumber ?? '').toLowerCase().contains(q),
                             )
                             .toList();
                       }
-                      filtered.sort(
-                        (a, b) => a.isPending && !b.isPending
-                            ? -1
-                            : !a.isPending && b.isPending
-                            ? 1
-                            : 0,
-                      );
+                      // En attente toujours en tête, puis du plus récent inscrit au plus
+                      // ancien (au lieu d'un ordre arbitraire côté backend).
+                      filtered.sort((a, b) {
+                        if (a.isPending != b.isPending) {
+                          return a.isPending ? -1 : 1;
+                        }
+                        if (a.createdAt == null && b.createdAt == null) return 0;
+                        if (a.createdAt == null) return 1;
+                        if (b.createdAt == null) return -1;
+                        return b.createdAt!.compareTo(a.createdAt!);
+                      });
 
                       if (filtered.isEmpty) {
                         return const Padding(
@@ -431,6 +439,28 @@ class _PartnerStatsDetailPageState
                       final hasMore = filtered.length > _pageSize;
                       return Column(
                         children: [
+                          // Toujours calculés sur l'ensemble des partenaires (hors
+                          // covoiturage), indépendamment des filtres actifs.
+                          CountChipsBar(
+                            chips: [
+                              (
+                                'En attente',
+                                scoped.where((p) => p.isPending).length,
+                                AppColors.warning,
+                              ),
+                              (
+                                'Actifs',
+                                scoped.where((p) => p.enabled).length,
+                                AppColors.stationGreen,
+                              ),
+                              (
+                                'Inactifs',
+                                scoped.where((p) => !p.enabled).length,
+                                AppColors.gray500,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -525,6 +555,14 @@ class _PartnerStatsDetailPageState
                                                     style: const TextStyle(
                                                       fontSize: 11,
                                                       color: AppColors.gray500,
+                                                    ),
+                                                  ),
+                                                if (p.createdAt != null)
+                                                  Text(
+                                                    'Inscrit le ${DateFormat('dd/MM/yyyy').format(p.createdAt!)}',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      color: AppColors.gray400,
                                                     ),
                                                   ),
                                               ],

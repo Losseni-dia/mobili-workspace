@@ -667,3 +667,52 @@ class _AdminHorizontalBarChartState extends State<AdminHorizontalBarChart> {
     );
   }
 }
+
+/// Trois compteurs compacts (ex. En attente/Actifs/Inactifs) — vue d'ensemble
+/// indépendante des filtres actifs sur la liste en dessous.
+class CountChipsBar extends StatelessWidget {
+  const CountChipsBar({super.key, required this.chips});
+  final List<(String label, int value, Color color)> chips;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      for (var i = 0; i < chips.length; i++) ...[
+        if (i > 0) const SizedBox(width: 8),
+        Expanded(child: _CountChip(chips[i])),
+      ],
+    ],
+  );
+}
+
+class _CountChip extends StatelessWidget {
+  const _CountChip(this.data);
+  final (String label, int value, Color color) data;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, value, color) = data;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$value',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              color: color,
+            ),
+          ),
+          Text(label, style: TextStyle(fontSize: 10, color: color)),
+        ],
+      ),
+    );
+  }
+}
