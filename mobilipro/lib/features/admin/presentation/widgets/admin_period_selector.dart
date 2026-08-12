@@ -7,6 +7,11 @@ import '../../../../core/theme/app_colors.dart';
 /// Type record : égalité structurelle automatique (compatible Riverpod family).
 typedef AdminStatsPeriod = ({int days, DateTime? fromDate, DateTime? toDate});
 
+bool _isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+enum _CalendarChoice { range, single }
+
 const AdminStatsPeriod kPeriodToday = (days: 1, fromDate: null, toDate: null);
 const AdminStatsPeriod kPeriodWeek = (days: 7, fromDate: null, toDate: null);
 const AdminStatsPeriod kPeriodMonth = (days: 30, fromDate: null, toDate: null);
@@ -25,6 +30,7 @@ extension AdminStatsPeriodX on AdminStatsPeriod {
   String label() {
     if (isCustom) {
       final f = DateFormat('dd/MM/yy');
+      if (_isSameDay(fromDate!, toDate!)) return f.format(fromDate!);
       return '${f.format(fromDate!)} → ${f.format(toDate!)}';
     }
     return switch (days) {
@@ -73,6 +79,67 @@ class AdminPeriodSelector extends StatelessWidget {
     }
   }
 
+  Future<void> _pickSingleDate(BuildContext context) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(now.year - 3),
+      lastDate: now,
+      initialDate: selected.isCustom ? selected.fromDate! : now,
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: Theme.of(
+            ctx,
+          ).colorScheme.copyWith(primary: AppColors.mobiliBlue),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      onChanged((days: 0, fromDate: picked, toDate: picked));
+    }
+  }
+
+  Future<void> _pickCalendar(BuildContext context) async {
+    final choice = await showModalBottomSheet<_CalendarChoice>(
+      context: context,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(
+                Icons.date_range_rounded,
+                color: AppColors.mobiliBlue,
+              ),
+              title: const Text('Intervalle de dates'),
+              onTap: () => Navigator.pop(ctx, _CalendarChoice.range),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.today_rounded,
+                color: AppColors.mobiliBlue,
+              ),
+              title: const Text('Une date précise'),
+              onTap: () => Navigator.pop(ctx, _CalendarChoice.single),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || choice == null) return;
+    if (choice == _CalendarChoice.range) {
+      await _pickRange(context);
+    } else {
+      await _pickSingleDate(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chips = <Widget>[
@@ -95,7 +162,7 @@ class AdminPeriodSelector extends StatelessWidget {
         label: selected.isCustom ? selected.label() : 'Calendrier',
         selected: selected.isCustom,
         icon: Icons.calendar_month_rounded,
-        onTap: () => _pickRange(context),
+        onTap: () => _pickCalendar(context),
       ),
     ];
     return Container(
