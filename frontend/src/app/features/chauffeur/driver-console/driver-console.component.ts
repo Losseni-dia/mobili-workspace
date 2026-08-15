@@ -42,6 +42,7 @@ export class DriverConsoleComponent implements OnInit {
   isLoadingStops = signal<boolean>(false);
   isLoadingAlightings = signal<boolean>(false);
   busyAction = signal<string | null>(null);
+  isUndoing = signal<boolean>(false);
 
   error = signal<string>('');
   successFlash = signal<string>('');
@@ -240,6 +241,33 @@ export class DriverConsoleComponent implements OnInit {
       error: (e) => {
         this.busyAction.set(null);
         this.error.set(e?.error?.message || 'Impossible d\'enregistrer le départ.');
+      },
+    });
+  }
+
+  /**
+   * Annule le dernier départ enregistré (erreur de manip). Recharge intégralement l'itinéraire et
+   * les descentes de l'arrêt courant résultant, puisque le statut du trajet peut avoir changé.
+   */
+  undoLastDeparture() {
+    const id = this.loadedTripId();
+    if (id == null || this.isUndoing()) return;
+    if (!confirm('Annuler le dernier départ enregistré ? Les passagers marqués descendus à cet arrêt redeviendront « à bord ».')) {
+      return;
+    }
+    this.isUndoing.set(true);
+    this.error.set('');
+    this.driverTrip.undoLastDeparture(id).subscribe({
+      next: ({ currentStopIndex }) => {
+        this.isUndoing.set(false);
+        this.selectedStop.set(currentStopIndex);
+        this.flashSuccess('Dernier départ annulé.');
+        this.fetchAlightings(id, currentStopIndex);
+        this.loadChauffeurOverview();
+      },
+      error: (e) => {
+        this.isUndoing.set(false);
+        this.error.set(e?.error?.message || "Impossible d'annuler ce départ.");
       },
     });
   }

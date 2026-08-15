@@ -177,6 +177,27 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/gare/scanner/scanner.component').then((m) => m.TicketScannerComponent),
       },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/chauffeur/chauffeur-profile/chauffeur-profile.component').then(
+            (m) => m.ChauffeurProfileComponent,
+          ),
+      },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/notifications/inbox-page/inbox-page.component').then(
+            (m) => m.InboxPageComponent,
+          ),
+      },
+      {
+        path: 'trip-channel/:tripId',
+        loadComponent: () =>
+          import('./features/notifications/trip-channel-page/trip-channel-page.component').then(
+            (m) => m.TripChannelPageComponent,
+          ),
+      },
     ],
   },
 
