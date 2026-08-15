@@ -1,0 +1,98 @@
+<section class="tickets-toolbar">
+    <div class="revenue-chip">
+        <span class="chip-label">Montant confirmé</span>
+        <strong>{{ confirmedAmount() | number }} FCFA</strong>
+    </div>
+
+    <div class="status-filters">
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'CONFIRME'" (click)="setStatusFilter('CONFIRME')">Confirmé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'ANNULE'" (click)="setStatusFilter('ANNULE')">Annulé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'TOUS'" (click)="setStatusFilter('TOUS')">Tous</button>
+    </div>
+
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">🚉</span>
+            <select [ngModel]="stationFilter()" (ngModelChange)="onStationFilterChange($event)">
+                <option [ngValue]="null">Toutes les gares</option>
+                @for (s of stations(); track s.id) {
+                    <option [ngValue]="s.id">{{ s.name }} ({{ s.city }})</option>
+                }
+            </select>
+        </label>
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); loadTickets()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); loadTickets()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="N° ticket, passager ou trajet…">
+        </label>
+    </div>
+</section>
+<p class="range-hint">Sans dates, les 30 derniers jours sont affichés par défaut.</p>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Tickets</h2>
+            <p>Billets vendus sur toutes les gares de votre compagnie.</p>
+        </div>
+        <span class="count-chip">{{ filteredTickets().length }} résultats</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des tickets…</div>
+    } @else if (errorMessage()) {
+        <div class="empty">
+            <div class="empty-icon">⚠️</div>
+            <strong>{{ errorMessage() }}</strong>
+        </div>
+    } @else if (filteredTickets().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>N° ticket</th>
+                        <th>Passager</th>
+                        <th>Trajet</th>
+                        <th>Gare</th>
+                        <th>Date</th>
+                        <th>Siège</th>
+                        <th>Statut</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (t of filteredTickets(); track t.id) {
+                        <tr>
+                            <td class="mono">{{ t.ticketNumber }}</td>
+                            <td>{{ t.passengerName }}</td>
+                            <td>{{ t.route }}</td>
+                            <td>{{ t.stationName }}</td>
+                            <td class="mono">{{ t.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td>{{ t.seatNumber }}</td>
+                            <td>
+                                <span class="status-pill" [class.active]="t.status !== 'ANNULÉ'" [class.warn]="t.status === 'ANNULÉ'">
+                                    <span class="dot"></span>
+                                    {{ t.status }}{{ t.scanned ? ' · scanné' : '' }}
+                                </span>
+                            </td>
+                            <td class="right amount">{{ displayAmount(t) | number }} FCFA</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">🎫</div>
+            <strong>Aucun ticket trouvé</strong>
+            <p>Modifie tes filtres pour élargir la recherche.</p>
+        </div>
+    }
+</section>

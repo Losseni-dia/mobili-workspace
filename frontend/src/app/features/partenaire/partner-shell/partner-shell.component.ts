@@ -79,6 +79,8 @@ export class PartnerShellComponent implements OnInit {
       { label: 'Vue d\'ensemble', icon: '📊', path: '/partenaire/dashboard' },
       { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
       { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
+      { label: 'Tickets', icon: '🎟️', path: '/partenaire/tickets' },
+      { label: 'Transactions', icon: '💳', path: '/partenaire/transactions' },
     ];
     sections.push({ title: 'Activité', items: activite });
 
@@ -165,6 +167,8 @@ export class PartnerShellComponent implements OnInit {
     if (url.includes('/add-trip')) return { title: 'Publier un trajet', desc: 'Définis les détails du trajet et les prix par étape.', crumb: 'Publier' };
     if (url.includes('/edit-trip')) return { title: 'Modifier le trajet', desc: 'Mets à jour les informations du voyage.', crumb: 'Modifier' };
     if (url.includes('/bookings')) return { title: 'Réservations', desc: 'Suivez les réservations de vos clients.', crumb: 'Réservations' };
+    if (url.includes('/tickets')) return { title: 'Tickets', desc: 'Billets vendus sur toutes les gares de votre compagnie.', crumb: 'Tickets' };
+    if (url.includes('/transactions')) return { title: 'Transactions', desc: 'Frais Mobili, commission et net compagnie, par réservation payée.', crumb: 'Transactions' };
     if (url.includes('/settings')) return { title: 'Profil compagnie', desc: 'Modifie les informations de votre entreprise.', crumb: 'Profil' };
     return { title: 'Vue d\'ensemble', desc: 'Statistiques et dernière activité de votre compagnie.', crumb: 'Dashboard' };
   });

@@ -79,6 +79,21 @@ export interface PaymentCheckoutResponse {
   url: string;
 }
 
+/** Aligné sur PartnerTransactionResponse (backend) — détail financier par réservation payée. */
+export interface PartnerTransaction {
+  bookingId: number;
+  reference: string;
+  date: string;
+  route: string;
+  /** Vente brute compagnie, jamais le forfait client. */
+  grossAmount: number;
+  /** Commission Mobili prélevée sur cette réservation. */
+  commissionTotal: number;
+  /** grossAmount - commissionTotal, net réellement dû à la compagnie. */
+  companyNet: number;
+  status: string;
+}
+
 /** Réponse de POST /payments/verify/{bookingId} */
 export interface PaymentVerifyResponse {
   confirmed: boolean;
@@ -154,6 +169,22 @@ export class BookingService {
 
   getPartnerBookings(): Observable<BookingResponse[]> {
     return this.http.get<BookingResponse[]>('/bookings/partner/my-bookings');
+  }
+
+  /**
+   * Frais Mobili/commission et net compagnie par réservation payée — vue partenaire/gare de
+   * l'équivalent admin `/admin/stats/transactions/list`. `stationId` restreint à une gare.
+   */
+  getPartnerTransactionsInRange(
+    fromDate?: string,
+    toDate?: string,
+    stationId?: number,
+  ): Observable<PartnerTransaction[]> {
+    let params = new HttpParams();
+    if (fromDate) params = params.set('fromDate', fromDate);
+    if (toDate) params = params.set('toDate', toDate);
+    if (stationId != null) params = params.set('stationId', String(stationId));
+    return this.http.get<PartnerTransaction[]>('/bookings/partner/transactions/range', { params });
   }
 
   /**
