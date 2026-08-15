@@ -194,10 +194,10 @@ export const businessRoutes: Routes = [
           ),
       },
       {
-        path: 'company-messages',
+        path: 'communications',
         loadComponent: () =>
-          import('@mobili-app/features/shared/company-messages/company-messages.component').then(
-            (m) => m.CompanyMessagesComponent,
+          import('@mobili-app/features/gare/gare-communications/gare-communications.component').then(
+            (m) => m.GareCommunicationsComponent,
           ),
       },
       {
@@ -214,14 +214,6 @@ export const businessRoutes: Routes = [
         loadComponent: () =>
           import('@mobili-app/features/gare/gare-transactions/gare-transactions.component').then(
             (m) => m.GareTransactionsComponent,
-          ),
-      },
-      {
-        path: 'support',
-        canActivate: [gareOperationsGuard],
-        loadComponent: () =>
-          import('@mobili-app/features/shared/support-chat/support-chat.component').then(
-            (m) => m.SupportChatComponent,
           ),
       },
       {

@@ -1,0 +1,29 @@
+@use '../../../styles/variables';
+
+.comm-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid variables.$gray-200;
+}
+
+.comm-tab {
+  padding: 0.7rem 1.1rem;
+  border: none;
+  background: none;
+  color: variables.$gray-500;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color variables.$t-fast, border-color variables.$t-fast;
+
+  &:hover {
+    color: variables.$mobili-blue-deep;
+  }
+
+  &.active {
+    color: variables.$mobili-blue-deep;
+    border-bottom-color: variables.$mobili-yellow;
+  }
+}

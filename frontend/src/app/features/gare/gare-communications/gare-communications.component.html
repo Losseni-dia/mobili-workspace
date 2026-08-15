@@ -1,0 +1,28 @@
+<div class="comm-tabs" role="tablist" aria-label="Communications">
+    <button
+        type="button"
+        role="tab"
+        class="comm-tab"
+        [class.active]="activeTab() === 'company'"
+        [attr.aria-selected]="activeTab() === 'company'"
+        (click)="setTab('company')"
+    >
+        Canal société
+    </button>
+    <button
+        type="button"
+        role="tab"
+        class="comm-tab"
+        [class.active]="activeTab() === 'support'"
+        [attr.aria-selected]="activeTab() === 'support'"
+        (click)="setTab('support')"
+    >
+        Canal support
+    </button>
+</div>
+
+@if (activeTab() === 'company') {
+    <app-company-messages />
+} @else {
+    <app-support-chat />
+}
