@@ -4,7 +4,7 @@
 .brh {
   min-height: calc(100vh - #{variables.$header-height});
   padding: 42px 20px 72px;
-  background: linear-gradient(180deg, #eef3fb 0%, variables.$white 100%);
+  background: linear-gradient(180deg, variables.$mobili-blue-fog 0%, variables.$white 100%);
   display: flex;
   flex-direction: column;
   align-items: center;

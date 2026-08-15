@@ -297,6 +297,15 @@
 
   .modal-subtitle { color: variables.$gray-500; font-size: 0.9rem; margin-bottom: 18px; }
 
+  .modal-error {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: variables.$radius-sm;
+    background: variables.$danger-soft;
+    color: variables.$danger;
+    font-size: 0.85rem;
+  }
+
   .modal-footer {
     display: flex;
     justify-content: flex-end;
@@ -305,6 +314,34 @@
 
     .btn-cancel { @include mixins.btn-ghost; padding: 11px 20px; }
     .btn-confirm { @include mixins.btn-danger; padding: 11px 20px; }
+  }
+}
+
+.modal-content--sm {
+  max-width: 420px;
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  transition: variables.$t-fast;
+
+  &:focus-within { border-color: variables.$mobili-blue; box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12); }
+
+  .s-ico { opacity: 0.6; }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.9rem;
+    color: variables.$mobili-blue-deep;
+    min-width: 200px;
   }
 }
 

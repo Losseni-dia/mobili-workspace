@@ -45,6 +45,7 @@ export interface PartnerChauffeurItem {
   firstname: string | null;
   lastname: string | null;
   email: string | null;
+  phone: string | null;
   enabled: boolean;
   affiliationStationId: number | null;
   affiliationStationName: string | null;
@@ -139,15 +140,50 @@ export class PartenaireService {
     return this.http.get<PartnerChauffeurItem[]>('/partenaire/chauffeurs');
   }
 
-  createChauffeur(body: {
-    firstname: string;
-    lastname: string;
-    email: string;
-    login: string;
-    password: string;
-    stationId: number | null;
-  }): Observable<PartnerChauffeurItem> {
-    return this.http.post<PartnerChauffeurItem>('/partenaire/chauffeurs', body);
+  /**
+   * Le backend attend un `multipart/form-data` avec une part JSON nommée "chauffeur" (+ "avatar"
+   * optionnelle) — @RequestPart, pas un simple body JSON (PartnerChauffeurController.create).
+   */
+  createChauffeur(
+    body: {
+      firstname: string;
+      lastname: string;
+      email: string;
+      phone: string;
+      login: string;
+      password: string;
+      stationId: number | null;
+    },
+    avatar?: File | null,
+  ): Observable<PartnerChauffeurItem> {
+    const form = new FormData();
+    form.append('chauffeur', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    if (avatar) {
+      form.append('avatar', avatar);
+    }
+    return this.http.post<PartnerChauffeurItem>('/partenaire/chauffeurs', form);
+  }
+
+  /** Même contrat multipart que la création (PartnerChauffeurController.update). */
+  updateChauffeur(
+    userId: number,
+    body: { firstname: string; lastname: string; phone?: string; email?: string; password?: string },
+    avatar?: File | null,
+  ): Observable<PartnerChauffeurItem> {
+    const form = new FormData();
+    form.append('chauffeur', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    if (avatar) {
+      form.append('avatar', avatar);
+    }
+    return this.http.put<PartnerChauffeurItem>(`/partenaire/chauffeurs/${userId}`, form);
+  }
+
+  reactivateChauffeur(userId: number): Observable<PartnerChauffeurItem> {
+    return this.http.patch<PartnerChauffeurItem>(`/partenaire/chauffeurs/${userId}/reactivate`, {});
+  }
+
+  deleteChauffeur(userId: number): Observable<void> {
+    return this.http.delete<void>(`/partenaire/chauffeurs/${userId}`);
   }
 
   patchChauffeurAffiliation(

@@ -40,6 +40,13 @@
             <input type="email" formControlName="email" autocomplete="email" />
           </label>
           <label class="chauff-field">
+            <span>Téléphone</span>
+            <input type="tel" formControlName="phone" autocomplete="tel" minlength="8" maxlength="20" />
+            @if (form.controls.phone.dirty && form.controls.phone.invalid) {
+              <span class="chauff-field-error" role="alert">8 à 20 caractères, obligatoire.</span>
+            }
+          </label>
+          <label class="chauff-field">
             <span>Identifiant (login)</span>
             <input type="text" formControlName="login" autocomplete="username" />
           </label>
@@ -94,6 +101,9 @@
     @if (affiliationError()) {
       <div class="chauff-alert" role="alert">{{ affiliationError() }}</div>
     }
+    @if (statusError()) {
+      <div class="chauff-alert" role="alert">{{ statusError() }}</div>
+    }
     @if (isLoading()) {
       <p class="chauff-placeholder">Chargement…</p>
     } @else if (items().length === 0 && !error()) {
@@ -105,44 +115,103 @@
             <tr>
               <th scope="col">Nom</th>
               <th scope="col">E-mail</th>
+              <th scope="col">Téléphone</th>
               <th scope="col">Gare d’affectation</th>
               <th scope="col">Compte</th>
+              @if (canRegisterChauffeur()) {
+                <th scope="col" class="right">Actions</th>
+              }
             </tr>
           </thead>
           <tbody>
             @for (c of items(); track c.id) {
-              <tr>
-                <td>
-                  <span class="chauff-name"
-                    >{{ c.firstname || '—' }} <strong>{{ c.lastname || '—' }}</strong></span
-                  >
-                </td>
-                <td>{{ c.email || '—' }}</td>
-                <td class="chauff-td-station">
-                  @if (canRegisterChauffeur()) {
-                    <label class="chauff-sr-only" [attr.for]="'aff-' + c.id">Gare d’affectation pour {{ c.lastname }}</label>
-                    <select
-                      [id]="'aff-' + c.id"
-                      class="chauff-station-select"
-                      [disabled]="affiliationSavingId() === c.id"
-                      [value]="c.affiliationStationId == null ? '' : c.affiliationStationId"
-                      (change)="onAffiliationChange(c, $any($event.target).value)"
-                    >
-                      <option value="">— Aucune —</option>
-                      @for (g of stations(); track g.id) {
-                        <option [value]="g.id">{{ g.name }} ({{ g.city }})</option>
+              @if (editingId() === c.id) {
+                <tr class="chauff-edit-row">
+                  <td colspan="6">
+                    <form class="chauff-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(c)">
+                      @if (editError()) {
+                        <div class="chauff-alert" role="alert">{{ editError() }}</div>
                       }
-                    </select>
-                  } @else {
-                    {{ c.affiliationStationName || '—' }}
+                      <div class="chauff-form-grid">
+                        <label class="chauff-field">
+                          <span>Prénom</span>
+                          <input type="text" formControlName="firstname" />
+                        </label>
+                        <label class="chauff-field">
+                          <span>Nom</span>
+                          <input type="text" formControlName="lastname" />
+                        </label>
+                        <label class="chauff-field">
+                          <span>E-mail</span>
+                          <input type="email" formControlName="email" />
+                        </label>
+                        <label class="chauff-field">
+                          <span>Téléphone</span>
+                          <input type="tel" formControlName="phone" />
+                        </label>
+                      </div>
+                      <div class="chauff-form-actions">
+                        <button type="button" class="chauff-btn-ghost" (click)="cancelEdit()">Annuler</button>
+                        <button
+                          type="submit"
+                          class="chauff-btn-primary"
+                          [disabled]="editForm.invalid || editSubmitting()"
+                        >
+                          {{ editSubmitting() ? 'Enregistrement…' : 'Enregistrer' }}
+                        </button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              } @else {
+                <tr>
+                  <td>
+                    <span class="chauff-name"
+                      >{{ c.firstname || '—' }} <strong>{{ c.lastname || '—' }}</strong></span
+                    >
+                  </td>
+                  <td>{{ c.email || '—' }}</td>
+                  <td>{{ c.phone || '—' }}</td>
+                  <td class="chauff-td-station">
+                    @if (canRegisterChauffeur()) {
+                      <label class="chauff-sr-only" [attr.for]="'aff-' + c.id">Gare d’affectation pour {{ c.lastname }}</label>
+                      <select
+                        [id]="'aff-' + c.id"
+                        class="chauff-station-select"
+                        [disabled]="affiliationSavingId() === c.id"
+                        [value]="c.affiliationStationId == null ? '' : c.affiliationStationId"
+                        (change)="onAffiliationChange(c, $any($event.target).value)"
+                      >
+                        <option value="">— Aucune —</option>
+                        @for (g of stations(); track g.id) {
+                          <option [value]="g.id">{{ g.name }} ({{ g.city }})</option>
+                        }
+                      </select>
+                    } @else {
+                      {{ c.affiliationStationName || '—' }}
+                    }
+                  </td>
+                  <td>
+                    <span [class.chauff-badge--ok]="c.enabled" [class.chauff-badge--off]="!c.enabled" class="chauff-badge">
+                      {{ c.enabled ? 'actif' : 'désactivé' }}
+                    </span>
+                  </td>
+                  @if (canRegisterChauffeur()) {
+                    <td class="right chauff-actions">
+                      <button type="button" class="chauff-btn-ghost" (click)="startEdit(c)">Modifier</button>
+                      <button
+                        type="button"
+                        class="chauff-btn-ghost"
+                        [class.chauff-btn-ghost--danger]="c.enabled"
+                        [disabled]="statusSavingId() === c.id"
+                        (click)="toggleEnabled(c)"
+                      >
+                        {{ statusSavingId() === c.id ? '…' : (c.enabled ? 'Désactiver' : 'Réactiver') }}
+                      </button>
+                    </td>
                   }
-                </td>
-                <td>
-                  <span [class.chauff-badge--ok]="c.enabled" [class.chauff-badge--off]="!c.enabled" class="chauff-badge">
-                    {{ c.enabled ? 'actif' : 'désactivé' }}
-                  </span>
-                </td>
-              </tr>
+                </tr>
+              }
             }
           </tbody>
         </table>

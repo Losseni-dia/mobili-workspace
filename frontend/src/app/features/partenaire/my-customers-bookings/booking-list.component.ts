@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { BookingService } from '../../../core/services/booking/booking.service';
+import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 
 type BookingStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -27,7 +27,7 @@ export class BookingListComponent implements OnInit {
   private bookingService = inject(BookingService);
 
   // État des données
-  bookings = signal<any[]>([]);
+  bookings = signal<BookingResponse[]>([]);
   isLoading = signal(false);
 
   // État des filtres

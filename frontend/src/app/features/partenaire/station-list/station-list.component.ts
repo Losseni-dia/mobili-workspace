@@ -34,6 +34,14 @@ export class StationListComponent implements OnInit {
     city: ['', Validators.required],
   });
 
+  editingId = signal<number | null>(null);
+  editSubmitting = signal(false);
+  editError = signal<string | null>(null);
+  editForm = this.fb.nonNullable.group({
+    name: ['', Validators.required],
+    city: ['', Validators.required],
+  });
+
   /** Redirigé depuis le shell : il faut au moins une gare validée pour les trajets. */
   needValidationHint = signal(false);
 
@@ -88,6 +96,35 @@ export class StationListComponent implements OnInit {
     }
     const c = g.code ?? '';
     return c.startsWith('GAR-') && g.active === false;
+  }
+
+  startEdit(g: Station) {
+    this.editError.set(null);
+    this.editingId.set(g.id);
+    this.editForm.reset({ name: g.name, city: g.city });
+  }
+
+  cancelEdit() {
+    this.editingId.set(null);
+    this.editError.set(null);
+  }
+
+  saveEdit(g: Station) {
+    if (this.editForm.invalid || this.editSubmitting()) return;
+    const v = this.editForm.getRawValue();
+    this.editSubmitting.set(true);
+    this.editError.set(null);
+    this.partenaire.updateStation(g.id, { name: v.name.trim(), city: v.city.trim() }).subscribe({
+      next: (updated) => {
+        this.stations.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
+        this.editSubmitting.set(false);
+        this.editingId.set(null);
+      },
+      error: (e) => {
+        this.editError.set(e?.error?.message || 'Impossible de mettre à jour cette gare.');
+        this.editSubmitting.set(false);
+      },
+    });
   }
 
   approve(g: Station) {

@@ -4,6 +4,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PartenaireService, Partner } from '../../../core/services/partners/partenaire.service';
 import { Location } from '@angular/common';
+import { NotificationService } from '../../../core/services/notification/notification.service';
+import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-partner-edit',
@@ -16,6 +18,7 @@ export class PartnerEditComponent implements OnInit {
   private fb = inject(FormBuilder);
   private partenaireService = inject(PartenaireService);
   private router = inject(Router);
+  private notification = inject(NotificationService);
 
   isLoading = signal(false);
   partnerId = signal<number | null>(null);
@@ -82,12 +85,6 @@ export class PartnerEditComponent implements OnInit {
 
         this.isLoading.set(false);
         this.loadComplete.set(true);
-
-        // Log pour vérifier si le formulaire est valide après le remplissage
-        console.log('Formulaire valide ?', this.partnerForm.valid);
-        if (!this.partnerForm.valid) {
-          console.log('Erreurs :', this.partnerForm.errors);
-        }
       },
       error: (err) => {
         console.error('Erreur chargement partenaire', err);
@@ -97,8 +94,9 @@ export class PartnerEditComponent implements OnInit {
     });
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (file) {
       this.selectedFile = file;
       // Création d'un aperçu local immédiat
@@ -125,10 +123,15 @@ export class PartnerEditComponent implements OnInit {
 
     this.partenaireService.updatePartner(this.partnerId()!, formData).subscribe({
       next: () => {
+        this.notification.show('Profil compagnie mis à jour.', 'success');
         this.router.navigate(['/partenaire/dashboard']);
       },
       error: (err) => {
         console.error('Erreur MAJ partenaire', err);
+        this.notification.show(
+          extractApiErrorMessage(err, 'Impossible de mettre à jour le profil compagnie.'),
+          'error',
+        );
         this.isLoading.set(false);
       },
     });

@@ -8,7 +8,7 @@
   background:
     radial-gradient(circle at 10% 15%, rgba(variables.$mobili-yellow, 0.2), transparent 45%),
     radial-gradient(circle at 90% 85%, rgba(variables.$mobili-blue, 0.15), transparent 50%),
-    linear-gradient(155deg, #{color.adjust(variables.$mobili-blue-deep, $lightness: -6%)} 0%, #0f1f3e 70%);
+    linear-gradient(155deg, #{color.adjust(variables.$mobili-blue-deep, $lightness: -6%)} 0%, variables.$mobili-blue-deep 70%);
   color: variables.$white;
 
   &__masthead {

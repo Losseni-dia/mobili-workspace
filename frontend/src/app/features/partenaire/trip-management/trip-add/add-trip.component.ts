@@ -15,6 +15,7 @@ import {
 import { TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../../core/services/notification/notification.service';
 import { VEHICLE_TYPE_ENUM_OPTIONS, type VehicleTypeName } from '../../../../core/constants/vehicle-types';
+import { extractApiErrorMessage } from '../../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-add-trip',
@@ -336,6 +337,10 @@ export class AddTripComponent implements OnInit {
       next: () => this.router.navigate(['/partenaire/trips']),
       error: (err) => {
         this.isLoading.set(false);
+        this.notification.show(
+          extractApiErrorMessage(err, 'Publication impossible. Vérifie les champs et réessaie.'),
+          'error',
+        );
         console.error('Erreur création trajet :', err);
       },
     });

@@ -264,3 +264,61 @@
   background: rgba(variables.$gray-500, 0.12);
   color: variables.$gray-600;
 }
+
+.right {
+  text-align: right;
+}
+
+.chauff-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.chauff-btn-ghost {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid variables.$gray-300;
+  background: variables.$white;
+  color: variables.$mobili-blue-deep;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: variables.$t-fast;
+
+  &:hover:not(:disabled) {
+    border-color: variables.$mobili-blue;
+    color: variables.$mobili-blue;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--danger {
+    border-color: rgba(variables.$danger, 0.35);
+    color: variables.$danger;
+    &:hover:not(:disabled) {
+      border-color: variables.$danger;
+      color: variables.$danger;
+      background: variables.$danger-soft;
+    }
+  }
+}
+
+.chauff-edit-row td {
+  background: variables.$gray-50;
+}
+
+.chauff-edit-form {
+  padding: 0.75rem 0;
+
+  .chauff-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+}

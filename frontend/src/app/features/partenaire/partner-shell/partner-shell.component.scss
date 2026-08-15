@@ -7,7 +7,7 @@ $sidebar-w-collapsed: 76px;
 
 :host {
   display: block;
-  background: #f5f6fa;
+  background: variables.$gray-100;
   min-height: 100vh;
 }
 
@@ -236,6 +236,20 @@ $sidebar-w-collapsed: 76px;
   flex-direction: column;
   gap: 3px;
   flex-shrink: 0;
+}
+
+.nav-section-title {
+  margin: 14px 0 4px;
+  padding: 0 14px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: variables.$gray-400;
+
+  &:first-child {
+    margin-top: 2px;
+  }
 }
 
 .nav-link {
@@ -470,9 +484,9 @@ $sidebar-w-collapsed: 76px;
       font-weight: 800;
       line-height: 16px;
       text-align: center;
-      background: #ef4444;
-      color: #fff;
-      border-radius: 999px;
+      background: variables.$danger;
+      color: variables.$white;
+      border-radius: variables.$radius-pill;
     }
   }
 }

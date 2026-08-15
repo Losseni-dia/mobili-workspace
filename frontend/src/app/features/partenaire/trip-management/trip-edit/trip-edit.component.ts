@@ -11,6 +11,7 @@ import { PartenaireService, PartnerChauffeurItem } from '../../../../core/servic
 import { TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../../core/services/notification/notification.service';
 import { VEHICLE_TYPE_ENUM_OPTIONS, type VehicleTypeName } from '../../../../core/constants/vehicle-types';
+import { extractApiErrorMessage } from '../../../../core/utils/api-error.util';
 
 @Component({
   selector: 'app-trip-edit',
@@ -355,19 +356,12 @@ export class TripEditComponent implements OnInit {
 
     this.tripService.updateTrip(this.tripId, formData).subscribe({
       next: () => this.router.navigate(['/partenaire/trips']),
-      error: (err: unknown) => {
+      error: (err) => {
         this.isLoading.set(false);
-        const e = err as { error?: { message?: string; title?: string; errors?: { defaultMessage?: string }[] } };
-        const parts: string[] = [];
-        if (typeof e?.error?.message === 'string') parts.push(e.error.message);
-        if (typeof e?.error?.title === 'string') parts.push(e.error.title);
-        if (Array.isArray(e?.error?.errors)) {
-          for (const x of e.error.errors) {
-            if (typeof x?.defaultMessage === 'string') parts.push(x.defaultMessage);
-          }
-        }
-        const msg = parts.filter(Boolean).join(' ') || 'Mise à jour impossible. Vérifie les champs et réessaie.';
-        this.notification.show(msg, 'error');
+        this.notification.show(
+          extractApiErrorMessage(err, 'Mise à jour impossible. Vérifie les champs et réessaie.'),
+          'error',
+        );
         console.error('Erreur Update :', err);
       },
     });
