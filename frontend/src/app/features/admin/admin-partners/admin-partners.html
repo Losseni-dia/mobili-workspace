@@ -10,10 +10,24 @@
           <h2 id="h-public">Compagnies & transport</h2>
           <p>Partenaires inscrits (lignes, gares, offres liées à une compagnie).</p>
         </div>
-        <span class="count-chip">{{ publicPartners().length }} compagnie{{ publicPartners().length > 1 ? 's' : '' }}</span>
+        <span class="count-chip">{{ filteredPartners().length }} / {{ publicPartners().length }} compagnie{{ publicPartners().length > 1 ? 's' : '' }}</span>
       </header>
+
+      <div class="toolbar-search">
+        <label class="filter">
+          <span class="f-ico">🔍</span>
+          <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Nom ou email de la compagnie…">
+        </label>
+      </div>
+
+      @if (statusError()) {
+        <div class="admin-alert" role="alert">{{ statusError() }}</div>
+      }
+
       @if (publicPartners().length === 0) {
         <p class="empty-hint">Aucune compagnie enregistrée pour l’instant.</p>
+      } @else if (filteredPartners().length === 0) {
+        <p class="empty-hint">Aucune compagnie ne correspond à « {{ search() }} ».</p>
       } @else {
         <div class="table-container">
           <table class="data-table">
@@ -26,7 +40,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (p of publicPartners(); track p.id) {
+              @for (p of filteredPartners(); track p.id) {
                 <tr>
                   <td>
                     <div class="user-cell">
@@ -71,16 +85,17 @@
                     @if (isPending(p)) {
                       <button class="row-btn success" (click)="approvePartner(p.id)">Approuver</button>
                       @if (p.approvalStatus === 'PENDING') {
-                        <button class="row-btn danger" (click)="rejectPartner(p.id)">Rejeter</button>
+                        <button class="row-btn danger" (click)="askReject(p)">Rejeter</button>
                       }
                     } @else {
                       <button
                         class="row-btn"
                         [class.danger]="p.enabled"
                         [class.success]="!p.enabled"
-                        (click)="togglePartner(p.id)"
+                        [disabled]="statusSavingId() === p.id"
+                        (click)="togglePartner(p)"
                       >
-                        {{ p.enabled ? 'Suspendre' : 'Réactiver' }}
+                        {{ statusSavingId() === p.id ? '…' : (p.enabled ? 'Suspendre' : 'Réactiver') }}
                       </button>
                     }
                   </td>
@@ -169,9 +184,10 @@
                           class="row-btn"
                           [class.danger]="d.enabled"
                           [class.success]="!d.enabled"
+                          [disabled]="statusSavingId() === d.id"
                           (click)="toggleDriverAccount(d)"
                         >
-                          {{ d.enabled ? 'Suspendre' : 'Réactiver' }}
+                          {{ statusSavingId() === d.id ? '…' : (d.enabled ? 'Suspendre' : 'Réactiver') }}
                         </button>
                       </td>
                     </tr>
@@ -183,5 +199,37 @@
         </div>
       </div>
     </section>
+  }
+
+  @if (pendingReject(); as p) {
+    <div class="modal-overlay" (click)="cancelReject()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Rejeter {{ p.name }} ?</h3>
+          <button type="button" class="close-btn" (click)="cancelReject()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">Le motif sera communiqué au partenaire.</p>
+          <label class="ig">
+            <span>Motif du rejet</span>
+            <textarea
+              rows="4"
+              [ngModel]="rejectReason()"
+              (ngModelChange)="rejectReason.set($event)"
+              placeholder="Ex. : documents illisibles, informations incomplètes…"
+            ></textarea>
+          </label>
+          @if (rejectError()) {
+            <div class="admin-alert" role="alert">{{ rejectError() }}</div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" [disabled]="rejectSubmitting()" (click)="cancelReject()">Annuler</button>
+          <button type="button" class="btn-confirm" [disabled]="rejectSubmitting()" (click)="confirmReject()">
+            {{ rejectSubmitting() ? 'Envoi…' : 'Rejeter' }}
+          </button>
+        </div>
+      </div>
+    </div>
   }
 </div>

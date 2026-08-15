@@ -21,6 +21,20 @@ export class AdminUsers implements OnInit {
   private partners = signal<Partner[]>([]);
   transportPartners = computed(() => this.partners().filter((p) => !p.covoiturageSoloPool));
   isLoading = signal(true);
+  search = signal('');
+  statusSavingId = signal<number | null>(null);
+  statusError = signal<string | null>(null);
+
+  /** Recherche libre : nom, login, email, compagnie — même convention que les listes admin. */
+  filteredUsers = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    if (!term) return this.users();
+    return this.users().filter((u) =>
+      [u.firstname, u.lastname, u.email, u.partnerName, u.linkedCompanyName, u.stationName]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(term)),
+    );
+  });
 
   ngOnInit() {
     this.loadUsers();
@@ -44,14 +58,24 @@ export class AdminUsers implements OnInit {
   }
 
   updateStatus(user: UserAdmin) {
+    if (this.statusSavingId() != null) return;
     const newStatus = !user.enabled;
-    // Utilisation de la méthode du AdminService
+    const verb = newStatus ? 'réactiver' : 'bannir';
+    const name = `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.email;
+    if (!confirm(`Confirmer : ${verb} le compte de ${name} ?`)) return;
+
+    this.statusError.set(null);
+    this.statusSavingId.set(user.id);
     this.adminService.toggleUserStatus(user.id, newStatus).subscribe({
       next: () => {
-        // Mise à jour optimiste du signal
         this.users.update((list) =>
           list.map((u) => (u.id === user.id ? { ...u, enabled: newStatus } : u)),
         );
+        this.statusSavingId.set(null);
+      },
+      error: (e) => {
+        this.statusError.set(e?.error?.message || `Impossible de ${verb} ce compte.`);
+        this.statusSavingId.set(null);
       },
     });
   }

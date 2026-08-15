@@ -201,8 +201,8 @@
 }
 
 .subhead--teal {
-  background: rgba(13, 148, 136, 0.08);
-  color: #0f766e;
+  background: rgba(variables.$mobili-teal, 0.08);
+  color: variables.$mobili-teal-deep;
 }
 
 .p-name {
@@ -226,9 +226,9 @@
 }
 
 .tag-pool {
-  color: #0d9488;
-  background: rgba(13, 148, 136, 0.12);
-  border: 1px solid rgba(13, 148, 136, 0.25);
+  color: variables.$mobili-teal;
+  background: rgba(variables.$mobili-teal, 0.12);
+  border: 1px solid rgba(variables.$mobili-teal, 0.25);
   padding: 0.08rem 0.3rem;
   border-radius: 4px;
 }

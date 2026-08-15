@@ -1,5 +1,6 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   AdminService,
@@ -12,7 +13,7 @@ import { eventTypeLabel } from '../shared/admin-event-labels';
 @Component({
   selector: 'app-admin-app-analytics',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './admin-app-analytics.html',
   styleUrl: './admin-app-analytics.scss',
 })
@@ -25,8 +26,33 @@ export class AdminAppAnalytics implements OnInit {
   analyticsDays = signal<7 | 14 | 30>(30);
   recentEvents = signal<AnalyticsRecentEvent[] | null>(null);
   recentEventsError = signal(false);
+  eventSearch = signal('');
+  /** Le journal charge 200 lignes d'un coup (API) ; on n'en affiche qu'une partie au départ. */
+  visibleLimit = signal(50);
 
   readonly eventTypeLabel = eventTypeLabel;
+
+  filteredEvents = computed(() => {
+    const term = this.eventSearch().trim().toLowerCase();
+    const all = this.recentEvents() ?? [];
+    if (!term) return all;
+    return all.filter(
+      (e) =>
+        e.detail?.toLowerCase().includes(term) ||
+        this.eventTypeLabel(e.eventType).toLowerCase().includes(term),
+    );
+  });
+
+  visibleEvents = computed(() => this.filteredEvents().slice(0, this.visibleLimit()));
+
+  showMoreEvents() {
+    this.visibleLimit.update((n) => n + 50);
+  }
+
+  onEventSearchChange(v: string) {
+    this.eventSearch.set(v);
+    this.visibleLimit.set(50);
+  }
 
   ngOnInit() {
     this.adminService.getDailyLoginStats(30).subscribe((d) => this.loginStats.set(d));

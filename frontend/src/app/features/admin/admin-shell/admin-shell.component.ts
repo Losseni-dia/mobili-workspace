@@ -9,6 +9,11 @@ interface NavItem {
   path: string;
 }
 
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 @Component({
   selector: 'app-admin-shell',
   standalone: true,
@@ -23,16 +28,36 @@ export class AdminShellComponent {
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
 
-  navItems: NavItem[] = [
-    { label: 'Vue d’ensemble', icon: '📊', path: '/admin/dashboard' },
-    { label: 'Analyse app & journal', icon: '🔍', path: '/admin/analyse-app' },
-    { label: 'Statistiques métier', icon: '📈', path: '/admin/metier' },
-    { label: 'Annonces', icon: '📣', path: '/admin/communication' },
-    { label: 'Utilisateurs', icon: '👥', path: '/admin/users' },
-    { label: 'Partenaires', icon: '🏢', path: '/admin/partners' },
-    { label: 'Tickets', icon: '🎫', path: '/admin/tickets' },
-    { label: 'Réservations', icon: '📋', path: '/admin/bookings' },
-    { label: 'Transactions', icon: '💳', path: '/admin/transactions' },
+  /**
+   * Regroupé par intention plutôt qu'une liste plate de 9 liens sans hiérarchie : Analytics
+   * (reporting), Comptes (gestion d'identités), Ventes (données transactionnelles, même famille
+   * de filtres date/recherche/statut), Communication à part (action, pas de la consultation).
+   */
+  navSections: NavSection[] = [
+    { title: '', items: [{ label: 'Vue d’ensemble', icon: '📊', path: '/admin/dashboard' }] },
+    {
+      title: 'Analytics',
+      items: [
+        { label: 'Analyse app & journal', icon: '🔍', path: '/admin/analyse-app' },
+        { label: 'Statistiques métier', icon: '📈', path: '/admin/metier' },
+      ],
+    },
+    {
+      title: 'Comptes',
+      items: [
+        { label: 'Utilisateurs', icon: '👥', path: '/admin/users' },
+        { label: 'Partenaires', icon: '🏢', path: '/admin/partners' },
+      ],
+    },
+    {
+      title: 'Ventes',
+      items: [
+        { label: 'Tickets', icon: '🎫', path: '/admin/tickets' },
+        { label: 'Réservations', icon: '📋', path: '/admin/bookings' },
+        { label: 'Transactions', icon: '💳', path: '/admin/transactions' },
+      ],
+    },
+    { title: 'Communication', items: [{ label: 'Annonces', icon: '📣', path: '/admin/communication' }] },
   ];
 
   pageTitle = computed(() => {
@@ -46,25 +71,6 @@ export class AdminShellComponent {
     if (url.includes('bookings')) return 'Réservations';
     if (url.includes('transactions')) return 'Transactions';
     return 'Vue d’ensemble';
-  });
-
-  pageDescription = computed(() => {
-    const url = this.currentUrl();
-    if (url.includes('analyse-app')) {
-      return 'Journal d’événements et usage de l’app.';
-    }
-    if (url.includes('/admin/metier')) {
-      return 'Lignes, volumes et revenus sur la période choisie.';
-    }
-    if (url.includes('communication')) {
-      return '';
-    }
-    if (url.includes('users')) return 'Activer ou suspendre des comptes.';
-    if (url.includes('partners')) return 'Fiches compagnies et comptes chauffeurs covoiturage (particuliers).';
-    if (url.includes('tickets')) return 'Tous les billets, toutes compagnies confondues.';
-    if (url.includes('bookings')) return 'Toutes les réservations, toutes compagnies confondues.';
-    if (url.includes('transactions')) return 'Frais Mobili, commission et net compagnie, par réservation payée.';
-    return 'Chiffres clés et raccourcis vers les vues détaillées.';
   });
 
   userInitials = computed(() => {

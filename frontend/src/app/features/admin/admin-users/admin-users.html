@@ -7,11 +7,27 @@
                 covoiturage particulier apparaît comme <strong>covo</strong> (ligne d’info + pastille de rôle).
             </p>
         </div>
-        <span class="count-chip">{{ users().length }} comptes</span>
+        <span class="count-chip">{{ filteredUsers().length }} / {{ users().length }} comptes</span>
     </header>
+
+    <div class="toolbar-search">
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Nom, email, compagnie, gare…">
+        </label>
+    </div>
+
+    @if (statusError()) {
+        <div class="admin-alert" role="alert">{{ statusError() }}</div>
+    }
 
     @if (isLoading()) {
         <div class="loader">Chargement des utilisateurs…</div>
+    } @else if (filteredUsers().length === 0) {
+        <div class="empty">
+            <div class="empty-icon">🔎</div>
+            <strong>Aucun utilisateur ne correspond à « {{ search() }} »</strong>
+        </div>
     } @else {
         <div class="table-container">
             <table class="data-table">
@@ -25,7 +41,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (user of users(); track user.id) {
+                    @for (user of filteredUsers(); track user.id) {
                         <tr>
                             <td>
                                 <div class="user-cell">
@@ -97,9 +113,10 @@
                                     class="row-btn"
                                     [class.danger]="user.enabled"
                                     [class.success]="!user.enabled"
+                                    [disabled]="statusSavingId() === user.id"
                                     (click)="updateStatus(user)"
                                 >
-                                    {{ user.enabled ? 'Bannir' : 'Réactiver' }}
+                                    {{ statusSavingId() === user.id ? '…' : (user.enabled ? 'Bannir' : 'Réactiver') }}
                                 </button>
                             </td>
                         </tr>

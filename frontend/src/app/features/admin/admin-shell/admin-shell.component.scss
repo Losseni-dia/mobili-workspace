@@ -137,6 +137,20 @@ $topbar-h: 108px;
   gap: 3px;
 }
 
+.nav-section-title {
+  margin: 14px 0 4px;
+  padding: 0 14px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: variables.$gray-400;
+
+  &:first-child {
+    margin-top: 2px;
+  }
+}
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -240,31 +254,15 @@ $topbar-h: 108px;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: variables.$gray-500;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: variables.$gray-600;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    margin-bottom: 6px;
 
     .crumb-root { color: variables.$mobili-blue; }
     .crumb-sep { color: variables.$gray-300; }
     .crumb-current { color: variables.$mobili-blue-deep; }
-  }
-
-  .page-title {
-    font-family: variables.$font-display;
-    font-size: clamp(1.3rem, 2.2vw, 1.7rem);
-    font-weight: 900;
-    color: variables.$mobili-blue-deep;
-    margin: 0;
-    letter-spacing: -0.3px;
-  }
-
-  .page-desc {
-    margin: 4px 0 0;
-    color: variables.$gray-500;
-    font-size: 0.92rem;
   }
 
   .topbar-right {

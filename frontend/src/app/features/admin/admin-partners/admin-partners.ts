@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
@@ -12,7 +13,7 @@ import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-se
 @Component({
   selector: 'app-admin-partners',
   standalone: true,
-  imports: [CommonModule, RouterLink, MobiliSecureUploadImgComponent],
+  imports: [CommonModule, FormsModule, RouterLink, MobiliSecureUploadImgComponent],
   templateUrl: './admin-partners.html',
   styleUrl: './admin-partners.scss',
 })
@@ -23,12 +24,32 @@ export class AdminPartners implements OnInit {
 
   partners = signal<Partner[]>([]);
   isLoading = signal<boolean>(true);
+  search = signal('');
 
   /** Compagnies transport (lignes, partenariat classique), hors partenaire pool covoiturage. */
   publicPartners = computed(() => this.partners().filter((p) => !p.covoiturageSoloPool));
 
+  /** Filtrage libre sur le nom/email de la compagnie. */
+  filteredPartners = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    if (!term) return this.publicPartners();
+    return this.publicPartners().filter((p) =>
+      [p.name, p.email].filter(Boolean).some((v) => String(v).toLowerCase().includes(term)),
+    );
+  });
+
   /** Inscriptions chauffeur covoiturage particulier (profil pool). */
   covoiturageSoloDrivers = signal<CovoiturageSoloDriverAdminItem[]>([]);
+
+  /** Ligne (compagnie ou chauffeur covoit.) en cours de bascule statut — état de chargement. */
+  statusSavingId = signal<number | null>(null);
+  statusError = signal<string | null>(null);
+
+  /** Partenaire en cours de rejet — remplace window.prompt par une modale stylée avec validation. */
+  pendingReject = signal<Partner | null>(null);
+  rejectReason = signal('');
+  rejectSubmitting = signal(false);
+  rejectError = signal<string | null>(null);
 
   ngOnInit() {
     this.loadPartners();
@@ -102,49 +123,88 @@ export class AdminPartners implements OnInit {
     });
   }
 
-  rejectPartner(id: number) {
-    const reason = window.prompt('Motif du rejet (obligatoire, communiqué au partenaire) :');
-    if (reason == null) return; // annulé
-    if (!reason.trim()) {
-      window.alert('Le motif de rejet est obligatoire.');
+  askReject(p: Partner) {
+    this.rejectError.set(null);
+    this.rejectReason.set('');
+    this.pendingReject.set(p);
+  }
+
+  cancelReject() {
+    this.pendingReject.set(null);
+  }
+
+  confirmReject() {
+    const p = this.pendingReject();
+    const reason = this.rejectReason().trim();
+    if (!p || this.rejectSubmitting()) return;
+    if (!reason) {
+      this.rejectError.set('Le motif de rejet est obligatoire.');
       return;
     }
-    this.adminService.rejectPartner(id, reason.trim()).subscribe({
+    this.rejectSubmitting.set(true);
+    this.rejectError.set(null);
+    this.adminService.rejectPartner(p.id, reason).subscribe({
       next: () => {
         this.partners.update((list) =>
-          list.map((p) =>
-            p.id === id
-              ? { ...p, enabled: false, approvalStatus: 'REJECTED', rejectionReason: reason.trim() }
-              : p,
+          list.map((x) =>
+            x.id === p.id
+              ? { ...x, enabled: false, approvalStatus: 'REJECTED', rejectionReason: reason }
+              : x,
           ),
         );
+        this.rejectSubmitting.set(false);
+        this.pendingReject.set(null);
       },
-      error: (err) => console.error('Erreur lors du rejet du partenaire', err),
+      error: (err) => {
+        this.rejectError.set(err?.error?.message || 'Impossible de rejeter ce partenaire.');
+        this.rejectSubmitting.set(false);
+      },
     });
   }
 
   /** Suspendre / réactiver un partenaire DÉJÀ approuvé — ne touche jamais approvalStatus. */
-  togglePartner(id: number) {
-    this.adminService.togglePartnerStatus(id).subscribe({
+  togglePartner(p: Partner) {
+    if (this.statusSavingId() != null) return;
+    const verb = p.enabled ? 'suspendre' : 'réactiver';
+    if (!confirm(`Confirmer : ${verb} la compagnie ${p.name} ?`)) return;
+
+    this.statusError.set(null);
+    this.statusSavingId.set(p.id);
+    this.adminService.togglePartnerStatus(p.id).subscribe({
       next: () => {
         this.partners.update((list) =>
-          list.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p)),
+          list.map((x) => (x.id === p.id ? { ...x, enabled: !x.enabled } : x)),
         );
+        this.statusSavingId.set(null);
       },
-      error: (err) => console.error('Erreur lors du switch de statut', err),
+      error: (err) => {
+        this.statusError.set(err?.error?.message || `Impossible de ${verb} cette compagnie.`);
+        this.statusSavingId.set(null);
+      },
     });
   }
 
   /** Suspendre / réactiver un compte conducteur covoit. (même API que la page Utilisateurs). */
   toggleDriverAccount(d: CovoiturageSoloDriverAdminItem) {
+    if (this.statusSavingId() != null) return;
     const nextEnabled = !d.enabled;
+    const verb = nextEnabled ? 'réactiver' : 'suspendre';
+    const name = `${d.firstname || ''} ${d.lastname || ''}`.trim() || d.email;
+    if (!confirm(`Confirmer : ${verb} le compte de ${name} ?`)) return;
+
+    this.statusError.set(null);
+    this.statusSavingId.set(d.id);
     this.adminService.toggleUserStatus(d.id, nextEnabled).subscribe({
       next: () => {
         this.covoiturageSoloDrivers.update((list) =>
           list.map((u) => (u.id === d.id ? { ...u, enabled: nextEnabled } : u)),
         );
+        this.statusSavingId.set(null);
       },
-      error: (err) => console.error('Erreur statut compte conducteur', err),
+      error: (err) => {
+        this.statusError.set(err?.error?.message || `Impossible de ${verb} ce compte.`);
+        this.statusSavingId.set(null);
+      },
     });
   }
 }

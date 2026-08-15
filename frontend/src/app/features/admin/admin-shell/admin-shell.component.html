@@ -20,18 +20,23 @@
         </div>
 
         <nav class="sidebar-nav">
-            @for (item of navItems; track item.path) {
-                <a
-                    [routerLink]="item.path"
-                    routerLinkActive="active"
-                    class="nav-link"
-                    [title]="item.label"
-                >
-                    <span class="nav-icon">{{ item.icon }}</span>
-                    @if (!collapsed()) {
-                        <span class="nav-label">{{ item.label }}</span>
-                    }
-                </a>
+            @for (section of navSections; track section.title) {
+                @if (section.title && !collapsed()) {
+                    <p class="nav-section-title">{{ section.title }}</p>
+                }
+                @for (item of section.items; track item.path) {
+                    <a
+                        [routerLink]="item.path"
+                        routerLinkActive="active"
+                        class="nav-link"
+                        [title]="item.label"
+                    >
+                        <span class="nav-icon">{{ item.icon }}</span>
+                        @if (!collapsed()) {
+                            <span class="nav-label">{{ item.label }}</span>
+                        }
+                    </a>
+                }
             }
         </nav>
 
@@ -55,10 +60,6 @@
                     <span class="crumb-sep">/</span>
                     <span class="crumb-current">{{ pageTitle() }}</span>
                 </div>
-                <h1 class="page-title">{{ pageTitle() }}</h1>
-                @if (pageDescription()) {
-                    <p class="page-desc">{{ pageDescription() }}</p>
-                }
             </div>
         </header>
 

@@ -3,7 +3,19 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminService, AdminTripStats, TripStatsPeriod } from '../../../core/services/admin/admin.service';
 
-const DONUT_COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#64748b'];
+/**
+ * Palette dataviz alignée sur l'identité Mobili (styles/_variables.scss) — un .ts ne peut pas
+ * @use ces variables SCSS, valeurs dupliquées ici volontairement. Avant : palette bleu/violet/
+ * rose/orange déconnectée de la charte, à ajuster à la main si les tokens changent.
+ */
+const DONUT_COLORS = [
+  '#092990', // $mobili-blue
+  '#E6B800', // $mobili-yellow-dark
+  '#0d9488', // $mobili-teal
+  '#6b21a8', // $admin-purple
+  '#15803d', // $station-green
+  '#94a3b8', // $gray-400
+];
 
 /** Secteur SVG (un path par part — survol = translation radiale indépendante). */
 interface DonutSegment {
