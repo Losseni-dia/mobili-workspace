@@ -1,0 +1,122 @@
+<div class="support-page">
+    <aside class="support-list">
+        <header class="support-list-head">
+            <h2>Mes échanges</h2>
+            <button type="button" class="support-new-btn" (click)="openNewThreadForm()">＋ Nouveau</button>
+        </header>
+
+        @if (isLoadingThreads()) {
+            <p class="support-hint">Chargement…</p>
+        } @else if (threadsError()) {
+            <p class="support-hint support-hint--error">{{ threadsError() }}</p>
+        } @else if (threads().length === 0) {
+            <p class="support-hint">Aucun échange pour l'instant. Ouvrez-en un nouveau.</p>
+        } @else {
+            <ul class="support-thread-list">
+                @for (t of threads(); track t.id) {
+                    <li>
+                        <button
+                            type="button"
+                            class="support-thread-item"
+                            [class.active]="selectedThreadId() === t.id"
+                            (click)="openThread(t)"
+                        >
+                            <strong>{{ t.subject }}</strong>
+                            <span class="support-thread-meta">{{ t.displayLabel }} · {{ t.lastActivityAtFormatted }}</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+    </aside>
+
+    <section class="support-main">
+        @if (showNewThreadForm()) {
+            <div class="support-new-form">
+                <h3>Ouvrir un nouvel échange</h3>
+                @if (createError()) {
+                    <div class="support-alert" role="alert">{{ createError() }}</div>
+                }
+                <label class="support-field">
+                    <span>Sujet</span>
+                    <input
+                        type="text"
+                        [ngModel]="newSubject()"
+                        (ngModelChange)="newSubject.set($event)"
+                        placeholder="Ex. Problème avec ma réservation #1234"
+                        maxlength="300"
+                    />
+                </label>
+                <label class="support-field">
+                    <span>Votre message</span>
+                    <textarea
+                        rows="5"
+                        [ngModel]="newMessage()"
+                        (ngModelChange)="newMessage.set($event)"
+                        placeholder="Décrivez votre situation…"
+                        maxlength="4000"
+                    ></textarea>
+                </label>
+                <div class="support-form-actions">
+                    @if (threads().length > 0) {
+                        <button type="button" class="support-btn-ghost" (click)="cancelNewThread()">Annuler</button>
+                    }
+                    <button
+                        type="button"
+                        class="support-btn-primary"
+                        [disabled]="!newSubject().trim() || !newMessage().trim() || creating()"
+                        (click)="submitNewThread()"
+                    >
+                        {{ creating() ? 'Envoi…' : 'Envoyer' }}
+                    </button>
+                </div>
+            </div>
+        } @else if (selectedThread(); as thread) {
+            <header class="support-thread-head">
+                <h3>{{ thread.subject }}</h3>
+                <span class="support-thread-sub">{{ thread.displayLabel }}</span>
+            </header>
+
+            @if (isLoadingMessages()) {
+                <p class="support-hint">Chargement de la conversation…</p>
+            } @else if (messagesError()) {
+                <p class="support-hint support-hint--error">{{ messagesError() }}</p>
+            } @else {
+                <div class="support-thread-body">
+                    @for (m of messages(); track m.id) {
+                        <div class="support-msg" [class.support-msg--mine]="m.authorId === currentUserId()">
+                            <div class="support-msg-meta">
+                                <strong>{{ m.authorName }}</strong>
+                                <span>{{ m.createdAtFormatted }}</span>
+                            </div>
+                            <p class="support-msg-body">{{ m.body }}</p>
+                        </div>
+                    }
+                </div>
+
+                @if (sendError()) {
+                    <div class="support-alert" role="alert">{{ sendError() }}</div>
+                }
+                <div class="support-reply">
+                    <textarea
+                        rows="2"
+                        [ngModel]="replyBody()"
+                        (ngModelChange)="replyBody.set($event)"
+                        placeholder="Votre réponse…"
+                        maxlength="4000"
+                    ></textarea>
+                    <button
+                        type="button"
+                        class="support-btn-primary"
+                        [disabled]="!replyBody().trim() || sending()"
+                        (click)="submitReply()"
+                    >
+                        {{ sending() ? '…' : 'Envoyer' }}
+                    </button>
+                </div>
+            }
+        } @else {
+            <p class="support-hint">Sélectionnez un échange ou ouvrez-en un nouveau.</p>
+        }
+    </section>
+</div>

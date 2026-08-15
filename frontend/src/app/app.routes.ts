@@ -103,6 +103,13 @@ export const routes: Routes = [
             (m) => m.TripChannelPageComponent,
           ),
       },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('./features/shared/support-chat/support-chat.component').then(
+            (m) => m.SupportChatComponent,
+          ),
+      },
     ],
   },
 

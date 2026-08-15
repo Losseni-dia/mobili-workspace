@@ -1,0 +1,240 @@
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+
+.support-page {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  min-height: 60vh;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.support-list {
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.support-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid variables.$gray-100;
+
+  h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.support-new-btn {
+  padding: 6px 12px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid rgba(variables.$mobili-blue, 0.3);
+  background: variables.$mobili-blue-fog;
+  color: variables.$mobili-blue;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  &:hover { background: rgba(variables.$mobili-blue, 0.12); }
+}
+
+.support-hint {
+  padding: 20px 16px;
+  margin: 0;
+  color: variables.$gray-500;
+  font-size: 0.88rem;
+
+  &--error { color: variables.$danger; }
+}
+
+.support-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.support-thread-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-bottom: 1px solid variables.$gray-100;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: variables.$t-fast;
+
+  strong {
+    font-size: 0.88rem;
+    color: variables.$mobili-blue-deep;
+  }
+
+  &:hover { background: variables.$gray-50; }
+
+  &.active {
+    background: variables.$mobili-blue-fog;
+    border-left: 3px solid variables.$mobili-blue;
+  }
+}
+
+.support-thread-meta {
+  font-size: 0.74rem;
+  color: variables.$gray-500;
+}
+
+.support-main {
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.support-thread-head {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid variables.$gray-100;
+
+  h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.support-thread-sub {
+  font-size: 0.8rem;
+  color: variables.$gray-500;
+}
+
+.support-thread-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.support-msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: variables.$radius-sm;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+
+  &--mine {
+    align-self: flex-end;
+    background: variables.$mobili-blue-fog;
+    border-color: rgba(variables.$mobili-blue, 0.2);
+  }
+}
+
+.support-msg-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.74rem;
+  color: variables.$gray-500;
+  margin-bottom: 4px;
+
+  strong { color: variables.$mobili-blue-deep; }
+}
+
+.support-msg-body {
+  margin: 0;
+  font-size: 0.9rem;
+  color: variables.$gray-800;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.support-reply {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+
+  textarea {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1.5px solid variables.$gray-200;
+    border-radius: variables.$radius-sm;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: variables.$mobili-blue; }
+  }
+}
+
+.support-new-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.support-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-deep;
+
+  input,
+  textarea {
+    @include mixins.input;
+    font-family: inherit;
+  }
+
+  textarea { resize: vertical; }
+}
+
+.support-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.support-btn-primary {
+  @include mixins.btn-primary;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+}
+
+.support-btn-ghost {
+  @include mixins.btn-ghost;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+}
+
+.support-alert {
+  padding: 10px 14px;
+  border-radius: variables.$radius-sm;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  font-size: 0.85rem;
+}

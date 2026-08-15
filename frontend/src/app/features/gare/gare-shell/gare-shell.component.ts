@@ -31,6 +31,7 @@ export class GareShellComponent implements OnInit {
     { label: 'Scanner billets', icon: '📷', path: '/gare/scan' },
     { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
     { label: 'Transactions', icon: '💳', path: '/gare/transactions' },
+    { label: 'Support Mobili', icon: '🆘', path: '/gare/support' },
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
   ];
 
@@ -83,6 +84,13 @@ export class GareShellComponent implements OnInit {
         title: 'Transactions',
         desc: 'Frais Mobili, commission et net compagnie, par réservation payée.',
         crumb: 'Transactions',
+      };
+    }
+    if (url.includes('/gare/support')) {
+      return {
+        title: 'Support Mobili',
+        desc: 'Échangez directement avec l\'équipe Mobili.',
+        crumb: 'Support',
       };
     }
     if (url.includes('/gare/compte')) {

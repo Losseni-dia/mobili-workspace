@@ -30,6 +30,7 @@ export class UserShellComponent {
     { label: 'Notifications', icon: '🔔', path: '/my-account/notifications' },
     { label: 'Mes billets', icon: '🎫', path: '/my-account/my-tickets' },
     { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
+    { label: 'Support', icon: '💬', path: '/my-account/support' },
     { label: 'Modifier mon profil', icon: '✎', path: '/my-account/profile-edit' },
   ];
 
@@ -39,6 +40,7 @@ export class UserShellComponent {
     if (url.includes('/trip-channel')) return { title: 'Fil du voyage', desc: 'Annonces et retards partagés par la gare ou le partenaire.', crumb: 'Canal' };
     if (url.includes('/my-tickets')) return { title: 'Mes billets', desc: 'Tous tes titres de transport prêts à présenter à l\'embarquement.', crumb: 'Billets' };
     if (url.includes('/bookings')) return { title: 'Mes réservations', desc: 'Suis l\'état de tes réservations et leurs paiements.', crumb: 'Réservations' };
+    if (url.includes('/support')) return { title: 'Support', desc: 'Échange directement avec l\'équipe Mobili.', crumb: 'Support' };
     if (url.includes('/profile-edit')) return { title: 'Modifier mon profil', desc: 'Mets à jour tes informations personnelles et ton avatar.', crumb: 'Édition' };
     return { title: 'Mon espace voyageur', desc: 'Réservations, billets et activité récente.', crumb: 'Vue d\'ensemble' };
   });

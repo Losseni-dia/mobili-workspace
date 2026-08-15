@@ -100,6 +100,7 @@ export class PartnerShellComponent implements OnInit {
       items: [
         { label: 'Communication', icon: '💬', path: '/partenaire/company-messages' },
         { label: 'Notifications', icon: '🔔', path: '/partenaire/notifications' },
+        { label: 'Support Mobili', icon: '🆘', path: '/partenaire/support' },
         { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
       ],
     });
@@ -169,6 +170,7 @@ export class PartnerShellComponent implements OnInit {
     if (url.includes('/bookings')) return { title: 'Réservations', desc: 'Suivez les réservations de vos clients.', crumb: 'Réservations' };
     if (url.includes('/tickets')) return { title: 'Tickets', desc: 'Billets vendus sur toutes les gares de votre compagnie.', crumb: 'Tickets' };
     if (url.includes('/transactions')) return { title: 'Transactions', desc: 'Frais Mobili, commission et net compagnie, par réservation payée.', crumb: 'Transactions' };
+    if (url.includes('/support')) return { title: 'Support Mobili', desc: 'Échangez directement avec l\'équipe Mobili.', crumb: 'Support' };
     if (url.includes('/settings')) return { title: 'Profil compagnie', desc: 'Modifie les informations de votre entreprise.', crumb: 'Profil' };
     return { title: 'Vue d\'ensemble', desc: 'Statistiques et dernière activité de votre compagnie.', crumb: 'Dashboard' };
   });
@@ -216,7 +218,12 @@ export class PartnerShellComponent implements OnInit {
     if (!this.partnerTripsLocked()) {
       return false;
     }
-    if (item.path === '/gare/accueil' || item.path === '/partenaire/gares' || item.path === '/partenaire/company-messages') {
+    if (
+      item.path === '/gare/accueil' ||
+      item.path === '/partenaire/gares' ||
+      item.path === '/partenaire/company-messages' ||
+      item.path === '/partenaire/support'
+    ) {
       return false;
     }
     return item.path.startsWith('/partenaire');

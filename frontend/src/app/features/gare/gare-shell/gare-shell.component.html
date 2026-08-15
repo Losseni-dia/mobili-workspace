@@ -43,7 +43,7 @@
             <p class="nav-section-title" [class.nav-section-title--hidden]="collapsed()">Espace gare</p>
             <nav class="sidebar-nav" aria-label="Espace gare">
                 @for (item of navItems; track item.path) {
-                    @if (gareActionsLocked() && item.path !== '/gare/accueil' && item.path !== '/gare/company-messages') {
+                    @if (gareActionsLocked() && item.path !== '/gare/accueil' && item.path !== '/gare/company-messages' && item.path !== '/gare/support') {
                         <span
                             class="nav-link nav-link--disabled"
                             [title]="'En attente de validation du dirigeant de la compagnie'"
