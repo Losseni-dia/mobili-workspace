@@ -38,12 +38,17 @@ export class GareShellComponent implements OnInit {
    * réservations ici : la gare n’a besoin que des tickets (voir navItems), les réservations
    * restent un concept compagnie/partenaire (page conservée, juste non mise en avant côté
    * gare — même principe que côté mobilipro).
+   *
+   * Ni « Communication » ni « Notifications » ne sont dupliquées ici : CompanyMessagesComponent
+   * et InboxPageComponent dérivent leur contenu du rôle de l'utilisateur connecté, pas du préfixe
+   * d'URL — /partenaire/company-messages et /gare/company-messages affichent exactement la même
+   * chose pour un compte gare. Les entrées « Messages compagnie » et « Notifications » de la
+   * section Espace gare (navItems) couvrent déjà ce besoin, sans naviguer vers une deuxième route
+   * qui mène au même écran.
    */
   companyNavItems: GareNavItem[] = [
     { label: 'Tableau de bord', icon: '📊', path: '/partenaire/dashboard' },
     { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
-    { label: 'Communication', icon: '💬', path: '/partenaire/company-messages' },
-    { label: 'Notifications (compagnie)', icon: '🔔', path: '/partenaire/notifications' },
     { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
     { label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' },
     { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
@@ -145,7 +150,7 @@ export class GareShellComponent implements OnInit {
    * En attente de validation gare : messagerie + gestion des chauffeurs (inscription / affectation) restent accessibles.
    */
   isGareCompanyNavEntryAlwaysAllowed(item: GareNavItem): boolean {
-    return item.path === '/partenaire/company-messages' || item.path === '/partenaire/chauffeurs';
+    return item.path === '/partenaire/chauffeurs';
   }
 
   toggleSidebar() {

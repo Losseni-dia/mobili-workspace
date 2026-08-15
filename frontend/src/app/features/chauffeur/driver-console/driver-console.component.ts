@@ -64,8 +64,9 @@ export class DriverConsoleComponent implements OnInit {
 
   totalAlightings = computed(() => this.alightings().length);
 
+  /** Le backend renvoie l'enum français (VALIDÉ/UTILISÉ/ANNULÉ/ARRIVÉ), jamais 'USED'. */
   alightedDone = computed(
-    () => this.alightings().filter((a) => a.ticketStatus === 'USED').length,
+    () => this.alightings().filter((a) => a.ticketStatus === 'UTILISÉ').length,
   );
 
   alightedRemaining = computed(() => Math.max(0, this.totalAlightings() - this.alightedDone()));
@@ -145,6 +146,9 @@ export class DriverConsoleComponent implements OnInit {
     if (t.status === 'EN_COURS') {
       this.tripIdInput.set(id);
       this.loadTrip();
+      return;
+    }
+    if (!confirm(`Démarrer officiellement le service du trajet #${id} ? Cette action est visible des passagers.`)) {
       return;
     }
     this.startingTripId.set(id);

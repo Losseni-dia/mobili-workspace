@@ -73,45 +73,30 @@
     }
 </div>
 
-<section class="gare-company" aria-labelledby="gare-company-heading" [class.gare-company--locked]="gareActionsLocked()">
-    <h2 id="gare-company-heading" class="gare-company-title">Compagnie — voyages &amp; tickets</h2>
-    <p class="gare-company-lead">
-        En tant que responsable gare, vous pouvez gérer les trajets et consulter les tickets vendus sur votre gare, comme sur
-        l’espace partenaire, une fois la gare validée.
-    </p>
-    <div class="gare-company-grid">
-        @if (gareActionsLocked()) {
-            <p class="gare-company-locked-hint" role="status">
-                Ces raccourcis seront actifs dès que le dirigeant aura validé votre gare.
-            </p>
-        } @else {
-            <a routerLink="/partenaire/dashboard" class="company-card">
-                <span class="company-card-icon" aria-hidden="true">📊</span>
-                <h3>Tableau de bord</h3>
-                <p>Vue d’ensemble et activité récente.</p>
-            </a>
-            <a routerLink="/partenaire/trips" class="company-card">
-                <span class="company-card-icon" aria-hidden="true">🚌</span>
-                <h3>Mes voyages</h3>
-                <p>Consulter et modifier les trajets publiés.</p>
-            </a>
-            <a routerLink="/partenaire/add-trip" class="company-card company-card--accent">
-                <span class="company-card-icon" aria-hidden="true">＋</span>
-                <h3>Publier un trajet</h3>
-                <p>Créer un nouveau trajet pour la compagnie.</p>
-            </a>
-            <a routerLink="/gare/tickets" class="company-card">
-                <span class="company-card-icon" aria-hidden="true">🎫</span>
-                <h3>Tickets</h3>
-                <p>Billets vendus sur vos voyages, avec leur statut d'embarquement.</p>
-            </a>
-            <a routerLink="/partenaire/settings" class="company-card">
-                <span class="company-card-icon" aria-hidden="true">🏢</span>
-                <h3>Profil compagnie</h3>
-                <p>Informations et paramètres de l’entreprise.</p>
-            </a>
-        }
-    </div>
+<section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
+    <h2 id="gare-kpis-heading" class="gare-kpis-title">Aujourd’hui, sur votre gare</h2>
+    @if (gareActionsLocked()) {
+        <p class="gare-company-locked-hint" role="status">
+            Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
+        </p>
+    } @else if (todayTicketsLoading()) {
+        <p class="gare-kpis-status">Chargement…</p>
+    } @else {
+        <div class="gare-kpis-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Tickets confirmés</span>
+                <strong class="kpi-value">{{ todayTicketsCount() ?? 0 }}</strong>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Montant confirmé</span>
+                <strong class="kpi-value">{{ todayConfirmedAmount() ?? 0 | number }} FCFA</strong>
+            </div>
+        </div>
+        <p class="gare-kpis-link">
+            <a routerLink="/gare/tickets">Voir le détail des tickets →</a>
+            <a routerLink="/partenaire/trips">Gérer les voyages de la compagnie →</a>
+        </p>
+    }
 </section>
 
 <div class="gare-tips">

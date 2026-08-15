@@ -159,81 +159,71 @@
   }
 }
 
-.gare-company {
+.gare-kpis {
   max-width: 900px;
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid variables.$gray-200;
 }
 
-.gare-company-title {
+.gare-kpis-title {
   font-family: variables.$font-display;
   font-size: 1.05rem;
   font-weight: 900;
   color: variables.$mobili-blue-deep;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.9rem;
 }
 
-.gare-company-lead {
-  margin: 0 0 1rem;
-  font-size: 0.88rem;
-  line-height: 1.5;
-  color: variables.$gray-600;
+.gare-kpis-status {
+  margin: 0;
+  color: variables.$gray-500;
+  font-size: 0.9rem;
 }
 
-.gare-company-grid {
+.gare-kpis-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 0.75rem;
-
-  @media (min-width: 520px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (min-width: 900px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  max-width: 480px;
 }
 
-.company-card {
-  display: block;
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
   padding: 1rem 1.1rem;
   background: variables.$white;
   border: 1px solid variables.$gray-200;
   border-radius: variables.$radius-md;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color variables.$t-base, box-shadow variables.$t-base;
   box-shadow: variables.$shadow-sm;
 
-  &:hover {
-    border-color: rgba(variables.$mobili-blue, 0.35);
-    box-shadow: variables.$shadow-md;
+  .kpi-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: variables.$gray-500;
   }
 
-  &--accent {
-    border-color: rgba(variables.$mobili-blue, 0.25);
-    background: linear-gradient(180deg, rgba(variables.$mobili-blue-soft, 0.2) 0%, variables.$white 100%);
-  }
-
-  .company-card-icon {
-    font-size: 1.35rem;
-    display: block;
-    margin-bottom: 0.35rem;
-  }
-
-  h3 {
-    margin: 0 0 0.25rem;
-    font-size: 0.95rem;
-    font-weight: 800;
+  .kpi-value {
+    font-size: 1.4rem;
+    font-weight: 900;
     color: variables.$mobili-blue-deep;
   }
+}
 
-  p {
-    margin: 0;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: variables.$gray-600;
+.gare-kpis-link {
+  margin: 1rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+
+  a {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: variables.$mobili-blue-soft;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
   }
 }
 
@@ -245,8 +235,7 @@
   pointer-events: none;
 }
 
-.gare-company--locked .gare-company-locked-hint {
-  grid-column: 1 / -1;
+.gare-kpis--locked .gare-company-locked-hint {
   margin: 0;
   padding: 0.9rem 1rem;
   border-radius: variables.$radius-sm;

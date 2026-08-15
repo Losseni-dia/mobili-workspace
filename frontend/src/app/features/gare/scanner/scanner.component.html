@@ -24,6 +24,15 @@
         </div>
         }
 
+        @if (isVerifying()) {
+        <div class="status-overlay verifying">
+            <div class="status-content">
+                <div class="spinner" aria-hidden="true"></div>
+                <h2>Vérification…</h2>
+            </div>
+        </div>
+        }
+
         @if (scanResult()) {
         <div class="status-overlay success">
             <div class="status-content">

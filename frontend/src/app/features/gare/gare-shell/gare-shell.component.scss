@@ -7,7 +7,7 @@ $sidebar-w-collapsed: 76px;
 
 :host {
   display: block;
-  background: #f4f7f5;
+  background: variables.$gray-100;
   min-height: 100vh;
 }
 
@@ -325,9 +325,9 @@ $sidebar-w-collapsed: 76px;
     font-weight: 800;
     line-height: 16px;
     text-align: center;
-    background: #ef4444;
-    color: #fff;
-    border-radius: 999px;
+    background: variables.$danger;
+    color: variables.$white;
+    border-radius: variables.$radius-pill;
   }
 }
 
