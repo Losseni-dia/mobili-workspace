@@ -131,6 +131,18 @@ export class TripService {
     return this.http.get<Trip[]>('/trips/my-trips');
   }
 
+  /** Aligné sur mobile (`trips_gare_page.dart`) : filtre serveur par période, statut = client. */
+  getPartnerTripsInRange(fromDate: string, toDate: string): Observable<Trip[]> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<Trip[]>('/trips/my-trips/range', { params });
+  }
+
+  getStops(tripId: number): Observable<{ stopIndex: number; cityLabel: string; plannedDepartureAt: string }[]> {
+    return this.http.get<{ stopIndex: number; cityLabel: string; plannedDepartureAt: string }[]>(
+      `/trips/${tripId}/stops`,
+    );
+  }
+
   getCovoiturageSoloMyTrips(): Observable<Trip[]> {
     return this.http.get<Trip[]>('/covoiturage/trips/mine');
   }

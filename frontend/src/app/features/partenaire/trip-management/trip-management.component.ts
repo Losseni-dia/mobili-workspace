@@ -1,14 +1,18 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
 import { getTripPublicListPrice } from '../../../core/utils/trip-public-list-price.util';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
-import { BookingService } from '../../../core/services/booking/booking.service';
+import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
+
+/** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
+type TripStatusFilter = 'ALL' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
+type PeriodFilter = 'today' | 'week' | 'month';
 
 @Component({
   selector: 'app-trip-management',
@@ -22,21 +26,45 @@ export class TripManagementComponent implements OnInit {
   private bookingService = inject(BookingService);
   private notify = inject(NotificationService);
   private configuration = inject(ConfigurationService);
+  private router = inject(Router);
 
   myTrips = signal<Trip[]>([]);
   isLoading = signal(false);
   search = signal('');
 
+  /** Aligné sur mobile (`PartnerPeriodSelector`) : période serveur, statut = filtre client. */
+  period = signal<PeriodFilter>('month');
+  statusFilter = signal<TripStatusFilter>('ALL');
+
+  readonly STATUS_FILTERS: { value: TripStatusFilter; label: string }[] = [
+    { value: 'ALL', label: 'Tous' },
+    { value: 'EN_COURS', label: 'En cours' },
+    { value: 'PROGRAMMÉ', label: 'Programmé' },
+    { value: 'TERMINÉ', label: 'Historique' },
+    { value: 'ANNULÉ', label: 'Annulé' },
+  ];
+
   /** Filtre libre sur ville de départ/arrivée, ID ou plaque — mêmes conventions que booking-list. */
   filteredTrips = computed(() => {
     const q = this.search().trim().toLowerCase();
-    if (!q) return this.myTrips();
-    return this.myTrips().filter((t) =>
+    const status = this.statusFilter();
+    let list = this.myTrips();
+    if (status !== 'ALL') {
+      list = list.filter((t) => (t.status || '').toUpperCase() === status);
+    }
+    if (!q) return list;
+    return list.filter((t) =>
       [t.departureCity, t.arrivalCity, String(t.id), t.moreInfo]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q)),
     );
   });
+
+  /** Lien "Canal" contextuel : /partenaire/trip-channel ou /gare/trip-channel selon l'espace. */
+  tripChannelLink(tripId: number): string[] {
+    const base = this.router.url.includes('/gare/') ? '/gare' : '/partenaire';
+    return [`${base}/trip-channel`, String(tripId)];
+  }
 
   /** ID du trajet dont on vient de copier le code chauffeur (pour feedback UI). */
   copiedTripId = signal<number | null>(null);
@@ -49,6 +77,26 @@ export class TripManagementComponent implements OnInit {
   selectedTripForSeats = signal<Trip | null>(null);
   occupiedSeatsForTrip = signal<string[]>([]);
   tempSelectedSeats = signal<string[]>([]);
+
+  // ====== Passagers (aligné sur PassengersSheet mobile) ======
+  passengersTrip = signal<Trip | null>(null);
+  passengersList = signal<BookingResponse[]>([]);
+  isLoadingPassengers = signal(false);
+
+  passengerStats = computed(() => {
+    const list = this.passengersList();
+    const totalPassengers = list.reduce((sum, b) => sum + (b.numberOfSeats || 0), 0);
+    const totalRevenue = list.reduce((sum, b) => sum + (b.amount ?? b.totalPrice ?? 0), 0);
+    return { reservations: list.length, totalPassengers, totalRevenue };
+  });
+
+  // ====== Vente directe (aligné sur OfflineSaleSheet mobile) ======
+  saleTrip = signal<Trip | null>(null);
+  saleOccupiedSeats = signal<string[]>([]);
+  saleSelectedSeats = signal<string[]>([]);
+  salePassengerNames = signal<Record<string, string>>({});
+  saleSubmitting = signal(false);
+  saleError = signal<string | null>(null);
 
   listPrice = getTripPublicListPrice;
 
@@ -70,9 +118,38 @@ export class TripManagementComponent implements OnInit {
     this.loadTrips();
   }
 
+  setPeriod(p: PeriodFilter) {
+    this.period.set(p);
+    this.loadTrips();
+  }
+
+  setStatusFilter(s: TripStatusFilter) {
+    this.statusFilter.set(s);
+  }
+
+  private periodRange(): { from: string; to: string } {
+    const now = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    if (this.period() === 'today') {
+      return { from: iso(now), to: iso(now) };
+    }
+    if (this.period() === 'week') {
+      const day = now.getDay() || 7;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - day + 1);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return { from: iso(monday), to: iso(sunday) };
+    }
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { from: iso(first), to: iso(last) };
+  }
+
   loadTrips(): void {
     this.isLoading.set(true);
-    this.tripService.getPartnerTrips().subscribe({
+    const { from, to } = this.periodRange();
+    this.tripService.getPartnerTripsInRange(from, to).subscribe({
       next: (data: Trip[]) => {
         this.myTrips.set(Array.isArray(data) ? data : []);
         this.isLoading.set(false);
@@ -183,5 +260,90 @@ export class TripManagementComponent implements OnInit {
         this.deletingId.set(null);
       },
     });
+  }
+
+  // ====== Passagers ======
+  openPassengers(trip: Trip) {
+    this.passengersTrip.set(trip);
+    this.passengersList.set([]);
+    this.isLoadingPassengers.set(true);
+    this.bookingService.getConfirmedPassengers(trip.id).subscribe({
+      next: (list) => {
+        this.passengersList.set(list || []);
+        this.isLoadingPassengers.set(false);
+      },
+      error: () => {
+        this.passengersList.set([]);
+        this.isLoadingPassengers.set(false);
+      },
+    });
+  }
+
+  closePassengers() {
+    this.passengersTrip.set(null);
+  }
+
+  // ====== Vente directe ======
+  openSale(trip: Trip) {
+    this.saleTrip.set(trip);
+    this.saleSelectedSeats.set([]);
+    this.salePassengerNames.set({});
+    this.saleError.set(null);
+    this.bookingService.getOccupiedSeats(trip.id).subscribe({
+      next: (seats) => this.saleOccupiedSeats.set(seats),
+      error: () => this.saleOccupiedSeats.set([]),
+    });
+  }
+
+  closeSale() {
+    this.saleTrip.set(null);
+  }
+
+  onSaleSeatsSelected(seats: string[]) {
+    this.saleSelectedSeats.set(seats);
+    // Purge les noms des sièges désélectionnés, conserve le reste.
+    this.salePassengerNames.update((names) => {
+      const next: Record<string, string> = {};
+      for (const s of seats) next[s] = names[s] ?? '';
+      return next;
+    });
+  }
+
+  setSalePassengerName(seat: string, name: string) {
+    this.salePassengerNames.update((names) => ({ ...names, [seat]: name }));
+  }
+
+  confirmSale() {
+    const trip = this.saleTrip();
+    const seats = this.saleSelectedSeats();
+    if (!trip || seats.length === 0 || this.saleSubmitting()) return;
+
+    const names = this.salePassengerNames();
+    const missing = seats.some((s) => !names[s]?.trim());
+    if (missing) {
+      this.saleError.set('Renseignez le nom du passager pour chaque place sélectionnée.');
+      return;
+    }
+
+    this.saleSubmitting.set(true);
+    this.saleError.set(null);
+    this.bookingService
+      .createOfflineSale({
+        tripId: trip.id,
+        numberOfSeats: seats.length,
+        selections: seats.map((seatNumber) => ({ seatNumber, passengerName: names[seatNumber].trim() })),
+      })
+      .subscribe({
+        next: () => {
+          this.saleSubmitting.set(false);
+          this.notify.show(`Vente enregistrée : ${seats.length} place${seats.length > 1 ? 's' : ''}.`, 'success');
+          this.closeSale();
+          this.loadTrips();
+        },
+        error: (err) => {
+          this.saleSubmitting.set(false);
+          this.saleError.set(err?.error?.message || 'Impossible d\'enregistrer cette vente.');
+        },
+      });
   }
 }

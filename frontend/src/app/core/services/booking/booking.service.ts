@@ -217,4 +217,18 @@ export class BookingService {
       seatNumbers,
     });
   }
+
+  /**
+   * Vente directe (guichet) — aligné sur mobile (`OfflineSaleSheet`) : même DTO que
+   * `createBooking`, le backend force `status = OFFLINE_SALE` et calcule le prix normalement
+   * (aucun champ prix manuel côté client).
+   */
+  createOfflineSale(bookingData: BookingRequest): Observable<BookingResponse> {
+    return this.http.post<BookingResponse>(`${this.API_URL}/partner/offline-sale`, bookingData);
+  }
+
+  /** Passagers confirmés d'un trajet (une entrée par réservation) — aligné sur `PassengersSheet` (mobile). */
+  getConfirmedPassengers(tripId: number): Observable<BookingResponse[]> {
+    return this.http.get<BookingResponse[]>(`${this.API_URL}/trips/${tripId}/passengers`);
+  }
 }
