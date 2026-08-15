@@ -193,6 +193,16 @@ export class BookingService {
   }
 
   /**
+   * Aligné sur mobile (`_monthlyRevenueProvider`, dashboard_gare_page.dart) : sert à calculer le
+   * revenu du mois splitté Via Mobili (CONFIRMED) / Au guichet (OFFLINE_SALE) — jamais le forfait
+   * client (`serviceFee`), voir `ticketsTotalAmount` en priorité sur `amount`/`totalPrice`.
+   */
+  getPartnerBookingsInRange(fromDate: string, toDate: string): Observable<BookingResponse[]> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<BookingResponse[]>(`${this.API_URL}/partner/my-bookings/range`, { params });
+  }
+
+  /**
    * Frais Mobili/commission et net compagnie par réservation payée — vue partenaire/gare de
    * l'équivalent admin `/admin/stats/transactions/list`. `stationId` restreint à une gare.
    */
