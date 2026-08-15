@@ -93,6 +93,35 @@
   }
 }
 
+.account-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.65rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.72rem;
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  &.active {
+    background: rgba(variables.$success, 0.12);
+    color: variables.$success;
+    .dot { background: variables.$success; }
+  }
+
+  &.inactive {
+    background: variables.$danger-soft;
+    color: variables.$danger;
+    .dot { background: variables.$danger; }
+  }
+}
+
 .role-pills {
   list-style: none;
   margin: 0;
@@ -121,17 +150,6 @@
 
 .btn-primary {
   @include mixins.btn-primary;
-  text-decoration: none;
-  text-align: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.55rem 1.1rem;
-  font-size: 0.88rem;
-}
-
-.btn-secondary {
-  @include mixins.btn-secondary;
   text-decoration: none;
   text-align: center;
   display: inline-flex;

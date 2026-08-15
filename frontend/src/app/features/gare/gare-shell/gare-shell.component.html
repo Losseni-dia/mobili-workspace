@@ -101,28 +101,6 @@
             </nav>
         </div>
 
-        @if (!collapsed()) {
-            <div class="cta-card" [class.cta-card--disabled]="gareActionsLocked()">
-                <p class="cta-title">Embarquement</p>
-                <p class="cta-desc">Scannez les QR codes des passagers à l’entrée du bus.</p>
-                @if (gareActionsLocked()) {
-                    <span class="cta-btn cta-btn--disabled">Disponible après validation</span>
-                } @else {
-                    <a routerLink="/gare/scan" class="cta-btn">Ouvrir le scanner</a>
-                }
-            </div>
-        } @else {
-            @if (gareActionsLocked()) {
-                <span class="nav-link cta-compact nav-link--disabled" title="En attente de validation">
-                    <span class="nav-icon">📷</span>
-                </span>
-            } @else {
-                <a routerLink="/gare/scan" class="nav-link cta-compact" title="Scanner">
-                    <span class="nav-icon">📷</span>
-                </a>
-            }
-        }
-
         <div class="sidebar-footer">
             <a routerLink="/" class="nav-link soft" title="Retour au site">
                 <span class="nav-icon">🏠</span>

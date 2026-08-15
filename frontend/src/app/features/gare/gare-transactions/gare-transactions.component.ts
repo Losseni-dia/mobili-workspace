@@ -5,9 +5,10 @@ import { BookingService, PartnerTransaction } from '../../../core/services/booki
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 /**
- * Détail financier (frais Mobili/commission, net compagnie) pour la gare connectée — parité
- * mobilipro (« Transactions » gare), endpoint déjà utilisé côté partenaire, ici restreint à
- * la station de l'utilisateur (même convention que gare-tickets).
+ * Vente brute pour la gare connectée — aligné sur `gare_transactions_page.dart` (mobilipro) :
+ * la commission Mobili et le net compagnie ne concernent JAMAIS la gare, ils ne sont même pas
+ * affichés côté mobile (commentaire explicite dans le code Flutter). Ne jamais réintroduire ces
+ * colonnes ici, même si l'endpoint backend (`PartnerTransaction`) les renvoie.
  */
 @Component({
   selector: 'app-gare-transactions',
@@ -36,8 +37,6 @@ export class GareTransactionsComponent implements OnInit {
     );
   });
 
-  totalCommission = computed(() => this.transactions().reduce((sum, t) => sum + (t.commissionTotal || 0), 0));
-  totalCompanyNet = computed(() => this.transactions().reduce((sum, t) => sum + (t.companyNet || 0), 0));
   totalGross = computed(() => this.transactions().reduce((sum, t) => sum + (t.grossAmount || 0), 0));
 
   ngOnInit(): void {

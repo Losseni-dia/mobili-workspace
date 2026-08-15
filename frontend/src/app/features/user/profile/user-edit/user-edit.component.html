@@ -27,10 +27,12 @@
                     <input type="text" formControlName="lastname" placeholder="Votre nom">
                 </div>
 
-                <div class="field">
-                    <label>Nom d'utilisateur (Login)</label>
-                    <input type="text" formControlName="login" placeholder="Pseudo">
-                </div>
+                @if (!authService.hasRole('GARE')) {
+                    <div class="field">
+                        <label>Nom d'utilisateur (Login)</label>
+                        <input type="text" formControlName="login" placeholder="Pseudo">
+                    </div>
+                }
 
                 <div class="field">
                     <label>Email</label>

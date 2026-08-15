@@ -201,14 +201,6 @@ export const businessRoutes: Routes = [
           ),
       },
       {
-        path: 'scan',
-        canActivate: [gareOperationsGuard],
-        loadComponent: () =>
-          import('@mobili-app/features/gare/scanner/scanner.component').then(
-            (m) => m.TicketScannerComponent,
-          ),
-      },
-      {
         path: 'tickets',
         canActivate: [gareOperationsGuard],
         loadComponent: () =>
