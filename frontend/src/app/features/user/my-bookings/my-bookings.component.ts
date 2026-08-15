@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -14,9 +14,13 @@ type StatusFilter = 'ALL' | 'CONFIRMED' | 'PENDING' | 'CANCELLED';
   templateUrl: './my-bookings.component.html',
   styleUrl: './my-bookings.component.scss',
 })
-export class MyBookingsComponent implements OnInit {
+export class MyBookingsComponent implements OnInit, OnDestroy {
   private bookingService = inject(BookingService);
   private authService = inject(AuthService);
+
+  /** Rafraîchi toutes les 15s pour faire vivre le compte à rebours de paiement covoiturage. */
+  private now = signal(Date.now());
+  private tickHandle: ReturnType<typeof setInterval> | null = null;
 
   bookings = signal<BookingResponse[]>([]);
   isLoading = signal<boolean>(true);
@@ -97,6 +101,28 @@ export class MyBookingsComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+    this.tickHandle = setInterval(() => this.now.set(Date.now()), 15000);
+  }
+
+  ngOnDestroy() {
+    if (this.tickHandle != null) clearInterval(this.tickHandle);
+  }
+
+  /**
+   * Covoiturage accepté : fenêtre de paiement (~30 min, `paymentDeadline`). Aligné sur mobile
+   * (paiement possible depuis « Mes réservations » une fois la demande acceptée par le
+   * conducteur). `null` si non applicable ou délai expiré.
+   */
+  paymentCountdown(b: BookingResponse): string | null {
+    if (!b.paymentDeadline) return null;
+    const deadline = Date.parse(b.paymentDeadline);
+    if (Number.isNaN(deadline)) return null;
+    const remainingMs = deadline - this.now();
+    if (remainingMs <= 0) return null;
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const mm = Math.floor(totalSeconds / 60);
+    const ss = totalSeconds % 60;
+    return `${mm}:${ss.toString().padStart(2, '0')}`;
   }
 
   setFilter(f: StatusFilter) { this.filter.set(f); }

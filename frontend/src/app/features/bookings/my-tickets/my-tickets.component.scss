@@ -280,6 +280,60 @@
     text-decoration: none;
     color: inherit;
   }
+
+  .btn-hide {
+    @include mixins.btn-ghost;
+    padding: 10px 18px;
+    font-size: 0.82rem;
+    color: variables.$danger;
+    border-color: rgba(variables.$danger, 0.3);
+
+    &:hover {
+      background: variables.$danger-soft;
+    }
+  }
+}
+
+.hide-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(variables.$mobili-blue-deep, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.hide-modal-content {
+  width: 100%;
+  max-width: 420px;
+  background: variables.$white;
+  padding: 24px;
+  border-radius: variables.$radius-md;
+  box-shadow: variables.$shadow-xl;
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: variables.$mobili-blue-deep;
+  }
+
+  p {
+    margin: 0 0 18px;
+    font-size: 0.88rem;
+    color: variables.$gray-600;
+    line-height: 1.5;
+  }
+}
+
+.hide-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  .btn-cancel { @include mixins.btn-ghost; padding: 10px 18px; }
+  .btn-confirm { @include mixins.btn-danger; padding: 10px 18px; }
 }
 
 // ======================================================================

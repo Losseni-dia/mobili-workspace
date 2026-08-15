@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TicketService } from '../../../core/services/ticket/ticket.service';
@@ -16,11 +16,61 @@ export class MyTicketsComponent implements OnInit {
   private ticketService = inject(TicketService);
   private authService = inject(AuthService);
 
-  tickets = signal<any[]>([]);
+  private static readonly HIDDEN_KEY = 'mobili.tickets.hidden';
+
+  allTickets = signal<any[]>([]);
+  /** Numéros masqués localement (aucune suppression serveur — un billet émis reste émis). */
+  hiddenNumbers = signal<Set<string>>(this.readHidden());
   isLoading = signal(true);
+
+  /** Ticket en attente de confirmation de masquage (modale, pas de confirm() natif). */
+  pendingHide = signal<any | null>(null);
+
+  tickets = computed(() =>
+    this.allTickets().filter((t) => !this.hiddenNumbers().has(t.ticketNumber)),
+  );
 
   ngOnInit() {
     this.loadUserTickets();
+  }
+
+  askHide(ticket: any) {
+    this.pendingHide.set(ticket);
+  }
+
+  cancelHide() {
+    this.pendingHide.set(null);
+  }
+
+  confirmHide() {
+    const ticket = this.pendingHide();
+    if (!ticket) return;
+    this.hiddenNumbers.update((set) => {
+      const next = new Set(set);
+      next.add(ticket.ticketNumber);
+      this.persistHidden(next);
+      return next;
+    });
+    this.pendingHide.set(null);
+  }
+
+  private readHidden(): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(MyTicketsComponent.HIDDEN_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private persistHidden(set: Set<string>) {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(MyTicketsComponent.HIDDEN_KEY, JSON.stringify([...set]));
+    } catch {
+      /* noop */
+    }
   }
 
   // ✅ Nouvelle fonction de téléchargement direct
@@ -58,7 +108,7 @@ export class MyTicketsComponent implements OnInit {
     if (userId) {
       this.ticketService.getTicketsByUserId(userId).subscribe({
         next: (data) => {
-          this.tickets.set(data);
+          this.allTickets.set(data);
           this.isLoading.set(false);
         },
         error: (err) => {
