@@ -13,6 +13,89 @@
     }
 </section>
 
+<section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
+    <h2 id="gare-kpis-heading" class="gare-kpis-title">Ce mois-ci, sur votre gare</h2>
+    @if (gareActionsLocked()) {
+        <p class="gare-company-locked-hint" role="status">
+            Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
+        </p>
+    } @else if (isLoadingKpis()) {
+        <p class="gare-kpis-status">Chargement…</p>
+    } @else {
+        <div class="gare-kpis-grid">
+            <div class="kpi-card">
+                <span class="kpi-label">Trajets actifs</span>
+                <strong class="kpi-value">{{ activeTripsCount() ?? 0 }}</strong>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Tickets vendus</span>
+                <strong class="kpi-value">{{ ticketsSoldCount() ?? 0 }}</strong>
+            </div>
+        </div>
+
+        <div class="revenue-card">
+            <div class="revenue-card__head">
+                <span class="kpi-label">Revenu du mois</span>
+                <strong class="revenue-total">{{ revenueTotal() | number }} FCFA</strong>
+            </div>
+            <div class="revenue-split">
+                <div class="revenue-split__item">
+                    <span>Via Mobili</span>
+                    <strong>{{ revenueOnline() | number }} FCFA</strong>
+                </div>
+                <div class="revenue-split__item">
+                    <span>Au guichet</span>
+                    <strong>{{ revenueOffline() | number }} FCFA</strong>
+                </div>
+            </div>
+        </div>
+
+        <p class="gare-kpis-link">
+            <a routerLink="/gare/tickets">Voir le détail des tickets →</a>
+            <a routerLink="/partenaire/trips">Gérer les voyages de la compagnie →</a>
+        </p>
+    }
+</section>
+
+@if (!gareActionsLocked()) {
+    <section class="gare-recent" aria-labelledby="gare-recent-heading">
+        <h2 id="gare-recent-heading" class="gare-kpis-title">Réservations récentes</h2>
+        @if (isLoadingRecent()) {
+            <p class="gare-kpis-status">Chargement…</p>
+        } @else if (recentBookings().length === 0) {
+            <p class="gare-recent-empty">Aucune réservation récente.</p>
+        } @else {
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Trajet</th>
+                            <th>Date</th>
+                            <th class="right">Montant</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (b of visibleRecentBookings(); track b.id) {
+                            <tr>
+                                <td>{{ b.customerName }}</td>
+                                <td>{{ b.tripRoute }}</td>
+                                <td class="mono">{{ b.date | date: 'dd/MM/yy HH:mm' }}</td>
+                                <td class="right">{{ b.amount | number }} FCFA</td>
+                                <td>{{ b.status }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (hasMoreRecent()) {
+                <button type="button" class="btn-more" (click)="showMoreRecent()">Voir plus</button>
+            }
+        }
+    </section>
+}
+
 <div class="gare-action-grid" [class.gare-action-grid--locked]="gareActionsLocked()">
     @if (gareActionsLocked()) {
         <div class="action-card action-card--disabled" aria-disabled="true">
@@ -29,32 +112,6 @@
         </a>
     }
 </div>
-
-<section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
-    <h2 id="gare-kpis-heading" class="gare-kpis-title">Aujourd’hui, sur votre gare</h2>
-    @if (gareActionsLocked()) {
-        <p class="gare-company-locked-hint" role="status">
-            Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
-        </p>
-    } @else if (todayTicketsLoading()) {
-        <p class="gare-kpis-status">Chargement…</p>
-    } @else {
-        <div class="gare-kpis-grid">
-            <div class="kpi-card">
-                <span class="kpi-label">Tickets confirmés</span>
-                <strong class="kpi-value">{{ todayTicketsCount() ?? 0 }}</strong>
-            </div>
-            <div class="kpi-card">
-                <span class="kpi-label">Montant confirmé</span>
-                <strong class="kpi-value">{{ todayConfirmedAmount() ?? 0 | number }} FCFA</strong>
-            </div>
-        </div>
-        <p class="gare-kpis-link">
-            <a routerLink="/gare/tickets">Voir le détail des tickets →</a>
-            <a routerLink="/partenaire/trips">Gérer les voyages de la compagnie →</a>
-        </p>
-    }
-</section>
 
 <div class="gare-tips">
     <h3>À savoir</h3>

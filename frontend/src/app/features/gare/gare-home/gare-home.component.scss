@@ -1,5 +1,6 @@
 @use '../../../styles/variables';
 @use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 .gare-welcome {
   margin-bottom: 1.5rem;
@@ -34,70 +35,6 @@
   color: variables.$mobili-blue-deep;
   font-size: 0.9rem;
   line-height: 1.5;
-}
-
-.gare-chauffeurs {
-  max-width: 900px;
-  margin-bottom: 1.75rem;
-  padding: 1.1rem 1.2rem;
-  background: variables.$white;
-  border: 1px solid rgba(variables.$mobili-blue, 0.12);
-  border-radius: variables.$radius-md;
-  box-shadow: variables.$shadow-sm;
-}
-
-.gare-chauffeurs-title {
-  font-family: variables.$font-display;
-  font-size: 1.05rem;
-  font-weight: 900;
-  color: variables.$mobili-blue-deep;
-  margin: 0 0 0.35rem;
-}
-
-.gare-chauffeurs-lead {
-  margin: 0 0 0.85rem;
-  font-size: 0.88rem;
-  line-height: 1.5;
-  color: variables.$gray-600;
-}
-
-.gare-chauffeurs-status,
-.gare-chauffeurs-err {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.gare-chauffeurs-err {
-  color: variables.$danger;
-}
-
-.gare-chauffeurs-list {
-  margin: 0 0 0.75rem;
-  padding-left: 1.2rem;
-  line-height: 1.45;
-  color: variables.$mobili-blue-deep;
-  strong {
-    font-weight: 800;
-  }
-}
-
-.gare-chauffeurs-empty {
-  margin: 0 0 0.75rem;
-  font-size: 0.9rem;
-  color: variables.$gray-600;
-}
-
-.gare-chauffeurs-link {
-  margin: 0;
-  font-size: 0.88rem;
-  a {
-    font-weight: 700;
-    color: variables.$mobili-blue-soft;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
 }
 
 .gare-action-grid {
@@ -210,6 +147,74 @@
     font-weight: 900;
     color: variables.$mobili-blue-deep;
   }
+}
+
+.revenue-card {
+  max-width: 480px;
+  margin-top: 0.9rem;
+  padding: 1rem 1.1rem;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  box-shadow: variables.$shadow-sm;
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .revenue-total {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.revenue-split {
+  display: flex;
+  gap: 0.75rem;
+
+  &__item {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    background: variables.$gray-50;
+    border-radius: variables.$radius-sm;
+    font-size: 0.85rem;
+
+    span {
+      color: variables.$gray-600;
+    }
+
+    strong {
+      color: variables.$mobili-blue-deep;
+      font-weight: 800;
+    }
+  }
+}
+
+.gare-recent {
+  max-width: 900px;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid variables.$gray-200;
+}
+
+.gare-recent-empty {
+  margin: 0;
+  color: variables.$gray-500;
+  font-size: 0.9rem;
+}
+
+.btn-more {
+  @include mixins.btn-ghost;
+  margin-top: 0.9rem;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.85rem;
 }
 
 .gare-kpis-link {
