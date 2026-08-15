@@ -22,6 +22,17 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'cgu',
+    loadComponent: () => import('./features/legal/cgu/cgu.component').then((m) => m.CguComponent),
+  },
+  {
+    path: 'confidentialite',
+    loadComponent: () =>
+      import('./features/legal/confidentialite/confidentialite.component').then(
+        (m) => m.ConfidentialiteComponent,
+      ),
+  },
+  {
     path: 'auth/login',
     loadComponent: () =>
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
