@@ -156,6 +156,22 @@ public class StationService {
         return toDto(stationRepository.save(s));
     }
 
+    /**
+     * Approuve une gare (débloque trajets/tickets/transactions côté partenaire) — jusqu'ici
+     * appelé par le web/mobile mais jamais implémenté côté serveur : le bouton "Approuver"
+     * échouait silencieusement (404) et {@code validated} n'était jamais mis à jour, donc
+     * {@code isStationReadyForTrips} côté client restait bloqué en permanence.
+     */
+    @Transactional
+    public StationResponseDTO approve(Long id, UserPrincipal principal) {
+        requirePartnerOwner(principal);
+        Partner partner = partnerService.getCurrentPartnerForOperations();
+        Station s = stationRepository.findByIdAndPartnerId(id, partner.getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
+        s.setActive(true);
+        return toDto(stationRepository.save(s));
+    }
+
     @Transactional
     public void updateFcmToken(Long stationId, String fcmToken) {
         Station s = stationRepository.findById(stationId)
@@ -394,6 +410,14 @@ public class StationService {
                 .code(s.getCode())
                 .active(s.isActive())
                 .partnerId(s.getPartner() != null ? s.getPartner().getId() : null)
+                // Aucune colonne "validated" séparée en base : le seul état réel exploitable
+                // est `active`. Avant ce correctif, ces deux champs n'étaient jamais renseignés
+                // (toujours false/null), donc le front (isPending/isStationReadyForTrips)
+                // considérait TOUTE gare comme "en attente" en permanence, même une gare active
+                // depuis longtemps — verrouillant Trajets/Tickets/Transactions sans issue
+                // possible (le bouton "Approuver" appelait un endpoint qui n'existait pas).
+                .validated(s.isActive())
+                .approvalStatus(s.isActive() ? "APPROVED" : "PENDING")
                 .responsibleName(responsible)
                 .assignedChauffeurs(assignedChauffeurs)
                 .build();

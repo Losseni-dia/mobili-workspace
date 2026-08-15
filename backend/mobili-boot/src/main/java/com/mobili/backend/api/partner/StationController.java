@@ -67,6 +67,14 @@ public class StationController {
         stationService.delete(id, principal);
     }
 
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('ROLE_PARTNER')")
+    public StationResponseDTO approve(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return stationService.approve(id, principal);
+    }
+
    @PostMapping("/gare-accounts")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('ROLE_PARTNER')")
