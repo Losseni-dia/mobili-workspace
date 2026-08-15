@@ -28,7 +28,7 @@ export function postLoginNavigateUrl(options: {
     if (a.hasRole('ADMIN')) {
       return `${options.configuration.getTravelerWebBaseUrl()}/admin/dashboard`;
     }
-    if (a.hasRole('GARE')) {
+    if (a.hasRole('GARE') || a.hasRole('STATION')) {
       return '/gare/accueil';
     }
     if (a.hasRole('PARTNER')) {
@@ -44,7 +44,7 @@ export function postLoginNavigateUrl(options: {
   const biz = options.configuration.getBusinessWebBaseUrl();
   if (a.hasRole('ADMIN')) return '/admin/dashboard';
   if (a.hasRole('PARTNER')) return `${biz}/partenaire/dashboard`;
-  if (a.hasRole('GARE')) return `${biz}/gare/accueil`;
+  if (a.hasRole('GARE') || a.hasRole('STATION')) return `${biz}/gare/accueil`;
   if (a.hasRole('CHAUFFEUR')) return `${biz}/covoiturage/accueil`;
   if (a.isLoggedIn()) return '/my-account/profile';
   return '/';
