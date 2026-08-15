@@ -26,6 +26,8 @@ export class TicketScannerComponent implements OnInit {
 
   scanResult = signal<any>(null);
   isScanning = signal(true);
+  /** Entre le scan du QR et la réponse serveur — évite l'impression que le scan n'a rien fait. */
+  isVerifying = signal(false);
   errorMessage = signal('');
 
   ngOnInit(): void {
@@ -45,14 +47,17 @@ export class TicketScannerComponent implements OnInit {
   }
 
   validateTicket(ticketNumber: string) {
+    this.isVerifying.set(true);
     this.ticketService.verifyTicket(ticketNumber).subscribe({
       next: (ticket) => {
         this.scanResult.set(ticket);
         this.errorMessage.set('');
+        this.isVerifying.set(false);
       },
       error: (err) => {
         this.errorMessage.set(err.error?.message || 'Ticket invalide ou déjà utilisé');
         this.scanResult.set(null);
+        this.isVerifying.set(false);
       },
     });
   }
@@ -60,6 +65,7 @@ export class TicketScannerComponent implements OnInit {
   resetScanner() {
     this.scanResult.set(null);
     this.errorMessage.set('');
+    this.isVerifying.set(false);
     this.isScanning.set(true);
   }
 }

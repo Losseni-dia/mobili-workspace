@@ -1,6 +1,7 @@
 @use "sass:color";
 @use '../../../styles/variables';
 @use '../../../styles/mixins';
+@use '../../../styles/data-panel';
 
 // ---------------------------------------------------------------------------
 //  Page
@@ -346,47 +347,8 @@
   font-size: 0.9rem;
 }
 
-.history-table-wrap {
-  overflow-x: auto;
-  border-radius: variables.$radius-md;
-  border: 1px solid variables.$gray-200;
-  background: variables.$white;
-  box-shadow: variables.$shadow-xs;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.86rem;
-  text-align: left;
-
-  th,
-  td {
-    padding: 0.65rem 0.9rem;
-    border-bottom: 1px solid variables.$gray-100;
-  }
-
-  th {
-    background: variables.$gray-50;
-    color: variables.$gray-500;
-    font-weight: 800;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tr:hover td {
-    background: rgba(variables.$mobili-blue-fog, 0.4);
-  }
-
-  .mono {
-    font-variant-numeric: tabular-nums;
-  }
-}
+// Le tableau historique utilise désormais .table-container/.data-table (styles/_data-panel.scss),
+// le même composant visuel que gare-tickets et les listes admin — plus de style ad-hoc dupliqué ici.
 
 // Accès par ID (repliable : moins de poids visuel qu’un second bloc-titre)
 .access-code-panel {

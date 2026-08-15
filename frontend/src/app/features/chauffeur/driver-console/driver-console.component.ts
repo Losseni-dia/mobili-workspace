@@ -148,6 +148,9 @@ export class DriverConsoleComponent implements OnInit {
       this.loadTrip();
       return;
     }
+    if (!confirm(`Démarrer officiellement le service du trajet #${id} ? Cette action est visible des passagers.`)) {
+      return;
+    }
     this.startingTripId.set(id);
     this.driverTrip.startTrip(id).subscribe({
       next: () => {
