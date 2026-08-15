@@ -1,0 +1,117 @@
+<div class="admin-coupons-page">
+  <section class="data-panel">
+    <header class="panel-head">
+      <div>
+        <h2>Coupons</h2>
+        <p>Codes de réduction utilisables par les voyageurs à la réservation.</p>
+      </div>
+      <div class="panel-head__actions">
+        <span class="count-chip">{{ filteredCoupons().length }} / {{ coupons().length }} coupon{{ coupons().length > 1 ? 's' : '' }}</span>
+        <button type="button" class="btn-new" (click)="toggleCreateForm()">
+          {{ showCreateForm() ? 'Annuler' : '+ Nouveau coupon' }}
+        </button>
+      </div>
+    </header>
+
+    @if (showCreateForm()) {
+      <form class="create-form" (ngSubmit)="submitCreate()">
+        <div class="form-grid">
+          <label class="ig">
+            <span>Code</span>
+            <input type="text" [ngModel]="newCode()" (ngModelChange)="newCode.set($event)" name="code"
+                   placeholder="Ex. RENTREE2026" />
+          </label>
+
+          <label class="ig">
+            <span>Type</span>
+            <select [ngModel]="newType()" (ngModelChange)="newType.set($event)" name="type">
+              <option value="PERCENTAGE">Pourcentage</option>
+              <option value="FIXED_AMOUNT">Montant fixe</option>
+            </select>
+          </label>
+
+          <label class="ig">
+            <span>Valeur {{ newType() === 'PERCENTAGE' ? '(%)' : '(FCFA)' }}</span>
+            <input type="number" min="1" [ngModel]="newValue()" (ngModelChange)="newValue.set($event)" name="value" />
+          </label>
+
+          <label class="ig">
+            <span>Expiration (optionnelle)</span>
+            <input type="date" [ngModel]="newExpiresAt()" (ngModelChange)="newExpiresAt.set($event)" name="expiresAt" />
+          </label>
+        </div>
+
+        @if (createError()) {
+          <div class="admin-alert" role="alert">{{ createError() }}</div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" [disabled]="createSubmitting()">
+            {{ createSubmitting() ? 'Création…' : 'Créer le coupon' }}
+          </button>
+        </div>
+      </form>
+    }
+
+    <div class="toolbar-search">
+      <label class="filter">
+        <span class="f-ico">🔍</span>
+        <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Code…">
+      </label>
+    </div>
+
+    @if (actionError()) {
+      <div class="admin-alert" role="alert">{{ actionError() }}</div>
+    }
+
+    @if (loadError()) {
+      <div class="admin-alert" role="alert">{{ loadError() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="loader">Chargement des coupons…</div>
+    } @else if (filteredCoupons().length === 0) {
+      <p class="empty-hint">Aucun coupon ne correspond à ces filtres.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Type</th>
+              <th>Valeur</th>
+              <th>Expiration</th>
+              <th>Statut</th>
+              <th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of filteredCoupons(); track c.id) {
+              <tr>
+                <td class="mono"><strong>{{ c.code }}</strong></td>
+                <td>{{ TYPE_LABELS[c.type] }}</td>
+                <td>{{ c.type === 'PERCENTAGE' ? c.value + ' %' : (c.value | number: '1.0-0') + ' FCFA' }}</td>
+                <td class="mono">{{ c.expiresAt ? (c.expiresAt | date: 'dd/MM/yyyy') : 'Aucune' }}</td>
+                <td>
+                  <span class="status-pill" [class.active]="c.active && !isExpired(c)" [class.warn]="c.active && isExpired(c)">
+                    <span class="dot"></span>
+                    {{ !c.active ? 'Désactivé' : (isExpired(c) ? 'Expiré' : 'Actif') }}
+                  </span>
+                </td>
+                <td class="right">
+                  @if (c.active) {
+                    <button type="button" class="row-btn danger" [disabled]="deactivatingId() === c.id" (click)="deactivate(c)">
+                      {{ deactivatingId() === c.id ? '…' : 'Désactiver' }}
+                    </button>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

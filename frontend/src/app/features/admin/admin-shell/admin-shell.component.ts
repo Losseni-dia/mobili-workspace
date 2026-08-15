@@ -57,6 +57,14 @@ export class AdminShellComponent {
         { label: 'Transactions', icon: '💳', path: '/admin/transactions' },
       ],
     },
+    {
+      title: 'Support',
+      items: [{ label: 'Réclamations', icon: '📮', path: '/admin/claims' }],
+    },
+    {
+      title: 'Marketing',
+      items: [{ label: 'Coupons', icon: '🎟️', path: '/admin/coupons' }],
+    },
     { title: 'Communication', items: [{ label: 'Annonces', icon: '📣', path: '/admin/communication' }] },
   ];
 
@@ -70,6 +78,8 @@ export class AdminShellComponent {
     if (url.includes('tickets')) return 'Tickets';
     if (url.includes('bookings')) return 'Réservations';
     if (url.includes('transactions')) return 'Transactions';
+    if (url.includes('claims')) return 'Réclamations';
+    if (url.includes('coupons')) return 'Coupons';
     return 'Vue d’ensemble';
   });
 

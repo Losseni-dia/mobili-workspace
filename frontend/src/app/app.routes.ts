@@ -229,6 +229,16 @@ export const routes: Routes = [
             (m) => m.AdminTransactions,
           ),
       },
+      {
+        path: 'claims',
+        loadComponent: () =>
+          import('./features/admin/admin-claims/admin-claims').then((m) => m.AdminClaims),
+      },
+      {
+        path: 'coupons',
+        loadComponent: () =>
+          import('./features/admin/admin-coupons/admin-coupons').then((m) => m.AdminCoupons),
+      },
     ],
   },
 
