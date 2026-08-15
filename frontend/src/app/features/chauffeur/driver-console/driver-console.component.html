@@ -257,6 +257,19 @@
                             Enregistrer le départ
                         }
                     </button>
+
+                    <button
+                        type="button"
+                        class="undo-btn"
+                        [disabled]="isUndoing()"
+                        (click)="undoLastDeparture()"
+                    >
+                        @if (isUndoing()) {
+                            Annulation…
+                        } @else {
+                            ↺ Annuler le dernier départ
+                        }
+                    </button>
                 </div>
             </article>
 

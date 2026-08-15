@@ -79,6 +79,15 @@ export class DriverTripService {
     return this.http.post<void>(`/trips/${tripId}/driver/departures`, { stopIndex });
   }
 
+  /**
+   * Annule le dernier départ enregistré (le plus récent arrêt marqué "parti") : repasse les
+   * tickets auto-marqués ARRIVÉ à cet arrêt en UTILISÉ, et le trajet en PROGRAMMÉ/EN_COURS selon
+   * l'arrêt courant résultant. 400 si aucun départ à annuler.
+   */
+  undoLastDeparture(tripId: number): Observable<{ currentStopIndex: number }> {
+    return this.http.post<{ currentStopIndex: number }>(`/trips/${tripId}/driver/departures/undo`, {});
+  }
+
   confirmAlighted(
     tripId: number,
     ticketNumber: string,
