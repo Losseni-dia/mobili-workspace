@@ -43,6 +43,9 @@
             <p>Billets vendus sur toutes les gares de votre compagnie.</p>
         </div>
         <span class="count-chip">{{ filteredTickets().length }} résultats</span>
+        <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filteredTickets().length === 0">
+            ⬇ Export CSV
+        </button>
     </header>
 
     @if (isLoading()) {

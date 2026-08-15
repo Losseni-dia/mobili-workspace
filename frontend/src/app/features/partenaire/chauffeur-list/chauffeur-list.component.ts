@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   PartenaireService,
   PartnerChauffeurItem,
@@ -8,10 +8,13 @@ import {
 } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
+/** Aligné sur `PersonFilter` (mobile, `_ChauffeursTab`). */
+type ChauffeurStatusFilter = 'ALL' | 'ACTIVE' | 'ARCHIVED' | 'UNASSIGNED';
+
 @Component({
   selector: 'app-chauffeur-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './chauffeur-list.component.html',
   styleUrl: './chauffeur-list.component.scss',
 })
@@ -39,6 +42,29 @@ export class ChauffeurListComponent implements OnInit {
   /** Dirigeant ou compte gare : enregistrement des chauffeurs société. */
   canRegisterChauffeur = () =>
     (this.auth.hasRole('PARTNER') && !this.auth.hasRole('GARE')) || this.auth.hasRole('GARE');
+
+  /** Aligné sur `_SearchAndFilterBar` (mobile). */
+  search = signal('');
+  statusFilter = signal<ChauffeurStatusFilter>('ALL');
+
+  filteredItems = computed(() => {
+    const term = this.search().trim().toLowerCase();
+    const status = this.statusFilter();
+    return this.items().filter((c) => {
+      const matchSearch =
+        !term ||
+        [c.firstname, c.lastname, c.email, c.phone].filter(Boolean).some((v) => String(v).toLowerCase().includes(term));
+      const matchStatus =
+        status === 'ALL'
+          ? true
+          : status === 'ACTIVE'
+            ? c.enabled
+            : status === 'ARCHIVED'
+              ? !c.enabled
+              : c.affiliationStationId == null;
+      return matchSearch && matchStatus;
+    });
+  });
 
   form = this.fb.group({
     firstname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),

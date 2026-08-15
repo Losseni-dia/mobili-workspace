@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 type BookingStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -14,6 +15,16 @@ function isConfirmedBooking(status: string | undefined): boolean {
 
 function isCancelledBooking(status: string | undefined): boolean {
   return (status || '').toUpperCase() === 'CANCELLED';
+}
+
+/**
+ * Vente brute réelle (aligné sur `PartnerBookingItem.grossAmount`, mobile) — jamais `amount`/
+ * `totalPrice` seuls s'ils incluent le forfait client : priorité à `ticketsTotalAmount +
+ * luggageFee`, absent uniquement sur les réservations antérieures au forfait client.
+ */
+function grossAmount(b: BookingResponse): number {
+  if (b.ticketsTotalAmount != null) return b.ticketsTotalAmount + (b.luggageFee || 0);
+  return b.amount ?? b.totalPrice ?? 0;
 }
 
 @Component({
@@ -89,7 +100,7 @@ export class BookingListComponent implements OnInit {
 
   // Somme totale des montants affichés (vue filtrée)
   totalRevenue = computed(() => {
-    return this.filteredBookings().reduce((acc, b) => acc + (b.amount || 0), 0);
+    return this.filteredBookings().reduce((acc, b) => acc + grossAmount(b), 0);
   });
 
   /**
@@ -100,8 +111,10 @@ export class BookingListComponent implements OnInit {
   confirmedRevenue = computed(() =>
     this.bookings()
       .filter((b) => isConfirmedBooking(b.status))
-      .reduce((acc, b) => acc + (b.amount || 0), 0),
+      .reduce((acc, b) => acc + grossAmount(b), 0),
   );
+
+  displayAmount = grossAmount;
 
   getStatusClass(status: string): string {
     return status ? status.toLowerCase() : 'pending';
@@ -109,5 +122,20 @@ export class BookingListComponent implements OnInit {
 
   setStatusFilter(f: BookingStatusFilter) {
     this.statusFilter.set(f);
+  }
+
+  exportCsv(): void {
+    exportToCsv(
+      `reservations-${new Date().toISOString().slice(0, 10)}`,
+      this.filteredBookings().map((b) => ({
+        Référence: b.reference,
+        Client: b.customerName,
+        Trajet: b.tripRoute,
+        Date: b.date,
+        Places: b.numberOfSeats,
+        'Montant (FCFA)': this.displayAmount(b),
+        Statut: b.status,
+      })),
+    );
   }
 }

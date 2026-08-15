@@ -183,6 +183,68 @@
   font-size: 0.95rem;
 }
 
+.chauff-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 0 1.25rem 1rem;
+}
+
+.chauff-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  min-width: 220px;
+  flex: 1 1 220px;
+
+  &:focus-within {
+    border-color: variables.$mobili-blue;
+    box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12);
+  }
+
+  .s-ico { opacity: 0.6; }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.88rem;
+    color: variables.$mobili-blue-deep;
+    width: 100%;
+  }
+}
+
+.chauff-status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chauff-status-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all variables.$t-fast;
+
+  &:hover { border-color: variables.$mobili-blue; }
+
+  &.active {
+    background: variables.$mobili-blue-deep;
+    border-color: variables.$mobili-blue-deep;
+    color: variables.$white;
+  }
+}
+
 .chauff-table-wrap {
   overflow-x: auto;
 }

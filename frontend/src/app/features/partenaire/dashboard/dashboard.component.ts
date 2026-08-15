@@ -8,6 +8,7 @@ import {
   Station,
 } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { TicketService } from '../../../core/services/ticket/ticket.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,11 +20,17 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 export class DashboardComponent implements OnInit {
   private partenaireService = inject(PartenaireService);
   private auth = inject(AuthService);
+  private ticketService = inject(TicketService);
 
   recentBookings = signal<any[]>([]);
   stations = signal<Station[]>([]);
   /** Dirigeant : filtre des KPI (backend `stationId` optionnel) */
   stationFilter: 'all' | number = 'all';
+
+  /** Split en ligne/guichet — aligné sur `dashboard_partner_page.dart` (carte Revenus). */
+  revenueOnline = signal(0);
+  revenueOffline = signal(0);
+  ticketsSoldCount = signal<number | null>(null);
 
   stats = [
     { label: 'Voyages actifs', value: '0', color: '#092990' },
@@ -57,9 +64,20 @@ export class DashboardComponent implements OnInit {
           { label: 'Réservations', value: data.totalBookingsCount.toString(), color: '#27ae60' },
           { label: 'Revenus (CFA)', value: data.totalRevenue.toLocaleString(), color: '#f39c12' },
         ];
+        this.revenueOnline.set(data.revenueOnline ?? 0);
+        this.revenueOffline.set(data.revenueOffline ?? 0);
         this.recentBookings.set(data.recentBookings);
       },
       error: (err) => console.error('Erreur stats dashboard :', err),
+    });
+
+    const now = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const from = iso(new Date(now.getFullYear(), now.getMonth(), 1));
+    const to = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
+      next: (tickets) => this.ticketsSoldCount.set(tickets.length),
+      error: () => this.ticketsSoldCount.set(null),
     });
   }
 }

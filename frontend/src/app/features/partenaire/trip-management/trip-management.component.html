@@ -23,6 +23,9 @@
                 />
             </label>
             <span class="count-chip">{{ filteredTrips().length }} / {{ myTrips().length }} trajets</span>
+            <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filteredTrips().length === 0">
+                ⬇ Export CSV
+            </button>
             <a routerLink="/partenaire/add-trip" class="action-cta">＋ Nouveau trajet</a>
         </div>
     </header>
