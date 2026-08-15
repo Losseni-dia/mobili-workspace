@@ -1,0 +1,193 @@
+<div class="ga-page">
+  <header class="ga-hero">
+    <div class="ga-hero-icon" aria-hidden="true">🚉</div>
+    <div class="ga-hero-text">
+      <p class="ga-eyebrow">Réseau</p>
+      <h1 class="ga-title">Comptes gare</h1>
+      <p class="ga-lead">
+        Identifiants de connexion des responsables gare de votre réseau. Chaque compte est rattaché à une gare précise
+        et peut consulter/scanner les tickets de cette gare.
+      </p>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="ga-alert" role="alert">{{ error() }}</div>
+  }
+
+  <section class="data-panel ga-form-card" aria-label="Créer un compte gare">
+    <header class="panel-head">
+      <h2>Nouveau compte gare</h2>
+    </header>
+    @if (createError()) {
+      <div class="ga-alert ga-alert--create" role="alert">{{ createError() }}</div>
+    }
+    <form class="ga-form" [formGroup]="form" (ngSubmit)="onCreateSubmit()">
+      <div class="ga-form-grid">
+        <label class="ga-field">
+          <span>Prénom</span>
+          <input type="text" formControlName="firstname" autocomplete="given-name" />
+        </label>
+        <label class="ga-field">
+          <span>Nom</span>
+          <input type="text" formControlName="lastname" autocomplete="family-name" />
+        </label>
+        <label class="ga-field ga-field--wide">
+          <span>E-mail (facultatif)</span>
+          <input type="email" formControlName="email" autocomplete="email" />
+        </label>
+        <label class="ga-field">
+          <span>Téléphone</span>
+          <input type="tel" formControlName="phone" autocomplete="tel" maxlength="20" />
+        </label>
+        <label class="ga-field">
+          <span>Identifiant (login)</span>
+          <input type="text" formControlName="login" autocomplete="username" />
+        </label>
+        <label class="ga-field">
+          <span>Mot de passe initial</span>
+          <input type="password" formControlName="password" autocomplete="new-password" minlength="6" maxlength="128" />
+          <span class="ga-field-hint">Au moins 6 caractères (même règle que le serveur).</span>
+        </label>
+        <label class="ga-field ga-field--wide">
+          <span>Gare de rattachement</span>
+          <select formControlName="stationId">
+            <option [ngValue]="null">— Choisir une gare —</option>
+            @for (g of stations(); track g.id) {
+              <option [ngValue]="g.id">{{ g.name }} — {{ g.city }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <div class="ga-form-actions">
+        @if (form.invalid && !createSubmitting()) {
+          <p class="ga-form-hint" role="status">
+            Le bouton reste désactivé tant qu'un champ obligatoire est manquant ou invalide.
+          </p>
+        }
+        <button type="submit" class="ga-btn-primary" [disabled]="form.invalid || createSubmitting()">
+          {{ createSubmitting() ? 'Enregistrement…' : 'Créer le compte' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="data-panel ga-list-card" [attr.aria-busy]="isLoading()">
+    <header class="panel-head">
+      <h2>Liste</h2>
+    </header>
+    @if (affiliationError()) {
+      <div class="ga-alert" role="alert">{{ affiliationError() }}</div>
+    }
+    @if (statusError()) {
+      <div class="ga-alert" role="alert">{{ statusError() }}</div>
+    }
+    @if (isLoading()) {
+      <p class="ga-placeholder">Chargement…</p>
+    } @else if (items().length === 0 && !error()) {
+      <p class="ga-placeholder">Aucun compte gare n'est enregistré pour l'instant.</p>
+    } @else if (items().length > 0) {
+      <div class="ga-table-wrap">
+        <table class="ga-table">
+          <thead>
+            <tr>
+              <th scope="col">Nom</th>
+              <th scope="col">Login</th>
+              <th scope="col">Contact</th>
+              <th scope="col">Gare</th>
+              <th scope="col">Compte</th>
+              <th scope="col" class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              @if (editingId() === item.id) {
+                <tr class="ga-edit-row">
+                  <td colspan="6">
+                    <form class="ga-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
+                      @if (editError()) {
+                        <div class="ga-alert" role="alert">{{ editError() }}</div>
+                      }
+                      <div class="ga-form-grid">
+                        <label class="ga-field">
+                          <span>Prénom</span>
+                          <input type="text" formControlName="firstname" />
+                        </label>
+                        <label class="ga-field">
+                          <span>Nom</span>
+                          <input type="text" formControlName="lastname" />
+                        </label>
+                        <label class="ga-field">
+                          <span>E-mail</span>
+                          <input type="email" formControlName="email" />
+                        </label>
+                        <label class="ga-field">
+                          <span>Téléphone</span>
+                          <input type="tel" formControlName="phone" />
+                        </label>
+                        <label class="ga-field">
+                          <span>Nouveau mot de passe (facultatif)</span>
+                          <input type="password" formControlName="password" minlength="6" />
+                        </label>
+                      </div>
+                      <div class="ga-form-actions">
+                        <button type="button" class="ga-btn-ghost" (click)="cancelEdit()">Annuler</button>
+                        <button type="submit" class="ga-btn-primary" [disabled]="editForm.invalid || editSubmitting()">
+                          {{ editSubmitting() ? 'Enregistrement…' : 'Enregistrer' }}
+                        </button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              } @else {
+                <tr>
+                  <td>
+                    <span class="ga-name">{{ item.firstname || '—' }} <strong>{{ item.lastname || '—' }}</strong></span>
+                  </td>
+                  <td class="mono">{{ item.login }}</td>
+                  <td>
+                    <div class="ga-contact">
+                      @if (item.email) { <span>{{ item.email }}</span> }
+                      @if (item.phone) { <span>{{ item.phone }}</span> }
+                    </div>
+                  </td>
+                  <td class="ga-td-station">
+                    <label class="ga-sr-only" [attr.for]="'ga-aff-' + item.id">Gare pour {{ item.lastname }}</label>
+                    <select
+                      [id]="'ga-aff-' + item.id"
+                      class="ga-station-select"
+                      [disabled]="affiliationSavingId() === item.id"
+                      [value]="item.stationId"
+                      (change)="onAffiliationChange(item, $any($event.target).value)"
+                    >
+                      @for (g of stations(); track g.id) {
+                        <option [value]="g.id">{{ g.name }} ({{ g.city }})</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <span [class.ga-badge--ok]="item.enabled" [class.ga-badge--off]="!item.enabled" class="ga-badge">
+                      {{ item.enabled ? 'actif' : 'archivé' }}
+                    </span>
+                  </td>
+                  <td class="right ga-actions">
+                    <button type="button" class="ga-btn-ghost" (click)="startEdit(item)">Modifier</button>
+                    <button
+                      type="button"
+                      class="ga-btn-ghost"
+                      [class.ga-btn-ghost--danger]="item.enabled"
+                      [disabled]="statusSavingId() === item.id"
+                      (click)="toggleEnabled(item)"
+                    >
+                      {{ statusSavingId() === item.id ? '…' : (item.enabled ? 'Archiver' : 'Réactiver') }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

@@ -84,6 +84,13 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        path: 'comptes-gare',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/gare-accounts/gare-accounts.component').then(
+            (m) => m.GareAccountsComponent,
+          ),
+      },
+      {
         path: 'company-messages',
         loadComponent: () =>
           import('@mobili-app/features/shared/company-messages/company-messages.component').then(

@@ -87,6 +87,10 @@ export class PartnerShellComponent implements OnInit {
       reseau.push({ label: 'Gares', icon: '🏤', path: '/partenaire/gares' });
     }
     reseau.push({ label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' });
+    // GareUserController est réservé au rôle PARTNER (jamais GARE) côté backend.
+    if (this.authService.hasRole('PARTNER') && !this.authService.hasRole('GARE')) {
+      reseau.push({ label: 'Comptes gare', icon: '🔑', path: '/partenaire/comptes-gare' });
+    }
     sections.push({ title: 'Réseau', items: reseau });
 
     sections.push({
@@ -142,6 +146,13 @@ export class PartnerShellComponent implements OnInit {
     }
     if (url.includes('/trip-channel')) {
       return { title: 'Fil du voyage', desc: 'Annonces partagées avec les passagers du trajet.', crumb: 'Canal' };
+    }
+    if (url.includes('/comptes-gare')) {
+      return {
+        title: 'Comptes gare',
+        desc: 'Identifiants de connexion des responsables gare de votre réseau.',
+        crumb: 'Comptes gare',
+      };
     }
     if (url.includes('/gares')) {
       return {
