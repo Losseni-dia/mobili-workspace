@@ -1,0 +1,191 @@
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+
+.claims-page {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.claims-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  h1 {
+    margin: 0 0 4px;
+    font-family: variables.$font-display;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: variables.$mobili-blue-deep;
+  }
+
+  p {
+    margin: 0;
+    color: variables.$gray-500;
+    font-size: 0.9rem;
+    max-width: 46ch;
+  }
+}
+
+.claims-new-btn {
+  padding: 10px 18px;
+  border-radius: variables.$radius-sm;
+  border: none;
+  background: variables.$mobili-blue;
+  color: variables.$white;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: variables.$mobili-blue-soft; }
+}
+
+.claims-form-card {
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.claims-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-deep;
+
+  select,
+  input,
+  textarea {
+    @include mixins.input;
+    font-family: inherit;
+  }
+
+  textarea { resize: vertical; }
+}
+
+.claims-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.claims-btn-primary {
+  @include mixins.btn-primary;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+}
+
+.claims-btn-ghost {
+  @include mixins.btn-ghost;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+}
+
+.claims-alert {
+  padding: 10px 14px;
+  border-radius: variables.$radius-sm;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  font-size: 0.85rem;
+}
+
+.claims-list-section h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: variables.$mobili-blue-deep;
+}
+
+.claims-hint {
+  color: variables.$gray-500;
+  font-size: 0.9rem;
+
+  &--error { color: variables.$danger; }
+}
+
+.claims-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.claim-card {
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  padding: 16px;
+}
+
+.claim-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+
+  strong {
+    font-size: 0.92rem;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.claim-status {
+  padding: 3px 10px;
+  border-radius: variables.$radius-pill;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: variables.$gray-100;
+  color: variables.$gray-600;
+
+  &--received { background: variables.$mobili-blue-fog; color: variables.$mobili-blue; }
+  &--in_progress { background: rgba(variables.$warning, 0.14); color: variables.$warning; }
+  &--resolved { background: rgba(variables.$success, 0.14); color: variables.$success; }
+  &--rejected { background: variables.$danger-soft; color: variables.$danger; }
+}
+
+.claim-message {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: variables.$gray-800;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.claim-resolution {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: variables.$radius-sm;
+  background: rgba(variables.$success, 0.08);
+  color: variables.$gray-800;
+  font-size: 0.86rem;
+  line-height: 1.5;
+
+  strong { color: variables.$success; }
+}
+
+.claim-date {
+  font-size: 0.76rem;
+  color: variables.$gray-400;
+}
