@@ -35,18 +35,6 @@ export interface AlightingPassengerRow {
   boardingStopIndex: number;
 }
 
-export interface DriverLuggageSummary {
-  includedCabinBagsPerPassenger: number;
-  includedHoldBagsPerPassenger: number;
-  maxExtraHoldBagsPerPassenger: number;
-  extraHoldBagPrice: number;
-  confirmedPassengerSeats: number;
-  expectedIncludedHoldBags: number;
-  expectedIncludedCabinBags: number;
-  totalExtraHoldBagsReserved: number;
-  maxPossibleExtraHoldBags: number;
-}
-
 @Injectable({ providedIn: 'root' })
 export class DriverTripService {
   private readonly http = inject(HttpClient);
@@ -65,13 +53,16 @@ export class DriverTripService {
     return this.http.get<TripStopRow[]>(`/trips/${tripId}/stops`);
   }
 
-  getLuggageSummary(tripId: number): Observable<DriverLuggageSummary> {
-    return this.http.get<DriverLuggageSummary>(`/trips/${tripId}/driver/luggage-summary`);
-  }
-
   listAlightings(tripId: number, stopIndex: number): Observable<AlightingPassengerRow[]> {
     return this.http.get<AlightingPassengerRow[]>(
       `/trips/${tripId}/driver/stops/${stopIndex}/alightings`,
+    );
+  }
+
+  /** Passagers qui montent à cet arrêt — même DTO que les descentes, purement informatif. */
+  listBoardings(tripId: number, stopIndex: number): Observable<AlightingPassengerRow[]> {
+    return this.http.get<AlightingPassengerRow[]>(
+      `/trips/${tripId}/driver/stops/${stopIndex}/boardings`,
     );
   }
 
@@ -86,16 +77,5 @@ export class DriverTripService {
    */
   undoLastDeparture(tripId: number): Observable<{ currentStopIndex: number }> {
     return this.http.post<{ currentStopIndex: number }>(`/trips/${tripId}/driver/departures/undo`, {});
-  }
-
-  confirmAlighted(
-    tripId: number,
-    ticketNumber: string,
-    stopIndex?: number | null,
-  ): Observable<unknown> {
-    const path = `/trips/${tripId}/driver/tickets/${encodeURIComponent(ticketNumber)}/alighted`;
-    const hasStop = stopIndex != null && !Number.isNaN(Number(stopIndex));
-    const body = hasStop ? { stopIndex: Number(stopIndex) } : {};
-    return this.http.post(path, body);
   }
 }

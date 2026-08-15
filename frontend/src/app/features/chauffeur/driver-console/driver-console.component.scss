@@ -347,78 +347,17 @@
   font-size: 0.9rem;
 }
 
-// Le tableau historique utilise désormais .table-container/.data-table (styles/_data-panel.scss),
-// le même composant visuel que gare-tickets et les listes admin — plus de style ad-hoc dupliqué ici.
+.history-row {
+  cursor: pointer;
+  transition: background variables.$t-fast;
 
-// Accès par ID (repliable : moins de poids visuel qu’un second bloc-titre)
-.access-code-panel {
-  margin-top: 1.75rem;
-  padding: 0;
-  background: variables.$white;
-  border: 1px solid variables.$gray-200;
-  border-radius: variables.$radius-lg;
-  box-shadow: variables.$shadow-sm;
-
-  &__summary {
-    list-style: none;
-    cursor: pointer;
-    padding: 0.9rem 1.15rem;
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: variables.$mobili-blue-deep;
-    user-select: none;
-
-    &::-webkit-details-marker {
-      display: none;
-    }
-
-    &::before {
-      content: '▸';
-      display: inline-block;
-      margin-right: 0.45rem;
-      font-size: 0.7rem;
-      color: variables.$gray-500;
-      transition: transform 0.15s ease;
-    }
-  }
-
-  &[open] .access-code-panel__summary::before {
-    transform: rotate(90deg);
-  }
-
-  &__text {
-    margin: 0 1.15rem 0.9rem;
-    color: variables.$gray-600;
-    font-size: 0.86rem;
-    line-height: 1.5;
-  }
-
-  &__form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    align-items: stretch;
-    padding: 0 1.15rem 1.15rem;
-
-    input {
-      @include mixins.input;
-      flex: 1;
-      min-width: 7rem;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .btn-secondary {
-      @include mixins.btn-secondary;
-      padding: 0.75rem 1.25rem;
-    }
-  }
-
-  .inline-alert {
-    margin: 0 1.15rem 1.15rem;
+  &:hover {
+    background: variables.$mobili-blue-fog;
   }
 }
+
+// Le tableau historique utilise désormais .table-container/.data-table (styles/_data-panel.scss),
+// le même composant visuel que gare-tickets et les listes admin — plus de style ad-hoc dupliqué ici.
 
 // ---------------------------------------------------------------------------
 //  Voyage en cours
@@ -446,38 +385,6 @@
     background: variables.$danger-soft;
     color: variables.$danger;
     border: 1px solid rgba(variables.$danger, 0.2);
-  }
-}
-
-.luggage-card {
-  .card-head p {
-    font-size: 0.86rem;
-  }
-
-  &__stats {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.75rem 1.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  }
-
-  &__label {
-    display: block;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: variables.$gray-500;
-    margin-bottom: 0.2rem;
-  }
-
-  &__sub {
-    display: block;
-    font-size: 0.75rem;
-    color: variables.$gray-500;
-    font-weight: 500;
   }
 }
 
@@ -640,16 +547,12 @@
 
 .action-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
   margin-top: 0.5rem;
 
   > .card {
     margin: 0;
-  }
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -685,19 +588,39 @@
   }
 }
 
-.manual-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem;
-
-  input {
-    @include mixins.input;
-    padding: 0.75rem 0.9rem;
-  }
+.passengers .card-head,
+.boardings .card-head,
+.passengers-full .card-head {
+  margin-bottom: 0.9rem;
 }
 
-.passengers .card-head {
+.passenger-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
   margin-bottom: 0.9rem;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+
+  &:focus-within {
+    border-color: variables.$mobili-blue;
+    box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12);
+  }
+
+  .s-ico {
+    opacity: 0.6;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.88rem;
+    color: variables.$mobili-blue-deep;
+  }
 }
 
 .passenger-list {
@@ -775,8 +698,13 @@
   border-radius: variables.$radius-pill;
   font-weight: 800;
   font-size: 0.75rem;
-  background: rgba(variables.$success, 0.12);
-  color: variables.$success;
+  background: variables.$gray-100;
+  color: variables.$gray-600;
+
+  &.done {
+    background: rgba(variables.$success, 0.12);
+    color: variables.$success;
+  }
 }
 
 .empty {

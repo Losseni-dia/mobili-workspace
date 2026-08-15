@@ -164,6 +164,22 @@
         font-weight: 900;
         color: variables.$mobili-yellow;
         text-shadow: 0 4px 12px rgba(variables.$mobili-blue-deep, 0.4);
+        margin-bottom: 10px;
+      }
+
+      .route,
+      .ticket-num,
+      .fare {
+        font-size: 0.95rem;
+        font-weight: 600;
+        opacity: 0.95;
+        margin: 2px 0;
+      }
+
+      .fare--total {
+        font-weight: 900;
+        font-size: 1.1rem;
+        margin-top: 6px;
       }
 
       .msg {

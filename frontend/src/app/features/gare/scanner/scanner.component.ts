@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
-import { TicketService } from '../../../core/services/ticket/ticket.service';
+import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
@@ -24,7 +24,7 @@ export class TicketScannerComponent implements OnInit {
   // ✅ On définit le format attendu pour éviter l'erreur TS2322
   allowedFormats = [BarcodeFormat.QR_CODE];
 
-  scanResult = signal<any>(null);
+  scanResult = signal<TicketResponse | null>(null);
   isScanning = signal(true);
   /** Entre le scan du QR et la réponse serveur — évite l'impression que le scan n'a rien fait. */
   isVerifying = signal(false);
@@ -60,6 +60,13 @@ export class TicketScannerComponent implements OnInit {
         this.isVerifying.set(false);
       },
     });
+  }
+
+  /** Aligné sur mobile (`QrScanResult.totalPaid`) : pas de champ backend dédié. */
+  totalPaid(): number {
+    const t = this.scanResult();
+    if (!t) return 0;
+    return (t.transportPrice ?? 0) + (t.luggageFee ?? 0);
   }
 
   resetScanner() {

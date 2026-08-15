@@ -79,9 +79,6 @@ export class InboxPageComponent implements OnInit {
     if (u.includes('/gare/')) {
       return ['/gare/trip-channel', tripId];
     }
-    if (u.includes('/chauffeur/')) {
-      return ['/chauffeur/trip-channel', tripId];
-    }
     return ['/my-account/trip-channel', tripId];
   }
 

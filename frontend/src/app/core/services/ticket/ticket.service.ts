@@ -25,7 +25,10 @@ export interface PartnerTicket {
   scanned: boolean;
 }
 
+/** Aligné sur TicketResponseDTO (backend) — DTO complet, tous champs. */
 export interface TicketResponse {
+  id?: number;
+  bookingId?: number;
   tripId?: number;
   ticketNumber: string;
   passengerFullName: string;
@@ -38,6 +41,19 @@ export interface TicketResponse {
   status: string;
   partnerName: string;
   seatNumber: string;
+  boardingPoint?: string | null;
+  boardingCity?: string | null;
+  alightingCity?: string | null;
+  boardingStopIndex?: number | null;
+  alightingStopIndex?: number | null;
+  bookingDate?: string;
+  /** Nb de bagages soute supplémentaires (payants) sur ce billet. */
+  extraHoldBags?: number | null;
+  /** Frais bagages supplémentaires (FCFA). */
+  luggageFee?: number | null;
+  /** Part transport du prix (hors bagages/forfait). */
+  transportPrice?: number | null;
+  numberOfSeatsInBooking?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,6 +92,15 @@ export class TicketService {
 
   verifyTicket(ticketNumber: string): Observable<TicketResponse> {
     return this.http.patch<TicketResponse>(`${this.API_URL}/verify/${ticketNumber}`, {});
+  }
+
+  /**
+   * Tous les billets (non annulés) d'un trajet — vue chauffeur/gare/partenaire, aligné sur
+   * `TripDetailChauffeurPage._tripPassengersProvider` (mobile). Les stats (à bord/arrivés/
+   * absents) et la recherche se calculent 100% côté client à partir de cette liste.
+   */
+  getByTrip(tripId: number): Observable<TicketResponse[]> {
+    return this.http.get<TicketResponse[]>(`${this.API_URL}/trip/${tripId}`);
   }
 
   /**

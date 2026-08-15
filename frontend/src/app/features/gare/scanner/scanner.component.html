@@ -33,13 +33,24 @@
         </div>
         }
 
-        @if (scanResult()) {
+        @if (scanResult(); as t) {
         <div class="status-overlay success">
             <div class="status-content">
                 <div class="icon">✅</div>
                 <h2>VALIDE</h2>
-                <p class="passenger">{{ scanResult().passengerFullName }}</p>
-                <p class="seat">Siège : {{ scanResult().seatNumber }}</p>
+                <p class="passenger">{{ t.passengerFullName }}</p>
+                <p class="seat">Siège : {{ t.seatNumber }}</p>
+                <p class="route">{{ t.departureCity }} → {{ t.arrivalCity }}</p>
+                <p class="ticket-num">N° ticket : {{ t.ticketNumber }}</p>
+                @if (t.transportPrice != null) {
+                    <p class="fare">Transport : {{ t.transportPrice | number: '1.0-0' }} FCFA</p>
+                }
+                @if (t.extraHoldBags) {
+                    <p class="fare">Bagages ({{ t.extraHoldBags }}) : {{ t.luggageFee | number: '1.0-0' }} FCFA</p>
+                }
+                @if (t.transportPrice != null) {
+                    <p class="fare fare--total">Total payé : {{ totalPaid() | number: '1.0-0' }} FCFA</p>
+                }
                 <button (click)="resetScanner()" class="btn-action">Scanner Suivant</button>
             </div>
         </div>
