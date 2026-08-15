@@ -67,9 +67,4 @@ export class UserShellComponent {
   }
 
   toggleSidebar() { this.collapsed.update((v) => !v); }
-
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/'], { replaceUrl: true });
-  }
 }
