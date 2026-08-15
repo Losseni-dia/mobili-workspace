@@ -54,30 +54,35 @@
 
         <div class="sidebar-scroll">
             <nav class="sidebar-nav">
-                @for (item of navItems(); track item.path) {
-                    @if (isPartnerNavItemDisabled(item)) {
-                        <span
-                            class="nav-link nav-link--disabled"
-                            [title]="'Aucune gare validée pour exploiter, ou gare en attente de validation.'"
-                        >
-                            <span class="nav-icon">{{ item.icon }}</span>
-                            @if (!collapsed()) {
-                                <span class="nav-label">{{ item.label }}</span>
-                            }
-                        </span>
-                    } @else {
-                        <a
-                            [routerLink]="item.path"
-                            routerLinkActive="active"
-                            [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
-                            class="nav-link"
-                            [title]="item.label"
-                        >
-                            <span class="nav-icon">{{ item.icon }}</span>
-                            @if (!collapsed()) {
-                                <span class="nav-label">{{ item.label }}</span>
-                            }
-                        </a>
+                @for (section of navSections(); track section.title) {
+                    @if (!collapsed()) {
+                        <p class="nav-section-title">{{ section.title }}</p>
+                    }
+                    @for (item of section.items; track item.path) {
+                        @if (isPartnerNavItemDisabled(item)) {
+                            <span
+                                class="nav-link nav-link--disabled"
+                                [title]="'Aucune gare validée pour exploiter, ou gare en attente de validation.'"
+                            >
+                                <span class="nav-icon">{{ item.icon }}</span>
+                                @if (!collapsed()) {
+                                    <span class="nav-label">{{ item.label }}</span>
+                                }
+                            </span>
+                        } @else {
+                            <a
+                                [routerLink]="item.path"
+                                routerLinkActive="active"
+                                [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+                                class="nav-link"
+                                [title]="item.label"
+                            >
+                                <span class="nav-icon">{{ item.icon }}</span>
+                                @if (!collapsed()) {
+                                    <span class="nav-label">{{ item.label }}</span>
+                                }
+                            </a>
+                        }
                     }
                 }
             </nav>

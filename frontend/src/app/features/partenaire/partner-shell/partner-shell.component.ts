@@ -17,6 +17,11 @@ export interface NavItem {
   exact?: boolean;
 }
 
+export interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
 @Component({
   selector: 'app-partner-shell',
   standalone: true,
@@ -55,25 +60,45 @@ export class PartnerShellComponent implements OnInit {
   /** Court retour après copie du code gare (sidebar). */
   codeCopyFeedback = signal(false);
 
-  navItems = computed((): NavItem[] => {
-    const base: NavItem[] = [];
+  /**
+   * Regroupé par intention (Activité / Réseau / Compte) plutôt qu'une liste plate historique
+   * (l'ordre précédent plaçait Communication en 2e position pour une raison ponctuelle, pas une
+   * hiérarchie pensée). « Espace gare » reste une section à part : c'est un changement de
+   * contexte, pas une simple page de plus.
+   */
+  navSections = computed((): NavSection[] => {
+    const sections: NavSection[] = [];
     if (this.authService.hasRole('GARE')) {
-      base.push({ label: 'Espace gare (scan)', icon: '🚉', path: '/gare/accueil', exact: true });
+      sections.push({
+        title: 'Espace gare',
+        items: [{ label: 'Accueil gare (scan)', icon: '🚉', path: '/gare/accueil', exact: true }],
+      });
     }
-    base.push({ label: 'Vue d\'ensemble', icon: '📊', path: '/partenaire/dashboard' });
-    /** Toujours proche du haut : la capture utilisateur montrait un bundle sans ce lien. */
-    base.push({ label: 'Communication', icon: '💬', path: '/partenaire/company-messages' });
-    if (this.authService.hasRole('PARTNER') && !this.authService.hasRole('GARE')) {
-      base.push({ label: 'Gares', icon: '🏤', path: '/partenaire/gares' });
-    }
-    base.push({ label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' });
-    base.push(
-      { label: 'Notifications', icon: '🔔', path: '/partenaire/notifications' },
+
+    const activite: NavItem[] = [
+      { label: 'Vue d\'ensemble', icon: '📊', path: '/partenaire/dashboard' },
       { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
       { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
-      { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
-    );
-    return base;
+    ];
+    sections.push({ title: 'Activité', items: activite });
+
+    const reseau: NavItem[] = [];
+    if (this.authService.hasRole('PARTNER') && !this.authService.hasRole('GARE')) {
+      reseau.push({ label: 'Gares', icon: '🏤', path: '/partenaire/gares' });
+    }
+    reseau.push({ label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' });
+    sections.push({ title: 'Réseau', items: reseau });
+
+    sections.push({
+      title: 'Compte',
+      items: [
+        { label: 'Communication', icon: '💬', path: '/partenaire/company-messages' },
+        { label: 'Notifications', icon: '🔔', path: '/partenaire/notifications' },
+        { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
+      ],
+    });
+
+    return sections;
   });
 
   ctaPath = '/partenaire/add-trip';

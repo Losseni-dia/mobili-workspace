@@ -7,7 +7,7 @@
   padding: 48px 20px 80px;
   background:
     radial-gradient(circle at 15% 20%, rgba(variables.$mobili-yellow, 0.22), transparent 52%),
-    linear-gradient(160deg, #0f1f3f 0%, color.adjust(variables.$mobili-blue-deep, $lightness: -14%) 100%);
+    linear-gradient(160deg, variables.$mobili-blue-deep 0%, color.adjust(variables.$mobili-blue-deep, $lightness: -14%) 100%);
   color: variables.$white;
   display: flex;
   flex-direction: column;

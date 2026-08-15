@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
@@ -12,7 +13,7 @@ import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
 @Component({
   selector: 'app-trip-management',
   standalone: true,
-  imports: [CommonModule, RouterModule, SeatPickerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, SeatPickerComponent],
   templateUrl: './trip-management.component.html',
   styleUrls: ['./trip-management.component.scss'],
 })
@@ -24,9 +25,25 @@ export class TripManagementComponent implements OnInit {
 
   myTrips = signal<Trip[]>([]);
   isLoading = signal(false);
+  search = signal('');
+
+  /** Filtre libre sur ville de départ/arrivée, ID ou plaque — mêmes conventions que booking-list. */
+  filteredTrips = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    if (!q) return this.myTrips();
+    return this.myTrips().filter((t) =>
+      [t.departureCity, t.arrivalCity, String(t.id), t.moreInfo]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  });
 
   /** ID du trajet dont on vient de copier le code chauffeur (pour feedback UI). */
   copiedTripId = signal<number | null>(null);
+  /** Trajet en attente de confirmation de suppression (modal stylée, plus de confirm() natif). */
+  pendingDelete = signal<Trip | null>(null);
+  deletingId = signal<number | null>(null);
+  deleteError = signal<string | null>(null);
 
   // Gestion du blocage des places
   selectedTripForSeats = signal<Trip | null>(null);
@@ -140,14 +157,31 @@ export class TripManagementComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce trajet ?')) {
-      this.tripService.deleteTrip(id).subscribe({
-        next: () => {
-          this.myTrips.update((trips) => trips.filter((t) => t.id !== id));
-        },
-        error: (err) => console.error('Erreur suppression :', err),
-      });
-    }
+  askDelete(trip: Trip) {
+    this.deleteError.set(null);
+    this.pendingDelete.set(trip);
+  }
+
+  cancelDelete() {
+    this.pendingDelete.set(null);
+  }
+
+  confirmDelete() {
+    const trip = this.pendingDelete();
+    if (!trip || this.deletingId() != null) return;
+    this.deletingId.set(trip.id);
+    this.deleteError.set(null);
+    this.tripService.deleteTrip(trip.id).subscribe({
+      next: () => {
+        this.myTrips.update((trips) => trips.filter((t) => t.id !== trip.id));
+        this.deletingId.set(null);
+        this.pendingDelete.set(null);
+      },
+      error: (err) => {
+        console.error('Erreur suppression :', err);
+        this.deleteError.set(err?.error?.message || 'Suppression impossible. Réessayez.');
+        this.deletingId.set(null);
+      },
+    });
   }
 }

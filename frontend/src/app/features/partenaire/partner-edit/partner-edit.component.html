@@ -65,7 +65,7 @@
                 <button type="button" class="btn-secondary" (click)="onCancel()">Annuler</button>
             
             <button type="submit" class="btn-primary" [disabled]="isLoading()">
-                Enregistrer
+                {{ isLoading() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             </div>
         </form>
