@@ -94,7 +94,7 @@
                 </div>
             </section>
 
-            <button class="btn-pay" [disabled]="isProcessing()" (click)="confirmAndPay()">
+            <button class="btn-pay" [disabled]="isProcessing() || isProcessingCard()" (click)="confirmAndPay()">
                 @if (isProcessing()) {
                     <span class="spinner-sm"></span>
                     Redirection vers FedaPay…
@@ -104,8 +104,18 @@
                 }
             </button>
 
+            <button class="btn-pay btn-pay--card" [disabled]="isProcessing() || isProcessingCard()" (click)="confirmAndPayByCard()">
+                @if (isProcessingCard()) {
+                    <span class="spinner-sm"></span>
+                    Redirection vers Stripe…
+                } @else {
+                    <span>Payer par carte</span>
+                    <span class="pay-hint">Visa · Mastercard (Stripe)</span>
+                }
+            </button>
+
             <footer class="ticket-bottom">
-                <span class="secure">🔒 Paiement sécurisé via FedaPay</span>
+                <span class="secure">🔒 Paiement sécurisé via FedaPay ou Stripe</span>
                 <a class="back-link" routerLink="/">Retour à l'accueil</a>
             </footer>
         </div>
