@@ -11,36 +11,23 @@
 
 .hero {
   position: relative;
-  padding: 90px 20px 140px;
-  background:
-    radial-gradient(circle at 12% 20%, rgba(variables.$mobili-yellow, 0.35), transparent 55%),
-    radial-gradient(circle at 92% 80%, rgba(variables.$mobili-blue-soft, 0.35), transparent 60%),
-    linear-gradient(135deg, variables.$mobili-blue 0%, variables.$mobili-blue-deep 100%);
+  padding: 72px 20px 116px;
+  background: variables.$gradient-hero;
   color: variables.$white;
   overflow: hidden;
   text-align: center;
 
-  &::before,
-  &::after {
+  &::before {
     content: '';
     position: absolute;
+    top: -80px;
+    left: -80px;
+    width: 280px;
+    height: 280px;
     border-radius: 50%;
     pointer-events: none;
     filter: blur(60px);
-  }
-  &::before {
-    top: -80px;
-    left: -80px;
-    width: 320px;
-    height: 320px;
-    background: rgba(variables.$mobili-yellow, 0.25);
-  }
-  &::after {
-    bottom: -100px;
-    right: -80px;
-    width: 380px;
-    height: 380px;
-    background: rgba(variables.$mobili-blue-soft, 0.3);
+    background: rgba(variables.$mobili-yellow, 0.15);
   }
 
   .hero-title {
@@ -100,7 +87,7 @@
 //  SECTION TRAJETS
 // ======================================================================
 .trips-section {
-  padding: 60px 20px 80px;
+  padding: 48px 20px 64px;
   max-width: 920px;
   margin: 0 auto;
 
@@ -144,8 +131,8 @@
   transition: all variables.$t-base;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: variables.$shadow-lg;
+    transform: translateY(-2px);
+    box-shadow: variables.$shadow-md;
     border-color: rgba(variables.$mobili-yellow, 0.5);
 
     .trip-image__inner {
@@ -233,7 +220,7 @@
 
   .trip-details {
     min-width: 0;
-    padding: 22px 26px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -341,7 +328,7 @@
 
   .trip-action {
     min-width: 0;
-    padding: 24px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
