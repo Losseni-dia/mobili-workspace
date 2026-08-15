@@ -29,8 +29,7 @@
                             <div class="state-block state-block--empty">
                                 <p class="state-block__title">Aucun service programmé</p>
                                 <p class="state-block__hint">
-                                    Ils s’affichent dès affectation par la gare ou la compagnie. Utilisez l’accès manuel
-                                    en bas de page si besoin.
+                                    Ils s’affichent dès affectation par la gare ou la compagnie.
                                 </p>
                             </div>
                         } @else {
@@ -103,7 +102,7 @@
                                         </thead>
                                         <tbody>
                                             @for (h of historyTrips(); track h.id) {
-                                                <tr>
+                                                <tr class="history-row" (click)="viewHistoryTrip(h)">
                                                     <td class="mono">#{{ h.id }}</td>
                                                     <td>{{ h.departureCity }} → {{ h.arrivalCity }}</td>
                                                     <td class="mono">{{ h.departureDateTime | date: "d MMM yyyy, HH:mm" }}</td>
@@ -121,32 +120,9 @@
                 </section>
             }
 
-            <details class="access-code-panel">
-                <summary class="access-code-panel__summary">Accès par n° de voyage (hors liste)</summary>
-                <p class="access-code-panel__text">Si le conducteur a reçu un identifiant (message, feuille de route…).</p>
-                <div class="access-code-panel__form">
-                    <label class="visually-hidden" for="tid">Numéro de voyage</label>
-                    <input
-                        id="tid"
-                        type="number"
-                        min="1"
-                        placeholder="N° du voyage"
-                        [ngModel]="tripIdInput()"
-                        (ngModelChange)="tripIdInput.set($event)"
-                        (keyup.enter)="loadTrip()"
-                    />
-                    <button type="button" class="btn-secondary" (click)="loadTrip()" [disabled]="isLoadingStops()">
-                        @if (isLoadingStops()) {
-                            Chargement…
-                        } @else {
-                            Ouvrir
-                        }
-                    </button>
-                </div>
-                @if (error()) {
-                    <p class="inline-alert inline-alert--err" role="alert">{{ error() }}</p>
-                }
-            </details>
+            @if (error()) {
+                <p class="inline-alert inline-alert--err" role="alert">{{ error() }}</p>
+            }
         </div>
     } @else {
         <div class="driver-run">
@@ -155,44 +131,6 @@
         }
         @if (error()) {
             <div class="flash flash--err" role="alert">{{ error() }}</div>
-        }
-
-        @if (luggageSummary(); as bag) {
-            <section class="card card--elev luggage-card" aria-label="Synthèse bagages">
-                <header class="card-head">
-                    <div>
-                        <h2>Bagages attendus</h2>
-                        <p>
-                            Politique : {{ bag.includedCabinBagsPerPassenger }} cabine + {{ bag.includedHoldBagsPerPassenger }} soute
-                            inclus par passager ; jusqu’à {{ bag.maxExtraHoldBagsPerPassenger }} soute en plus chacun
-                            @if (bag.extraHoldBagPrice > 0) {
-                                ({{ bag.extraHoldBagPrice | number: '1.0-0' }} FCFA / unité).
-                            } @else {
-                                (sans supplément paramétré).
-                            }
-                        </p>
-                    </div>
-                </header>
-                <ul class="luggage-card__stats">
-                    <li>
-                        <span class="luggage-card__label">Places payées (réservations)</span>
-                        <strong>{{ bag.confirmedPassengerSeats }}</strong>
-                    </li>
-                    <li>
-                        <span class="luggage-card__label">Soute « inclus » théorique</span>
-                        <strong>{{ bag.expectedIncludedHoldBags }}</strong>
-                    </li>
-                    <li>
-                        <span class="luggage-card__label">Soute suppl. réservés (payants)</span>
-                        <strong>{{ bag.totalExtraHoldBagsReserved }}</strong>
-                        <span class="luggage-card__sub">(plafond théorique : {{ bag.maxPossibleExtraHoldBags }})</span>
-                    </li>
-                    <li>
-                        <span class="luggage-card__label">Cabine « inclus » théorique</span>
-                        <strong>{{ bag.expectedIncludedCabinBags }}</strong>
-                    </li>
-                </ul>
-            </section>
         }
 
         <section class="card card--elev itinerary">
@@ -253,8 +191,10 @@
                     >
                         @if (isBusy('departure-' + selectedStop())) {
                             Enregistrement…
+                        } @else if (isLastStop()) {
+                            Terminer le trajet
                         } @else {
-                            Enregistrer le départ
+                            Quitter {{ selectedStopLabel() }}
                         }
                     </button>
 
@@ -272,35 +212,40 @@
                     </button>
                 </div>
             </article>
+        </section>
 
-            <article class="card card--elev action-card manual">
-                <header class="card-head">
-                    <div>
-                        <h2>Ticket manuel</h2>
-                        <p>Saisissez le numéro de billet s’il n’apparaît pas dans la liste.</p>
-                    </div>
-                </header>
-
-                <div class="action-body">
-                    <div class="manual-row">
-                        <input
-                            type="text"
-                            placeholder="Numéro de ticket"
-                            [ngModel]="ticketInput()"
-                            (ngModelChange)="ticketInput.set($event)"
-                            (keyup.enter)="markManualTicket()"
-                        />
-                        <button
-                            type="button"
-                            class="primary-btn"
-                            (click)="markManualTicket()"
-                            [disabled]="!ticketInput().trim()"
-                        >
-                            Valider
-                        </button>
-                    </div>
+        <section class="card card--elev boardings">
+            <header class="card-head">
+                <div>
+                    <h2>Montées · {{ selectedStopLabel() }}</h2>
+                    <p>Passagers qui embarquent à cet arrêt (informatif).</p>
                 </div>
-            </article>
+            </header>
+
+            @if (isLoadingBoardings()) {
+                <div class="empty">Chargement de la liste…</div>
+            } @else if (boardings().length === 0) {
+                <div class="empty">
+                    <div class="empty-icon">👋</div>
+                    <strong>Personne ne monte ici.</strong>
+                    <p>Aucun passager n'embarque à cet arrêt.</p>
+                </div>
+            } @else {
+                <ul class="passenger-list">
+                    @for (p of boardings(); track p.ticketNumber) {
+                        <li class="pax">
+                            <div class="pax-seat">
+                                <span class="seat-label">Siège</span>
+                                <span class="seat-num">{{ p.seatNumber }}</span>
+                            </div>
+                            <div class="pax-info">
+                                <strong>{{ p.passengerName }}</strong>
+                                <span class="pax-meta">Ticket <span class="mono">#{{ p.ticketNumber }}</span></span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
         <section class="card card--elev passengers">
@@ -326,7 +271,7 @@
             } @else {
                 <ul class="passenger-list">
                     @for (p of alightings(); track p.ticketNumber) {
-                        <li class="pax" [class.done]="p.ticketStatus === 'USED'">
+                        <li class="pax" [class.done]="p.ticketStatus === 'UTILISÉ'">
                             <div class="pax-seat">
                                 <span class="seat-label">Siège</span>
                                 <span class="seat-num">{{ p.seatNumber }}</span>
@@ -343,19 +288,63 @@
                                 @if (p.ticketStatus === 'UTILISÉ') {
                                     <span class="status-pill done">✓ Descendu</span>
                                 } @else {
-                                    <button
-                                        type="button"
-                                        class="primary-btn small"
-                                        [disabled]="isBusy('ticket-' + p.ticketNumber)"
-                                        (click)="markAlighted(p.ticketNumber)"
-                                    >
-                                        @if (isBusy('ticket-' + p.ticketNumber)) {
-                                            …
-                                        } @else {
-                                            Marquer descendu
-                                        }
-                                    </button>
+                                    <span class="status-pill">À bord</span>
                                 }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="card card--elev passengers-full" aria-label="Tous les passagers du trajet">
+            <header class="card-head">
+                <div>
+                    <h2>Passagers du trajet</h2>
+                    <p>
+                        Total : <strong>{{ passengerStats().total }}</strong> · À bord :
+                        <strong>{{ passengerStats().onboard }}</strong> · Arrivés :
+                        <strong>{{ passengerStats().arrived }}</strong> · Non présentés :
+                        <strong>{{ passengerStats().absent }}</strong>
+                    </p>
+                </div>
+            </header>
+
+            <label class="passenger-search">
+                <span class="s-ico">🔍</span>
+                <input
+                    type="text"
+                    placeholder="Nom, siège, n° ticket…"
+                    [ngModel]="passengerSearch()"
+                    (ngModelChange)="passengerSearch.set($event)"
+                />
+            </label>
+
+            @if (isLoadingPassengers()) {
+                <div class="empty">Chargement des passagers…</div>
+            } @else if (filteredPassengers().length === 0) {
+                <div class="empty">
+                    <div class="empty-icon">🧍</div>
+                    <strong>Aucun passager.</strong>
+                    <p>Aucun billet ne correspond à cette recherche.</p>
+                </div>
+            } @else {
+                <ul class="passenger-list">
+                    @for (p of filteredPassengers(); track p.ticketNumber) {
+                        <li class="pax">
+                            <div class="pax-seat">
+                                <span class="seat-label">Siège</span>
+                                <span class="seat-num">{{ p.seatNumber }}</span>
+                            </div>
+                            <div class="pax-info">
+                                <strong>{{ p.passengerFullName }}</strong>
+                                <span class="pax-meta">
+                                    Ticket <span class="mono">#{{ p.ticketNumber }}</span>
+                                    · {{ p.boardingCity }} → {{ p.alightingCity }}
+                                </span>
+                            </div>
+                            <div class="pax-action">
+                                <span class="status-pill" [class.done]="p.status === 'UTILISÉ'">{{ passengerStatusLabel(p.status) }}</span>
                             </div>
                         </li>
                     }

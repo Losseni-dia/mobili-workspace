@@ -1,18 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { take } from 'rxjs';
+import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import {
   AlightingPassengerRow,
   ChauffeurTripListItem,
-  DriverLuggageSummary,
   DriverTripService,
   TripStopRow,
 } from '../../../core/services/driver/driver-trip.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
+import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 
 const STORAGE_KEY = 'mobili.driver.lastTripId';
 
@@ -25,22 +24,29 @@ const STORAGE_KEY = 'mobili.driver.lastTripId';
 })
 export class DriverConsoleComponent implements OnInit {
   private readonly driverTrip = inject(DriverTripService);
+  private readonly ticketService = inject(TicketService);
   private readonly notify = inject(NotificationService);
-  private readonly route = inject(ActivatedRoute);
   authService = inject(AuthService);
 
   // ====== ÉTAT ======
-  // NB : `<input type="number">` peut renvoyer un nombre, on accepte string|number et on normalise.
-  tripIdInput = signal<string | number>(this.readStoredTripId());
-  ticketInput = signal<string>('');
+  /** Interne uniquement (reprise après rechargement de page) — jamais saisi manuellement par
+   * l'utilisateur, aligné sur mobile qui n'expose aucune saisie manuelle de n° de voyage. */
+  private tripIdInput = signal<string | number>(this.readStoredTripId());
 
   loadedTripId = signal<number | null>(null);
   stops = signal<TripStopRow[] | null>(null);
   selectedStop = signal<number>(0);
   alightings = signal<AlightingPassengerRow[]>([]);
+  boardings = signal<AlightingPassengerRow[]>([]);
+
+  /** Onglet "Passagers" (tous les billets du trajet, pas filtrés par arrêt) — mobile : _PassengersTab. */
+  tripPassengers = signal<TicketResponse[]>([]);
+  isLoadingPassengers = signal<boolean>(false);
+  passengerSearch = signal<string>('');
 
   isLoadingStops = signal<boolean>(false);
   isLoadingAlightings = signal<boolean>(false);
+  isLoadingBoardings = signal<boolean>(false);
   busyAction = signal<string | null>(null);
   isUndoing = signal<boolean>(false);
 
@@ -53,9 +59,6 @@ export class DriverConsoleComponent implements OnInit {
   overviewLoading = signal(false);
   overviewError = signal<string | null>(null);
   startingTripId = signal<number | null>(null);
-
-  /** Récap bagages (API) pour le voyage chargé. */
-  luggageSummary = signal<DriverLuggageSummary | null>(null);
 
   // ====== DÉRIVÉ ======
   selectedStopLabel = computed(() => {
@@ -79,6 +82,34 @@ export class DriverConsoleComponent implements OnInit {
     return this.selectedStop() === last;
   });
 
+  /** Stats calculées 100% côté client sur la liste brute, alignées sur `_PassengersTab` (mobile). */
+  passengerStats = computed(() => {
+    const list = this.tripPassengers();
+    const onboard = list.filter((p) => ['UTILISÉ', 'UTILISE'].includes((p.status || '').toUpperCase())).length;
+    const arrived = list.filter((p) => ['ARRIVÉ', 'ARRIVE'].includes((p.status || '').toUpperCase())).length;
+    const absent = list.filter((p) => ['VALIDÉ', 'VALIDE'].includes((p.status || '').toUpperCase())).length;
+    return { total: list.length, onboard, arrived, absent };
+  });
+
+  /** Filtre client nom/siège/n° ticket, insensible à la casse — le filtre n'affecte pas les stats. */
+  filteredPassengers = computed(() => {
+    const term = this.passengerSearch().trim().toLowerCase();
+    if (!term) return this.tripPassengers();
+    return this.tripPassengers().filter((p) =>
+      [p.passengerFullName, p.seatNumber, p.ticketNumber].filter(Boolean).some((v) =>
+        String(v).toLowerCase().includes(term),
+      ),
+    );
+  });
+
+  passengerStatusLabel(technical: string | undefined | null): string {
+    const s = (technical || '').toUpperCase();
+    if (s === 'UTILISÉ' || s === 'UTILISE') return 'À bord';
+    if (s === 'ARRIVÉ' || s === 'ARRIVE') return 'Arrivé';
+    if (s === 'VALIDÉ' || s === 'VALIDE') return 'Non présenté';
+    return technical || '—';
+  }
+
   /** Libellés en français pour l’interface conducteur. */
   statusLabel(technical: string | undefined | null): string {
     if (!technical) return '—';
@@ -101,6 +132,7 @@ export class DriverConsoleComponent implements OnInit {
       const idx = this.selectedStop();
       if (tripId != null) {
         this.fetchAlightings(tripId, idx);
+        this.fetchBoardings(tripId, idx);
       }
     });
   }
@@ -109,13 +141,6 @@ export class DriverConsoleComponent implements OnInit {
     if (this.authService.hasRole('CHAUFFEUR') || this.authService.hasRole('ADMIN')) {
       this.loadChauffeurOverview();
     }
-    this.route.queryParamMap.pipe(take(1)).subscribe((q) => {
-      const t = q.get('trip');
-      if (t && /^\d+$/.test(t.trim())) {
-        this.tripIdInput.set(t.trim());
-        setTimeout(() => this.loadTrip(), 0);
-      }
-    });
   }
 
   private loadChauffeurOverview() {
@@ -140,6 +165,7 @@ export class DriverConsoleComponent implements OnInit {
   /**
    * PROGRAMMÉ : démarrer le service (API) puis ouvrir la console.
    * EN_COURS : reprendre sans nouvel appel start.
+   * Aligné sur mobile (`TripDetailChauffeurPage._startTrip()`) : aucune confirmation.
    */
   openService(t: ChauffeurTripListItem) {
     const id = t.id;
@@ -147,9 +173,6 @@ export class DriverConsoleComponent implements OnInit {
     if (t.status === 'EN_COURS') {
       this.tripIdInput.set(id);
       this.loadTrip();
-      return;
-    }
-    if (!confirm(`Démarrer officiellement le service du trajet #${id} ? Cette action est visible des passagers.`)) {
       return;
     }
     this.startingTripId.set(id);
@@ -194,7 +217,7 @@ export class DriverConsoleComponent implements OnInit {
         this.selectedStop.set(sorted.length > 0 ? sorted[0].stopIndex : 0);
         this.persistTripId(id);
         this.loadChauffeurOverview();
-        this.loadLuggageSummary(id);
+        this.loadTripPassengers(id);
         this.flashSuccess(`Voyage #${id} chargé (${sorted.length} arrêts).`);
       },
       error: (e) => {
@@ -228,6 +251,34 @@ export class DriverConsoleComponent implements OnInit {
     });
   }
 
+  private fetchBoardings(tripId: number, stopIndex: number) {
+    this.isLoadingBoardings.set(true);
+    this.driverTrip.listBoardings(tripId, stopIndex).subscribe({
+      next: (rows) => {
+        this.boardings.set(rows ?? []);
+        this.isLoadingBoardings.set(false);
+      },
+      error: () => {
+        this.boardings.set([]);
+        this.isLoadingBoardings.set(false);
+      },
+    });
+  }
+
+  private loadTripPassengers(tripId: number) {
+    this.isLoadingPassengers.set(true);
+    this.ticketService.getByTrip(tripId).subscribe({
+      next: (rows) => {
+        this.tripPassengers.set(rows ?? []);
+        this.isLoadingPassengers.set(false);
+      },
+      error: () => {
+        this.tripPassengers.set([]);
+        this.isLoadingPassengers.set(false);
+      },
+    });
+  }
+
   recordDeparture() {
     const id = this.loadedTripId();
     if (id == null) return;
@@ -248,13 +299,11 @@ export class DriverConsoleComponent implements OnInit {
   /**
    * Annule le dernier départ enregistré (erreur de manip). Recharge intégralement l'itinéraire et
    * les descentes de l'arrêt courant résultant, puisque le statut du trajet peut avoir changé.
+   * Aligné sur mobile (`_undoLastDeparture`) : aucune confirmation.
    */
   undoLastDeparture() {
     const id = this.loadedTripId();
     if (id == null || this.isUndoing()) return;
-    if (!confirm('Annuler le dernier départ enregistré ? Les passagers marqués descendus à cet arrêt redeviendront « à bord ».')) {
-      return;
-    }
     this.isUndoing.set(true);
     this.error.set('');
     this.driverTrip.undoLastDeparture(id).subscribe({
@@ -272,49 +321,26 @@ export class DriverConsoleComponent implements OnInit {
     });
   }
 
-  markAlighted(ticketNumber: string) {
-    const id = this.loadedTripId();
-    if (id == null || !ticketNumber.trim()) return;
-    this.busyAction.set(`ticket-${ticketNumber}`);
-    this.driverTrip.confirmAlighted(id, ticketNumber, this.selectedStop()).subscribe({
-      next: () => {
-        this.busyAction.set(null);
-        this.flashSuccess(`Passager ${ticketNumber} marqué descendu.`);
-        this.fetchAlightings(id, this.selectedStop());
-      },
-      error: (e) => {
-        this.busyAction.set(null);
-        this.error.set(e?.error?.message || 'Échec de la confirmation.');
-      },
-    });
-  }
-
-  markManualTicket() {
-    const raw = this.ticketInput();
-    const ticket = raw == null ? '' : String(raw).trim();
-    if (!ticket) {
-      this.error.set('Numéro de ticket requis.');
-      return;
-    }
-    this.markAlighted(ticket);
-    this.ticketInput.set('');
-  }
-
   resetTrip() {
     this.loadedTripId.set(null);
     this.stops.set(null);
     this.alightings.set([]);
-    this.luggageSummary.set(null);
+    this.boardings.set([]);
+    this.tripPassengers.set([]);
+    this.passengerSearch.set('');
     this.selectedStop.set(0);
     this.error.set('');
     this.loadChauffeurOverview();
   }
 
-  private loadLuggageSummary(tripId: number) {
-    this.driverTrip.getLuggageSummary(tripId).subscribe({
-      next: (s) => this.luggageSummary.set(s),
-      error: () => this.luggageSummary.set(null),
-    });
+  /**
+   * Aligné sur mobile (`ChauffeurHistoryPage` → `TripDetailChauffeurPage`) : ouvrir le détail d'un
+   * trajet terminé en lecture (itinéraire + liste des passagers), pas d'actions de conduite.
+   */
+  viewHistoryTrip(t: ChauffeurTripListItem) {
+    this.error.set('');
+    this.tripIdInput.set(t.id);
+    this.loadTrip();
   }
 
   // ====== HELPERS ======

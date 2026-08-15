@@ -184,20 +184,6 @@ export const routes: Routes = [
             (m) => m.ChauffeurProfileComponent,
           ),
       },
-      {
-        path: 'notifications',
-        loadComponent: () =>
-          import('./features/notifications/inbox-page/inbox-page.component').then(
-            (m) => m.InboxPageComponent,
-          ),
-      },
-      {
-        path: 'trip-channel/:tripId',
-        loadComponent: () =>
-          import('./features/notifications/trip-channel-page/trip-channel-page.component').then(
-            (m) => m.TripChannelPageComponent,
-          ),
-      },
     ],
   },
 

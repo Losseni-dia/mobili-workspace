@@ -15,6 +15,8 @@ export interface AuthResponse {
   phone: string; // Aligné avec ProfileDTO Java
   avatarUrl: string; // Aligné avec ProfileDTO Java
   roles: string[];
+  /** Statut du compte (ProfileDTO.enabled) — absent sur d'anciennes sessions en storage, défensif. */
+  enabled?: boolean;
   partnerId?: number;
   /** Compte responsable gare */
   stationId?: number;

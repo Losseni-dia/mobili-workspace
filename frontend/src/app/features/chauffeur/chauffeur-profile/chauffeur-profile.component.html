@@ -5,6 +5,22 @@
             <p>Gérez vos informations de connexion et votre avatar</p>
         </div>
 
+        <div class="account-status-box">
+            <span class="role-badge">{{ primaryRoleLabel() }}</span>
+            <span class="account-status" [class.active]="user?.enabled !== false" [class.inactive]="user?.enabled === false">
+                <span class="dot"></span>
+                {{ user?.enabled === false ? 'Désactivé' : 'Actif' }}
+            </span>
+        </div>
+
+        @if (roleChips().length > 1) {
+            <div class="role-chips">
+                @for (r of roleChips(); track r) {
+                    <span class="role-chip">{{ r }}</span>
+                }
+            </div>
+        }
+
         <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
             <div class="avatar-upload-section">
                 <div class="avatar-wrapper" (click)="avatarInput.click()">
@@ -54,5 +70,9 @@
                 </button>
             </div>
         </form>
+
+        <div class="logout-zone">
+            <button type="button" class="btn-logout" (click)="logout()">Se déconnecter</button>
+        </div>
     </div>
 </div>

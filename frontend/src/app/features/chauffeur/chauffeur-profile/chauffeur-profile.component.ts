@@ -30,6 +30,33 @@ export class ChauffeurProfileComponent implements OnInit {
   selectedFile: File | null = null;
   user = this.authService.currentUser();
 
+  /** Traduction alignée sur `_roleLabel()` (mobile, `profile_page.dart`). */
+  private static readonly ROLE_LABELS: Record<string, string> = {
+    ADMIN: 'SUPER ADMIN',
+    PARTNER: 'PARTENAIRE',
+    GARE: 'GARE',
+    STATION: 'GARE',
+    CHAUFFEUR: 'CHAUFFEUR',
+    COVOITURAGE: 'CONDUCTEUR',
+  };
+
+  /** Rôle "principal" affiché en badge — même règle de priorité que le mobile. */
+  primaryRoleLabel(): string {
+    const roles = (this.user?.roles || []).map((r) => String(r).replace(/^ROLE_/, '').toUpperCase());
+    for (const key of ['ADMIN', 'PARTNER', 'GARE', 'STATION', 'CHAUFFEUR', 'COVOITURAGE']) {
+      if (roles.includes(key)) return ChauffeurProfileComponent.ROLE_LABELS[key];
+    }
+    return 'UTILISATEUR';
+  }
+
+  /** Liste brute des rôles, seule transformation : STATION -> GARE (comme mobile). */
+  roleChips(): string[] {
+    return (this.user?.roles || []).map((r) => {
+      const clean = String(r).replace(/^ROLE_/, '').toUpperCase();
+      return clean === 'STATION' ? 'GARE' : clean;
+    });
+  }
+
   profileForm = this.fb.group({
     firstname: ['', [Validators.required]],
     lastname: ['', [Validators.required]],
@@ -53,6 +80,13 @@ export class ChauffeurProfileComponent implements OnInit {
         if (url) this.avatarPreview.set(url);
       }
     }
+  }
+
+  /** Aligné sur mobile (`ProfilePage`) : confirmation puis déconnexion. */
+  logout() {
+    if (!confirm('Se déconnecter ?')) return;
+    this.authService.logout();
+    this.router.navigate(['/']);
   }
 
   onFileSelected(event: Event) {
