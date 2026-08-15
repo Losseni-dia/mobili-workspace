@@ -395,42 +395,6 @@
   text-align: right;
 }
 
-.gares-validate-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.status-pill.pending {
-  background: rgba(variables.$warning, 0.14);
-  color: variables.$warning;
-}
-
-.status-pill.ok {
-  background: rgba(variables.$success, 0.12);
-  color: variables.$success;
-}
-
-.btn-approve {
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  border-radius: variables.$radius-sm;
-  border: 1px solid variables.$station-green;
-  background: variables.$white;
-  color: variables.$station-green;
-  cursor: pointer;
-  transition: all variables.$t-base;
-  &:hover {
-    background: rgba(variables.$station-green, 0.08);
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
 .gares-chauffeurs-cell {
   max-width: 16rem;
   font-size: 0.86rem;
