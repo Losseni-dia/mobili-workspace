@@ -42,23 +42,12 @@ $sidebar-w-collapsed: 76px;
   padding: 0 8px;
   margin-bottom: 14px;
 
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: variables.$mobili-blue-deep;
-    font-weight: 900;
-    font-size: 1.05rem;
-    letter-spacing: 2.5px;
-    text-decoration: none;
-
-    .brand-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: variables.$mobili-yellow;
-      box-shadow: 0 0 0 4px rgba(variables.$mobili-yellow, 0.18);
-    }
+  .brand-name {
+    color: variables.$gray-500;
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
   }
 
   .collapse-btn {
@@ -188,17 +177,6 @@ $sidebar-w-collapsed: 76px;
     box-shadow: 0 10px 20px rgba(variables.$mobili-blue, 0.25);
   }
 
-  &.soft {
-    color: variables.$gray-400;
-    font-size: 0.85rem;
-    &:hover { color: variables.$mobili-blue-deep; }
-  }
-
-  &.soft.logout:hover {
-    color: variables.$danger;
-    background: variables.$danger-soft;
-  }
-
   &.cta-compact {
     justify-content: center;
     background: variables.$mobili-yellow;
@@ -252,12 +230,6 @@ $sidebar-w-collapsed: 76px;
 
     &:hover { transform: translateY(-1px); box-shadow: 0 10px 18px rgba(variables.$mobili-yellow, 0.45); }
   }
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid variables.$gray-100;
 }
 
 .user-shell.collapsed {
@@ -385,7 +357,6 @@ $sidebar-w-collapsed: 76px;
 
   .sidebar-brand { margin-bottom: 0; margin-right: 10px; }
   .sidebar-nav { flex-direction: row; margin-bottom: 0; gap: 6px; }
-  .sidebar-footer { margin-top: 0; padding: 0; border: none; border-left: 1px solid variables.$gray-200; margin-left: 8px; padding-left: 10px; display: flex; gap: 4px; }
   .shell-topbar { flex-wrap: wrap; padding: 18px 20px; }
   .shell-content { padding: 22px 20px 40px; }
 }

@@ -1,3 +1,5 @@
+@use '../../styles/variables';
+
 .banner {
   position: sticky;
   top: 0;
@@ -7,21 +9,21 @@
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  background: #eef2ff;
-  color: #1e293b;
-  border-bottom: 1px solid #cbd5e1;
+  background: variables.$mobili-blue-fog;
+  color: variables.$gray-800;
+  border-bottom: 1px solid variables.$gray-300;
 }
 
 .banner.error {
-  background: #fee2e2;
-  color: #7f1d1d;
-  border-bottom-color: #fecaca;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  border-bottom-color: variables.$danger-soft;
 }
 
 .banner.success {
-  background: #dcfce7;
-  color: #14532d;
-  border-bottom-color: #bbf7d0;
+  background: rgba(variables.$success, 0.12);
+  color: variables.$success;
+  border-bottom-color: rgba(variables.$success, 0.3);
 }
 
 button {

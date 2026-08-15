@@ -41,6 +41,17 @@ export class BookingConfirmationComponent implements OnInit {
     return labels[idx] ?? b.arrivalCity;
   });
 
+  /**
+   * Vrai quand le trajet complet (départ → arrivée du voyage) diffère du couple
+   * embarquement/descente déjà affiché — évite de répéter les mêmes deux villes
+   * quand il n'y a pas d'escale avant/après le segment réservé.
+   */
+  showFullRoute = computed(() => {
+    const b = this.booking();
+    if (!b) return false;
+    return b.departureCity !== this.boardingLabel() || b.arrivalCity !== this.alightingLabel();
+  });
+
   /** Liste ordonnée des passagers + siège associé. */
   passengerLines = computed<{ name: string; seat: string }[]>(() => {
     const b = this.booking();

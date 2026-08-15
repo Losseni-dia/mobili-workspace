@@ -1,16 +1,15 @@
-$mobili-blue: #092990;
-$mobili-yellow: #FFCC00;
-$mobili-dark: #05164d;
-$mobili-light: #f8faff;
-$mobili-gray: #a0aec0;
+@use '../../../styles/variables';
+
+$mobili-blue: variables.$mobili-blue;
+$mobili-yellow: variables.$mobili-yellow;
+$mobili-dark: variables.$mobili-blue-deep;
+$mobili-light: variables.$gray-50;
+$mobili-gray: variables.$gray-400;
 
 .confirmation-page {
   min-height: 80vh;
   padding: 40px 16px 60px;
-  background:
-    radial-gradient(circle at 20% 0%, rgba($mobili-yellow, 0.18), transparent 55%),
-    radial-gradient(circle at 80% 100%, rgba($mobili-blue, 0.15), transparent 55%),
-    linear-gradient(180deg, $mobili-light 0%, #eef2ff 100%);
+  background: $mobili-light;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -19,8 +18,8 @@ $mobili-gray: #a0aec0;
 .loader {
   background: white;
   padding: 32px 40px;
-  border-radius: 20px;
-  box-shadow: 0 12px 35px rgba($mobili-blue, 0.08);
+  border-radius: variables.$radius-lg;
+  box-shadow: variables.$shadow-sm;
   text-align: center;
 
   p {
@@ -57,13 +56,11 @@ $mobili-gray: #a0aec0;
   width: 100%;
   max-width: 540px;
   background: white;
-  border-radius: 24px;
+  border-radius: variables.$radius-lg;
   overflow: hidden;
-  box-shadow:
-    0 30px 60px rgba($mobili-blue, 0.18),
-    0 12px 24px rgba($mobili-dark, 0.08);
+  box-shadow: variables.$shadow-md;
   position: relative;
-  animation: ticket-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: ticket-in 0.3s ease-out both;
 }
 
 @keyframes ticket-in {
@@ -304,9 +301,9 @@ $mobili-gray: #a0aec0;
 .price-block {
   margin: 0 28px 20px;
   padding: 18px 20px;
-  background: linear-gradient(135deg, rgba($mobili-blue, 0.04), rgba($mobili-yellow, 0.1));
+  background: rgba($mobili-blue, 0.04);
   border: 1px solid rgba($mobili-blue, 0.08);
-  border-radius: 16px;
+  border-radius: variables.$radius-md;
 
   .price-row {
     display: flex;
@@ -347,14 +344,13 @@ $mobili-gray: #a0aec0;
   background: $mobili-yellow;
   color: $mobili-blue;
   border: none;
-  border-radius: 16px;
+  border-radius: variables.$radius-md;
   font-weight: 900;
   font-size: 1.05rem;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: 0 14px 28px rgba($mobili-yellow, 0.5);
+  transition: filter variables.$t-fast;
 
   .pay-hint {
     font-size: 0.7rem;
@@ -365,9 +361,7 @@ $mobili-gray: #a0aec0;
   }
 
   &:hover:not(:disabled) {
-    transform: translateY(-2px);
     filter: brightness(1.03);
-    box-shadow: 0 18px 36px rgba($mobili-yellow, 0.6);
   }
 
   &:disabled {

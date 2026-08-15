@@ -1,3 +1,5 @@
+@use '../../../styles/variables';
+
 .channel {
   max-width: 640px;
   margin: 0 auto;
@@ -6,7 +8,7 @@
 .back {
   margin: 0 0 0.5rem;
   a {
-    color: #2563eb;
+    color: variables.$mobili-blue-soft;
     text-decoration: none;
     font-size: 0.9rem;
     &:hover {
@@ -22,16 +24,16 @@
 
 .muted,
 .hint {
-  color: #64748b;
+  color: variables.$gray-500;
   font-size: 0.9rem;
   line-height: 1.45;
   margin: 0 0 1rem;
 }
 
 .hint {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-xs;
   padding: 0.75rem 1rem;
 }
 
@@ -47,18 +49,18 @@
   textarea {
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    border: 1px solid variables.$gray-300;
+    border-radius: variables.$radius-xs;
     padding: 0.6rem 0.75rem;
     font: inherit;
     resize: vertical;
   }
   .btn-send {
     align-self: flex-start;
-    background: #2563eb;
-    color: #fff;
+    background: variables.$mobili-blue-soft;
+    color: variables.$white;
     border: none;
-    border-radius: 8px;
+    border-radius: variables.$radius-xs;
     padding: 0.5rem 1.1rem;
     font-weight: 600;
     cursor: pointer;
@@ -70,11 +72,11 @@
 }
 
 .empty {
-  color: #64748b;
+  color: variables.$gray-500;
   text-align: center;
   padding: 2rem;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
+  border: 1px dashed variables.$gray-300;
+  border-radius: variables.$radius-sm;
 }
 
 .thread {
@@ -87,10 +89,10 @@
 }
 
 .bubble {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
   padding: 0.9rem 1rem;
-  background: #fff;
+  background: variables.$white;
 }
 
 .who {
@@ -99,10 +101,10 @@
   align-items: baseline;
   gap: 0.35rem 0.75rem;
   font-size: 0.85rem;
-  color: #64748b;
+  color: variables.$gray-500;
   margin-bottom: 0.4rem;
   strong {
-    color: #0f172a;
+    color: variables.$gray-900;
   }
   .role {
     text-transform: lowercase;
