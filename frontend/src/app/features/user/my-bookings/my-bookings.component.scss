@@ -157,3 +157,12 @@
   padding: 12px 22px;
   display: inline-flex;
 }
+
+.claim-link {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-soft;
+  text-decoration: none;
+  white-space: nowrap;
+  &:hover { text-decoration: underline; }
+}

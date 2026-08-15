@@ -370,6 +370,25 @@ $mobili-gray: variables.$gray-400;
     box-shadow: none;
     cursor: not-allowed;
   }
+
+  &--card {
+    margin-top: -8px;
+    background: variables.$white;
+    color: $mobili-blue;
+    border: 2px solid rgba($mobili-blue, 0.2);
+
+    .pay-hint { color: variables.$gray-500; }
+
+    &:hover:not(:disabled) {
+      border-color: $mobili-blue;
+      filter: none;
+    }
+
+    &:disabled {
+      background: variables.$gray-100;
+      border-color: variables.$gray-200;
+    }
+  }
 }
 
 .ticket-bottom {

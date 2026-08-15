@@ -1,0 +1,92 @@
+<div class="claims-page">
+    <header class="claims-head">
+        <div>
+            <h1>Réclamations</h1>
+            <p>Signale un problème sur une réservation ou une question générale — l'équipe Mobili te répond ici.</p>
+        </div>
+        @if (!showNewForm()) {
+            <button type="button" class="claims-new-btn" (click)="openNewForm()">＋ Nouvelle réclamation</button>
+        }
+    </header>
+
+    @if (showNewForm()) {
+        <section class="claims-form-card">
+            <h2>Nouvelle réclamation</h2>
+            @if (createError()) {
+                <div class="claims-alert" role="alert">{{ createError() }}</div>
+            }
+
+            <label class="claims-field">
+                <span>Motif</span>
+                <select [ngModel]="reason()" (ngModelChange)="reason.set($event)">
+                    @for (r of reasons; track r) {
+                        <option [value]="r">{{ reasonLabels[r] }}</option>
+                    }
+                </select>
+            </label>
+
+            @if (needsBooking()) {
+                <label class="claims-field">
+                    <span>Réservation concernée</span>
+                    <select [ngModel]="bookingId()" (ngModelChange)="bookingId.set($event)">
+                        <option [ngValue]="null">— Choisir une réservation —</option>
+                        @for (b of bookings(); track b.id) {
+                            <option [ngValue]="b.id">{{ bookingLabel(b) }}</option>
+                        }
+                    </select>
+                </label>
+            }
+
+            <label class="claims-field">
+                <span>Votre message</span>
+                <textarea
+                    rows="5"
+                    [ngModel]="message()"
+                    (ngModelChange)="message.set($event)"
+                    placeholder="Décrivez votre situation en détail…"
+                    maxlength="2000"
+                ></textarea>
+            </label>
+
+            <div class="claims-form-actions">
+                @if (claims().length > 0) {
+                    <button type="button" class="claims-btn-ghost" (click)="cancelNewForm()">Annuler</button>
+                }
+                <button type="button" class="claims-btn-primary" [disabled]="!message().trim() || submitting()" (click)="submit()">
+                    {{ submitting() ? 'Envoi…' : 'Envoyer' }}
+                </button>
+            </div>
+        </section>
+    }
+
+    <section class="claims-list-section">
+        <h2>Historique</h2>
+        @if (isLoading()) {
+            <p class="claims-hint">Chargement…</p>
+        } @else if (loadError()) {
+            <p class="claims-hint claims-hint--error">{{ loadError() }}</p>
+        } @else if (claims().length === 0) {
+            <p class="claims-hint">Aucune réclamation pour l'instant.</p>
+        } @else {
+            <ul class="claims-list">
+                @for (c of claims(); track c.id) {
+                    <li class="claim-card">
+                        <div class="claim-card-head">
+                            <strong>{{ reasonLabels[c.reason] }}</strong>
+                            <span class="claim-status" [ngClass]="'claim-status--' + c.status.toLowerCase()">
+                                {{ statusLabels[c.status] }}
+                            </span>
+                        </div>
+                        <p class="claim-message">{{ c.message }}</p>
+                        @if (c.resolutionMessage) {
+                            <p class="claim-resolution">
+                                <strong>Réponse Mobili :</strong> {{ c.resolutionMessage }}
+                            </p>
+                        }
+                        <span class="claim-date">{{ c.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>

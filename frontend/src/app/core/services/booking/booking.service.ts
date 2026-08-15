@@ -160,6 +160,27 @@ export class BookingService {
   }
 
   /**
+   * Paiement carte bancaire (Stripe), alternative à FedaPay. Contrairement à FedaPay, il n'existe
+   * aucun endpoint `verify` dédié côté Stripe — la confirmation réelle passe uniquement par le
+   * webhook Stripe côté serveur (StripeWebhookController, fichier protégé, non modifié ici). Les
+   * pages de retour Stripe (`/v1/payments/stripe/success|cancel`) sont de simples pages HTML
+   * backend, pas des routes Angular : après paiement carte, l'utilisateur quitte temporairement
+   * le site avant d'y revenir manuellement (ex. via « Mes réservations »).
+   */
+  getStripeCheckoutUrl(
+    bookingId: number,
+    amount: number,
+    currency: string,
+    customerEmail: string,
+  ): Observable<{ paymentUrl: string }> {
+    return this.http.post<{ paymentUrl: string }>(`/payments/stripe/checkout/${bookingId}`, {
+      amount,
+      currency,
+      customerEmail,
+    });
+  }
+
+  /**
    * Après retour FedaPay : relit le statut sur l'API FedaPay et confirme la réservation (billets)
    * si le webhook n'a pas pu joindre le backend (ex. localhost).
    */

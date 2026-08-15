@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { buildTripCityLabels } from '../../../core/utils/trip-city-labels.util';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-booking-confirmation',
@@ -18,9 +19,11 @@ export class BookingConfirmationComponent implements OnInit {
   private router = inject(Router);
   private bookingService = inject(BookingService);
   private notificationService = inject(NotificationService);
+  private authService = inject(AuthService);
 
   booking = signal<BookingResponse | null>(null);
   isProcessing = signal(false);
+  isProcessingCard = signal(false);
 
   /** Label de la ville d'embarquement (fallback calculé si manquant côté API). */
   boardingLabel = computed(() => {
@@ -124,6 +127,42 @@ export class BookingConfirmationComponent implements OnInit {
       },
       error: () => {
         this.isProcessing.set(false);
+        this.notificationService.show('Erreur technique. Veuillez réessayer.', 'error');
+      },
+    });
+  }
+
+  /**
+   * Paiement carte bancaire (Stripe) — alternative à FedaPay. Redirige vers Stripe Checkout ;
+   * au retour, l'utilisateur atterrit sur une page backend (pas une route Angular, aucun endpoint
+   * verify dédié côté Stripe contrairement à FedaPay) : la confirmation réelle se fait par
+   * webhook. Il devra revenir sur le site (ex. « Mes réservations ») pour voir le nouveau statut.
+   */
+  confirmAndPayByCard() {
+    const bookingData = this.booking();
+    if (!bookingData) {
+      this.notificationService.show("Erreur d'identification de la réservation.", 'error');
+      return;
+    }
+    const rawId = bookingData.id;
+    const cleanId = Number(Array.isArray(rawId) ? rawId[0] : rawId);
+    if (Number.isNaN(cleanId)) {
+      this.notificationService.show("Erreur d'identification de la réservation.", 'error');
+      return;
+    }
+    const email = this.authService.currentUser()?.email;
+    if (!email) {
+      this.notificationService.show('Un e-mail est requis pour le paiement par carte.', 'error');
+      return;
+    }
+
+    this.isProcessingCard.set(true);
+    this.bookingService.getStripeCheckoutUrl(cleanId, this.totalPrice(), 'XOF', email).subscribe({
+      next: (response) => {
+        window.location.href = response.paymentUrl;
+      },
+      error: () => {
+        this.isProcessingCard.set(false);
         this.notificationService.show('Erreur technique. Veuillez réessayer.', 'error');
       },
     });

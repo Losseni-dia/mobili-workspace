@@ -51,6 +51,7 @@
                         <th>Places</th>
                         <th>Statut</th>
                         <th class="right">Montant</th>
+                        <th class="right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,6 +87,11 @@
                                 </span>
                             </td>
                             <td class="right amount">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
+                            <td class="right">
+                                <a class="claim-link" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
+                                    Signaler
+                                </a>
+                            </td>
                         </tr>
                     }
                 </tbody>

@@ -110,6 +110,11 @@ export const routes: Routes = [
             (m) => m.SupportChatComponent,
           ),
       },
+      {
+        path: 'claims',
+        loadComponent: () =>
+          import('./features/user/claims/claims.component').then((m) => m.ClaimsComponent),
+      },
     ],
   },
 
