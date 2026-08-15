@@ -67,6 +67,9 @@ export interface Trip {
   transportType?: string;
   /** Présent si offre covoiturage particulier (hors compagnie). */
   covoiturageOrganizerId?: number | null;
+  covoiturageOrganizerFirstname?: string | null;
+  covoiturageOrganizerLastname?: string | null;
+  covoiturageOrganizerDriverPhotoUrl?: string | null;
   /** Chauffeur salarié affecté au service (dispatch gare ou partenaire). */
   assignedChauffeurId?: number | null;
   assignedChauffeurFirstname?: string | null;

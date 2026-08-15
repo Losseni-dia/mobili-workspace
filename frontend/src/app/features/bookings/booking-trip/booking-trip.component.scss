@@ -16,6 +16,67 @@ $mobili-gray: variables.$gray-400;
   background: $mobili-light-bg;
   border-radius: 30px;
 
+  // Bloc conducteur (covoiturage particulier uniquement)
+  .driver-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: variables.$white;
+    border: 1px solid rgba(variables.$mobili-yellow, 0.4);
+    border-radius: 16px;
+    box-shadow: variables.$shadow-sm;
+  }
+
+  .driver-avatar {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: variables.$gradient-gold;
+    color: $mobili-dark;
+    font-weight: 900;
+    font-size: 1.2rem;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  .driver-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .driver-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $mobili-gray;
+  }
+
+  .driver-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: $mobili-dark;
+  }
+
+  .driver-hint {
+    font-size: 0.8rem;
+    color: variables.$gray-500;
+  }
+
+  .covoiturage-hint {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    color: variables.$gray-500;
+    font-style: italic;
+  }
+
   // Bloc de choix du segment (embarquement / descente)
   .segment-picker {
     margin-bottom: 24px;

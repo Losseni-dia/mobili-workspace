@@ -16,6 +16,7 @@ import { NotificationService } from '../../../core/services/notification/notific
 import { buildTripCityLabels } from '../../../core/utils/trip-city-labels.util';
 import { getPricePerSeatForSegment } from '../../../core/utils/trip-segment-price.util';
 import { CouponService } from '../../../core/services/coupon/coupon.service';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 
 @Component({
   selector: 'app-booking-trip',
@@ -33,9 +34,30 @@ export class BookingTripComponent implements OnInit {
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private couponService = inject(CouponService);
+  private configuration = inject(ConfigurationService);
 
   tripDetails = signal<Trip | null>(null);
   occupiedSeats = signal<string[]>([]);
+  isSubmitting = signal(false);
+
+  /**
+   * Covoiturage particulier : même écran de réservation, mais ça reste une DEMANDE envoyée au
+   * conducteur (pas de paiement immédiat) — aligné sur `booking_page.dart` (mobile_app), qui
+   * bifurque sur `trip.isCovoiturage` sans dupliquer l'écran.
+   */
+  isCovoiturage = computed(() => this.tripDetails()?.transportType === 'COVOITURAGE');
+
+  driverPhotoUrl = computed(() => {
+    const url = this.tripDetails()?.covoiturageOrganizerDriverPhotoUrl;
+    return url ? this.configuration.resolveUploadMediaUrl(url) : null;
+  });
+
+  driverName = computed(() => {
+    const trip = this.tripDetails();
+    const fn = trip?.covoiturageOrganizerFirstname?.trim() ?? '';
+    const ln = trip?.covoiturageOrganizerLastname?.trim() ?? '';
+    return `${fn} ${ln}`.trim() || 'Conducteur';
+  });
 
   /** Libellés des arrêts dans l'ordre (ville de départ → … → ville d'arrivée). */
   stopLabels = signal<string[]>([]);
@@ -303,7 +325,7 @@ export class BookingTripComponent implements OnInit {
   }
 
   onSubmit() {
-    if (!this.bookingForm.valid || !this.hasValidSegment()) return;
+    if (!this.bookingForm.valid || !this.hasValidSegment() || this.isSubmitting()) return;
 
     const { selectedSeats, passengerNames } = this.bookingForm.value;
     const user = this.authService.currentUser();
@@ -333,10 +355,27 @@ export class BookingTripComponent implements OnInit {
       couponCode: this.appliedCoupon(),
     };
 
+    this.isSubmitting.set(true);
     this.bookingService.createBooking(payload).subscribe({
-      next: (res: BookingResponse) => this.router.navigate(['/booking/confirmation', res.id]),
-      error: (err) =>
-        this.notificationService.show(err.error?.message || 'Erreur de réservation.', 'error'),
+      next: (res: BookingResponse) => {
+        this.isSubmitting.set(false);
+        if (this.isCovoiturage()) {
+          // Covoiturage : simple demande, pas de paiement immédiat — le conducteur a jusqu'à
+          // 24h pour répondre ; paiement possible (30 min) depuis "Mes réservations" une fois
+          // accepté. Jamais de redirection vers l'étape de paiement ici.
+          this.notificationService.show(
+            'Demande envoyée au conducteur ! Vous serez notifié dès sa réponse (sous 24h). Vous pourrez alors payer votre place depuis « Mes réservations ».',
+            'success',
+          );
+          this.router.navigate(['/my-account/bookings']);
+        } else {
+          this.router.navigate(['/booking/confirmation', res.id]);
+        }
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.notificationService.show(err.error?.message || 'Erreur de réservation.', 'error');
+      },
     });
   }
 }
