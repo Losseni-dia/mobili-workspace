@@ -18,6 +18,8 @@ export interface BookingRequest {
   alightingStopIndex?: number;
   /** Bagages soute en plus (hors quota inclus). */
   extraHoldBags?: number;
+  /** Code promo — même calcul serveur que /bookings/price-preview. */
+  couponCode?: string | null;
 }
 
 export interface BookingResponse {

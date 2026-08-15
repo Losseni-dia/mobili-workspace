@@ -166,6 +166,85 @@ $mobili-gray: variables.$gray-400;
     }
   }
 
+  // Code promo
+  .coupon-block {
+    margin-top: 24px;
+  }
+
+  .coupon-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: $mobili-dark;
+  }
+
+  .coupon-input-row {
+    display: flex;
+    gap: 8px;
+
+    input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 2px solid variables.$gray-200;
+      border-radius: variables.$radius-sm;
+      font-size: 0.95rem;
+
+      &:focus {
+        outline: none;
+        border-color: $mobili-blue;
+        box-shadow: 0 0 0 3px rgba($mobili-blue, 0.1);
+      }
+    }
+
+    button {
+      padding: 0 18px;
+      border: none;
+      border-radius: variables.$radius-sm;
+      background: $mobili-blue;
+      color: variables.$white;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .coupon-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: variables.$radius-sm;
+    background: rgba(variables.$success, 0.1);
+    border: 1px solid rgba(variables.$success, 0.3);
+    color: variables.$success;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .coupon-remove {
+    background: none;
+    border: none;
+    color: variables.$success;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+
+  .coupon-error {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    color: variables.$danger;
+  }
+
   // Résumé financier avant validation
   .booking-summary {
     background: rgba($mobili-blue, 0.02);
