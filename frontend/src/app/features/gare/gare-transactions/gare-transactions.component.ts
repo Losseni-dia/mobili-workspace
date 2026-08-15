@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingService, PartnerTransaction } from '../../../core/services/booking/booking.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 /**
  * Vente brute pour la gare connectée — aligné sur `gare_transactions_page.dart` (mobilipro) :
@@ -60,5 +61,19 @@ export class GareTransactionsComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
+  }
+
+  /** Aligné sur mobilipro (export CSV des transactions gare). */
+  exportCsv(): void {
+    exportToCsv(
+      `transactions-gare-${new Date().toISOString().slice(0, 10)}`,
+      this.filtered().map((t) => ({
+        Référence: t.reference,
+        Trajet: t.route,
+        Date: t.date,
+        Statut: t.status,
+        'Montant (FCFA)': t.grossAmount,
+      })),
+    );
   }
 }
