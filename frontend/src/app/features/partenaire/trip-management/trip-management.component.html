@@ -27,6 +27,21 @@
         </div>
     </header>
 
+    <div class="filters-bar">
+        <div class="period-select">
+            <button type="button" class="period-btn" [class.active]="period() === 'today'" (click)="setPeriod('today')">Aujourd'hui</button>
+            <button type="button" class="period-btn" [class.active]="period() === 'week'" (click)="setPeriod('week')">Semaine</button>
+            <button type="button" class="period-btn" [class.active]="period() === 'month'" (click)="setPeriod('month')">Mois</button>
+        </div>
+        <div class="status-filters">
+            @for (f of STATUS_FILTERS; track f.value) {
+                <button type="button" class="status-chip" [class.active]="statusFilter() === f.value" (click)="setStatusFilter(f.value)">
+                    {{ f.label }}
+                </button>
+            }
+        </div>
+    </div>
+
     @if (isLoading()) {
         <div class="loader">Chargement de vos trajets…</div>
     } @else if (filteredTrips().length > 0) {
@@ -104,6 +119,9 @@
 
                             <td class="right">
                                 <div class="row-actions">
+                                    <button class="icon-btn" title="Passagers" (click)="openPassengers(trip)">👥</button>
+                                    <button class="icon-btn" title="Vente directe (guichet)" (click)="openSale(trip)">🎟️</button>
+                                    <a class="icon-btn" title="Canal du voyage" [routerLink]="tripChannelLink(trip.id)">💬</a>
                                     <button class="icon-btn warn" title="Bloquer des places" (click)="openSeatManager(trip)">🚫</button>
                                     <button class="icon-btn" title="Modifier" [routerLink]="['/partenaire/edit-trip', trip.id]">✎</button>
                                     <button
@@ -187,6 +205,104 @@
                 <button class="btn-cancel" [disabled]="deletingId() === trip.id" (click)="cancelDelete()">Annuler</button>
                 <button class="btn-confirm" [disabled]="deletingId() === trip.id" (click)="confirmDelete()">
                     {{ deletingId() === trip.id ? 'Suppression…' : 'Supprimer' }}
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (passengersTrip(); as trip) {
+    <div class="modal-overlay" (click)="closePassengers()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Passagers · {{ trip.departureCity }} → {{ trip.arrivalCity }}</h3>
+                <button class="close-btn" (click)="closePassengers()">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="passenger-stats">
+                    <div class="stat-chip">
+                        <span>Réservations</span>
+                        <strong>{{ passengerStats().reservations }}</strong>
+                    </div>
+                    <div class="stat-chip">
+                        <span>Passagers</span>
+                        <strong>{{ passengerStats().totalPassengers }}</strong>
+                    </div>
+                    <div class="stat-chip">
+                        <span>Revenus</span>
+                        <strong>{{ passengerStats().totalRevenue | number }} FCFA</strong>
+                    </div>
+                </div>
+
+                @if (isLoadingPassengers()) {
+                    <div class="loader">Chargement…</div>
+                } @else if (passengersList().length === 0) {
+                    <div class="empty">
+                        <div class="empty-icon">🧍</div>
+                        <strong>Aucun passager</strong>
+                        <p>Aucune réservation confirmée sur ce trajet.</p>
+                    </div>
+                } @else {
+                    <ul class="passenger-rows">
+                        @for (b of passengersList(); track b.id) {
+                            @for (seat of b.seatNumbers; track seat; let i = $index) {
+                                <li class="passenger-row">
+                                    <span class="seat-badge">{{ seat }}</span>
+                                    <span class="pax-name">{{ b.passengerNames?.[i] || b.customerName || '—' }}</span>
+                                    <span class="pax-ref">#{{ b.reference }}</span>
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (saleTrip(); as trip) {
+    <div class="modal-overlay" (click)="closeSale()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Vente directe · {{ trip.departureCity }} → {{ trip.arrivalCity }}</h3>
+                <button class="close-btn" (click)="closeSale()">×</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-subtitle">Sélectionnez les places vendues au guichet, puis renseignez le nom de chaque passager.</p>
+
+                <app-seat-picker
+                    [totalSeats]="trip.totalSeats"
+                    [occupiedSeats]="saleOccupiedSeats()"
+                    (seatToggle)="onSaleSeatsSelected($event)"
+                />
+
+                @if (saleSelectedSeats().length > 0) {
+                    <div class="sale-names">
+                        @for (seat of saleSelectedSeats(); track seat) {
+                            <label class="sale-name-field">
+                                <span>Siège {{ seat }}</span>
+                                <input
+                                    type="text"
+                                    placeholder="Nom du passager"
+                                    [ngModel]="salePassengerNames()[seat] || ''"
+                                    (ngModelChange)="setSalePassengerName(seat, $event)"
+                                />
+                            </label>
+                        }
+                    </div>
+                }
+
+                @if (saleError()) {
+                    <p class="modal-error" role="alert">{{ saleError() }}</p>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" [disabled]="saleSubmitting()" (click)="closeSale()">Annuler</button>
+                <button class="btn-confirm" [disabled]="saleSubmitting() || saleSelectedSeats().length === 0" (click)="confirmSale()">
+                    {{ saleSubmitting() ? 'Enregistrement…' : 'Confirmer la vente (' + saleSelectedSeats().length + ')' }}
                 </button>
             </div>
         </div>

@@ -206,6 +206,167 @@
   }
 }
 
+// ====== Filtres période / statut ======
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 16px;
+}
+
+.period-select {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: variables.$gray-100;
+  border-radius: variables.$radius-sm;
+}
+
+.period-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: variables.$gray-600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all variables.$t-fast;
+
+  &.active {
+    background: variables.$white;
+    color: variables.$mobili-blue-deep;
+    box-shadow: variables.$shadow-xs;
+  }
+}
+
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-chip {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all variables.$t-fast;
+
+  &:hover { border-color: variables.$mobili-blue; }
+
+  &.active {
+    background: variables.$mobili-blue-deep;
+    border-color: variables.$mobili-blue-deep;
+    color: variables.$white;
+  }
+}
+
+// ====== Passagers ======
+.passenger-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-chip {
+  flex: 1;
+  padding: 10px 12px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  text-align: center;
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: variables.$gray-500;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+
+  strong {
+    font-size: 1rem;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.passenger-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.passenger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+
+  .seat-badge {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: variables.$gradient-gold;
+    color: variables.$mobili-blue-deep;
+    font-weight: 900;
+    font-size: 0.78rem;
+  }
+
+  .pax-name {
+    flex: 1;
+    font-weight: 700;
+    color: variables.$mobili-blue-deep;
+    font-size: 0.88rem;
+  }
+
+  .pax-ref {
+    font-family: ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: variables.$gray-500;
+  }
+}
+
+// ====== Vente directe ======
+.sale-names {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.sale-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-deep;
+
+  input {
+    @include mixins.input;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+}
+
 // ====== Actions de ligne ======
 .row-actions {
   display: inline-flex;
