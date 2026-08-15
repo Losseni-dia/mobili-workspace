@@ -3,6 +3,23 @@
         <h2>Choisis ton trajet et tes places</h2>
 
         @if (tripDetails(); as tripData) {
+            @if (isCovoiturage()) {
+                <div class="driver-block">
+                    <div class="driver-avatar">
+                        @if (driverPhotoUrl(); as photo) {
+                            <img [src]="photo" [alt]="driverName()" />
+                        } @else {
+                            <span class="driver-initial">{{ driverName().charAt(0) }}</span>
+                        }
+                    </div>
+                    <div class="driver-info">
+                        <span class="driver-label">Votre conducteur</span>
+                        <strong class="driver-name">{{ driverName() }}</strong>
+                        <span class="driver-hint">Trajet en covoiturage — votre place sera confirmée par le conducteur.</span>
+                    </div>
+                </div>
+            }
+
             <div class="segment-picker">
                 <p class="segment-hint">
                     Ce voyage passe par plusieurs villes. Choisis où tu montes et où tu descends :
@@ -161,11 +178,16 @@
                         </div>
                     }
                     <div class="summary-line total">
-                        <span>Total à payer :</span>
+                        <span>{{ isCovoiturage() ? 'Montant estimé :' : 'Total à payer :' }}</span>
                         <strong>
                             {{ totalBookingPrice() | number: '1.0-0' }} FCFA
                         </strong>
                     </div>
+                    @if (isCovoiturage()) {
+                        <p class="covoiturage-hint">
+                            Ce montant est estimatif : vous ne payez que si le conducteur accepte votre demande.
+                        </p>
+                    }
                 </div>
             }
 
@@ -174,10 +196,17 @@
                 [disabled]="
                     bookingForm.invalid ||
                     !hasValidSegment() ||
-                    bookingForm.get('selectedSeats')?.value?.length === 0
+                    bookingForm.get('selectedSeats')?.value?.length === 0 ||
+                    isSubmitting()
                 "
             >
-                Confirmer la réservation
+                @if (isSubmitting()) {
+                    Envoi…
+                } @else if (isCovoiturage()) {
+                    Envoyer la demande au conducteur
+                } @else {
+                    Confirmer la réservation
+                }
             </button>
         </form>
     </section>
