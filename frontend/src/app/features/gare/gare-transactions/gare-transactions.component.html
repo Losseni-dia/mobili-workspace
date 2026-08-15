@@ -30,6 +30,9 @@
             <p>Vente brute pour votre gare, par réservation payée.</p>
         </div>
         <span class="count-chip">{{ filtered().length }} résultats</span>
+        <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filtered().length === 0">
+            ⬇ Export CSV
+        </button>
     </header>
 
     @if (isLoading()) {

@@ -34,6 +34,9 @@
             <p>Billets vendus sur vos voyages, avec leur statut d'embarquement.</p>
         </div>
         <span class="count-chip">{{ filteredTickets().length }} résultats</span>
+        <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filteredTickets().length === 0">
+            ⬇ Export CSV
+        </button>
     </header>
 
     @if (isLoading()) {
