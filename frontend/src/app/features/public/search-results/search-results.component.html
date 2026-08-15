@@ -49,13 +49,15 @@
         </div>
 
         <div class="time-box">
-          <span class="time route-terminus">{{ trip.arrivalCity }}</span>
+          <span class="route-terminus">{{ trip.arrivalCity }}</span>
           <span class="city">Arrivée</span>
         </div>
       </div>
 
       <div class="trip-meta">
+        @if (!searchParams.date) {
         <span>{{ trip.departureDateTime | date : 'EEE d MMM' }}</span>
+        }
         @if (trip.boardingPoint) {
         <span>· 📍 {{ trip.boardingPoint }}</span>
         }
