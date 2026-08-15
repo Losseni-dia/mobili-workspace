@@ -43,7 +43,7 @@
             <p class="nav-section-title" [class.nav-section-title--hidden]="collapsed()">Espace gare</p>
             <nav class="sidebar-nav" aria-label="Espace gare">
                 @for (item of navItems; track item.path) {
-                    @if (gareActionsLocked() && item.path !== '/gare/accueil' && item.path !== '/gare/company-messages' && item.path !== '/gare/support') {
+                    @if (gareActionsLocked() && !isGareNavEntryAlwaysAllowed(item)) {
                         <span
                             class="nav-link nav-link--disabled"
                             [title]="'En attente de validation du dirigeant de la compagnie'"
@@ -73,7 +73,7 @@
             <p class="nav-section-title" [class.nav-section-title--hidden]="collapsed()">Compagnie</p>
             <nav class="sidebar-nav company-nav" aria-label="Espace compagnie">
                 @for (item of companyNavItems; track item.path) {
-                    @if (gareActionsLocked() && !isGareCompanyNavEntryAlwaysAllowed(item)) {
+                    @if (gareActionsLocked() && !isGareNavEntryAlwaysAllowed(item)) {
                         <span
                             class="nav-link nav-link--disabled"
                             [title]="'En attente de validation du dirigeant de la compagnie'"
@@ -135,7 +135,7 @@
                 <div class="gare-pending-strip" role="status">
                     <strong>Compte en attente</strong> — le dirigeant de votre compagnie doit valider la gare
                     <strong> {{ stationLine() }} </strong>
-                    avant toute action (trajets, scanner, accès compagnie).
+                    avant toute action (trajets, tickets, accès compagnie).
                 </div>
             }
             <router-outlet></router-outlet>

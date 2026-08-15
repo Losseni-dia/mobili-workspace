@@ -25,45 +25,33 @@ export class GareShellComponent implements OnInit {
   collapsed = signal(false);
 
   /**
-   * Aligné sur `shell_gare.dart` (mobilipro) : pas de scanner côté gare — scanner les billets
-   * à l'embarquement est une action CHAUFFEUR uniquement (voir `/chauffeur/scan`), jamais gare.
+   * Aligné sur `shell_gare.dart` (mobilipro) : Dashboard, Trajets, Tickets, Chauffeurs,
+   * Communications, Notifications, Profil — 7 entrées plates, même ordre. Pas de scanner côté
+   * gare (action CHAUFFEUR uniquement, voir `/chauffeur/scan`) ; Transactions n'est pas un onglet
+   * sur mobile (carte du dashboard) mais reste une entrée dédiée ici (contenu identique, juste
+   * plus visible côté web — pas une fonctionnalité web-only puisque l'écran mobile existe aussi).
    */
   navItems: GareNavItem[] = [
     { label: 'Accueil', icon: '🏠', path: '/gare/accueil', exact: true },
-    { label: 'Messages compagnie', icon: '💬', path: '/gare/company-messages' },
-    { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
+    { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
     { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
+    { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
+    { label: 'Communications', icon: '💬', path: '/gare/communications' },
     { label: 'Transactions', icon: '💳', path: '/gare/transactions' },
-    { label: 'Support Mobili', icon: '🆘', path: '/gare/support' },
+    { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
   ];
 
-  /**
-   * Mêmes accès compagnie que l’espace partenaire (rôle GARE lié à une compagnie) — pas de
-   * réservations ici : la gare n’a besoin que des tickets (voir navItems), les réservations
-   * restent un concept compagnie/partenaire (page conservée, juste non mise en avant côté
-   * gare — même principe que côté mobilipro).
-   *
-   * Ni « Communication » ni « Notifications » ne sont dupliquées ici : CompanyMessagesComponent
-   * et InboxPageComponent dérivent leur contenu du rôle de l'utilisateur connecté, pas du préfixe
-   * d'URL — /partenaire/company-messages et /gare/company-messages affichent exactement la même
-   * chose pour un compte gare. Les entrées « Messages compagnie » et « Notifications » de la
-   * section Espace gare (navItems) couvrent déjà ce besoin, sans naviguer vers une deuxième route
-   * qui mène au même écran.
-   */
-  companyNavItems: GareNavItem[] = [
-    { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
-    { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
-    { label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' },
-  ];
+  /** Publier un trajet reste une action compagnie séparée (FAB sur mobile, entrée dédiée ici). */
+  companyNavItems: GareNavItem[] = [{ label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' }];
 
   pageInfo = computed(() => {
     const url = this.currentUrl();
-    if (url.includes('/gare/company-messages')) {
+    if (url.includes('/gare/communications')) {
       return {
-        title: 'Messages compagnie',
-        desc: 'Échanges avec le dirigeant et les autres gares (collectif ou ciblé).',
-        crumb: 'Messages',
+        title: 'Communications',
+        desc: 'Canal société (dirigeant et gares) et canal support Mobili.',
+        crumb: 'Communications',
       };
     }
     if (url.includes('/gare/tickets')) {
@@ -78,13 +66,6 @@ export class GareShellComponent implements OnInit {
         title: 'Transactions',
         desc: 'Frais Mobili, commission et net compagnie, par réservation payée.',
         crumb: 'Transactions',
-      };
-    }
-    if (url.includes('/gare/support')) {
-      return {
-        title: 'Support Mobili',
-        desc: 'Échangez directement avec l\'équipe Mobili.',
-        crumb: 'Support',
       };
     }
     if (url.includes('/gare/compte')) {
@@ -157,10 +138,15 @@ export class GareShellComponent implements OnInit {
   }
 
   /**
-   * En attente de validation gare : messagerie + gestion des chauffeurs (inscription / affectation) restent accessibles.
+   * En attente de validation gare : accueil, messagerie (communications) et gestion des chauffeurs
+   * (inscription / affectation) restent accessibles.
    */
-  isGareCompanyNavEntryAlwaysAllowed(item: GareNavItem): boolean {
-    return item.path === '/partenaire/chauffeurs';
+  isGareNavEntryAlwaysAllowed(item: GareNavItem): boolean {
+    return (
+      item.path === '/gare/accueil' ||
+      item.path === '/gare/communications' ||
+      item.path === '/partenaire/chauffeurs'
+    );
   }
 
   toggleSidebar() {

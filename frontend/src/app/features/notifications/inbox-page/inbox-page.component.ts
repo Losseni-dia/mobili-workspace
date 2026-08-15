@@ -91,7 +91,7 @@ export class InboxPageComponent implements OnInit {
       return '/partenaire/company-messages';
     }
     if (u.includes('/gare/')) {
-      return '/gare/company-messages';
+      return '/gare/communications';
     }
     return null;
   }
