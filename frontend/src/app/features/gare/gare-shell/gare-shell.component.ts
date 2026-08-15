@@ -24,11 +24,14 @@ export class GareShellComponent implements OnInit {
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal(false);
 
+  /**
+   * Aligné sur `shell_gare.dart` (mobilipro) : pas de scanner côté gare — scanner les billets
+   * à l'embarquement est une action CHAUFFEUR uniquement (voir `/chauffeur/scan`), jamais gare.
+   */
   navItems: GareNavItem[] = [
     { label: 'Accueil', icon: '🏠', path: '/gare/accueil', exact: true },
     { label: 'Messages compagnie', icon: '💬', path: '/gare/company-messages' },
     { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
-    { label: 'Scanner billets', icon: '📷', path: '/gare/scan' },
     { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
     { label: 'Transactions', icon: '💳', path: '/gare/transactions' },
     { label: 'Support Mobili', icon: '🆘', path: '/gare/support' },
@@ -49,11 +52,9 @@ export class GareShellComponent implements OnInit {
    * qui mène au même écran.
    */
   companyNavItems: GareNavItem[] = [
-    { label: 'Tableau de bord', icon: '📊', path: '/partenaire/dashboard' },
     { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
     { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
     { label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' },
-    { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
   ];
 
   pageInfo = computed(() => {
@@ -63,13 +64,6 @@ export class GareShellComponent implements OnInit {
         title: 'Messages compagnie',
         desc: 'Échanges avec le dirigeant et les autres gares (collectif ou ciblé).',
         crumb: 'Messages',
-      };
-    }
-    if (url.includes('/gare/scan')) {
-      return {
-        title: 'Scanner embarquement',
-        desc: 'Valide les titres de transport (QR code) à l’embarquement.',
-        crumb: 'Scanner',
       };
     }
     if (url.includes('/gare/tickets')) {

@@ -33,7 +33,11 @@
         </section>
 
         <section class="card">
-            <h3 class="card-title">Rôles</h3>
+            <h3 class="card-title">Rôles &amp; statut</h3>
+            <span class="account-status" [class.active]="u.enabled !== false" [class.inactive]="u.enabled === false">
+                <span class="dot"></span>
+                {{ u.enabled === false ? 'Désactivé' : 'Actif' }}
+            </span>
             <ul class="role-pills" aria-label="Rôles sur la plateforme">
                 @for (r of roleLabels(); track r) {
                     <li class="role-pill">{{ r }}</li>
@@ -43,7 +47,6 @@
 
         <div class="actions">
             <a routerLink="/gare/compte" class="btn-primary">Modifier mes informations</a>
-            <a routerLink="/gare/scan" class="btn-secondary">Aller au scanner</a>
         </div>
     </div>
 } @else {

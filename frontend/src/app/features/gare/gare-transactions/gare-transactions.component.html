@@ -1,15 +1,7 @@
 <section class="kpi-row">
-    <div class="kpi-chip">
-        <span class="chip-label">Vente brute</span>
-        <strong>{{ totalGross() | number }} FCFA</strong>
-    </div>
-    <div class="kpi-chip">
-        <span class="chip-label">Commission Mobili</span>
-        <strong>{{ totalCommission() | number }} FCFA</strong>
-    </div>
     <div class="kpi-chip kpi-chip--accent">
-        <span class="chip-label">Net compagnie</span>
-        <strong>{{ totalCompanyNet() | number }} FCFA</strong>
+        <span class="chip-label">Montant total</span>
+        <strong>{{ totalGross() | number }} FCFA</strong>
     </div>
 </section>
 
@@ -35,7 +27,7 @@
     <header class="panel-head">
         <div>
             <h2>Transactions</h2>
-            <p>Frais Mobili, commission prélevée et net revenant à la compagnie, pour votre gare.</p>
+            <p>Vente brute pour votre gare, par réservation payée.</p>
         </div>
         <span class="count-chip">{{ filtered().length }} résultats</span>
     </header>
@@ -56,9 +48,7 @@
                         <th>Trajet</th>
                         <th>Date</th>
                         <th>Statut</th>
-                        <th class="right">Vente brute</th>
-                        <th class="right">Commission</th>
-                        <th class="right">Net compagnie</th>
+                        <th class="right">Montant</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,9 +58,7 @@
                             <td>{{ t.route }}</td>
                             <td class="mono">{{ t.date | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td>{{ t.status }}</td>
-                            <td class="right">{{ t.grossAmount | number }} FCFA</td>
-                            <td class="right">{{ t.commissionTotal | number }} FCFA</td>
-                            <td class="right amount">{{ t.companyNet | number }} FCFA</td>
+                            <td class="right amount">{{ t.grossAmount | number }} FCFA</td>
                         </tr>
                     }
                 </tbody>
