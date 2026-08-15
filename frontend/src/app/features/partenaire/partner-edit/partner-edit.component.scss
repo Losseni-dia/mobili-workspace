@@ -32,6 +32,71 @@
       margin-bottom: 1.25rem;
     }
 
+    .kyc-resubmit-box {
+      margin: 0 0 1.5rem;
+      padding: 1rem 1.1rem;
+      border-radius: variables.$radius-md;
+      border: 1px solid rgba(variables.$danger, 0.3);
+      background: variables.$danger-soft;
+    }
+
+    .kyc-resubmit-box__label {
+      display: block;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: variables.$danger;
+    }
+
+    .kyc-resubmit-box__reason {
+      margin: 0.4rem 0 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: variables.$mobili-blue-deep;
+    }
+
+    .kyc-resubmit-box__hint {
+      margin: 0.4rem 0 0.9rem;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: variables.$gray-600;
+    }
+
+    .kyc-resubmit-box__files {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .kyc-file-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: variables.$mobili-blue-deep;
+
+      input {
+        font-size: 0.8rem;
+      }
+    }
+
+    .kyc-file-name {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: variables.$gray-600;
+    }
+
+    .kyc-alert {
+      margin: 0 0 0.9rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: variables.$radius-sm;
+      background: variables.$white;
+      border: 1px solid rgba(variables.$danger, 0.3);
+      color: variables.$danger;
+      font-size: 0.82rem;
+    }
+
     .registration-code-box {
       margin: 0 0 1.5rem;
       padding: 1rem 1.1rem;

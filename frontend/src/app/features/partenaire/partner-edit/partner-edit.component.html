@@ -3,6 +3,44 @@
         <h2>⚙️ Paramètres de l'entreprise</h2>
         <p class="subtitle">Modifiez les informations de votre compagnie de transport</p>
 
+        @if (approvalStatus() === 'REJECTED') {
+        <div class="kyc-resubmit-box" role="region" aria-label="Resoumission des documents d'identité">
+            <div class="kyc-resubmit-box__text">
+                <span class="kyc-resubmit-box__label">⚠️ Dossier rejeté</span>
+                @if (rejectionReason()) {
+                    <p class="kyc-resubmit-box__reason">Motif : {{ rejectionReason() }}</p>
+                }
+                <p class="kyc-resubmit-box__hint">
+                    Envoyez de nouvelles photos recto/verso de la pièce d'identité du gérant pour renvoyer le dossier
+                    en validation. Vous pouvez ne remplacer qu'un seul des deux fichiers.
+                </p>
+            </div>
+            @if (kycError()) {
+                <div class="kyc-alert" role="alert">{{ kycError() }}</div>
+            }
+            <div class="kyc-resubmit-box__files">
+                <label class="kyc-file-field">
+                    <span>Recto</span>
+                    <input type="file" (change)="onKycFrontSelected($event)" accept="image/*">
+                    @if (kycFrontName()) { <span class="kyc-file-name">{{ kycFrontName() }}</span> }
+                </label>
+                <label class="kyc-file-field">
+                    <span>Verso</span>
+                    <input type="file" (change)="onKycBackSelected($event)" accept="image/*">
+                    @if (kycBackName()) { <span class="kyc-file-name">{{ kycBackName() }}</span> }
+                </label>
+            </div>
+            <button
+                type="button"
+                class="btn-primary"
+                [disabled]="isLoading() || (!kycFrontName() && !kycBackName())"
+                (click)="submitKycResubmission()"
+            >
+                {{ isLoading() ? 'Envoi…' : 'Renvoyer le dossier' }}
+            </button>
+        </div>
+        }
+
         @if (loadComplete() && partnerId()) {
         <div class="registration-code-box" role="region" aria-label="Code d’inscription gare">
             <div class="registration-code-box__text">

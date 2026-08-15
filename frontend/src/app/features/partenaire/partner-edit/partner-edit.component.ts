@@ -30,6 +30,19 @@ export class PartnerEditComponent implements OnInit {
   copyFeedback = signal(false);
   selectedFile: File | null = null;
 
+  /**
+   * PENDING/APPROVED/REJECTED — resoumission KYC affichée uniquement si REJECTED. Pas d'endpoint
+   * dédié côté backend : c'est le même PUT /partners/{id} que la mise à jour de profil, avec les
+   * parts kycFront/kycBack en plus ; le backend repasse automatiquement approvalStatus à PENDING.
+   */
+  approvalStatus = signal<string | null>(null);
+  rejectionReason = signal<string | null>(null);
+  kycFrontFile: File | null = null;
+  kycBackFile: File | null = null;
+  kycFrontName = signal<string | null>(null);
+  kycBackName = signal<string | null>(null);
+  kycError = signal<string | null>(null);
+
   // Formulaire réactif
   partnerForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -82,6 +95,8 @@ export class PartnerEditComponent implements OnInit {
         this.registrationCode.set(
           partner.registrationCode?.trim() ? partner.registrationCode.trim() : null,
         );
+        this.approvalStatus.set(partner.approvalStatus ?? null);
+        this.rejectionReason.set(partner.rejectionReason ?? null);
 
         this.isLoading.set(false);
         this.loadComplete.set(true);
@@ -104,6 +119,53 @@ export class PartnerEditComponent implements OnInit {
       reader.onload = () => this.logoPreview.set(reader.result as string);
       reader.readAsDataURL(file);
     }
+  }
+
+  onKycFrontSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.kycFrontFile = file;
+      this.kycFrontName.set(file.name);
+    }
+  }
+
+  onKycBackSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.kycBackFile = file;
+      this.kycBackName.set(file.name);
+    }
+  }
+
+  /** Formulaire minimal dédié : ne touche que les documents, pas le reste du profil compagnie. */
+  submitKycResubmission() {
+    if (!this.partnerId() || (!this.kycFrontFile && !this.kycBackFile)) return;
+    this.kycError.set(null);
+    this.isLoading.set(true);
+
+    const formData = new FormData();
+    if (this.kycFrontFile) formData.append('kycFront', this.kycFrontFile);
+    if (this.kycBackFile) formData.append('kycBack', this.kycBackFile);
+
+    this.partenaireService.updatePartner(this.partnerId()!, formData).subscribe({
+      next: (partner) => {
+        this.approvalStatus.set(partner.approvalStatus ?? 'PENDING');
+        this.rejectionReason.set(null);
+        this.kycFrontFile = null;
+        this.kycBackFile = null;
+        this.kycFrontName.set(null);
+        this.kycBackName.set(null);
+        this.isLoading.set(false);
+        this.notification.show('Dossier renvoyé pour validation.', 'success');
+      },
+      error: (err) => {
+        console.error('Erreur resoumission KYC', err);
+        this.kycError.set(extractApiErrorMessage(err, 'Impossible de renvoyer le dossier.'));
+        this.isLoading.set(false);
+      },
+    });
   }
 
   onSubmit() {
