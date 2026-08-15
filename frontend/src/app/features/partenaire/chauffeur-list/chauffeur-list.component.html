@@ -97,7 +97,22 @@
   <section class="data-panel chauff-list-card" [attr.aria-busy]="isLoading()">
     <header class="panel-head">
       <h2>Liste</h2>
+      <span class="count-chip">{{ filteredItems().length }} / {{ items().length }}</span>
     </header>
+
+    <div class="chauff-toolbar">
+      <label class="chauff-search">
+        <span class="s-ico">🔍</span>
+        <input type="text" placeholder="Nom, email, téléphone…" [ngModel]="search()" (ngModelChange)="search.set($event)" [ngModelOptions]="{ standalone: true }">
+      </label>
+      <div class="chauff-status-filters">
+        <button type="button" class="chauff-status-chip" [class.active]="statusFilter() === 'ALL'" (click)="statusFilter.set('ALL')">Tous</button>
+        <button type="button" class="chauff-status-chip" [class.active]="statusFilter() === 'ACTIVE'" (click)="statusFilter.set('ACTIVE')">Actifs</button>
+        <button type="button" class="chauff-status-chip" [class.active]="statusFilter() === 'ARCHIVED'" (click)="statusFilter.set('ARCHIVED')">Archivés</button>
+        <button type="button" class="chauff-status-chip" [class.active]="statusFilter() === 'UNASSIGNED'" (click)="statusFilter.set('UNASSIGNED')">Non affiliés</button>
+      </div>
+    </div>
+
     @if (affiliationError()) {
       <div class="chauff-alert" role="alert">{{ affiliationError() }}</div>
     }
@@ -108,7 +123,9 @@
       <p class="chauff-placeholder">Chargement…</p>
     } @else if (items().length === 0 && !error()) {
       <p class="chauff-placeholder">Aucun chauffeur société n’est enregistré pour l’instant.</p>
-    } @else if (items().length > 0) {
+    } @else if (filteredItems().length === 0) {
+      <p class="chauff-placeholder">Aucun chauffeur ne correspond à ces filtres.</p>
+    } @else {
       <div class="chauff-table-wrap">
         <table class="chauff-table">
           <thead>
@@ -124,7 +141,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (c of items(); track c.id) {
+            @for (c of filteredItems(); track c.id) {
               @if (editingId() === c.id) {
                 <tr class="chauff-edit-row">
                   <td colspan="6">

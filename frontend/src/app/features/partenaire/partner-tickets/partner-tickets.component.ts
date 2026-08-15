@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -97,5 +98,22 @@ export class PartnerTicketsComponent implements OnInit {
 
   displayAmount(t: PartnerTicket): number {
     return t.grossAmount ?? t.amountPaid ?? 0;
+  }
+
+  exportCsv(): void {
+    exportToCsv(
+      `tickets-compagnie-${new Date().toISOString().slice(0, 10)}`,
+      this.filteredTickets().map((t) => ({
+        'N° ticket': t.ticketNumber,
+        Passager: t.passengerName,
+        Trajet: t.route,
+        Gare: t.stationName,
+        Date: t.bookingDate,
+        Siège: t.seatNumber,
+        Statut: t.status,
+        Scanné: t.scanned ? 'Oui' : 'Non',
+        'Montant (FCFA)': this.displayAmount(t),
+      })),
+    );
   }
 }

@@ -9,6 +9,7 @@ import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-p
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
 type TripStatusFilter = 'ALL' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
@@ -64,6 +65,24 @@ export class TripManagementComponent implements OnInit {
   tripChannelLink(tripId: number): string[] {
     const base = this.router.url.includes('/gare/') ? '/gare' : '/partenaire';
     return [`${base}/trip-channel`, String(tripId)];
+  }
+
+  /** Aligné sur mobilipro (export CSV des trajets). */
+  exportCsv(): void {
+    exportToCsv(
+      `trajets-${new Date().toISOString().slice(0, 10)}`,
+      this.filteredTrips().map((t) => ({
+        ID: t.id,
+        Conducteur: this.chauffeurLabel(t),
+        Départ: t.departureCity,
+        Arrivée: t.arrivalCity,
+        Date: t.departureDateTime,
+        'Prix (FCFA)': this.listPrice(t),
+        'Places disponibles': t.availableSeats,
+        'Places totales': t.totalSeats,
+        Statut: t.status,
+      })),
+    );
   }
 
   /** ID du trajet dont on vient de copier le code chauffeur (pour feedback UI). */

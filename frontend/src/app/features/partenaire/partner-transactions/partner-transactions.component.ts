@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BookingService, PartnerTransaction } from '../../../core/services/booking/booking.service';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 /**
  * Détail financier (frais Mobili/commission, net compagnie) par réservation payée — parité
@@ -71,5 +72,20 @@ export class PartnerTransactionsComponent implements OnInit {
   onStationFilterChange(raw: string): void {
     this.stationFilter.set(raw === '' ? null : Number(raw));
     this.load();
+  }
+
+  exportCsv(): void {
+    exportToCsv(
+      `transactions-compagnie-${new Date().toISOString().slice(0, 10)}`,
+      this.filtered().map((t) => ({
+        Référence: t.reference,
+        Trajet: t.route,
+        Date: t.date,
+        Statut: t.status,
+        'Vente brute (FCFA)': t.grossAmount,
+        'Commission (FCFA)': t.commissionTotal,
+        'Net compagnie (FCFA)': t.companyNet,
+      })),
+    );
   }
 }

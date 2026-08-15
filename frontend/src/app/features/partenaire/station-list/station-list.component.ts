@@ -32,6 +32,8 @@ export class StationListComponent implements OnInit {
   form = this.fb.nonNullable.group({
     name: ['', Validators.required],
     city: ['', Validators.required],
+    /** Optionnel — aligné sur `_StationFormSheet` (mobile) : compte connexion "gare legacy". */
+    password: ['', [Validators.minLength(6)]],
   });
 
   editingId = signal<number | null>(null);
@@ -40,6 +42,7 @@ export class StationListComponent implements OnInit {
   editForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
     city: ['', Validators.required],
+    password: ['', [Validators.minLength(6)]],
   });
 
   /** Redirigé depuis le shell : il faut au moins une gare validée pour les trajets. */
@@ -71,10 +74,11 @@ export class StationListComponent implements OnInit {
       .createStation({
         name: v.name.trim(),
         city: v.city.trim(),
+        password: v.password.trim() || undefined,
       })
       .subscribe({
         next: () => {
-          this.form.reset({ name: '', city: '' });
+          this.form.reset({ name: '', city: '', password: '' });
           this.load();
         },
         error: (e) => console.error(e),
@@ -101,7 +105,7 @@ export class StationListComponent implements OnInit {
   startEdit(g: Station) {
     this.editError.set(null);
     this.editingId.set(g.id);
-    this.editForm.reset({ name: g.name, city: g.city });
+    this.editForm.reset({ name: g.name, city: g.city, password: '' });
   }
 
   cancelEdit() {
@@ -114,17 +118,19 @@ export class StationListComponent implements OnInit {
     const v = this.editForm.getRawValue();
     this.editSubmitting.set(true);
     this.editError.set(null);
-    this.partenaire.updateStation(g.id, { name: v.name.trim(), city: v.city.trim() }).subscribe({
-      next: (updated) => {
-        this.stations.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
-        this.editSubmitting.set(false);
-        this.editingId.set(null);
-      },
-      error: (e) => {
-        this.editError.set(e?.error?.message || 'Impossible de mettre à jour cette gare.');
-        this.editSubmitting.set(false);
-      },
-    });
+    this.partenaire
+      .updateStation(g.id, { name: v.name.trim(), city: v.city.trim(), password: v.password.trim() || undefined })
+      .subscribe({
+        next: (updated) => {
+          this.stations.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
+          this.editSubmitting.set(false);
+          this.editingId.set(null);
+        },
+        error: (e) => {
+          this.editError.set(e?.error?.message || 'Impossible de mettre à jour cette gare.');
+          this.editSubmitting.set(false);
+        },
+      });
   }
 
   approve(g: Station) {

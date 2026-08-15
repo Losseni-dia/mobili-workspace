@@ -40,6 +40,9 @@
             <p>Toutes les réservations rattachées à vos trajets, en temps réel.</p>
         </div>
         <span class="count-chip">{{ filteredBookings().length }} résultats</span>
+        <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filteredBookings().length === 0">
+            ⬇ Export CSV
+        </button>
     </header>
 
     @if (isLoading()) {
@@ -85,7 +88,7 @@
                                     {{ booking.status }}
                                 </span>
                             </td>
-                            <td class="right amount">{{ booking.amount | number }} FCFA</td>
+                            <td class="right amount">{{ displayAmount(booking) | number }} FCFA</td>
                         </tr>
                     }
                 </tbody>

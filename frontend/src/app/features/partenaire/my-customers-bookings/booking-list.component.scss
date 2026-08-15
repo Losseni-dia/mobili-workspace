@@ -3,6 +3,17 @@
 @use '../../../styles/mixins';
 @use '../../../styles/data-panel';
 
+.btn-export {
+  @include mixins.btn-secondary;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .booking-toolbar {
   display: flex;
   align-items: center;

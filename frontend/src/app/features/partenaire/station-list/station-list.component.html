@@ -85,6 +85,10 @@
                             <span>Ville</span>
                             <input type="text" formControlName="city" />
                           </label>
+                          <label class="ig">
+                            <span>Nouveau mot de passe (optionnel)</span>
+                            <input type="password" formControlName="password" placeholder="Laisser vide pour ne pas changer" autocomplete="new-password" />
+                          </label>
                           <div class="add-form-actions">
                             <button type="button" class="btn-cancel" (click)="cancelEdit()">Annuler</button>
                             <button type="submit" class="btn-submit" [disabled]="editForm.invalid || editSubmitting()">
@@ -182,6 +186,10 @@
         <label class="ig">
           <span>Ville</span>
           <input type="text" formControlName="city" placeholder="ex. Abidjan" autocomplete="off" />
+        </label>
+        <label class="ig">
+          <span>Mot de passe de connexion (optionnel)</span>
+          <input type="password" formControlName="password" placeholder="Au moins 6 caractères" autocomplete="new-password" />
         </label>
         <div class="add-form-actions">
           <button type="submit" class="btn-submit" [disabled]="form.invalid">Enregistrer la gare</button>

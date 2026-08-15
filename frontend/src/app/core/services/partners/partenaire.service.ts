@@ -30,6 +30,10 @@ export interface PartnerDashboard {
   activeTripsCount: number;
   totalBookingsCount: number;
   totalRevenue: number;
+  /** Revenu réalisé via paiement en ligne (CONFIRMED) — champ backend déjà renvoyé, jamais mappé côté web avant ce chantier. */
+  revenueOnline?: number;
+  /** Revenu réalisé au guichet (OFFLINE_SALE) — idem. */
+  revenueOffline?: number;
   recentBookings: {
     id: number;
     customerName: string;
@@ -206,11 +210,15 @@ export class PartenaireService {
     return this.http.patch<PartnerChauffeurItem>(`/partenaire/chauffeurs/${userId}/affiliation`, body);
   }
 
-  createStation(body: { name: string; city: string; active?: boolean }): Observable<Station> {
+  /** `password` optionnel (min. 6) — aligné sur `_StationFormSheet` (mobile) : compte connexion "gare legacy". */
+  createStation(body: { name: string; city: string; active?: boolean; password?: string }): Observable<Station> {
     return this.http.post<Station>('/partenaire/stations', body);
   }
 
-  updateStation(id: number, body: { name: string; city: string; active?: boolean }): Observable<Station> {
+  updateStation(
+    id: number,
+    body: { name: string; city: string; active?: boolean; password?: string },
+  ): Observable<Station> {
     return this.http.put<Station>(`/partenaire/stations/${id}`, body);
   }
 
