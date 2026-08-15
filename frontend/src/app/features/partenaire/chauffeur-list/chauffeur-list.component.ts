@@ -28,6 +28,13 @@ export class ChauffeurListComponent implements OnInit {
   createError = signal<string | null>(null);
   affiliationSavingId = signal<number | null>(null);
   affiliationError = signal<string | null>(null);
+  /** Ligne en cours de désactivation/réactivation (état de chargement du bouton). */
+  statusSavingId = signal<number | null>(null);
+  statusError = signal<string | null>(null);
+  /** Chauffeur dont la fiche est ouverte en édition inline. */
+  editingId = signal<number | null>(null);
+  editSubmitting = signal(false);
+  editError = signal<string | null>(null);
 
   /** Dirigeant ou compte gare : enregistrement des chauffeurs société. */
   canRegisterChauffeur = () =>
@@ -37,9 +44,17 @@ export class ChauffeurListComponent implements OnInit {
     firstname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
     lastname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
     email: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.email, Validators.maxLength(255)] }),
+    phone: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8), Validators.maxLength(20)] }),
     login: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.minLength(2), Validators.maxLength(80)] }),
     password: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8), Validators.maxLength(120)] }),
     stationId: this.fb.control<number | null>(null),
+  });
+
+  editForm = this.fb.group({
+    firstname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    lastname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    email: this.fb.control('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(255)] }),
+    phone: this.fb.control('', { nonNullable: true, validators: [Validators.maxLength(20)] }),
   });
 
   ngOnInit() {
@@ -77,6 +92,7 @@ export class ChauffeurListComponent implements OnInit {
         firstname: v.firstname.trim(),
         lastname: v.lastname.trim(),
         email: v.email.trim(),
+        phone: v.phone.trim(),
         login: v.login.trim(),
         password: v.password,
         stationId: v.stationId ?? null,
@@ -87,6 +103,7 @@ export class ChauffeurListComponent implements OnInit {
             firstname: '',
             lastname: '',
             email: '',
+            phone: '',
             login: '',
             password: '',
             stationId: null,
@@ -99,6 +116,73 @@ export class ChauffeurListComponent implements OnInit {
             e?.error?.message || "Impossible de créer le compte chauffeur. Vérifiez les données ou l'unicité du login.",
           );
           this.createSubmitting.set(false);
+        },
+      });
+  }
+
+  /** Bascule actif/désactivé — `delete` côté backend est une désactivation logique (enabled=false). */
+  toggleEnabled(chauffeur: PartnerChauffeurItem) {
+    if (this.statusSavingId() != null) return;
+    const willDisable = chauffeur.enabled;
+    const verb = willDisable ? 'désactiver' : 'réactiver';
+    if (!confirm(`Confirmer : ${verb} le compte de ${chauffeur.firstname} ${chauffeur.lastname} ?`)) return;
+
+    this.statusError.set(null);
+    this.statusSavingId.set(chauffeur.id);
+    const onDone = () => {
+      this.items.update((list) =>
+        list.map((x) => (x.id === chauffeur.id ? { ...x, enabled: !willDisable } : x)),
+      );
+      this.statusSavingId.set(null);
+    };
+    const onError = (e: { error?: { message?: string } }) => {
+      this.statusError.set(e?.error?.message || `Impossible de ${verb} ce compte.`);
+      this.statusSavingId.set(null);
+    };
+    if (willDisable) {
+      this.partenaire.deleteChauffeur(chauffeur.id).subscribe({ next: onDone, error: onError });
+    } else {
+      this.partenaire.reactivateChauffeur(chauffeur.id).subscribe({ next: onDone, error: onError });
+    }
+  }
+
+  startEdit(chauffeur: PartnerChauffeurItem) {
+    this.editError.set(null);
+    this.editingId.set(chauffeur.id);
+    this.editForm.reset({
+      firstname: chauffeur.firstname ?? '',
+      lastname: chauffeur.lastname ?? '',
+      email: chauffeur.email ?? '',
+      phone: chauffeur.phone ?? '',
+    });
+  }
+
+  cancelEdit() {
+    this.editingId.set(null);
+    this.editError.set(null);
+  }
+
+  saveEdit(chauffeur: PartnerChauffeurItem) {
+    if (this.editForm.invalid || this.editSubmitting()) return;
+    const v = this.editForm.getRawValue();
+    this.editSubmitting.set(true);
+    this.editError.set(null);
+    this.partenaire
+      .updateChauffeur(chauffeur.id, {
+        firstname: v.firstname.trim(),
+        lastname: v.lastname.trim(),
+        phone: v.phone.trim() || undefined,
+        email: v.email.trim() || undefined,
+      })
+      .subscribe({
+        next: (row) => {
+          this.items.update((list) => list.map((x) => (x.id === row.id ? row : x)));
+          this.editSubmitting.set(false);
+          this.editingId.set(null);
+        },
+        error: (e) => {
+          this.editError.set(e?.error?.message || 'Impossible de mettre à jour ce chauffeur.');
+          this.editSubmitting.set(false);
         },
       });
   }

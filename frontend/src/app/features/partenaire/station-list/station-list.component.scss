@@ -316,6 +316,34 @@
   }
 }
 
+.btn-cancel {
+  @include mixins.btn-ghost;
+  width: 100%;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.gares-edit-row td {
+  background: variables.$gray-50;
+}
+
+.gares-edit-form {
+  padding: 12px 4px;
+  max-width: 32rem;
+
+  .add-form-actions {
+    display: flex;
+    gap: 0.6rem;
+
+    .btn-cancel,
+    .btn-submit {
+      width: auto;
+      min-height: 42px;
+      padding: 0 1.1rem;
+    }
+  }
+}
+
 // ---- Alerte & cellules ----
 .gares-alert {
   display: flex;

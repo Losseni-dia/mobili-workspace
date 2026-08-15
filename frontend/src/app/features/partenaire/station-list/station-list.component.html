@@ -29,32 +29,6 @@
     </div>
   }
 
-  @if (isPartnerManager() && pendingStations().length > 0) {
-    <section class="data-panel gares-pending-panel" aria-label="Gares en attente de validation">
-      <header class="panel-head">
-        <h2>En attente de votre validation</h2>
-      </header>
-      <ul class="gares-pending-list">
-        @for (g of pendingStations(); track g.id) {
-          <li>
-            <span class="gares-pending-name"
-              ><strong>{{ g.name }}</strong> <span class="gares-pending-meta">{{ g.city }}</span
-              > · <code class="gares-pending-code">{{ g.code || 'code non assigné' }}</code></span
-            >
-            <button
-              type="button"
-              class="btn-approve"
-              (click)="approve(g)"
-              [disabled]="approvingId() === g.id"
-            >
-              {{ approvingId() === g.id ? '…' : 'Approuver' }}
-            </button>
-          </li>
-        }
-      </ul>
-    </section>
-  }
-
   <div class="gares-main">
     <section class="data-panel gares-list-card" aria-label="Inventaire des gares">
       <header class="panel-head">
@@ -89,10 +63,38 @@
                   <th>Chauffeurs affectés</th>
                   <th>Validation</th>
                   <th class="right">Actif (trajets)</th>
+                  @if (isPartnerManager()) {
+                    <th class="right">Actions</th>
+                  }
                 </tr>
               </thead>
               <tbody>
                 @for (g of stations(); track g.id) {
+                  @if (editingId() === g.id) {
+                    <tr class="gares-edit-row">
+                      <td [attr.colspan]="isPartnerManager() ? 7 : 6">
+                        <form class="add-form gares-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(g)">
+                          @if (editError()) {
+                            <div class="gares-alert gares-alert--err" role="alert">{{ editError() }}</div>
+                          }
+                          <label class="ig">
+                            <span>Nom de la gare</span>
+                            <input type="text" formControlName="name" />
+                          </label>
+                          <label class="ig">
+                            <span>Ville</span>
+                            <input type="text" formControlName="city" />
+                          </label>
+                          <div class="add-form-actions">
+                            <button type="button" class="btn-cancel" (click)="cancelEdit()">Annuler</button>
+                            <button type="submit" class="btn-submit" [disabled]="editForm.invalid || editSubmitting()">
+                              {{ editSubmitting() ? 'Enregistrement…' : 'Enregistrer' }}
+                            </button>
+                          </div>
+                        </form>
+                      </td>
+                    </tr>
+                  } @else {
                   <tr>
                     <td>
                       <div class="gare-name-cell">
@@ -153,7 +155,13 @@
                         {{ g.active ? 'Oui' : 'Non' }}
                       </span>
                     </td>
+                    @if (isPartnerManager()) {
+                      <td class="right">
+                        <button type="button" class="btn-cancel" (click)="startEdit(g)">Modifier</button>
+                      </td>
+                    }
                   </tr>
+                  }
                 }
               </tbody>
             </table>
