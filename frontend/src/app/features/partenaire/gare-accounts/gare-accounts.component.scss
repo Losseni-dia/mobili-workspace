@@ -1,0 +1,338 @@
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
+
+.ga-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 4px;
+}
+
+.ga-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px 24px;
+  align-items: start;
+  padding: 24px 26px;
+  margin-bottom: 22px;
+  border-radius: variables.$radius-lg;
+  border: 1px solid rgba(variables.$mobili-blue, 0.2);
+  background: linear-gradient(135deg, rgba(variables.$mobili-blue, 0.06) 0%, variables.$white 100%);
+  box-shadow: variables.$shadow-sm;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ga-hero-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  border-radius: 14px;
+  background: rgba(variables.$mobili-blue, 0.08);
+  border: 1px solid rgba(variables.$mobili-blue, 0.2);
+}
+
+.ga-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: variables.$mobili-blue;
+}
+
+.ga-title {
+  margin: 0 0 10px;
+  font-family: variables.$font-display;
+  font-size: clamp(1.35rem, 2.2vw, 1.6rem);
+  font-weight: 900;
+  color: variables.$mobili-blue-deep;
+  line-height: 1.15;
+}
+
+.ga-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: variables.$gray-500;
+}
+
+.ga-alert {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$danger, 0.08);
+  border: 1px solid rgba(variables.$danger, 0.2);
+  color: variables.$mobili-blue-deep;
+  font-size: 0.9rem;
+}
+
+.ga-form-card {
+  margin-bottom: 1.25rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ga-form {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.ga-form-card .panel-head {
+  padding: 1rem 1.25rem;
+  margin: 0;
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.1);
+}
+
+.ga-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ga-field--wide {
+  grid-column: 1 / -1;
+}
+
+.ga-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+  span {
+    font-weight: 600;
+    color: variables.$mobili-blue-deep;
+  }
+  input {
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid variables.$gray-300;
+    font-size: 0.95rem;
+  }
+}
+
+.ga-field-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: variables.$gray-600;
+  line-height: 1.3;
+}
+
+.ga-field-error {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: variables.$danger;
+}
+
+.ga-form-hint-form {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: variables.$gray-600;
+  max-width: 36rem;
+}
+
+.ga-form-actions {
+  margin-top: 1rem;
+}
+
+.ga-btn-primary {
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  background: variables.$mobili-blue;
+  color: variables.$white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    background: variables.$mobili-blue-soft;
+  }
+}
+
+.ga-alert--create {
+  margin: 0 1.25rem 0.75rem;
+}
+
+.ga-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ga-list-card .panel-head {
+  padding: 1rem 1.25rem;
+  margin: 0;
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.1);
+}
+
+.ga-placeholder {
+  margin: 0;
+  padding: 1.5rem 1.25rem;
+  color: variables.$gray-500;
+  font-size: 0.95rem;
+}
+
+.ga-table-wrap {
+  overflow-x: auto;
+}
+
+.ga-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ga-td-station {
+  min-width: 12rem;
+  vertical-align: middle;
+}
+
+.ga-station-select {
+  width: 100%;
+  max-width: 18rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid variables.$gray-300;
+  font-size: 0.88rem;
+  background: variables.$white;
+}
+
+.ga-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.ga-form select {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid variables.$gray-300;
+  font-size: 0.95rem;
+  background: variables.$white;
+  max-width: 100%;
+}
+
+.ga-table th,
+.ga-table td {
+  padding: 0.75rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(variables.$mobili-blue, 0.08);
+}
+
+.ga-table th {
+  font-weight: 700;
+  color: variables.$mobili-blue-deep;
+  background: rgba(variables.$mobili-blue, 0.04);
+}
+
+.ga-name {
+  color: variables.$gray-800;
+}
+
+.ga-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ga-badge--ok {
+  background: rgba(variables.$station-green, 0.12);
+  color: variables.$station-green;
+}
+
+.ga-badge--off {
+  background: rgba(variables.$gray-500, 0.12);
+  color: variables.$gray-600;
+}
+
+.right {
+  text-align: right;
+}
+
+.ga-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.ga-btn-ghost {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid variables.$gray-300;
+  background: variables.$white;
+  color: variables.$mobili-blue-deep;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: variables.$t-fast;
+
+  &:hover:not(:disabled) {
+    border-color: variables.$mobili-blue;
+    color: variables.$mobili-blue;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--danger {
+    border-color: rgba(variables.$danger, 0.35);
+    color: variables.$danger;
+    &:hover:not(:disabled) {
+      border-color: variables.$danger;
+      color: variables.$danger;
+      background: variables.$danger-soft;
+    }
+  }
+}
+
+.ga-edit-row td {
+  background: variables.$gray-50;
+}
+
+.ga-edit-form {
+  padding: 0.75rem 0;
+
+  .ga-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+}
+
+.mono {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85rem;
+  color: variables.$gray-600;
+}
+
+.ga-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: variables.$gray-600;
+}

@@ -1,0 +1,123 @@
+@use '../../../styles/variables';
+
+.legal-page {
+  max-width: variables.$container-narrow;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.legal-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-soft;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.legal-hero {
+  padding: 24px;
+  border-radius: variables.$radius-lg;
+  background: variables.$gradient-hero;
+  color: variables.$white;
+  margin-bottom: 16px;
+
+  .legal-hero-icon {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-family: variables.$font-display;
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    font-weight: 900;
+  }
+
+  .legal-version {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(variables.$white, 0.75);
+  }
+}
+
+.legal-intro {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: variables.$radius-sm;
+  background: variables.$mobili-blue-fog;
+  border: 1px solid rgba(variables.$mobili-blue, 0.2);
+  color: variables.$mobili-blue;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.legal-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.legal-section {
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  overflow: hidden;
+  box-shadow: variables.$shadow-xs;
+}
+
+.legal-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  background: rgba(variables.$mobili-blue, 0.05);
+  border-bottom: 1px solid variables.$gray-100;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.legal-section-num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: variables.$mobili-blue;
+  color: variables.$white;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.legal-section-body {
+  margin: 0;
+  padding: 16px;
+  white-space: pre-line;
+  line-height: 1.6;
+  color: variables.$gray-700;
+  font-size: 0.92rem;
+}
+
+.legal-footnote {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border-radius: variables.$radius-sm;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+
+  &--success {
+    background: rgba(variables.$success, 0.1);
+    border: 1px solid rgba(variables.$success, 0.3);
+    color: variables.$success;
+    font-weight: 600;
+  }
+}

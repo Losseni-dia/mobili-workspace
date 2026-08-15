@@ -1,0 +1,28 @@
+<div class="legal-page">
+    <a routerLink="/" class="legal-back">← Retour à l'accueil</a>
+
+    <header class="legal-hero">
+        <span class="legal-hero-icon" aria-hidden="true">🛡️</span>
+        <h1>Politique de Confidentialité &amp; Protection des Données</h1>
+        <p class="legal-version">{{ version }}</p>
+    </header>
+
+    <p class="legal-intro">{{ intro }}</p>
+
+    <div class="legal-sections">
+        @for (s of sections; track s.number) {
+            <section class="legal-section">
+                <header class="legal-section-head">
+                    <span class="legal-section-num">{{ s.number }}</span>
+                    <h2>{{ s.title }}</h2>
+                </header>
+                <p class="legal-section-body">{{ s.content }}</p>
+            </section>
+        }
+    </div>
+
+    <p class="legal-footnote legal-footnote--success">
+        Vos données sont protégées et ne sont jamais vendues à des tiers. Mobili s'engage à respecter votre vie privée
+        et à traiter vos données avec la plus grande transparence.
+    </p>
+</div>

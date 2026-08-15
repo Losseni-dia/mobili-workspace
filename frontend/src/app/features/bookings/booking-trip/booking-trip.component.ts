@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
 import {
   BookingService,
@@ -15,11 +15,12 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { buildTripCityLabels } from '../../../core/utils/trip-city-labels.util';
 import { getPricePerSeatForSegment } from '../../../core/utils/trip-segment-price.util';
+import { CouponService } from '../../../core/services/coupon/coupon.service';
 
 @Component({
   selector: 'app-booking-trip',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SeatPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SeatPickerComponent],
   templateUrl: './booking-trip.component.html',
   styleUrl: './booking-trip.component.scss',
 })
@@ -31,6 +32,7 @@ export class BookingTripComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private couponService = inject(CouponService);
 
   tripDetails = signal<Trip | null>(null);
   occupiedSeats = signal<string[]>([]);
@@ -54,6 +56,14 @@ export class BookingTripComponent implements OnInit {
   serviceFee = signal<number | null>(null);
   private previewTotal = signal<number | null>(null);
   private previewSeq = 0;
+
+  /** Coupon appliqué (validé côté serveur) — envoyé à la fois au preview et à la création. */
+  appliedCoupon = signal<string | null>(null);
+  couponInput = signal('');
+  couponChecking = signal(false);
+  couponError = signal<string | null>(null);
+  /** Résultat du dernier GET /coupons/{code}/validate réussi — feedback instantané avant preview. */
+  couponDiscount = signal<{ originalPrice: number; finalPrice: number } | null>(null);
 
   bookingForm: FormGroup;
   tripId: number = 0;
@@ -226,6 +236,7 @@ export class BookingTripComponent implements OnInit {
         boardingStopIndex: this.boardingIndex(),
         alightingStopIndex: this.alightingIndex(),
         extraHoldBags: extra,
+        couponCode: this.appliedCoupon(),
       })
       .pipe(catchError(() => of(null)))
       .subscribe((preview) => {
@@ -233,6 +244,41 @@ export class BookingTripComponent implements OnInit {
         this.serviceFee.set(preview?.serviceFee ?? null);
         this.previewTotal.set(preview?.total ?? null);
       });
+  }
+
+  /**
+   * Valide le code saisi côté serveur (même calcul que le preview/la création) et donne un
+   * retour immédiat avant même de recalculer le total complet. `price` = sous-total sièges
+   * actuel, cohérent avec ce que le backend applique réellement.
+   */
+  applyCoupon() {
+    const code = this.couponInput().trim();
+    if (!code || this.couponChecking()) return;
+    const price = this.selectedSeatCount() * this.pricePerSeat();
+    this.couponChecking.set(true);
+    this.couponError.set(null);
+    this.couponService.validate(code, price).subscribe({
+      next: (res) => {
+        this.couponChecking.set(false);
+        this.appliedCoupon.set(code);
+        this.couponDiscount.set({ originalPrice: res.originalPrice, finalPrice: res.finalPrice });
+        this.refreshPricePreview();
+      },
+      error: (err) => {
+        this.couponChecking.set(false);
+        this.couponError.set(err?.error?.message || 'Coupon invalide ou expiré.');
+        this.appliedCoupon.set(null);
+        this.couponDiscount.set(null);
+      },
+    });
+  }
+
+  removeCoupon() {
+    this.appliedCoupon.set(null);
+    this.couponDiscount.set(null);
+    this.couponError.set(null);
+    this.couponInput.set('');
+    this.refreshPricePreview();
   }
 
   luggageFeeAmount(): number {
@@ -284,6 +330,7 @@ export class BookingTripComponent implements OnInit {
       boardingStopIndex: this.boardingIndex(),
       alightingStopIndex: this.alightingIndex(),
       extraHoldBags: extra,
+      couponCode: this.appliedCoupon(),
     };
 
     this.bookingService.createBooking(payload).subscribe({

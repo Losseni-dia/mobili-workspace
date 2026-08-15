@@ -107,6 +107,38 @@
             }
 
             @if (bookingForm.get('selectedSeats')?.value?.length > 0) {
+                <div class="coupon-block">
+                    @if (appliedCoupon(); as code) {
+                        <div class="coupon-applied">
+                            <span>🏷️ Coupon <strong>{{ code }}</strong> appliqué</span>
+                            <button type="button" class="coupon-remove" (click)="removeCoupon()">Retirer</button>
+                        </div>
+                    } @else {
+                        <label class="coupon-field">
+                            <span>Code promo (facultatif)</span>
+                            <div class="coupon-input-row">
+                                <input
+                                    type="text"
+                                    [ngModel]="couponInput()"
+                                    (ngModelChange)="couponInput.set($event)"
+                                    [ngModelOptions]="{ standalone: true }"
+                                    placeholder="Ex. BIENVENUE10"
+                                />
+                                <button
+                                    type="button"
+                                    [disabled]="!couponInput().trim() || couponChecking()"
+                                    (click)="applyCoupon()"
+                                >
+                                    {{ couponChecking() ? '…' : 'Appliquer' }}
+                                </button>
+                            </div>
+                        </label>
+                        @if (couponError()) {
+                            <p class="coupon-error">{{ couponError() }}</p>
+                        }
+                    }
+                </div>
+
                 <div class="booking-summary">
                     <div class="summary-line">
                         <span>Places sélectionnées :</span>

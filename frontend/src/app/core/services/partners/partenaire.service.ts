@@ -51,6 +51,19 @@ export interface PartnerChauffeurItem {
   affiliationStationName: string | null;
 }
 
+/** Compte utilisateur rattaché à une gare (GareUserController). */
+export interface GareUserItem {
+  id: number;
+  firstname: string | null;
+  lastname: string | null;
+  email: string | null;
+  phone: string | null;
+  login: string;
+  enabled: boolean;
+  stationId: number;
+  stationName: string | null;
+}
+
 export interface StationChauffeurSummary {
   id: number;
   firstname: string | null;
@@ -209,14 +222,44 @@ export class PartenaireService {
     return this.http.delete<void>(`/partenaire/stations/${id}`);
   }
 
+  /**
+   * `phone` obligatoire côté backend (GareUserCreateRequest @NotBlank) — absent des versions
+   * précédentes de cette méthode, jamais consommée par aucune page (même bug de contrat que la
+   * création de chauffeur avant correction).
+   */
   createGareAccount(body: {
     stationId: number;
     login: string;
-    email: string;
+    phone: string;
+    email?: string;
     password: string;
     firstname: string;
     lastname: string;
   }): Observable<void> {
     return this.http.post<void>('/partenaire/stations/gare-accounts', body);
+  }
+
+  listGareUsers(): Observable<GareUserItem[]> {
+    return this.http.get<GareUserItem[]>('/partenaire/gare-users');
+  }
+
+  updateGareUser(
+    id: number,
+    body: { firstname: string; lastname: string; email?: string; phone?: string; password?: string },
+  ): Observable<GareUserItem> {
+    return this.http.put<GareUserItem>(`/partenaire/gare-users/${id}`, body);
+  }
+
+  updateGareUserAffiliation(id: number, stationId: number): Observable<GareUserItem> {
+    return this.http.patch<GareUserItem>(`/partenaire/gare-users/${id}/affiliation`, { stationId });
+  }
+
+  reactivateGareUser(id: number): Observable<GareUserItem> {
+    return this.http.patch<GareUserItem>(`/partenaire/gare-users/${id}/reactivate`, {});
+  }
+
+  /** Archivage logique (204, pas de suppression réelle). */
+  archiveGareUser(id: number): Observable<void> {
+    return this.http.delete<void>(`/partenaire/gare-users/${id}`);
   }
 }

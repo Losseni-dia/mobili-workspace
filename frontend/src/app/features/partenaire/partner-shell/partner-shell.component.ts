@@ -79,6 +79,8 @@ export class PartnerShellComponent implements OnInit {
       { label: 'Vue d\'ensemble', icon: '📊', path: '/partenaire/dashboard' },
       { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
       { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
+      { label: 'Tickets', icon: '🎟️', path: '/partenaire/tickets' },
+      { label: 'Transactions', icon: '💳', path: '/partenaire/transactions' },
     ];
     sections.push({ title: 'Activité', items: activite });
 
@@ -87,6 +89,10 @@ export class PartnerShellComponent implements OnInit {
       reseau.push({ label: 'Gares', icon: '🏤', path: '/partenaire/gares' });
     }
     reseau.push({ label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' });
+    // GareUserController est réservé au rôle PARTNER (jamais GARE) côté backend.
+    if (this.authService.hasRole('PARTNER') && !this.authService.hasRole('GARE')) {
+      reseau.push({ label: 'Comptes gare', icon: '🔑', path: '/partenaire/comptes-gare' });
+    }
     sections.push({ title: 'Réseau', items: reseau });
 
     sections.push({
@@ -94,6 +100,7 @@ export class PartnerShellComponent implements OnInit {
       items: [
         { label: 'Communication', icon: '💬', path: '/partenaire/company-messages' },
         { label: 'Notifications', icon: '🔔', path: '/partenaire/notifications' },
+        { label: 'Support Mobili', icon: '🆘', path: '/partenaire/support' },
         { label: 'Profil compagnie', icon: '🏢', path: '/partenaire/settings' },
       ],
     });
@@ -143,6 +150,13 @@ export class PartnerShellComponent implements OnInit {
     if (url.includes('/trip-channel')) {
       return { title: 'Fil du voyage', desc: 'Annonces partagées avec les passagers du trajet.', crumb: 'Canal' };
     }
+    if (url.includes('/comptes-gare')) {
+      return {
+        title: 'Comptes gare',
+        desc: 'Identifiants de connexion des responsables gare de votre réseau.',
+        crumb: 'Comptes gare',
+      };
+    }
     if (url.includes('/gares')) {
       return {
         title: 'Gares',
@@ -154,6 +168,9 @@ export class PartnerShellComponent implements OnInit {
     if (url.includes('/add-trip')) return { title: 'Publier un trajet', desc: 'Définis les détails du trajet et les prix par étape.', crumb: 'Publier' };
     if (url.includes('/edit-trip')) return { title: 'Modifier le trajet', desc: 'Mets à jour les informations du voyage.', crumb: 'Modifier' };
     if (url.includes('/bookings')) return { title: 'Réservations', desc: 'Suivez les réservations de vos clients.', crumb: 'Réservations' };
+    if (url.includes('/tickets')) return { title: 'Tickets', desc: 'Billets vendus sur toutes les gares de votre compagnie.', crumb: 'Tickets' };
+    if (url.includes('/transactions')) return { title: 'Transactions', desc: 'Frais Mobili, commission et net compagnie, par réservation payée.', crumb: 'Transactions' };
+    if (url.includes('/support')) return { title: 'Support Mobili', desc: 'Échangez directement avec l\'équipe Mobili.', crumb: 'Support' };
     if (url.includes('/settings')) return { title: 'Profil compagnie', desc: 'Modifie les informations de votre entreprise.', crumb: 'Profil' };
     return { title: 'Vue d\'ensemble', desc: 'Statistiques et dernière activité de votre compagnie.', crumb: 'Dashboard' };
   });
@@ -201,7 +218,12 @@ export class PartnerShellComponent implements OnInit {
     if (!this.partnerTripsLocked()) {
       return false;
     }
-    if (item.path === '/gare/accueil' || item.path === '/partenaire/gares' || item.path === '/partenaire/company-messages') {
+    if (
+      item.path === '/gare/accueil' ||
+      item.path === '/partenaire/gares' ||
+      item.path === '/partenaire/company-messages' ||
+      item.path === '/partenaire/support'
+    ) {
       return false;
     }
     return item.path.startsWith('/partenaire');

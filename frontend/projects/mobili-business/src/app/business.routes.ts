@@ -84,6 +84,34 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        path: 'comptes-gare',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/gare-accounts/gare-accounts.component').then(
+            (m) => m.GareAccountsComponent,
+          ),
+      },
+      {
+        path: 'tickets',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/partner-tickets/partner-tickets.component').then(
+            (m) => m.PartnerTicketsComponent,
+          ),
+      },
+      {
+        path: 'transactions',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/partner-transactions/partner-transactions.component').then(
+            (m) => m.PartnerTransactionsComponent,
+          ),
+      },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('@mobili-app/features/shared/support-chat/support-chat.component').then(
+            (m) => m.SupportChatComponent,
+          ),
+      },
+      {
         path: 'company-messages',
         loadComponent: () =>
           import('@mobili-app/features/shared/company-messages/company-messages.component').then(
@@ -186,6 +214,22 @@ export const businessRoutes: Routes = [
         loadComponent: () =>
           import('@mobili-app/features/gare/gare-tickets/gare-tickets.component').then(
             (m) => m.GareTicketsComponent,
+          ),
+      },
+      {
+        path: 'transactions',
+        canActivate: [gareOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/gare/gare-transactions/gare-transactions.component').then(
+            (m) => m.GareTransactionsComponent,
+          ),
+      },
+      {
+        path: 'support',
+        canActivate: [gareOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/shared/support-chat/support-chat.component').then(
+            (m) => m.SupportChatComponent,
           ),
       },
       {

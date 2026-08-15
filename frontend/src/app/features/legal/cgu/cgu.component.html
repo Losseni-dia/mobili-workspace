@@ -1,0 +1,26 @@
+<div class="legal-page">
+    <a routerLink="/" class="legal-back">← Retour à l'accueil</a>
+
+    <header class="legal-hero">
+        <span class="legal-hero-icon" aria-hidden="true">⚖️</span>
+        <h1>Conditions Générales d'Utilisation</h1>
+        <p class="legal-version">{{ version }}</p>
+    </header>
+
+    <div class="legal-sections">
+        @for (s of sections; track s.number) {
+            <section class="legal-section">
+                <header class="legal-section-head">
+                    <span class="legal-section-num">{{ s.number }}</span>
+                    <h2>{{ s.title }}</h2>
+                </header>
+                <p class="legal-section-body">{{ s.content }}</p>
+            </section>
+        }
+    </div>
+
+    <p class="legal-footnote">
+        Ces CGU ont été rédigées en français et sont applicables à compter du 1er juillet 2026. Elles remplacent toute
+        version antérieure.
+    </p>
+</div>

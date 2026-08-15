@@ -22,6 +22,17 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'cgu',
+    loadComponent: () => import('./features/legal/cgu/cgu.component').then((m) => m.CguComponent),
+  },
+  {
+    path: 'confidentialite',
+    loadComponent: () =>
+      import('./features/legal/confidentialite/confidentialite.component').then(
+        (m) => m.ConfidentialiteComponent,
+      ),
+  },
+  {
     path: 'auth/login',
     loadComponent: () =>
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
@@ -90,6 +101,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/notifications/trip-channel-page/trip-channel-page.component').then(
             (m) => m.TripChannelPageComponent,
+          ),
+      },
+      {
+        path: 'support',
+        loadComponent: () =>
+          import('./features/shared/support-chat/support-chat.component').then(
+            (m) => m.SupportChatComponent,
           ),
       },
     ],
