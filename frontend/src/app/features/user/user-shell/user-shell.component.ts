@@ -32,7 +32,6 @@ export class UserShellComponent {
     { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
     { label: 'Réclamations', icon: '📮', path: '/my-account/claims' },
     { label: 'Support', icon: '💬', path: '/my-account/support' },
-    { label: 'Modifier mon profil', icon: '✎', path: '/my-account/profile-edit' },
   ];
 
   pageInfo = computed(() => {

@@ -56,6 +56,10 @@ export interface BookingResponse {
   ticketsTotalAmount?: number;
   /** Forfait client appliqué (100/200/300 FCFA) — absent sur les réservations antérieures. */
   serviceFee?: number;
+  /** Covoiturage uniquement : délai de réponse du conducteur à la demande. */
+  driverResponseDeadline?: string | null;
+  /** Covoiturage uniquement : une fois la demande acceptée, fenêtre de paiement (~30 min). */
+  paymentDeadline?: string | null;
 }
 
 export interface BookingPricePreviewRequest {

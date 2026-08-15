@@ -83,6 +83,9 @@
                         💬 Annonces du voyage
                     </a>
                 }
+                <button type="button" (click)="askHide(ticket)" class="btn-hide">
+                    🗑 Masquer
+                </button>
             </div>
         </div>
         }
@@ -94,5 +97,22 @@
         <p>Vous n'avez pas encore effectué de réservation.</p>
         <button routerLink="/" class="btn-primary">Rechercher un trajet</button>
     </div>
+    }
+
+    @if (pendingHide(); as t) {
+        <div class="hide-modal-overlay" (click)="cancelHide()">
+            <div class="hide-modal-content" (click)="$event.stopPropagation()">
+                <h3>Masquer ce billet ?</h3>
+                <p>
+                    Le billet <strong>#{{ t.ticketNumber }}</strong> ({{ t.departureCity }} → {{ t.arrivalCity }})
+                    ne s'affichera plus ici. Il reste valable pour l'embarquement et consultable via votre historique
+                    de réservations.
+                </p>
+                <div class="hide-modal-actions">
+                    <button type="button" class="btn-cancel" (click)="cancelHide()">Annuler</button>
+                    <button type="button" class="btn-confirm" (click)="confirmHide()">Masquer</button>
+                </div>
+            </div>
+        </div>
     }
 </div>
