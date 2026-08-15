@@ -10,11 +10,22 @@
         <button type="button" class="status-chip" [class.active]="statusFilter() === 'TOUS'" (click)="setStatusFilter('TOUS')">Tous</button>
     </div>
 
-    <label class="filter">
-        <span class="f-ico">🔍</span>
-        <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="N° ticket, passager ou trajet…">
-    </label>
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); loadTickets()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); loadTickets()">
+        </label>
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="N° ticket, passager ou trajet…">
+        </label>
+    </div>
 </section>
+<p class="range-hint">Sans dates, les 30 derniers jours sont affichés par défaut.</p>
 
 <section class="data-panel">
     <header class="panel-head">

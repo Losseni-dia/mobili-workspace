@@ -33,6 +33,9 @@ export class GareTicketsComponent implements OnInit {
 
   search = signal('');
   statusFilter = signal<TicketStatusFilter>('CONFIRME');
+  /** Filtrées côté serveur (comme admin-tickets) — vides = 30 derniers jours par défaut côté API. */
+  fromDate = signal('');
+  toDate = signal('');
 
   filteredTickets = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -67,7 +70,9 @@ export class GareTicketsComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     const stationId = this.authService.currentUser()?.stationId ?? undefined;
-    this.ticketService.getPartnerTicketsInRange(undefined, undefined, stationId).subscribe({
+    this.ticketService
+      .getPartnerTicketsInRange(this.fromDate() || undefined, this.toDate() || undefined, stationId)
+      .subscribe({
       next: (data) => {
         this.tickets.set(data || []);
         this.isLoading.set(false);

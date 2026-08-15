@@ -64,8 +64,9 @@ export class DriverConsoleComponent implements OnInit {
 
   totalAlightings = computed(() => this.alightings().length);
 
+  /** Le backend renvoie l'enum français (VALIDÉ/UTILISÉ/ANNULÉ/ARRIVÉ), jamais 'USED'. */
   alightedDone = computed(
-    () => this.alightings().filter((a) => a.ticketStatus === 'USED').length,
+    () => this.alightings().filter((a) => a.ticketStatus === 'UTILISÉ').length,
   );
 
   alightedRemaining = computed(() => Math.max(0, this.totalAlightings() - this.alightedDone()));

@@ -6,7 +6,21 @@
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.range-hint {
+  margin: 0 0 18px;
+  font-size: 0.78rem;
+  color: variables.$gray-600;
 }
 
 .revenue-chip {
