@@ -1,0 +1,118 @@
+<div class="admin-claims-page">
+  <section class="data-panel">
+    <header class="panel-head">
+      <div>
+        <h2>Réclamations</h2>
+        <p>Signalements des voyageurs (remboursement, retard, objet perdu…) à traiter.</p>
+      </div>
+      <span class="count-chip">{{ filteredClaims().length }} / {{ claims().length }} réclamation{{ claims().length > 1 ? 's' : '' }}</span>
+    </header>
+
+    <div class="toolbar">
+      <label class="filter">
+        <span class="f-ico">🔍</span>
+        <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Référence, message…">
+      </label>
+
+      <div class="status-filters">
+        <button type="button" class="filter-chip" [class.active]="statusFilter() === ''" (click)="setStatusFilter('')">Toutes</button>
+        @for (s of STATUSES; track s) {
+          <button type="button" class="filter-chip" [class.active]="statusFilter() === s" (click)="setStatusFilter(s)">
+            {{ STATUS_LABELS[s] }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loadError()) {
+      <div class="admin-alert" role="alert">{{ loadError() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="loader">Chargement des réclamations…</div>
+    } @else if (filteredClaims().length === 0) {
+      <p class="empty-hint">Aucune réclamation ne correspond à ces filtres.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Motif</th>
+              <th>Réservation</th>
+              <th>Message</th>
+              <th>Statut</th>
+              <th>Reçue le</th>
+              <th class="right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of filteredClaims(); track c.id) {
+              <tr>
+                <td><strong>{{ REASON_LABELS[c.reason] }}</strong></td>
+                <td class="mono">{{ c.booking ? '#' + c.booking.reference : '—' }}</td>
+                <td class="claim-message">{{ c.message }}</td>
+                <td>
+                  <span class="status-pill" [class.active]="statusPillClass(c.status) === 'active'"
+                        [class.warn]="statusPillClass(c.status) === 'warn'"
+                        [class.danger]="statusPillClass(c.status) === 'danger'">
+                    <span class="dot"></span>
+                    {{ STATUS_LABELS[c.status] }}
+                  </span>
+                </td>
+                <td class="mono">{{ c.createdAt | date: 'dd/MM/yy HH:mm' }}</td>
+                <td class="right">
+                  <button type="button" class="row-btn" (click)="askHandle(c)">Traiter</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (pendingHandle(); as c) {
+    <div class="modal-overlay" (click)="cancelHandle()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Traiter la réclamation #{{ c.id }}</h3>
+          <button type="button" class="close-btn" (click)="cancelHandle()">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle"><strong>{{ REASON_LABELS[c.reason] }}</strong> — {{ c.message }}</p>
+
+          <label class="ig">
+            <span>Nouveau statut</span>
+            <select [ngModel]="handleStatus()" (ngModelChange)="handleStatus.set($event)">
+              @for (s of STATUSES; track s) {
+                <option [value]="s">{{ STATUS_LABELS[s] }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="ig">
+            <span>Note interne (jamais visible du voyageur)</span>
+            <textarea rows="2" [ngModel]="handleAdminNote()" (ngModelChange)="handleAdminNote.set($event)"
+                      placeholder="Contexte, suivi interne…"></textarea>
+          </label>
+
+          <label class="ig">
+            <span>Message de clôture (visible du voyageur)</span>
+            <textarea rows="3" [ngModel]="handleResolutionMessage()" (ngModelChange)="handleResolutionMessage.set($event)"
+                      placeholder="Ex. : remboursement effectué sous 48h."></textarea>
+          </label>
+
+          @if (handleError()) {
+            <div class="admin-alert" role="alert">{{ handleError() }}</div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" [disabled]="handleSubmitting()" (click)="cancelHandle()">Annuler</button>
+          <button type="button" class="btn-confirm" [disabled]="handleSubmitting()" (click)="confirmHandle()">
+            {{ handleSubmitting() ? 'Envoi…' : 'Enregistrer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
