@@ -82,6 +82,19 @@ export class AdminCommunication implements OnInit {
       this.toast.show('Cochez au moins un partenaire, ou repassez en envoi groupé.', 'error');
       return;
     }
+
+    const scope =
+      this.target === 'PICK'
+        ? `${this.pickIds().length} partenaire(s) sélectionné(s)`
+        : this.segment === 'ALL'
+          ? 'TOUS les comptes dirigeants (compagnies + pool covoiturage)'
+          : this.segment === 'COMPANIES'
+            ? 'toutes les compagnies transport'
+            : 'tout le pool covoiturage';
+    if (!confirm(`Envoyer ce message à ${scope} ? Cette action est irréversible.`)) {
+      return;
+    }
+
     this.sending.set(true);
     this.admin
       .sendPartnerCommunication({

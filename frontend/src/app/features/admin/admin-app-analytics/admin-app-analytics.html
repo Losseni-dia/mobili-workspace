@@ -99,33 +99,51 @@
     <section class="panel">
         <header class="panel-head">
             <h2>Journal détaillé (ligne à ligne)</h2>
-            <span class="panel-hint">200 derniers enregistrements</span>
+            <span class="panel-hint">{{ visibleEvents().length }} / {{ filteredEvents().length }} affichés (200 derniers chargés)</span>
         </header>
         <p class="analytics-intro">Horodatage serveur, type et libellé généré par l’API. Export possible via copie de tableau pour analyse ultérieure.</p>
         @if (recentEventsError()) {
             <p class="analytics-error">Chargement du journal impossible.</p>
         } @else if (recentEvents(); as evs) {
             @if (evs.length) {
-                <div class="table-wrap">
-                    <table class="evt-table">
-                        <thead>
-                            <tr>
-                                <th>Date / heure</th>
-                                <th>Type</th>
-                                <th>Détail</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (row of evs; track row.id) {
+                <label class="evt-search">
+                    <span class="evt-search-ico">🔍</span>
+                    <input
+                        type="text"
+                        [ngModel]="eventSearch()"
+                        (ngModelChange)="onEventSearchChange($event)"
+                        placeholder="Filtrer par type ou détail…"
+                    >
+                </label>
+                @if (visibleEvents().length) {
+                    <div class="table-wrap">
+                        <table class="evt-table">
+                            <thead>
                                 <tr>
-                                    <td class="evt-td-time">{{ row.occurredAt | date: 'dd/MM/yyyy, HH:mm:ss' }}</td>
-                                    <td class="evt-td-type">{{ eventTypeLabel(row.eventType) }}</td>
-                                    <td class="evt-td-detail">{{ row.detail }}</td>
+                                    <th>Date / heure</th>
+                                    <th>Type</th>
+                                    <th>Détail</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @for (row of visibleEvents(); track row.id) {
+                                    <tr>
+                                        <td class="evt-td-time">{{ row.occurredAt | date: 'dd/MM/yyyy, HH:mm:ss' }}</td>
+                                        <td class="evt-td-type">{{ eventTypeLabel(row.eventType) }}</td>
+                                        <td class="evt-td-detail">{{ row.detail }}</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (visibleLimit() < filteredEvents().length) {
+                        <button type="button" class="evt-show-more" (click)="showMoreEvents()">
+                            Afficher 50 de plus ({{ filteredEvents().length - visibleLimit() }} restants)
+                        </button>
+                    }
+                } @else {
+                    <p class="analytics-empty">Aucun événement ne correspond à ce filtre.</p>
+                }
             } @else {
                 <p class="analytics-empty">Journal vide.</p>
             }

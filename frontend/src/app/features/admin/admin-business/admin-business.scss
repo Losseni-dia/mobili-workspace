@@ -103,7 +103,7 @@
   transition: border-color 0.25s ease, box-shadow 0.3s ease;
   &:hover {
     border-color: rgba(variables.$mobili-blue, 0.2);
-    box-shadow: 0 4px 20px rgba(variables.$mobili-blue-deep, 0.08);
+    box-shadow: variables.$shadow-md;
   }
   h3 {
     margin: 0 0 14px;
