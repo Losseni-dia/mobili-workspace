@@ -124,7 +124,7 @@ export class BookingConfirmationComponent implements OnInit {
     const email = this.authService.currentUser()?.email ?? null;
     this.bookingService.getFedaPayUrl(cleanId, email).subscribe({
       next: (response) => {
-        window.location.href = response.url;
+        window.location.href = response.paymentUrl;
       },
       error: () => {
         this.isProcessing.set(false);
