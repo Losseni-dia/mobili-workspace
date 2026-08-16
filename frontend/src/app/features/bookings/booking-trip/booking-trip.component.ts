@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
@@ -138,17 +138,28 @@ export class BookingTripComponent implements OnInit {
       extraHoldBags: [0, [Validators.min(0)]],
     });
 
+    // `untracked()` est indispensable ici : refreshPricePreview() lit selectedSeatCount()
+    // (et bookingForm/appliedCoupon) — sans ça, cet effect ADOPTE ces signaux comme
+    // dépendances transitives (tracking Angular = tout signal lu pendant l'exécution,
+    // même via un appel imbriqué). Résultat observé : cliquer un siège appelle
+    // selectedSeatCount.set(...) dans onSeatToggle(), ce qui re-déclenchait CET effect,
+    // qui remettait aussitôt selectedSeats à [] et vidait passengerArray — la sélection de
+    // siège semblait ne jamais s'afficher (noms/coupon/paiement), sur mobile ET desktop,
+    // sans exception JS puisque tout le code s'exécutait normalement, juste dans le mauvais
+    // ordre. Cet effect ne doit réagir qu'au changement de segment (boarding/alighting).
     effect(() => {
       const b = this.boardingIndex();
       const a = this.alightingIndex();
       if (this.tripId && a > b) {
-        this.reloadOccupiedSeats(b, a);
-        this.bookingForm.patchValue({ selectedSeats: [], extraHoldBags: 0 });
-        this.selectedSeatCount.set(0);
-        while (this.passengerArray.length) {
-          this.passengerArray.removeAt(0);
-        }
-        this.refreshPricePreview();
+        untracked(() => {
+          this.reloadOccupiedSeats(b, a);
+          this.bookingForm.patchValue({ selectedSeats: [], extraHoldBags: 0 });
+          this.selectedSeatCount.set(0);
+          while (this.passengerArray.length) {
+            this.passengerArray.removeAt(0);
+          }
+          this.refreshPricePreview();
+        });
       }
     });
 
