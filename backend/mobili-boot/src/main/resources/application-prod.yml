@@ -41,7 +41,10 @@ mobili:
       secure: true
 
 fedapay:
-  environment: ${FEDAPAY_ENVIRONMENT:live}
+  # "sandbox" tant que FEDAPAY_SECRET_KEY est une cle de test (situation actuelle, phase de
+  # test) -- repasser sur "live" (ou definir FEDAPAY_ENVIRONMENT=live cote serveur) le jour
+  # ou une vraie cle de production FedaPay est fournie.
+  environment: ${FEDAPAY_ENVIRONMENT:sandbox}
   secret:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:
