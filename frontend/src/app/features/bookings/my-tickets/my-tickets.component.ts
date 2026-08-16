@@ -26,6 +26,26 @@ export class MyTicketsComponent implements OnInit {
   /** Ticket en attente de confirmation de masquage (modale, pas de confirm() natif). */
   pendingHide = signal<any | null>(null);
 
+  /**
+   * QR replié par défaut sur mobile (bouton "Afficher le code QR", aligné sur
+   * `_TicketCardState._qrExpanded`, mobile_app) — sans effet sur desktop, où le
+   * bouton toggle reste caché en CSS et le QR toujours visible.
+   */
+  qrOpenNumbers = signal<Set<string>>(new Set());
+
+  isQrOpen(ticketNumber: string): boolean {
+    return this.qrOpenNumbers().has(ticketNumber);
+  }
+
+  toggleQr(ticketNumber: string): void {
+    this.qrOpenNumbers.update((set) => {
+      const next = new Set(set);
+      if (next.has(ticketNumber)) next.delete(ticketNumber);
+      else next.add(ticketNumber);
+      return next;
+    });
+  }
+
   tickets = computed(() =>
     this.allTickets().filter((t) => !this.hiddenNumbers().has(t.ticketNumber)),
   );

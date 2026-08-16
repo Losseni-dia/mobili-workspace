@@ -52,19 +52,26 @@
                     </div>
                 </div>
 
-                <div class="ticket-stub">
-                    <div class="stub-info">
-                        <span class="label">SIÈGE</span>
-                        <div class="seat-badge">
-                            <span class="seat-icon">💺</span>
-                            <span class="seat-number">{{ ticket.seatNumber || 'N/A' }}</span>
+                <div class="ticket-stub" [class.qr-open]="isQrOpen(ticket.ticketNumber)">
+                    <div class="stub-row">
+                        <div class="stub-info">
+                            <span class="label">SIÈGE</span>
+                            <div class="seat-badge">
+                                <span class="seat-icon">💺</span>
+                                <span class="seat-number">{{ ticket.seatNumber || 'N/A' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="stub-info">
+                            <span class="label">VÉHICULE</span>
+                            <span class="value">{{ ticket.vehiculePlateNumber }}</span>
                         </div>
                     </div>
 
-                    <div class="stub-info">
-                        <span class="label">VÉHICULE</span>
-                        <span class="value">{{ ticket.vehiculePlateNumber }}</span>
-                    </div>
+                    <button type="button" class="qr-toggle" (click)="toggleQr(ticket.ticketNumber)">
+                        {{ isQrOpen(ticket.ticketNumber) ? 'Masquer le code QR' : 'Afficher le code QR' }}
+                        <span class="qr-toggle__chevron">{{ isQrOpen(ticket.ticketNumber) ? '▲' : '▼' }}</span>
+                    </button>
 
                     <div class="qr-code">
                         <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + ticket.qrCodeData"
