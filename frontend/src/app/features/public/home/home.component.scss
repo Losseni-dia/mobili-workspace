@@ -298,19 +298,6 @@
       font-size: 0.78rem;
       color: variables.$gray-500;
 
-      .transport-badge {
-        padding: 3px 10px;
-        border-radius: variables.$radius-pill;
-        font-size: 0.7rem;
-        font-weight: 800;
-        background: rgba(variables.$mobili-blue, 0.1);
-        color: variables.$mobili-blue-deep;
-        &--carpool {
-          background: rgba(139, 92, 246, 0.12);
-          color: #5b21b6;
-        }
-      }
-
       .vehicle-type {
         padding: 3px 10px;
         background: rgba(variables.$station-green, 0.1);
@@ -439,7 +426,7 @@
         margin-top: 2px;
         font-size: 0.64rem;
 
-        .transport-badge, .vehicle-type { padding: 2px 7px; font-size: 0.6rem; }
+        .vehicle-type { padding: 2px 7px; font-size: 0.6rem; }
       }
     }
 
