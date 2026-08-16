@@ -76,6 +76,13 @@
       select { @include mixins.input; }
     }
 
+    // Overlays "Quand ?" / "Public ou Covoiturage ?" : mobile uniquement (voir plus bas).
+    // Sur desktop le label au-dessus suffit déjà — les afficher aussi ferait doublon.
+    .date-field__placeholder,
+    .select-field__placeholder {
+      display: none;
+    }
+
     .btn-main {
       @include mixins.btn-primary;
       padding: 16px 24px;
@@ -493,10 +500,11 @@
 
       .input-block--transport { grid-column: auto; }
 
-      .date-field {
+      .date-field,
+      .select-field {
         position: relative;
 
-        input[type='date'] { width: 100%; }
+        input[type='date'], select { width: 100%; }
 
         &__placeholder {
           position: absolute;
