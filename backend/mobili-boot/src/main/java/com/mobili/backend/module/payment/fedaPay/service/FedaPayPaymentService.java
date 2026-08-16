@@ -23,14 +23,16 @@ public class FedaPayPaymentService implements PaymentService {
 
     @Override
     @Transactional
-    public String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail) {
+    public String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail,
+            String frontendBaseUrl) {
         log.info("🚀 Délégation création session FedaPay pour Booking #{}", bookingId);
 
         // FedaPayService attend un double pour amount
         FedaPayService.FedaPayCheckoutResult result = fedaPayService.createPaymentSession(
                 amount.doubleValue(),
                 customerEmail != null ? customerEmail : "client@mobili.com",
-                bookingId
+                bookingId,
+                frontendBaseUrl
         );
 
         // Persistance de l'ID transaction FedaPay, indispensable à la vérification

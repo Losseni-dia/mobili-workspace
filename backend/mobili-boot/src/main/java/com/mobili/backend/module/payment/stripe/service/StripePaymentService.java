@@ -15,10 +15,11 @@ public class StripePaymentService implements PaymentService {
     private final StripeService stripeService;
 
     @Override
-    public String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail) {
+    public String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail,
+            String frontendBaseUrl) {
         // Conversion unités réelles (ex: 23 EUR) -> centimes (2300) pour Stripe
         Long amountInCents = amount * 100;
-        return stripeService.createCheckoutSession(bookingId, amountInCents, currency, customerEmail);
+        return stripeService.createCheckoutSession(bookingId, amountInCents, currency, customerEmail, frontendBaseUrl);
     }
 
     @Override

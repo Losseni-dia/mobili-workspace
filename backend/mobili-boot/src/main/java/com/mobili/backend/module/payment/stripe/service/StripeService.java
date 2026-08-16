@@ -5,22 +5,21 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class StripeService {
 
-    /** Site web Angular — jamais l'API — pour rediriger le navigateur après Stripe Checkout. */
-    @Value("${mobili.public.frontend-url}")
-    private String frontendUrl;
-
     /**
      * Crée une session de paiement Stripe Checkout.
      * Le SDK Stripe est configuré globalement par StripeConfig.
+     * @param frontendBaseUrl Site web (Angular) — jamais l'API — vers lequel rediriger le
+     *                        navigateur après paiement. Voir
+     *                        {@link com.mobili.backend.module.payment.service.FrontendReturnUrlResolver}.
      */
-    public String createCheckoutSession(Long bookingId, Long amount, String currency, String customerEmail) {
+    public String createCheckoutSession(Long bookingId, Long amount, String currency, String customerEmail,
+            String frontendBaseUrl) {
         log.info("🚀 Création session Stripe pour Booking #{}", bookingId);
 
         try {
@@ -31,8 +30,8 @@ public class StripeService {
             SessionCreateParams.Builder builder = SessionCreateParams.builder()
                     .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl(frontendUrl + "/payment/success?id=" + bookingId)
-                    .setCancelUrl(frontendUrl + "/booking/confirmation/" + bookingId)
+                    .setSuccessUrl(frontendBaseUrl + "/payment/success?id=" + bookingId)
+                    .setCancelUrl(frontendBaseUrl + "/booking/confirmation/" + bookingId)
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
                                     .setQuantity(1L)

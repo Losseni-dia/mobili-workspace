@@ -16,10 +16,12 @@ import com.mobili.backend.module.payment.enums.PaymentProvider;
 import com.mobili.backend.module.payment.fedaPay.dto.PaymentVerifyResponse;
 import com.mobili.backend.module.payment.fedaPay.service.FedaPayService;
 import com.mobili.backend.module.payment.service.ExchangeRateService;
+import com.mobili.backend.module.payment.service.FrontendReturnUrlResolver;
 import com.mobili.backend.module.payment.service.PaymentCreationService;
 import com.mobili.backend.module.payment.service.PaymentGatewayResolver;
 import com.mobili.backend.module.payment.service.PaymentService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,11 +36,13 @@ public class PaymentController {
     private final PaymentGatewayResolver paymentGatewayResolver;
     private final PaymentCreationService paymentCreationService;
     private final ExchangeRateService exchangeRateService;
+    private final FrontendReturnUrlResolver frontendReturnUrlResolver;
 
 @PostMapping("/checkout/{bookingId}")
 public ResponseEntity<PaymentResponse> createCheckout(
         @PathVariable("bookingId") Long bookingId,
-        @RequestBody PaymentRequest request) {
+        @RequestBody PaymentRequest request,
+        HttpServletRequest httpRequest) {
     log.info("🚀 Requête de paiement reçue pour le Booking ID: {} via {}", bookingId, request.provider());
 
     // Récupérer le montant métier en XOF (réel)
@@ -71,7 +75,8 @@ public ResponseEntity<PaymentResponse> createCheckout(
             bookingId,
             providerAmount,
             targetCurrency,
-            request.customerEmail());
+            request.customerEmail(),
+            frontendReturnUrlResolver.resolve(httpRequest));
 
     return ResponseEntity.ok(new PaymentResponse(
             payment.getId(),
