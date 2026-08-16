@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminBookingListItem } from '../../../core/services/admin/admin.service';
+import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type StatusFilter = 'CONFIRME' | 'ANNULE';
@@ -29,6 +30,7 @@ function isCancelled(status: string | undefined): boolean {
 })
 export class AdminBookings implements OnInit {
   private adminService = inject(AdminService);
+  private ticketService = inject(TicketService);
 
   bookings = signal<AdminBookingListItem[]>([]);
   isLoading = signal(false);
@@ -96,5 +98,30 @@ export class AdminBookings implements OnInit {
   onManualDateChange(): void {
     this.activePeriod.set(null);
     this.load();
+  }
+
+  // ====== Détails (tickets + voyageurs) ======
+  detailsBooking = signal<AdminBookingListItem | null>(null);
+  detailsTickets = signal<TicketResponse[]>([]);
+  isLoadingDetails = signal(false);
+
+  openDetails(booking: AdminBookingListItem) {
+    this.detailsBooking.set(booking);
+    this.detailsTickets.set([]);
+    this.isLoadingDetails.set(true);
+    this.ticketService.getByBooking(booking.id).subscribe({
+      next: (tickets) => {
+        this.detailsTickets.set(tickets || []);
+        this.isLoadingDetails.set(false);
+      },
+      error: () => {
+        this.detailsTickets.set([]);
+        this.isLoadingDetails.set(false);
+      },
+    });
+  }
+
+  closeDetails() {
+    this.detailsBooking.set(null);
   }
 }

@@ -97,3 +97,151 @@
     color: variables.$mobili-blue-deep;
   }
 }
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  color: variables.$gray-600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all variables.$t-base;
+  display: inline-grid;
+  place-items: center;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: variables.$mobili-blue;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+// ======================================================================
+//  MODALE détails (tickets + voyageurs d'une réservation)
+// ======================================================================
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(variables.$mobili-blue-deep, 0.55);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 520px;
+  background: variables.$white;
+  padding: 28px;
+  border-radius: variables.$radius-md;
+  box-shadow: variables.$shadow-xl;
+  border: 1px solid variables.$gray-200;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: variables.$mobili-blue-deep;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: variables.$gray-500;
+      transition: all variables.$t-base;
+
+      &:hover { background: variables.$gray-100; color: variables.$mobili-blue-deep; }
+    }
+  }
+}
+
+.passenger-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-chip {
+  flex: 1;
+  padding: 10px 12px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  text-align: center;
+
+  span {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: variables.$gray-500;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+
+  strong {
+    font-size: 1rem;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.passenger-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.passenger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+
+  .seat-badge {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: variables.$gradient-gold;
+    color: variables.$mobili-blue-deep;
+    font-weight: 900;
+    font-size: 0.78rem;
+  }
+
+  .pax-name {
+    flex: 1;
+    font-weight: 700;
+    color: variables.$mobili-blue-deep;
+    font-size: 0.88rem;
+  }
+
+  .pax-ref {
+    font-family: ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: variables.$gray-500;
+  }
+}
