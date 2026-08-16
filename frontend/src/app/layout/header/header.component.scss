@@ -488,7 +488,10 @@
   // Nav complète + actions desktop (cloche, avatar-link, logout) remplacées par le seul
   // avatar mobile ci-dessous, qui révèle le tiroir. Connexion/Inscription (déconnecté)
   // restent visibles tel quel — pas de tiroir pertinent sans compte.
-  .nav-container,
+  // Spécificité `.header .nav-container` (0,2,0) : doit égaler/dépasser la règle
+  // desktop nichée dans `.header { .nav-container {...} }` (même spécificité), sinon
+  // le flat `.nav-container { display:none }` perd et la pill nav reste visible.
+  .header .nav-container,
   .actions .header-bell,
   .actions .avatar-link,
   .actions .btn-logout {
