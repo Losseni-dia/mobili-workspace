@@ -303,18 +303,15 @@
     .stops-container {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
 
       &::before {
-        content: 'Passant par :';
-        display: block;
-        width: 100%;
-        font-size: 0.65rem;
-        color: variables.$gray-500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        margin-bottom: 3px;
+        content: 'via';
+        font-size: 0.68rem;
+        color: variables.$gray-400;
+        font-weight: 600;
+        font-style: italic;
       }
 
       .stop-badge {
