@@ -89,10 +89,6 @@
                     </div>
 
                     <div class="partner-info">
-                        <span class="transport-badge" [class.transport-badge--carpool]="trip.transportType === 'COVOITURAGE'">
-                            {{ transportTypeLabel(trip) }}
-                        </span>
-                        <span class="dot">•</span>
                         <span class="vehicle-type">{{ formatVehicleType(trip.vehicleType) }}</span>
                         <span class="dot">•</span>
                         <span class="company">{{ trip.partnerName }}</span>

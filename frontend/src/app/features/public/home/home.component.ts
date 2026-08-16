@@ -132,8 +132,4 @@ export class HomeComponent implements OnInit {
     this.loadAllTrips();
   }
 
-  transportTypeLabel(trip: Trip): string {
-    if (trip.transportType === 'COVOITURAGE') return 'Covoiturage';
-    return 'Transport public';
-  }
 }
