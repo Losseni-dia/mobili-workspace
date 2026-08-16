@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
@@ -90,6 +90,8 @@ export class BookingTripComponent implements OnInit {
   bookingForm: FormGroup;
   tripId: number = 0;
 
+  @ViewChild(SeatPickerComponent) private seatPicker?: SeatPickerComponent;
+
   maxExtraHoldForSelection = computed(() => {
     const trip = this.tripDetails();
     const seats = this.selectedSeatCount();
@@ -155,6 +157,7 @@ export class BookingTripComponent implements OnInit {
           this.reloadOccupiedSeats(b, a);
           this.bookingForm.patchValue({ selectedSeats: [], extraHoldBags: 0 });
           this.selectedSeatCount.set(0);
+          this.seatPicker?.clearSelection();
           while (this.passengerArray.length) {
             this.passengerArray.removeAt(0);
           }
