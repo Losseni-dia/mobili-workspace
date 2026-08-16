@@ -34,7 +34,8 @@ mobili:
       - https://business.my-mobili.com
       - http://localhost
   public:
-    frontend-url: ${FRONTEND_URL:https://my-mobili.com}
+    # Site voyageur réel (le "www." est indispensable : my-mobili.com sans www ne résout pas).
+    frontend-url: ${FRONTEND_URL:https://www.my-mobili.com}
   security:
     refresh:
       secure: true
