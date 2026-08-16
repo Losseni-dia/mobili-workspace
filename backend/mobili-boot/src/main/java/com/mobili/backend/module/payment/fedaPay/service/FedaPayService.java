@@ -36,14 +36,23 @@ public class FedaPayService {
 
         try {
             FedaPay.setApiKey(secretKey.trim());
-            FedaPay.setEnvironement(environment);
+            // .intern() est indispensable : le SDK FedaPay compare la valeur avec == (pas
+            // .equals()) en interne (voir FedaPay.setEnvironement décompilé) — un literal Java
+            // codé en dur ("sandbox") matche par hasard grâce à l'internement automatique des
+            // constantes de compilation, mais une valeur venue de Spring (@Value) est un nouvel
+            // objet String jamais == à la constante du SDK : l'appel échoue alors silencieusement
+            // (exception avalée par le catch ci-dessous), laissant l'environnement à null, ce qui
+            // fait planter tout appel réel avec NullPointerException("FedaPay environement can't
+            // be null").
+            FedaPay.setEnvironement(environment.trim().intern());
         } catch (Exception e) {
-            log.warn("Tentative de config alternative pour l'environnement...");
-            // Option de secours si la première échoue au runtime
+            // Ne PAS avaler silencieusement : sans environnement configuré, FedaPay.environement
+            // reste null et le SDK lève NullPointerException("FedaPay environement can't be
+            // null") au premier appel réel (Transaction.create) — remonté ci-dessous comme
+            // "Échec FedaPay", jamais un défaut silencieux vers sandbox.
+            log.error("💥 Échec configuration environnement FedaPay ({}) : {}", environment, e.getMessage());
+            throw new RuntimeException("Échec configuration FedaPay : " + e.getMessage());
         }
-
-        // Si setEnvironment ne marche pas, le SDK utilise la sandbox par défaut
-        // ou on peut forcer l'URL si nécessaire. Essayons sans pour voir.
 
         try {
             log.info("🚀 Création transaction pour Booking #{}", bookingId);
@@ -107,7 +116,7 @@ public class FedaPayService {
 
     private void applyApiConfig() throws Exception {
         FedaPay.setApiKey(secretKey.trim());
-        FedaPay.setEnvironement(environment);
+        FedaPay.setEnvironement(environment.trim().intern());
     }
 
     /**
