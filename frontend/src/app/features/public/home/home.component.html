@@ -13,12 +13,44 @@
         <form class="search-form" [formGroup]="searchForm">
             <div class="input-block">
                 <label>Départ</label>
-                <input type="text" formControlName="departure" placeholder="D'où partez-vous ?">
+                <div class="city-field">
+                    <input
+                        type="text"
+                        formControlName="departure"
+                        placeholder="D'où partez-vous ?"
+                        autocomplete="off"
+                        (focus)="onCityFieldFocus('departure')"
+                        (blur)="onCityFieldBlur()"
+                    >
+                    @if (activeField() === 'departure' && departureSuggestions().length > 0) {
+                        <ul class="city-suggestions">
+                            @for (city of departureSuggestions(); track city) {
+                                <li (mousedown)="selectCity('departure', city)">📍 {{ city }}</li>
+                            }
+                        </ul>
+                    }
+                </div>
             </div>
 
             <div class="input-block">
                 <label>Arrivée</label>
-                <input type="text" formControlName="arrival" placeholder="Où allez-vous ?">
+                <div class="city-field">
+                    <input
+                        type="text"
+                        formControlName="arrival"
+                        placeholder="Où allez-vous ?"
+                        autocomplete="off"
+                        (focus)="onCityFieldFocus('arrival')"
+                        (blur)="onCityFieldBlur()"
+                    >
+                    @if (activeField() === 'arrival' && arrivalSuggestions().length > 0) {
+                        <ul class="city-suggestions">
+                            @for (city of arrivalSuggestions(); track city) {
+                                <li (mousedown)="selectCity('arrival', city)">📍 {{ city }}</li>
+                            }
+                        </ul>
+                    }
+                </div>
             </div>
 
             <div class="input-block input-block--date">

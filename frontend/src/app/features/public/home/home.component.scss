@@ -76,6 +76,38 @@
       select { @include mixins.input; }
     }
 
+    // Autocomplétion ville (Départ/Arrivée) — aligné sur CityAutocompleteField (mobile_app).
+    .city-field {
+      position: relative;
+    }
+
+    .city-suggestions {
+      position: absolute;
+      z-index: 20;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+      max-height: 220px;
+      overflow-y: auto;
+      background: variables.$white;
+      border-radius: variables.$radius-md;
+      border: 1px solid variables.$gray-200;
+      box-shadow: variables.$shadow-lg;
+
+      li {
+        padding: 10px 12px;
+        border-radius: variables.$radius-sm;
+        font-size: 0.9rem;
+        color: variables.$mobili-blue-deep;
+        cursor: pointer;
+
+        &:hover { background: variables.$mobili-blue-fog; }
+      }
+    }
+
     // Overlays "Quand ?" / "Public ou Covoiturage ?" : mobile uniquement (voir plus bas).
     // Sur desktop le label au-dessus suffit déjà — les afficher aussi ferait doublon.
     .date-field__placeholder,
