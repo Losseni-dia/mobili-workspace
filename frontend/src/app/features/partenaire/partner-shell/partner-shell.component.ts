@@ -37,6 +37,8 @@ export class PartnerShellComponent implements OnInit {
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
+  /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */
+  mobileMenuOpen = signal(false);
 
   private companyInfo = signal<Partner | null>(null);
   private stations = signal<Station[] | null>(null);

@@ -23,6 +23,8 @@ export class GareShellComponent implements OnInit {
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal(false);
+  /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */
+  mobileMenuOpen = signal(false);
 
   /**
    * Aligné sur `shell_gare.dart` (mobilipro) : Dashboard, Trajets, Tickets, Chauffeurs,

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { ConfigurationService } from '../../configurations/services/configuration.service';
@@ -18,6 +18,19 @@ export class HeaderComponent {
   mobiliInbox = inject(MobiliInboxService);
   private router = inject(Router);
   private configuration = inject(ConfigurationService);
+
+  /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */
+  mobileMenuOpen = signal(false);
+
+  /** Même 6 pages que `UserShellComponent.navItems` (sidebar « Mon compte ») — dupliqué ici
+   *  volontairement : petite liste statique, pas de service partagé entre les deux composants. */
+  readonly myAccountItems = [
+    { label: "Vue d'ensemble", icon: '🏠', path: '/my-account/profile' },
+    { label: 'Mes billets', icon: '🎫', path: '/my-account/my-tickets' },
+    { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
+    { label: 'Réclamations', icon: '📮', path: '/my-account/claims' },
+    { label: 'Support', icon: '💬', path: '/my-account/support' },
+  ];
 
   getAvatarUrl(avatarPath: string | undefined): string | null {
     return this.configuration.resolveUploadMediaUrl(avatarPath ?? null);

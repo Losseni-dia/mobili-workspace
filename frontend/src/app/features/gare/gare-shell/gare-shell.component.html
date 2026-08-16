@@ -1,3 +1,48 @@
+<header class="mobile-topbar">
+    <a routerLink="/gare/accueil" class="mobile-topbar__logo">MOBILI</a>
+    <button type="button" class="mobile-topbar__avatar" (click)="mobileMenuOpen.set(true)" title="Ouvrir le menu" aria-label="Ouvrir le menu">
+        {{ userInitials() }}
+    </button>
+</header>
+
+<div class="mobile-drawer-overlay" [class.open]="mobileMenuOpen()" (click)="mobileMenuOpen.set(false)">
+    <nav class="mobile-drawer" (click)="$event.stopPropagation()">
+        <div class="mobile-drawer__header">
+            <h3>{{ stationLine() }}</h3>
+            <button type="button" class="mobile-drawer__close" (click)="mobileMenuOpen.set(false)">×</button>
+        </div>
+
+        @for (item of navItems; track item.path) {
+            @if (!gareActionsLocked() || isGareNavEntryAlwaysAllowed(item)) {
+                <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+                    class="mobile-drawer__item"
+                    (click)="mobileMenuOpen.set(false)"
+                >
+                    {{ item.icon }} {{ item.label }}
+                </a>
+            }
+        }
+        @for (item of companyNavItems; track item.path) {
+            @if (!gareActionsLocked() || isGareNavEntryAlwaysAllowed(item)) {
+                <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    class="mobile-drawer__item"
+                    (click)="mobileMenuOpen.set(false)"
+                >
+                    {{ item.icon }} {{ item.label }}
+                </a>
+            }
+        }
+
+        <a routerLink="/" class="mobile-drawer__item soft" (click)="mobileMenuOpen.set(false)">🏠 Retour site</a>
+        <button type="button" class="mobile-drawer__item soft" (click)="logout()">⏻ Déconnexion</button>
+    </nav>
+</div>
+
 <div class="gare-shell" [class.collapsed]="collapsed()">
     <aside class="shell-sidebar">
         <div class="sidebar-brand">

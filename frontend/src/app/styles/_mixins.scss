@@ -223,6 +223,16 @@
   }
 }
 
+// ======================================================================
+//  RESPONSIVE
+// ======================================================================
+
+@mixin mobile {
+  @media (max-width: variables.$breakpoint-mobile) {
+    @content;
+  }
+}
+
 // Texte visible au lecteur d’écran seulement (ex. label « Déconnexion » en mobile compact)
 @mixin visually-hidden {
   position: absolute;

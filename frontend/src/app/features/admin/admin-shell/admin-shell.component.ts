@@ -27,6 +27,8 @@ export class AdminShellComponent {
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
+  /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */
+  mobileMenuOpen = signal(false);
 
   /**
    * Regroupé par intention plutôt qu'une liste plate de 9 liens sans hiérarchie : Analytics

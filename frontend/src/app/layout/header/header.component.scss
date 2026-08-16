@@ -1,6 +1,7 @@
 @use "sass:color";
 @use '../../styles/variables';
 @use '../../styles/mixins';
+@use '../../styles/mobile-nav';
 
 .header {
   position: sticky;
@@ -475,22 +476,26 @@
   }
 }
 
-@media (max-width: 720px) {
+.mobile-only {
+  display: none;
+}
+
+@include mixins.mobile {
   .header {
     padding: 0 16px;
-    flex-wrap: wrap;
-
-    .nav-container { order: 3; width: 100%; justify-content: center; padding: 8px 0; }
   }
 
-  .actions .user-welcome { display: none; }
-
+  // Nav complète + actions desktop (cloche, avatar-link, logout) remplacées par le seul
+  // avatar mobile ci-dessous, qui révèle le tiroir. Connexion/Inscription (déconnecté)
+  // restent visibles tel quel — pas de tiroir pertinent sans compte.
+  .nav-container,
+  .actions .header-bell,
+  .actions .avatar-link,
   .actions .btn-logout {
-    min-width: 40px;
-    min-height: 40px;
-    padding: 0 10px;
-    .btn-logout__text {
-      @include mixins.visually-hidden;
-    }
+    display: none;
+  }
+
+  .mobile-only {
+    display: grid;
   }
 }

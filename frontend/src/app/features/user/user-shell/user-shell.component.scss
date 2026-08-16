@@ -360,3 +360,13 @@ $sidebar-w-collapsed: 76px;
   .shell-topbar { flex-wrap: wrap; padding: 18px 20px; }
   .shell-content { padding: 22px 20px 40px; }
 }
+
+// En dessous de $breakpoint-mobile, ces mêmes liens sont déjà dans le tiroir du header
+// global (app-header, avatar → menu) : la sidebar devient une double nav redondante, on la
+// masque entièrement plutôt que de la comprimer en bandeau.
+@include mixins.mobile {
+  .user-shell, .user-shell.collapsed { grid-template-columns: 1fr; }
+  .shell-sidebar { display: none; }
+  .shell-topbar { padding: 16px; }
+  .shell-content { padding: 16px 16px 32px; }
+}
