@@ -137,6 +137,11 @@ export class BookingListComponent implements OnInit {
     return status ? status.toLowerCase() : 'pending';
   }
 
+  /** Vente à la gare (guichet, sans passage par le paiement en ligne) vs réservation en ligne. */
+  saleChannel(b: BookingResponse): string {
+    return (b.status || '').toUpperCase() === 'OFFLINE_SALE' ? 'Guichet' : 'Mobili';
+  }
+
   setStatusFilter(f: BookingStatusFilter) {
     this.statusFilter.set(f);
   }
@@ -151,6 +156,7 @@ export class BookingListComponent implements OnInit {
         Date: b.date,
         Places: b.numberOfSeats,
         'Montant (FCFA)': this.displayAmount(b),
+        Canal: this.saleChannel(b),
         Statut: b.status,
       })),
     );

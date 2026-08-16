@@ -63,6 +63,7 @@
                         <th>Trajet</th>
                         <th>Date</th>
                         <th>Sièges</th>
+                        <th>Canal</th>
                         <th>Statut</th>
                         <th class="right">Montant</th>
                         <th class="right">Actions</th>
@@ -88,6 +89,11 @@
                                         <span class="seat-chip">{{ seat }}</span>
                                     }
                                 </div>
+                            </td>
+                            <td>
+                                <span class="channel-pill" [class.guichet]="saleChannel(booking) === 'Guichet'">
+                                    {{ saleChannel(booking) }}
+                                </span>
                             </td>
                             <td>
                                 <span class="status-pill" [ngClass]="getStatusClass(booking.status)">
