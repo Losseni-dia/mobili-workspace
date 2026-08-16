@@ -26,7 +26,7 @@
                 <div class="date-field">
                     <input type="date" formControlName="date">
                     @if (!searchForm.get('date')?.value) {
-                        <span class="date-field__placeholder">Date</span>
+                        <span class="date-field__placeholder">Quand ?</span>
                     }
                 </div>
             </div>
@@ -34,7 +34,7 @@
             <div class="input-block input-block--transport">
                 <label>Type de transport</label>
                 <select formControlName="transportType">
-                    <option value="">Tous</option>
+                    <option value="">Public ou Covoiturage ?</option>
                     <option value="PUBLIC">Transport public</option>
                     <option value="COVOITURAGE">Covoiturage</option>
                 </select>
