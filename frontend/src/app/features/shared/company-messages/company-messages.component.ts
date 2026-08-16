@@ -41,6 +41,24 @@ export class CompanyMessagesComponent implements OnInit {
   /** Cases à cocher (ids) pour fil ciblé. */
   selectedStationIds = new Set<number>();
 
+  /**
+   * Destinataire côté gare (aligné sur `_CreateThreadDialog`, mobilipro) : soit le partenaire
+   * (dirigeant, comportement historique), soit une autre gare de la même compagnie. Auparavant
+   * la gare n'avait aucun choix ici — le formulaire envoyait toujours sa PROPRE station en
+   * `stationIds`, ce qui revient côté serveur à ne cibler que le partenaire (voir
+   * PartnerGareComService.createThread : la cible « autre » n'est ajoutée que si l'id envoyé
+   * diffère de la station appelante) — fonctionnellement inoffensif, mais impossible de
+   * vraiment écrire à une autre gare, contrairement à l'app mobile.
+   */
+  gareTarget = signal<'partner' | 'other'>('partner');
+  otherStationId = signal<number | null>(null);
+
+  /** Gares de la compagnie hors la sienne (pour cibler « une autre gare »). */
+  otherStations = computed(() => {
+    const own = this.auth.currentUser()?.stationId;
+    return this.stations().filter((s) => s.id !== own);
+  });
+
   /** Partenaire (dirigeant) : peut adresser toutes les gares. Gare seule : seulement sa gare. */
   canBroadcast = computed(() => this.auth.hasRole('PARTNER'));
   gareOnly = computed(() => this.auth.hasRole('GARE') && !this.auth.hasRole('PARTNER'));
@@ -109,11 +127,18 @@ export class CompanyMessagesComponent implements OnInit {
     this.error.set(null);
     this.creating.set(false);
     this.selectedStationIds = new Set();
+    this.gareTarget.set('partner');
+    this.otherStationId.set(null);
     this.newThreadForm.reset({ title: '', firstMessage: '', scope: 'ALL' });
     if (this.gareOnly()) {
       this.newThreadForm.patchValue({ scope: 'TARGETED' });
     }
     this.showCreate.set(true);
+  }
+
+  setGareTarget(target: 'partner' | 'other') {
+    this.gareTarget.set(target);
+    if (target === 'partner') this.otherStationId.set(null);
   }
 
   closeCreate() {
@@ -144,9 +169,16 @@ export class CompanyMessagesComponent implements OnInit {
     };
     if (payload.scope === 'TARGETED') {
       if (this.gareOnly()) {
-        const sid = this.auth.currentUser()?.stationId;
-        if (sid == null) return;
-        payload.stationIds = [sid];
+        if (this.gareTarget() === 'other') {
+          const other = this.otherStationId();
+          if (other == null) {
+            this.error.set('Sélectionnez la gare destinataire.');
+            return;
+          }
+          payload.stationIds = [other];
+        }
+        // Vers le partenaire : pas de stationIds — le dirigeant voit de toute façon
+        // tous les fils de sa compagnie (voir PartnerGareComService.listThreads).
       } else {
         payload.stationIds = Array.from(this.selectedStationIds);
         if (payload.stationIds.length === 0) {

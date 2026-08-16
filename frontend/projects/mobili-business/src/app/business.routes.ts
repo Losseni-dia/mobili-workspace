@@ -209,14 +209,6 @@ export const businessRoutes: Routes = [
           ),
       },
       {
-        path: 'transactions',
-        canActivate: [gareOperationsGuard],
-        loadComponent: () =>
-          import('@mobili-app/features/gare/gare-transactions/gare-transactions.component').then(
-            (m) => m.GareTransactionsComponent,
-          ),
-      },
-      {
         path: 'profil',
         canActivate: [gareOperationsGuard],
         loadComponent: () =>

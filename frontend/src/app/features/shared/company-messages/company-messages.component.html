@@ -97,6 +97,58 @@
           />
         </div>
 
+        @if (gareOnly()) {
+          <div class="pgc-form-field pgc-form-field--scope">
+            <span class="pgc-label" id="pgc-target-legend">Destinataire</span>
+            <div class="pgc-scope-cards" role="radiogroup" aria-labelledby="pgc-target-legend">
+              <label class="pgc-scope-card">
+                <input
+                  class="pgc-scope-card__input"
+                  type="radio"
+                  name="gareTarget"
+                  [checked]="gareTarget() === 'partner'"
+                  (change)="setGareTarget('partner')"
+                />
+                <span class="pgc-scope-card__body">
+                  <span class="pgc-scope-card__title">Vers le partenaire</span>
+                  <span class="pgc-scope-card__desc">La direction de votre compagnie</span>
+                </span>
+              </label>
+              <label class="pgc-scope-card">
+                <input
+                  class="pgc-scope-card__input"
+                  type="radio"
+                  name="gareTarget"
+                  [checked]="gareTarget() === 'other'"
+                  (change)="setGareTarget('other')"
+                />
+                <span class="pgc-scope-card__body">
+                  <span class="pgc-scope-card__title">Vers une autre gare</span>
+                  <span class="pgc-scope-card__desc">Choisissez la gare destinataire ci-dessous</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        }
+
+        @if (gareOnly() && gareTarget() === 'other') {
+          <div class="pgc-form-field">
+            <label for="t-other-station" class="pgc-label">Gare destinataire</label>
+            <select
+              id="t-other-station"
+              class="pgc-input"
+              [ngModel]="otherStationId()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="otherStationId.set($event)"
+            >
+              <option [ngValue]="null">— Choisir —</option>
+              @for (s of otherStations(); track s.id) {
+                <option [ngValue]="s.id">{{ s.name }} ({{ s.city }})</option>
+              }
+            </select>
+          </div>
+        }
+
         @if (canBroadcast() && !gareOnly()) {
           <div class="pgc-form-field pgc-form-field--scope">
             <span class="pgc-label" id="pgc-scope-legend">Qui reçoit ce message ?</span>

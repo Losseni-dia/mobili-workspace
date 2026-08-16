@@ -28,10 +28,9 @@ export class GareShellComponent implements OnInit {
 
   /**
    * Aligné sur `shell_gare.dart` (mobilipro) : Dashboard, Trajets, Tickets, Chauffeurs,
-   * Communications, Notifications, Profil — 7 entrées plates, même ordre. Pas de scanner côté
-   * gare (action CHAUFFEUR uniquement, voir `/chauffeur/scan`) ; Transactions n'est pas un onglet
-   * sur mobile (carte du dashboard) mais reste une entrée dédiée ici (contenu identique, juste
-   * plus visible côté web — pas une fonctionnalité web-only puisque l'écran mobile existe aussi).
+   * Communications, Notifications, Profil. Pas de scanner côté gare (action CHAUFFEUR
+   * uniquement, voir `/chauffeur/scan`). Transactions retiré (décision produit) : Réservations
+   * et Tickets suffisent déjà à couvrir le suivi financier gare, l'onglet dédié faisait doublon.
    */
   navItems: GareNavItem[] = [
     { label: 'Accueil', icon: '🏠', path: '/gare/accueil', exact: true },
@@ -39,7 +38,6 @@ export class GareShellComponent implements OnInit {
     { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
     { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
     { label: 'Communications', icon: '💬', path: '/gare/communications' },
-    { label: 'Transactions', icon: '💳', path: '/gare/transactions' },
     { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
   ];
@@ -61,13 +59,6 @@ export class GareShellComponent implements OnInit {
         title: 'Tickets',
         desc: 'Billets vendus sur vos voyages, avec leur statut d’embarquement.',
         crumb: 'Tickets',
-      };
-    }
-    if (url.includes('/gare/transactions')) {
-      return {
-        title: 'Transactions',
-        desc: 'Frais Mobili, commission et net compagnie, par réservation payée.',
-        crumb: 'Transactions',
       };
     }
     if (url.includes('/gare/compte')) {
