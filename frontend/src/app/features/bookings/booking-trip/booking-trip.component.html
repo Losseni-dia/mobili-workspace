@@ -29,18 +29,26 @@
                 <div class="segment-grid">
                     <label class="segment-field">
                         <span>Je monte à</span>
-                        <select [value]="boardingIndex()" (change)="onBoardingChange($event)">
+                        <select
+                            [ngModel]="boardingIndex()"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="onBoardingChange($event)"
+                        >
                             @for (opt of boardingOptions(); track opt.index) {
-                                <option [value]="opt.index">{{ opt.label }}</option>
+                                <option [ngValue]="opt.index">{{ opt.label }}</option>
                             }
                         </select>
                     </label>
 
                     <label class="segment-field">
                         <span>Je descends à</span>
-                        <select [value]="alightingIndex()" (change)="onAlightingChange($event)">
+                        <select
+                            [ngModel]="alightingIndex()"
+                            [ngModelOptions]="{ standalone: true }"
+                            (ngModelChange)="onAlightingChange($event)"
+                        >
                             @for (opt of alightingOptions(); track opt.index) {
-                                <option [value]="opt.index">{{ opt.label }}</option>
+                                <option [ngValue]="opt.index">{{ opt.label }}</option>
                             }
                         </select>
                     </label>

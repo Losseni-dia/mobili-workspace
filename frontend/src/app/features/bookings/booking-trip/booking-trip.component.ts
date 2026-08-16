@@ -206,10 +206,16 @@ export class BookingTripComponent implements OnInit {
     return this.bookingForm.get('passengerNames') as FormArray;
   }
 
-  onBoardingChange(ev: Event) {
-    const raw = (ev.target as HTMLSelectElement).value;
-    const idx = Number(raw);
-    if (Number.isNaN(idx)) return;
+  /**
+   * Reçoit directement l'index (via [ngModel]/[ngValue], pas un Event de <select> brut) —
+   * plain [value] sur un <select> dont les <option> se peuplent après coup (chargement
+   * async du trajet) laisse le navigateur retomber silencieusement sur la 1re option sans
+   * jamais notifier Angular : le champ affichait un tronçon différent de celui réellement
+   * retenu par boardingIndex()/alightingIndex(), d'où un prix qui ne correspondait pas au
+   * tronçon visible à l'écran. [ngModel]/[ngValue] gère correctement cette resynchronisation.
+   */
+  onBoardingChange(idx: number) {
+    if (idx == null || Number.isNaN(idx)) return;
     this.boardingIndex.set(idx);
     if (this.alightingIndex() <= idx) {
       const last = Math.max(0, this.stopLabels().length - 1);
@@ -217,10 +223,8 @@ export class BookingTripComponent implements OnInit {
     }
   }
 
-  onAlightingChange(ev: Event) {
-    const raw = (ev.target as HTMLSelectElement).value;
-    const idx = Number(raw);
-    if (Number.isNaN(idx)) return;
+  onAlightingChange(idx: number) {
+    if (idx == null || Number.isNaN(idx)) return;
     this.alightingIndex.set(idx);
   }
 
