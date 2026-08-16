@@ -62,7 +62,7 @@ export class AdminBookings implements OnInit {
   );
 
   ngOnInit(): void {
-    this.load();
+    this.setPeriodPreset('month');
   }
 
   load(): void {

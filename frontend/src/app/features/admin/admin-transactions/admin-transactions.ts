@@ -47,7 +47,7 @@ export class AdminTransactions implements OnInit {
   totalRevenue = computed(() => this.transactions().reduce((sum, t) => sum + (t.totalPrice || 0), 0));
 
   ngOnInit(): void {
-    this.load();
+    this.setPeriodPreset('month');
   }
 
   load(): void {

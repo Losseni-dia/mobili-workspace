@@ -218,14 +218,25 @@
   &.info { background: rgba(variables.$mobili-blue, 0.1); color: variables.$mobili-blue; }
 }
 
-// ---- Filtres période (Aujourd'hui / Semaine / Mois) ----
-// Vient toujours au-dessus des dates "intervalle" (inputs date déjà existants sur chaque page :
-// choisir un préset renseigne ces inputs, l'édition manuelle désélectionne le préset actif).
+// ---- Filtres période (Aujourd'hui / Semaine / Mois / Intervalle) ----
+// Les inputs date n'apparaissent que si "Intervalle" est actif (@if côté template) — jamais
+// affichés en même temps que les présets pour éviter les deux zones de choix de date redondantes.
 .period-presets {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   margin: 0 0 10px;
+
+  input[type='date'] {
+    padding: 5px 10px;
+    border-radius: variables.$radius-pill;
+    border: 1px solid variables.$gray-200;
+    background: variables.$white;
+    color: variables.$gray-700;
+    font-size: 0.78rem;
+    font-family: inherit;
+  }
 }
 
 .period-btn {

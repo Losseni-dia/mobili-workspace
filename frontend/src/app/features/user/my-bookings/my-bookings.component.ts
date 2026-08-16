@@ -36,6 +36,13 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   fromDate = signal('');
   toDate = signal('');
   activePeriod = signal<PeriodPreset | null>(null);
+  /** Distinct de `activePeriod === null` : ici null veut aussi dire « aucun filtre » (pas de
+   *  préset par défaut, contrairement aux listes admin/partenaire/gare). */
+  customMode = signal(false);
+
+  isCustomPeriod(): boolean {
+    return this.customMode();
+  }
 
   filtered = computed(() => {
     const raw = this.bookings();
@@ -82,16 +89,20 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   setPeriodPreset(preset: PeriodPreset): void {
     const { from, to } = computePeriodRange(preset);
     this.activePeriod.set(preset);
+    this.customMode.set(false);
     this.fromDate.set(from);
     this.toDate.set(to);
   }
 
+  /** Bascule/reste en mode « Intervalle » : la modif d'une des deux dates repasse ici. */
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.customMode.set(true);
   }
 
   clearPeriod(): void {
     this.activePeriod.set(null);
+    this.customMode.set(false);
     this.fromDate.set('');
     this.toDate.set('');
   }
