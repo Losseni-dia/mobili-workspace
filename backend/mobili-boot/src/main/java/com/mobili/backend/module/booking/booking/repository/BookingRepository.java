@@ -54,16 +54,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         List<Booking> findByTripIdWithSeats(@Param("tripId") Long tripId);
 
 
-        // JOIN FETCH b.trip / b.customer : sans ça, BookingMapper.toDto() (trip.id,
-        // trip.departureCity, customerName, ...) déréférence des proxies Hibernate hors
-        // session (open-in-view désactivé) -> LazyInitializationException -> 500 avalé en
-        // liste vide côté frontend (modale "Passagers" toujours vide malgré des
-        // réservations bien présentes en base, constaté côté gare).
+        // JOIN FETCH b.trip / b.customer / b.tickets : sans ça, BookingMapper.toDto()
+        // déréférence plusieurs proxies Hibernate hors session (open-in-view désactivé) ->
+        // LazyInitializationException -> 500 avalé en liste vide côté frontend (modale
+        // "Passagers" toujours vide malgré des réservations bien présentes en base) :
+        // - trip.id/departureCity/... et customer.firstname/lastname (mapping direct),
+        // - b.tickets, via booking.getGrossAmount() -> hasActiveTicketFareSplit()
+        //   (tickets.isEmpty()) appelé pour calculer le montant affiché (amount).
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "JOIN FETCH b.customer " +
                         "LEFT JOIN FETCH b.seatNumbers " +
                         "LEFT JOIN FETCH b.passengerNames " +
+                        "LEFT JOIN FETCH b.tickets " +
                         "WHERE t.id = :tripId " +
                         "AND b.status IN (" +
                         "com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
