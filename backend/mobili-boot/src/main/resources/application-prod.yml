@@ -33,11 +33,14 @@ mobili:
       - https://www.my-mobili.com
       - https://business.my-mobili.com
       - http://localhost
+  public:
+    frontend-url: ${FRONTEND_URL:https://my-mobili.com}
   security:
     refresh:
       secure: true
 
 fedapay:
+  environment: ${FEDAPAY_ENVIRONMENT:live}
   secret:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:
