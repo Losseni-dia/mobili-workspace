@@ -60,6 +60,26 @@ public class TicketService {
         return tickets;
     }
 
+    /**
+     * Tickets liés à UNE réservation (bouton "Voir tickets/voyageurs" côté partenaire, sur
+     * Mes réservations) — même astuce de pré-chargement lazy que {@link #findAllByTripId}.
+     */
+    @Transactional(readOnly = true)
+    public List<Ticket> findAllByBookingId(Long bookingId) {
+        List<Ticket> tickets = ticketRepository.findAllByBookingIdOrderBySeatNumberAsc(bookingId);
+        for (Ticket t : tickets) {
+            if (t.getTrip() != null) {
+                t.getTrip().getDepartureCity();
+            }
+            if (t.getBooking() != null
+                    && t.getBooking().getTrip() != null
+                    && t.getBooking().getTrip().getPartner() != null) {
+                t.getBooking().getTrip().getPartner().getName();
+            }
+        }
+        return tickets;
+    }
+
     @Transactional
     public Ticket create(Long tripId, Long userId) {
         Trip trip = tripService.findById(tripId);

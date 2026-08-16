@@ -104,6 +104,14 @@ export class TicketService {
   }
 
   /**
+   * Tickets d'UNE réservation (bouton "Voir tickets/voyageurs" côté partenaire, Mes
+   * réservations) — inclut les tickets annulés, contrairement à `getByTrip`.
+   */
+  getByBooking(bookingId: number): Observable<TicketResponse[]> {
+    return this.http.get<TicketResponse[]>(`${this.API_URL}/booking/${bookingId}`);
+  }
+
+  /**
    * Tickets de la compagnie (ou de la gare connectée) sur une période — vue gare/partenaire,
    * jamais les réservations. `stationId` optionnel : restreint à une gare précise.
    */
