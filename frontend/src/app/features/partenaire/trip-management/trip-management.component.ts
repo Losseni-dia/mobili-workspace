@@ -108,11 +108,11 @@ export class TripManagementComponent implements OnInit {
     return { reservations: list.length, totalPassengers, totalRevenue };
   });
 
-  // ====== Vente directe (aligné sur OfflineSaleSheet mobile) ======
+  // ====== Vente directe / blocage de places (choix produit : plus de nom de passager,
+  // contrairement à OfflineSaleSheet mobile — simple sélection + confirmation) ======
   saleTrip = signal<Trip | null>(null);
   saleOccupiedSeats = signal<string[]>([]);
   saleSelectedSeats = signal<string[]>([]);
-  salePassengerNames = signal<Record<string, string>>({});
   saleSubmitting = signal(false);
   saleError = signal<string | null>(null);
 
@@ -288,11 +288,14 @@ export class TripManagementComponent implements OnInit {
     return Array.from({ length: n }, () => '—');
   }
 
-  // ====== Vente directe ======
+  // ====== Vente directe (bloquer des places) ======
+  /** Sélection en cours → confirmation → soumission, sans nom de passager (guichet). */
+  saleConfirmOpen = signal(false);
+
   openSale(trip: Trip) {
     this.saleTrip.set(trip);
     this.saleSelectedSeats.set([]);
-    this.salePassengerNames.set({});
+    this.saleConfirmOpen.set(false);
     this.saleError.set(null);
     this.bookingService.getOccupiedSeats(trip.id).subscribe({
       next: (seats) => this.saleOccupiedSeats.set(seats),
@@ -302,20 +305,20 @@ export class TripManagementComponent implements OnInit {
 
   closeSale() {
     this.saleTrip.set(null);
+    this.saleConfirmOpen.set(false);
   }
 
   onSaleSeatsSelected(seats: string[]) {
     this.saleSelectedSeats.set(seats);
-    // Purge les noms des sièges désélectionnés, conserve le reste.
-    this.salePassengerNames.update((names) => {
-      const next: Record<string, string> = {};
-      for (const s of seats) next[s] = names[s] ?? '';
-      return next;
-    });
   }
 
-  setSalePassengerName(seat: string, name: string) {
-    this.salePassengerNames.update((names) => ({ ...names, [seat]: name }));
+  askConfirmSale() {
+    if (this.saleSelectedSeats().length === 0) return;
+    this.saleConfirmOpen.set(true);
+  }
+
+  cancelConfirmSale() {
+    this.saleConfirmOpen.set(false);
   }
 
   confirmSale() {
@@ -323,31 +326,25 @@ export class TripManagementComponent implements OnInit {
     const seats = this.saleSelectedSeats();
     if (!trip || seats.length === 0 || this.saleSubmitting()) return;
 
-    const names = this.salePassengerNames();
-    const missing = seats.some((s) => !names[s]?.trim());
-    if (missing) {
-      this.saleError.set('Renseignez le nom du passager pour chaque place sélectionnée.');
-      return;
-    }
-
     this.saleSubmitting.set(true);
     this.saleError.set(null);
     this.bookingService
       .createOfflineSale({
         tripId: trip.id,
         numberOfSeats: seats.length,
-        selections: seats.map((seatNumber) => ({ seatNumber, passengerName: names[seatNumber].trim() })),
+        selections: seats.map((seatNumber) => ({ seatNumber, passengerName: '' })),
       })
       .subscribe({
         next: () => {
           this.saleSubmitting.set(false);
-          this.notify.show(`Vente enregistrée : ${seats.length} place${seats.length > 1 ? 's' : ''}.`, 'success');
+          this.notify.show(`${seats.length} place${seats.length > 1 ? 's' : ''} bloquée${seats.length > 1 ? 's' : ''}.`, 'success');
           this.closeSale();
           this.loadTrips();
         },
         error: (err) => {
           this.saleSubmitting.set(false);
-          this.saleError.set(err?.error?.message || 'Impossible d\'enregistrer cette vente.');
+          this.saleConfirmOpen.set(false);
+          this.saleError.set(err?.error?.message || "Impossible de bloquer cette place.");
         },
       });
   }
