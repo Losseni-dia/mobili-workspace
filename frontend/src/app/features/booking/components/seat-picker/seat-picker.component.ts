@@ -36,6 +36,16 @@ export class SeatPickerComponent implements OnChanges {
     }
   }
 
+  /**
+   * Vide la sélection visuelle sans dépendre d'un changement de `totalSeats` — appelé par le
+   * parent (booking-trip) quand le tronçon change : le siège restait affiché "sélectionné" ici
+   * alors que le formulaire parent avait déjà remis `selectedSeats` à `[]`, masquant les champs
+   * nom passager/coupon sans que le siège ne se désélectionne visuellement (fallait cliquer 2x).
+   */
+  clearSelection() {
+    this.selectedSeats.set([]);
+  }
+
   onSeatClick(seatId: string) {
     // Bloque le clic si le siège est déjà réservé ou bloqué (gare)
     if (this.occupiedSeats.includes(seatId)) return;
