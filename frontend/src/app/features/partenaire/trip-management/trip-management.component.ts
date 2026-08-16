@@ -249,17 +249,24 @@ export class TripManagementComponent implements OnInit {
   }
 
   // ====== Passagers ======
+  passengersError = signal<string | null>(null);
+
   openPassengers(trip: Trip) {
     this.passengersTrip.set(trip);
     this.passengersList.set([]);
+    this.passengersError.set(null);
     this.isLoadingPassengers.set(true);
     this.bookingService.getConfirmedPassengers(trip.id).subscribe({
       next: (list) => {
         this.passengersList.set(list || []);
         this.isLoadingPassengers.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Erreur chargement passagers :', err);
         this.passengersList.set([]);
+        // Distingue une vraie erreur serveur d'une liste réellement vide, plutôt que
+        // d'afficher silencieusement "Aucun passager" dans les deux cas.
+        this.passengersError.set('Impossible de charger les passagers pour le moment.');
         this.isLoadingPassengers.set(false);
       },
     });

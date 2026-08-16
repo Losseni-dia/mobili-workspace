@@ -74,6 +74,7 @@ public class BookingService {
     private final PartnerMonthlyVolumeService partnerMonthlyVolumeService;
 
 
+    @Transactional(readOnly = true)
     public List<Booking> findConfirmedByTripId(Long tripId) {
         return bookingRepository.findConfirmedByTripIdWithDetails(tripId);
     }

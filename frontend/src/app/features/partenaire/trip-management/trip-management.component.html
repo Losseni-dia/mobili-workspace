@@ -217,6 +217,12 @@
 
                 @if (isLoadingPassengers()) {
                     <div class="loader">Chargement…</div>
+                } @else if (passengersError()) {
+                    <div class="empty">
+                        <div class="empty-icon">⚠️</div>
+                        <strong>{{ passengersError() }}</strong>
+                        <p>Réessaie dans quelques instants.</p>
+                    </div>
                 } @else if (passengersList().length === 0) {
                     <div class="empty">
                         <div class="empty-icon">🧍</div>
