@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingService, PartnerTransaction } from '../../../core/services/booking/booking.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 /**
  * Vente brute pour la gare connectée — aligné sur `gare_transactions_page.dart` (mobilipro) :
@@ -29,6 +30,7 @@ export class GareTransactionsComponent implements OnInit {
   fromDate = signal('');
   toDate = signal('');
   search = signal('');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -61,6 +63,19 @@ export class GareTransactionsComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.load();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.load();
   }
 
   /** Aligné sur mobilipro (export CSV des transactions gare). */

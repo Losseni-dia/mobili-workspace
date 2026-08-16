@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -38,6 +39,7 @@ export class PartnerTicketsComponent implements OnInit {
   stationFilter = signal<number | null>(null);
   fromDate = signal('');
   toDate = signal('');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filteredTickets = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -93,6 +95,19 @@ export class PartnerTicketsComponent implements OnInit {
 
   onStationFilterChange(raw: string): void {
     this.stationFilter.set(raw === '' ? null : Number(raw));
+    this.loadTickets();
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.loadTickets();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
     this.loadTickets();
   }
 

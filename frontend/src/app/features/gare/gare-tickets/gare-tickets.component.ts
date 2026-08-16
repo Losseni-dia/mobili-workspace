@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -37,6 +38,7 @@ export class GareTicketsComponent implements OnInit {
   /** Filtrées côté serveur (comme admin-tickets) — vides = 30 derniers jours par défaut côté API. */
   fromDate = signal('');
   toDate = signal('');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filteredTickets = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -88,6 +90,19 @@ export class GareTicketsComponent implements OnInit {
 
   setStatusFilter(f: TicketStatusFilter): void {
     this.statusFilter.set(f);
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.loadTickets();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.loadTickets();
   }
 
   displayAmount(t: PartnerTicket): number {

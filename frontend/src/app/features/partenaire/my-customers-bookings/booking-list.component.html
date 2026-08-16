@@ -10,6 +10,12 @@
         <button type="button" class="status-chip" [class.active]="statusFilter() === 'TOUS'" (click)="setStatusFilter('TOUS')">Tous</button>
     </div>
 
+    <div class="period-presets">
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'today'" (click)="setPeriodPreset('today')">Aujourd'hui</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'week'" (click)="setPeriodPreset('week')">Semaine</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'month'" (click)="setPeriodPreset('month')">Mois</button>
+    </div>
+
     <div class="filters">
         <label class="filter">
             <span class="f-ico">🔍</span>
@@ -18,7 +24,12 @@
 
         <label class="filter">
             <span class="f-ico">📅</span>
-            <input type="date" [ngModel]="filterDate()" (ngModelChange)="filterDate.set($event)">
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onManualDateChange()">
+        </label>
+
+        <label class="filter">
+            <span class="f-ico">📅</span>
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onManualDateChange()">
         </label>
 
         <label class="filter">

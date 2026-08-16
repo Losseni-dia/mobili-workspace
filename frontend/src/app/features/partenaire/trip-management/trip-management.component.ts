@@ -10,10 +10,11 @@ import { BookingResponse, BookingService } from '../../../core/services/booking/
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { computePeriodRange } from '../../../core/utils/period-range.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
 type TripStatusFilter = 'ALL' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
-type PeriodFilter = 'today' | 'week' | 'month';
+type PeriodFilter = 'today' | 'week' | 'month' | 'custom';
 
 @Component({
   selector: 'app-trip-management',
@@ -36,6 +37,9 @@ export class TripManagementComponent implements OnInit {
   /** Aligné sur mobile (`PartnerPeriodSelector`) : période serveur, statut = filtre client. */
   period = signal<PeriodFilter>('month');
   statusFilter = signal<TripStatusFilter>('ALL');
+  /** Dates manuelles utilisées uniquement quand period() === 'custom'. */
+  fromDate = signal('');
+  toDate = signal('');
 
   readonly STATUS_FILTERS: { value: TripStatusFilter; label: string }[] = [
     { value: 'ALL', label: 'Tous' },
@@ -139,6 +143,17 @@ export class TripManagementComponent implements OnInit {
 
   setPeriod(p: PeriodFilter) {
     this.period.set(p);
+    if (p !== 'custom') {
+      const { from, to } = computePeriodRange(p);
+      this.fromDate.set(from);
+      this.toDate.set(to);
+    }
+    this.loadTrips();
+  }
+
+  /** Passage manuel des dates : bascule automatiquement en mode "Intervalle". */
+  onManualDateChange(): void {
+    this.period.set('custom');
     this.loadTrips();
   }
 
@@ -147,22 +162,11 @@ export class TripManagementComponent implements OnInit {
   }
 
   private periodRange(): { from: string; to: string } {
-    const now = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    if (this.period() === 'today') {
-      return { from: iso(now), to: iso(now) };
+    const p = this.period();
+    if (p === 'custom') {
+      return { from: this.fromDate(), to: this.toDate() };
     }
-    if (this.period() === 'week') {
-      const day = now.getDay() || 7;
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - day + 1);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      return { from: iso(monday), to: iso(sunday) };
-    }
-    const first = new Date(now.getFullYear(), now.getMonth(), 1);
-    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { from: iso(first), to: iso(last) };
+    return computePeriodRange(p);
   }
 
   loadTrips(): void {
