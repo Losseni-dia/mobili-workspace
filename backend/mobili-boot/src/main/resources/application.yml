@@ -49,6 +49,12 @@ mobili:
       - http://127.0.0.1
       - http://127.0.0.1:81
 
+  public:
+    # URL du site web (Angular) — utilisée pour les redirections navigateur après paiement
+    # (Stripe success/cancel, retour FedaPay). Ne jamais pointer vers l'API (api.my-mobili.com) :
+    # ce sont des pages Angular (/payment/success, /booking/confirmation/:id), pas des endpoints.
+    frontend-url: ${FRONTEND_URL:http://localhost:4200}
+
   ui:
     show-success-messages: ${APP_SHOW_SUCCESS_MESSAGES:false}
 
@@ -86,6 +92,9 @@ mobili:
 # Services Externes
 # ---------------------------------------------------------------------------
 fedapay:
+  # "sandbox" ou "live" — doit correspondre au type de FEDAPAY_SECRET_KEY fourni (une clé
+  # live utilisée en environnement sandbox, ou l'inverse, fait échouer tous les appels API.
+  environment: ${FEDAPAY_ENVIRONMENT:sandbox}
   secret:
     key: ${FEDAPAY_SECRET_KEY}
   webhook:

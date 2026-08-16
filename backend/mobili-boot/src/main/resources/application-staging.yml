@@ -28,6 +28,8 @@ mobili:
       - http://localhost:4201
       - capacitor://localhost
       - http://localhost
+  public:
+    frontend-url: ${FRONTEND_URL:https://staging.my-mobili.com}
   security:
     jwt:
       secret-key: ${JWT_SECRET}

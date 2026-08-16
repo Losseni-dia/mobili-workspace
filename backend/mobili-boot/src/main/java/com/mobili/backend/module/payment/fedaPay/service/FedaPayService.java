@@ -19,6 +19,14 @@ public class FedaPayService {
     @Value("${FEDAPAY_SECRET_KEY}")
     private String secretKey;
 
+    /** "sandbox" ou "live" — doit correspondre au type de clé fournie (voir application.yml). */
+    @Value("${fedapay.environment:sandbox}")
+    private String environment;
+
+    /** Site web Angular — jamais l'API — pour rediriger le navigateur après le checkout FedaPay. */
+    @Value("${mobili.public.frontend-url}")
+    private String frontendUrl;
+
     public record FedaPayCheckoutResult(String paymentUrl, String transactionId) {
     }
 
@@ -26,9 +34,7 @@ public class FedaPayService {
 
         try {
             FedaPay.setApiKey(secretKey.trim());
-            // On teste cette syntaxe. Si VS Code souligne encore,
-            // regarde dans les suggestions (Ctrl+Espace) après "FedaPay."
-            FedaPay.setEnvironement("sandbox");
+            FedaPay.setEnvironement(environment);
         } catch (Exception e) {
             log.warn("Tentative de config alternative pour l'environnement...");
             // Option de secours si la première échoue au runtime
@@ -44,7 +50,12 @@ public class FedaPayService {
             params.put("description", "Ticket Mobili #" + bookingId);
             params.put("amount", (int) amount);
             params.put("currency", Map.of("iso", "XOF"));
-            params.put("callback_url", "https://api.my-mobili.com/v1/payments/callback?bookingId=" + bookingId);
+            // Retour navigateur après paiement : doit pointer vers la page Angular
+            // /payment/success (PaymentSuccessComponent lit ?id=), pas vers l'API — l'ancienne
+            // URL (api.my-mobili.com/v1/payments/callback) ne correspondait d'ailleurs à aucun
+            // endpoint existant (le vrai webhook est /v1/payments/fedapay/callback, configuré
+            // séparément côté dashboard FedaPay, sans rapport avec ce paramètre).
+            params.put("callback_url", frontendUrl + "/payment/success?id=" + bookingId);
 
             // Le SDK attend souvent les métadonnées ainsi :
             Map<String, Object> metadata = new HashMap<>();

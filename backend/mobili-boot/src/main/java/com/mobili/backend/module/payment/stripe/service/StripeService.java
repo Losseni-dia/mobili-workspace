@@ -5,11 +5,16 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class StripeService {
+
+    /** Site web Angular — jamais l'API — pour rediriger le navigateur après Stripe Checkout. */
+    @Value("${mobili.public.frontend-url}")
+    private String frontendUrl;
 
     /**
      * Crée une session de paiement Stripe Checkout.
@@ -19,11 +24,15 @@ public class StripeService {
         log.info("🚀 Création session Stripe pour Booking #{}", bookingId);
 
         try {
+            // success/cancel doivent pointer vers le site Angular (PaymentSuccessComponent lit
+            // ?id=, la page de confirmation permet de relancer un paiement) — l'ancienne URL
+            // (api.my-mobili.com/v1/payments/stripe/success) atterrissait sur une page HTML brute
+            // servie par le backend, hors du site, laissant l'utilisateur bloqué dessus.
             SessionCreateParams.Builder builder = SessionCreateParams.builder()
                     .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl("https://api.my-mobili.com/v1/payments/stripe/success?session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl("https://api.my-mobili.com/v1/payments/stripe/cancel")
+                    .setSuccessUrl(frontendUrl + "/payment/success?id=" + bookingId)
+                    .setCancelUrl(frontendUrl + "/booking/confirmation/" + bookingId)
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
                                     .setQuantity(1L)

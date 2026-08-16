@@ -26,6 +26,8 @@ mobili:
       - https://acc.my-mobili.com
       - http://localhost:4200
       - http://localhost:4201
+  public:
+    frontend-url: ${FRONTEND_URL:https://acc.my-mobili.com}
   security:
     jwt:
       secret-key: ${JWT_SECRET}

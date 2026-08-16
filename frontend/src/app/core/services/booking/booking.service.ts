@@ -158,9 +158,15 @@ export class BookingService {
     return this.http.get<BookingResponse>(`${this.API_URL}/${id}`);
   }
 
-  getFedaPayUrl(bookingId: number): Observable<PaymentCheckoutResponse> {
+  getFedaPayUrl(bookingId: number, customerEmail?: string | null): Observable<PaymentCheckoutResponse> {
     // On met juste /payments car l'intercepteur va ajouter le reste
-    return this.http.post<PaymentCheckoutResponse>(`/payments/checkout/${bookingId}`, {});
+    // ⚠️ Le backend (PaymentRequest) exige `provider` : un corps vide fait passer
+    // `request.provider()` à null côté serveur, ce que PaymentGatewayResolver.resolve()
+    // rejette avec IllegalArgumentException (500) — FedaPay ne s'ouvrait donc jamais sur web.
+    return this.http.post<PaymentCheckoutResponse>(`/payments/checkout/${bookingId}`, {
+      provider: 'FEDAPAY',
+      customerEmail: customerEmail ?? null,
+    });
   }
 
   /**
