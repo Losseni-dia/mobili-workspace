@@ -208,13 +208,6 @@
     border-left: 2px dashed rgba(variables.$white, 0.4);
   }
 
-  .stub-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-  }
-
   .stub-info {
     display: flex;
     flex-direction: column;
@@ -233,12 +226,6 @@
       font-weight: 800;
       font-size: 0.9rem;
     }
-  }
-
-  // Repliable sur mobile uniquement (voir mixins.mobile plus bas) — toujours visible
-  // et sans bouton sur desktop.
-  .qr-toggle {
-    display: none;
   }
 
   .seat-badge {
@@ -383,70 +370,142 @@
 }
 
 // ======================================================================
-//  RESPONSIVE
+//  MOBILE — carte dédiée simple, sobre, une seule colonne (voir .mobile-ticket
+//  ci-dessous) : ne réutilise volontairement pas la carte "billet physique"
+//  desktop, dont la mise en page 2 colonnes ne se prêtait pas à un simple
+//  redécoupage CSS sur petit écran (bus renversé, QR invisible, etc. — bugs
+//  constatés lors d'une première tentative). Les deux cartes coexistent dans
+//  le DOM, une seule visible à la fois selon le seuil $breakpoint-mobile.
 // ======================================================================
-// Aligné sur _TicketCard (mobile_app) : QR replié par défaut (bouton toggle), infos
-// SIÈGE/VÉHICULE côte à côte au lieu d'empilées dans la souche verticale desktop.
-@include mixins.mobile {
-  .ticket-card {
-    grid-template-columns: 1fr;
+.mobile-ticket { display: none; }
 
-    &::before,
-    &::after {
-      left: -11px;
-      right: auto;
-      display: none;
+@include mixins.mobile {
+  .desktop-only { display: none; }
+
+  .mobile-ticket {
+    display: block;
+    padding: 16px;
+    background: variables.$white;
+    border-radius: variables.$radius-md;
+    border: 1px solid variables.$gray-200;
+  }
+
+  .mt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    .mt-partner {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: variables.$gray-500;
+    }
+
+    .mt-status {
+      padding: 3px 10px;
+      border-radius: variables.$radius-pill;
+      background: rgba(variables.$success, 0.12);
+      color: variables.$success;
+      font-size: 0.68rem;
+      font-weight: 800;
+
+      &.used { background: variables.$gray-200; color: variables.$gray-600; }
     }
   }
 
-  .ticket-stub::before {
-    left: 18px;
-    right: 18px;
-    top: 0;
-    bottom: auto;
-    height: 2px;
-    width: auto;
-    border-left: none;
-    border-top: 2px dashed rgba(variables.$white, 0.4);
-  }
-
-  .route-display { grid-template-columns: 1fr; gap: 20px; }
-  .route-display .connector { transform: rotate(90deg); }
-
-  .stub-row {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-  }
-
-  .qr-toggle {
+  .mt-route {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: variables.$mobili-blue-deep;
+
+    &__arrow { color: variables.$mobili-yellow-dark; font-size: 0.9rem; }
+  }
+
+  .mt-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 12px 0;
+    border-top: 1px solid variables.$gray-100;
+    border-bottom: 1px solid variables.$gray-100;
+
+    &__item {
+      display: flex;
+      flex-direction: column;
+
+      .label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: variables.$gray-400;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
+
+      .value {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: variables.$mobili-blue-deep;
+      }
+    }
+  }
+
+  .mt-qr-toggle {
+    display: block;
     width: 100%;
-    padding: 10px 0;
-    margin-top: 4px;
-    background: rgba(variables.$white, 0.12);
+    margin-top: 10px;
+    padding: 8px 0;
+    background: none;
     border: none;
-    border-radius: variables.$radius-sm;
-    color: variables.$white;
+    color: variables.$mobili-blue;
     font-weight: 700;
     font-size: 0.8rem;
+    text-align: center;
     cursor: pointer;
-
-    &__chevron { font-size: 0.65rem; }
   }
 
-  .qr-code,
-  .serial {
-    display: none;
+  .mt-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+
+    img { width: 140px; height: 140px; }
+
+    &__serial {
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+      color: variables.$gray-500;
+      letter-spacing: 0.5px;
+    }
   }
 
-  .ticket-stub.qr-open {
-    .qr-code,
-    .serial {
-      display: block;
+  .mt-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid variables.$gray-100;
+
+    button, a {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: variables.$mobili-blue;
+      text-decoration: none;
+      cursor: pointer;
+
+      &.danger { color: variables.$danger; }
     }
   }
 }

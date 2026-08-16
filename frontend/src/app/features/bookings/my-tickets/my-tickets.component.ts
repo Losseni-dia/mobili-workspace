@@ -94,8 +94,11 @@ export class MyTicketsComponent implements OnInit {
   }
 
   // ✅ Nouvelle fonction de téléchargement direct
-  async downloadTicket(ticket: any) {
-    const ticketId = `ticket-${ticket.ticketNumber}`;
+  // `elementId` : deux cartes coexistent dans le DOM (desktop masquée en CSS sur mobile et
+  // inversement) — html2canvas ne capture rien d'un élément display:none, donc chaque bouton
+  // (desktop / mobile) doit passer l'id de SA carte, effectivement visible au moment du clic.
+  async downloadTicket(ticket: any, elementId?: string) {
+    const ticketId = elementId ?? `ticket-${ticket.ticketNumber}`;
     const element = document.getElementById(ticketId);
 
     if (!element) {

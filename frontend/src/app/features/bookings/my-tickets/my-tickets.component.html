@@ -10,7 +10,8 @@
     <div class="tickets-grid">
         @for (ticket of tickets(); track ticket.ticketNumber) {
         <div class="ticket-wrapper">
-            <div class="ticket-card" [id]="'ticket-' + ticket.ticketNumber">
+            <!-- Desktop / tablette : carte "billet physique" 2 colonnes -->
+            <div class="ticket-card desktop-only" [id]="'ticket-' + ticket.ticketNumber">
                 <div class="ticket-main">
                     <div class="ticket-top">
                         <span class="partner">{{ ticket.partnerName || 'TRANSPORT MOBILI' }}</span>
@@ -52,26 +53,19 @@
                     </div>
                 </div>
 
-                <div class="ticket-stub" [class.qr-open]="isQrOpen(ticket.ticketNumber)">
-                    <div class="stub-row">
-                        <div class="stub-info">
-                            <span class="label">SIÈGE</span>
-                            <div class="seat-badge">
-                                <span class="seat-icon">💺</span>
-                                <span class="seat-number">{{ ticket.seatNumber || 'N/A' }}</span>
-                            </div>
-                        </div>
-
-                        <div class="stub-info">
-                            <span class="label">VÉHICULE</span>
-                            <span class="value">{{ ticket.vehiculePlateNumber }}</span>
+                <div class="ticket-stub">
+                    <div class="stub-info">
+                        <span class="label">SIÈGE</span>
+                        <div class="seat-badge">
+                            <span class="seat-icon">💺</span>
+                            <span class="seat-number">{{ ticket.seatNumber || 'N/A' }}</span>
                         </div>
                     </div>
 
-                    <button type="button" class="qr-toggle" (click)="toggleQr(ticket.ticketNumber)">
-                        {{ isQrOpen(ticket.ticketNumber) ? 'Masquer le code QR' : 'Afficher le code QR' }}
-                        <span class="qr-toggle__chevron">{{ isQrOpen(ticket.ticketNumber) ? '▲' : '▼' }}</span>
-                    </button>
+                    <div class="stub-info">
+                        <span class="label">VÉHICULE</span>
+                        <span class="value">{{ ticket.vehiculePlateNumber }}</span>
+                    </div>
 
                     <div class="qr-code">
                         <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + ticket.qrCodeData"
@@ -81,7 +75,7 @@
                     <span class="serial">{{ ticket.ticketNumber }}</span>
                 </div>
             </div>
-            <div class="ticket-actions">
+            <div class="ticket-actions desktop-only">
                 <button (click)="downloadTicket(ticket)" class="btn-download">
                     📥 Enregistrer l'image (Galerie)
                 </button>
@@ -93,6 +87,55 @@
                 <button type="button" (click)="askHide(ticket)" class="btn-hide">
                     🗑 Masquer
                 </button>
+            </div>
+
+            <!-- Mobile : carte compacte, alignée sur _TicketCard (mobile_app) mais sobre -->
+            <div class="mobile-ticket" [id]="'ticket-mobile-' + ticket.ticketNumber">
+                <div class="mt-header">
+                    <span class="mt-partner">{{ ticket.partnerName || 'TRANSPORT MOBILI' }}</span>
+                    <span class="mt-status" [class.used]="ticket.status === 'UTILISÉ'">{{ ticket.status }}</span>
+                </div>
+
+                <div class="mt-route">
+                    <strong>{{ ticket.departureCity }}</strong>
+                    <span class="mt-route__arrow">→</span>
+                    <strong>{{ ticket.arrivalCity }}</strong>
+                </div>
+
+                <div class="mt-info">
+                    <div class="mt-info__item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ ticket.departureDateTime | date:'dd MMM yyyy' }}</span>
+                    </div>
+                    <div class="mt-info__item">
+                        <span class="label">Passager</span>
+                        <span class="value">{{ ticket.passengerFullName }}</span>
+                    </div>
+                    <div class="mt-info__item">
+                        <span class="label">Siège</span>
+                        <span class="value">{{ ticket.seatNumber || 'N/A' }}</span>
+                    </div>
+                </div>
+
+                <button type="button" class="mt-qr-toggle" (click)="toggleQr(ticket.ticketNumber)">
+                    {{ isQrOpen(ticket.ticketNumber) ? 'Masquer le QR' : 'Afficher le QR' }}
+                </button>
+
+                @if (isQrOpen(ticket.ticketNumber)) {
+                    <div class="mt-qr">
+                        <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + ticket.qrCodeData"
+                            alt="QR Code Validation">
+                        <span class="mt-qr__serial">{{ ticket.ticketNumber }}</span>
+                    </div>
+                }
+
+                <div class="mt-actions">
+                    <button type="button" (click)="downloadTicket(ticket, 'ticket-mobile-' + ticket.ticketNumber)">Enregistrer</button>
+                    @if (ticket.tripId) {
+                        <a [routerLink]="['/my-account/trip-channel', ticket.tripId]">Annonces</a>
+                    }
+                    <button type="button" class="danger" (click)="askHide(ticket)">Masquer</button>
+                </div>
             </div>
         </div>
         }
