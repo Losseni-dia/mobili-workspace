@@ -79,8 +79,9 @@ export interface BookingPricePreviewResponse {
   total: number;
 }
 
+/** Aligné sur PaymentResponse (backend) — le champ s'appelle paymentUrl, pas url. */
 export interface PaymentCheckoutResponse {
-  url: string;
+  paymentUrl: string;
 }
 
 /** Aligné sur PartnerTransactionResponse (backend) — détail financier par réservation payée. */
