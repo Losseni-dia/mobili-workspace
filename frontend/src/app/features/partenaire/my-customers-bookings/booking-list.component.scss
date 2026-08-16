@@ -126,6 +126,21 @@
 .status-pill.pending { background: rgba(variables.$warning, 0.14); color: variables.$warning; }
 .status-pill.cancelled { background: variables.$danger-soft; color: variables.$danger; }
 
+.channel-pill {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: variables.$radius-pill;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(variables.$mobili-blue, 0.1);
+  color: variables.$mobili-blue-deep;
+
+  &.guichet {
+    background: variables.$station-green-soft;
+    color: variables.$station-green;
+  }
+}
+
 .data-table .amount {
   color: variables.$station-green;
   font-weight: 800;
