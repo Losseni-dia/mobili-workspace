@@ -306,6 +306,18 @@ export class TripManagementComponent implements OnInit {
     this.passengersTrip.set(null);
   }
 
+  /**
+   * Sièges à afficher pour une réservation — repli sur `numberOfSeats` si `seatNumbers`
+   * est vide (réservations plus anciennes, ou collection non chargée) : sans ce repli, la
+   * modale Passagers restait visuellement vide malgré des réservations bien présentes
+   * (passengerStats affichait quand même les bons totaux, seule la liste ne rendait rien).
+   */
+  seatsForBooking(b: BookingResponse): string[] {
+    if (b.seatNumbers && b.seatNumbers.length > 0) return b.seatNumbers;
+    const n = b.numberOfSeats || 1;
+    return Array.from({ length: n }, () => '—');
+  }
+
   // ====== Vente directe ======
   openSale(trip: Trip) {
     this.saleTrip.set(trip);
