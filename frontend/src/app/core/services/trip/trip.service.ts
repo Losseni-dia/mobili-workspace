@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 export interface TripLegFarePayload {
   fromStopIndex: number;
@@ -91,6 +91,16 @@ export class TripService {
     return this.http.post<Trip>('/trips', formData);
   }
   // Pour charger tous les voyages par défaut sur la Home
+  /**
+   * Suggestions de villes pour l'autocomplétion Départ/Arrivée — aligné sur
+   * `fetchCities()` (mobile_app, `CityAutocompleteField`), même endpoint `GET /trips/cities`.
+   */
+  getCities(query: string): Observable<string[]> {
+    const q = query.trim();
+    if (!q) return of([]);
+    return this.http.get<string[]>('/trips/cities', { params: new HttpParams().set('q', q) });
+  }
+
   getAllTrips(transportType?: string): Observable<Trip[]> {
     let params = new HttpParams();
     if (transportType && transportType.trim() !== '') {

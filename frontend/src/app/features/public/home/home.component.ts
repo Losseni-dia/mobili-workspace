@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -47,6 +47,14 @@ export class HomeComponent implements OnInit {
     transportType: [''],
   });
 
+  /**
+   * Autocomplétion ville — alignée sur `CityAutocompleteField` (mobile_app), même
+   * endpoint `GET /trips/cities`. Un champ actif à la fois (celui avec le focus).
+   */
+  departureSuggestions = signal<string[]>([]);
+  arrivalSuggestions = signal<string[]>([]);
+  activeField = signal<'departure' | 'arrival' | null>(null);
+
   constructor() {
     this.searchForm.valueChanges
       .pipe(
@@ -61,6 +69,46 @@ export class HomeComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.refreshTripsFromForm());
+
+    this.searchForm
+      .get('departure')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => this.tripService.getCities(q ?? '')),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => {
+        this.departureSuggestions.set(cities);
+        this.cdr.markForCheck();
+      });
+
+    this.searchForm
+      .get('arrival')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => this.tripService.getCities(q ?? '')),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => {
+        this.arrivalSuggestions.set(cities);
+        this.cdr.markForCheck();
+      });
+  }
+
+  onCityFieldFocus(field: 'departure' | 'arrival'): void {
+    this.activeField.set(field);
+  }
+
+  /** Délai court pour laisser le temps au (click) sur une suggestion de se déclencher. */
+  onCityFieldBlur(): void {
+    setTimeout(() => this.activeField.set(null), 150);
+  }
+
+  selectCity(field: 'departure' | 'arrival', city: string): void {
+    this.searchForm.get(field)?.setValue(city);
+    this.activeField.set(null);
   }
 
   ngOnInit(): void {
