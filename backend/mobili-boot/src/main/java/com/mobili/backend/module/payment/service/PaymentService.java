@@ -8,9 +8,12 @@ public interface PaymentService {
     /**
      * Crée une session de paiement chez le fournisseur.
      * @param amount Montant en unités réelles (ex: XOF ou EUR réel)
+     * @param frontendBaseUrl Site web (Angular) vers lequel rediriger le navigateur après
+     *                        paiement — voir {@link FrontendReturnUrlResolver}, jamais l'API.
      * @return URL de paiement
      */
-    String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail);
+    String createPaymentSession(Long bookingId, Long amount, String currency, String customerEmail,
+            String frontendBaseUrl);
 
     /**
      * Demande un remboursement au fournisseur.

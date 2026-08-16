@@ -23,14 +23,16 @@ public class FedaPayService {
     @Value("${fedapay.environment:sandbox}")
     private String environment;
 
-    /** Site web Angular — jamais l'API — pour rediriger le navigateur après le checkout FedaPay. */
-    @Value("${mobili.public.frontend-url}")
-    private String frontendUrl;
-
     public record FedaPayCheckoutResult(String paymentUrl, String transactionId) {
     }
 
-    public FedaPayCheckoutResult createPaymentSession(double amount, String customerEmail, Long bookingId) {
+    /**
+     * @param frontendBaseUrl Site web (Angular) — jamais l'API — vers lequel rediriger le
+     *                        navigateur après le checkout FedaPay. Voir
+     *                        {@link com.mobili.backend.module.payment.service.FrontendReturnUrlResolver}.
+     */
+    public FedaPayCheckoutResult createPaymentSession(double amount, String customerEmail, Long bookingId,
+            String frontendBaseUrl) {
 
         try {
             FedaPay.setApiKey(secretKey.trim());
@@ -55,7 +57,7 @@ public class FedaPayService {
             // URL (api.my-mobili.com/v1/payments/callback) ne correspondait d'ailleurs à aucun
             // endpoint existant (le vrai webhook est /v1/payments/fedapay/callback, configuré
             // séparément côté dashboard FedaPay, sans rapport avec ce paramètre).
-            params.put("callback_url", frontendUrl + "/payment/success?id=" + bookingId);
+            params.put("callback_url", frontendBaseUrl + "/payment/success?id=" + bookingId);
 
             // Le SDK attend souvent les métadonnées ainsi :
             Map<String, Object> metadata = new HashMap<>();
@@ -105,7 +107,7 @@ public class FedaPayService {
 
     private void applyApiConfig() throws Exception {
         FedaPay.setApiKey(secretKey.trim());
-        FedaPay.setEnvironement("sandbox");
+        FedaPay.setEnvironement(environment);
     }
 
     /**

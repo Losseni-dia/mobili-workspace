@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
@@ -30,6 +31,7 @@ import com.mobili.backend.module.payment.enums.PaymentStatus;
 import com.mobili.backend.module.payment.fedaPay.dto.PaymentVerifyResponse;
 import com.mobili.backend.module.payment.fedaPay.service.FedaPayService;
 import com.mobili.backend.module.payment.service.ExchangeRateService;
+import com.mobili.backend.module.payment.service.FrontendReturnUrlResolver;
 import com.mobili.backend.module.payment.service.PaymentCreationService;
 import com.mobili.backend.module.payment.service.PaymentGatewayResolver;
 import com.mobili.backend.module.payment.service.PaymentService;
@@ -55,6 +57,8 @@ class PaymentControllerTest {
     private ExchangeRateService exchangeRateService;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private FrontendReturnUrlResolver frontendReturnUrlResolver;
 
     private PaymentController paymentController;
 
@@ -65,7 +69,8 @@ class PaymentControllerTest {
                 fedaPayService,
                 paymentGatewayResolver,
                 paymentCreationService,
-                exchangeRateService);
+                exchangeRateService,
+                frontendReturnUrlResolver);
     }
 
     @Test
@@ -89,11 +94,14 @@ class PaymentControllerTest {
                 .thenReturn(payment);
 
         when(paymentGatewayResolver.resolve(PaymentProvider.STRIPE)).thenReturn(paymentService);
-        when(paymentService.createPaymentSession(1L, 15L, "EUR", "client@mobili.test"))
+        when(frontendReturnUrlResolver.resolve(any())).thenReturn("https://staging.my-mobili.com");
+        when(paymentService.createPaymentSession(
+                1L, 15L, "EUR", "client@mobili.test", "https://staging.my-mobili.com"))
                 .thenReturn("https://stripe.example/checkout/session");
 
         PaymentRequest request = new PaymentRequest(PaymentProvider.STRIPE, "client@mobili.test");
-        ResponseEntity<PaymentResponse> response = paymentController.createCheckout(1L, request);
+        ResponseEntity<PaymentResponse> response =
+                paymentController.createCheckout(1L, request, new MockHttpServletRequest());
 
         assertEquals(200, response.getStatusCode().value());
         PaymentResponse body = response.getBody();
