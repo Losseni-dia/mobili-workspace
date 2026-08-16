@@ -530,6 +530,17 @@ public class TripService {
             trip.setOriginDestinationPrice(null);
         }
 
+        // Modifier un trajet (date, prix, chauffeur, ...) ne doit jamais remettre les places
+        // prises à zéro : le formulaire d'édition renvoie un seul champ "Nombre de places" pour
+        // la capacité du véhicule, mappé à la fois sur totalSeats ET availableSeats côté
+        // frontend (correct seulement à la création, où personne n'a encore réservé). Sur une
+        // mise à jour, on ignore la valeur d'availableSeats envoyée par le client et on la
+        // recalcule depuis les réservations/tickets réellement actifs — même logique que
+        // refreshTripAvailableSeatsCounter() déjà utilisée après annulation/blocage de places.
+        if (existingTrip != null) {
+            tripRunService.refreshTripAvailableSeatsCounter(trip);
+        }
+
         Trip saved = tripRepository.save(trip);
 
         if (isNew) {
