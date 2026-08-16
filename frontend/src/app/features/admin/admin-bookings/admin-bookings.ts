@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminBookingListItem } from '../../../core/services/admin/admin.service';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type StatusFilter = 'CONFIRME' | 'ANNULE';
 
@@ -37,6 +38,7 @@ export class AdminBookings implements OnInit {
   toDate = signal('');
   search = signal('');
   statusFilter = signal<StatusFilter>('CONFIRME');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -56,7 +58,7 @@ export class AdminBookings implements OnInit {
   confirmedAmount = computed(() =>
     this.bookings()
       .filter((b) => isConfirmed(b.status))
-      .reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+      .reduce((sum, b) => sum + (b.amount ?? b.totalPrice ?? 0), 0),
   );
 
   ngOnInit(): void {
@@ -81,5 +83,18 @@ export class AdminBookings implements OnInit {
 
   setStatusFilter(f: StatusFilter): void {
     this.statusFilter.set(f);
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.load();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.load();
   }
 }

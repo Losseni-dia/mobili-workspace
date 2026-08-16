@@ -151,7 +151,10 @@ export interface AdminBookingListItem {
   partnerName: string;
   bookingDate: string;
   numberOfSeats: number;
+  /** Vente initiale, figée — n'exclut PAS les tickets annulés depuis. Préférer `amount`. */
   totalPrice: number;
+  /** Montant réellement dû aujourd'hui (se réduit après annulation partielle) — à afficher. */
+  amount: number;
   status: string;
 }
 

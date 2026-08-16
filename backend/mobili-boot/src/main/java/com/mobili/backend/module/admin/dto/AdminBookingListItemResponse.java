@@ -10,6 +10,12 @@ public record AdminBookingListItemResponse(
         String partnerName,
         LocalDateTime bookingDate,
         Integer numberOfSeats,
+        /** Montant de vente initial, figé — n'exclut PAS les tickets annulés depuis. Ne jamais
+         *  l'utiliser seul pour un affichage : préférer {@link #amount()}. */
         Double totalPrice,
+        /** Montant réellement dû aujourd'hui (ticketsAmount + serviceFee + luggageFee des
+         *  tickets encore actifs) — se réduit après une annulation partielle, contrairement à
+         *  {@link #totalPrice()}. Champ à afficher côté admin. */
+        Double amount,
         String status) {
 }
