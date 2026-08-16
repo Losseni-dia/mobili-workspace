@@ -33,11 +33,16 @@
 
             <div class="input-block input-block--transport">
                 <label>Type de transport</label>
-                <select formControlName="transportType">
-                    <option value="">Public ou Covoiturage ?</option>
-                    <option value="PUBLIC">Transport public</option>
-                    <option value="COVOITURAGE">Covoiturage</option>
-                </select>
+                <div class="select-field">
+                    <select formControlName="transportType">
+                        <option value="">Tous</option>
+                        <option value="PUBLIC">Transport public</option>
+                        <option value="COVOITURAGE">Covoiturage</option>
+                    </select>
+                    @if (!searchForm.get('transportType')?.value) {
+                        <span class="select-field__placeholder">Public ou Covoiturage ?</span>
+                    }
+                </div>
             </div>
         </form>
     </div>
