@@ -68,7 +68,7 @@ export class PartnerTicketsComponent implements OnInit {
       next: (s) => this.stations.set(s),
       error: () => this.stations.set([]),
     });
-    this.loadTickets();
+    this.setPeriodPreset('month');
   }
 
   loadTickets(): void {

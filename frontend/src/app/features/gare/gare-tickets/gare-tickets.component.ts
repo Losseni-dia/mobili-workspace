@@ -66,7 +66,7 @@ export class GareTicketsComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.loadTickets();
+    this.setPeriodPreset('month');
   }
 
   loadTickets(): void {

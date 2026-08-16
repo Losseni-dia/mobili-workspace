@@ -43,7 +43,7 @@ export class GareTransactionsComponent implements OnInit {
   totalGross = computed(() => this.transactions().reduce((sum, t) => sum + (t.grossAmount || 0), 0));
 
   ngOnInit(): void {
-    this.load();
+    this.setPeriodPreset('month');
   }
 
   load(): void {

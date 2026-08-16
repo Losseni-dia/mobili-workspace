@@ -50,7 +50,7 @@ export class PartnerTransactionsComponent implements OnInit {
       next: (s) => this.stations.set(s),
       error: () => this.stations.set([]),
     });
-    this.load();
+    this.setPeriodPreset('month');
   }
 
   load(): void {
