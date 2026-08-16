@@ -1,6 +1,7 @@
 @use "sass:color";
 @use '../../../styles/variables';
 @use '../../../styles/mixins';
+@use '../../../styles/mobile-nav';
 
 $sidebar-w: 256px;
 $sidebar-w-collapsed: 76px;
@@ -568,4 +569,14 @@ $sidebar-w-collapsed: 76px;
   .sidebar-footer { margin-top: 0; padding: 0; border: none; border-left: 1px solid variables.$gray-200; margin-left: 8px; padding-left: 10px; display: flex; gap: 4px; }
   .shell-topbar { flex-wrap: wrap; padding: 18px 20px; }
   .shell-content { padding: 22px 20px 40px; }
+}
+
+// En dessous de $breakpoint-mobile : sidebar remplacée par la seule barre logo+avatar
+// ci-dessus (.mobile-topbar, styles partagés dans _mobile-nav.scss), qui ouvre le tiroir
+// listant les mêmes navSections().
+@include mixins.mobile {
+  .partner-shell, .partner-shell.collapsed { grid-template-columns: 1fr; }
+  .shell-sidebar { display: none; }
+  .shell-topbar { padding: 16px; }
+  .shell-content { padding: 16px 16px 32px; }
 }

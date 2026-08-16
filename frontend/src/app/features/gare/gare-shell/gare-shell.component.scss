@@ -1,6 +1,7 @@
 @use "sass:color";
 @use '../../../styles/variables';
 @use '../../../styles/mixins';
+@use '../../../styles/mobile-nav';
 
 $sidebar-w: 260px;
 $sidebar-w-collapsed: 76px;
@@ -402,4 +403,17 @@ $sidebar-w-collapsed: 76px;
   color: variables.$gray-500;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+// ======================================================================
+//  RESPONSIVE — première media query de ce fichier (aucune n'existait avant ce chantier)
+// ======================================================================
+// En dessous de $breakpoint-mobile : sidebar remplacée par la seule barre logo+avatar
+// ci-dessus (.mobile-topbar, styles partagés dans _mobile-nav.scss), qui ouvre le tiroir
+// listant les mêmes navItems/companyNavItems.
+@include mixins.mobile {
+  .gare-shell, .gare-shell.collapsed { grid-template-columns: 1fr; }
+  .shell-sidebar { display: none; }
+  .shell-topbar { padding: 16px; }
+  .shell-content { padding: 16px 16px 32px; }
 }

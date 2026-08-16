@@ -1,3 +1,35 @@
+<header class="mobile-topbar">
+    <a routerLink="/" class="mobile-topbar__logo">MOBILI</a>
+    <button type="button" class="mobile-topbar__avatar" (click)="mobileMenuOpen.set(true)" title="Ouvrir le menu" aria-label="Ouvrir le menu">
+        {{ userInitials() }}
+    </button>
+</header>
+
+<div class="mobile-drawer-overlay" [class.open]="mobileMenuOpen()" (click)="mobileMenuOpen.set(false)">
+    <nav class="mobile-drawer" (click)="$event.stopPropagation()">
+        <div class="mobile-drawer__header">
+            <h3>Administration</h3>
+            <button type="button" class="mobile-drawer__close" (click)="mobileMenuOpen.set(false)">×</button>
+        </div>
+
+        @for (section of navSections; track section.title) {
+            @for (item of section.items; track item.path) {
+                <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    class="mobile-drawer__item"
+                    (click)="mobileMenuOpen.set(false)"
+                >
+                    {{ item.icon }} {{ item.label }}
+                </a>
+            }
+        }
+
+        <a routerLink="/" class="mobile-drawer__item soft" (click)="mobileMenuOpen.set(false)">🏠 Retour site</a>
+        <button type="button" class="mobile-drawer__item soft" (click)="logout()">⏻ Déconnexion</button>
+    </nav>
+</div>
+
 <div class="admin-shell" [class.collapsed]="collapsed()">
     <aside class="shell-sidebar">
         <div class="sidebar-brand">
