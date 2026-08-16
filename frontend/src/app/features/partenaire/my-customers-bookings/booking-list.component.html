@@ -65,6 +65,7 @@
                         <th>Sièges</th>
                         <th>Statut</th>
                         <th class="right">Montant</th>
+                        <th class="right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,6 +96,9 @@
                                 </span>
                             </td>
                             <td class="right amount">{{ displayAmount(booking) | number }} FCFA</td>
+                            <td class="right">
+                                <button type="button" class="icon-btn" title="Voir tickets et voyageurs" (click)="openDetails(booking)">👁</button>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -108,3 +112,55 @@
         </div>
     }
 </section>
+
+@if (detailsBooking(); as booking) {
+    <div class="modal-overlay" (click)="closeDetails()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>#{{ booking.reference }} · {{ booking.tripRoute }}</h3>
+                <button class="close-btn" (click)="closeDetails()">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="passenger-stats">
+                    <div class="stat-chip">
+                        <span>Client</span>
+                        <strong>{{ booking.customerName }}</strong>
+                    </div>
+                    <div class="stat-chip">
+                        <span>Places</span>
+                        <strong>{{ booking.numberOfSeats }}</strong>
+                    </div>
+                    <div class="stat-chip">
+                        <span>Montant</span>
+                        <strong>{{ displayAmount(booking) | number }} FCFA</strong>
+                    </div>
+                </div>
+
+                @if (isLoadingDetails()) {
+                    <div class="loader">Chargement…</div>
+                } @else if (detailsTickets().length === 0) {
+                    <div class="empty">
+                        <div class="empty-icon">🎫</div>
+                        <strong>Aucun ticket trouvé</strong>
+                        <p>Aucun billet rattaché à cette réservation.</p>
+                    </div>
+                } @else {
+                    <ul class="passenger-rows">
+                        @for (t of detailsTickets(); track t.id) {
+                            <li class="passenger-row">
+                                <span class="seat-badge">{{ t.seatNumber }}</span>
+                                <span class="pax-name">{{ t.passengerFullName || booking.customerName || '—' }}</span>
+                                <span class="pax-ref">{{ t.ticketNumber }}</span>
+                                <span class="status-pill" [class.active]="t.status !== 'ANNULÉ'" [class.warn]="t.status === 'ANNULÉ'">
+                                    <span class="dot"></span>
+                                    {{ t.status }}
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+}

@@ -79,4 +79,13 @@ public class TicketController {
                 .collect(Collectors.toList());
     }
 
+    // TICKETS + VOYAGEURS D'UNE RÉSERVATION (bouton "Voir" côté partenaire, Mes réservations)
+    @GetMapping("/booking/{bookingId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN', 'ROLE_STATION')")
+    public List<TicketResponseDTO> getByBooking(@PathVariable Long bookingId) {
+        return ticketService.findAllByBookingId(bookingId).stream()
+                .map(ticketMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
@@ -37,6 +38,7 @@ function grossAmount(b: BookingResponse): number {
 })
 export class BookingListComponent implements OnInit {
   private bookingService = inject(BookingService);
+  private ticketService = inject(TicketService);
 
   // État des données
   bookings = signal<BookingResponse[]>([]);
@@ -152,5 +154,30 @@ export class BookingListComponent implements OnInit {
         Statut: b.status,
       })),
     );
+  }
+
+  // ====== Détails (tickets + voyageurs) ======
+  detailsBooking = signal<BookingResponse | null>(null);
+  detailsTickets = signal<TicketResponse[]>([]);
+  isLoadingDetails = signal(false);
+
+  openDetails(booking: BookingResponse) {
+    this.detailsBooking.set(booking);
+    this.detailsTickets.set([]);
+    this.isLoadingDetails.set(true);
+    this.ticketService.getByBooking(booking.id).subscribe({
+      next: (tickets) => {
+        this.detailsTickets.set(tickets || []);
+        this.isLoadingDetails.set(false);
+      },
+      error: () => {
+        this.detailsTickets.set([]);
+        this.isLoadingDetails.set(false);
+      },
+    });
+  }
+
+  closeDetails() {
+    this.detailsBooking.set(null);
   }
 }
