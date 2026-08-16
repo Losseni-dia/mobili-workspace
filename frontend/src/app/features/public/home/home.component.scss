@@ -474,11 +474,11 @@
 }
 
 // Aligné sur trips_list_page.dart (mobile_app) : pas de hero marketing, filtre
-// directement en haut de l'écran sur fond bleu, Départ/Arrivée sur une ligne puis
-// Date/Type sur la suivante. Départ/Arrivée/Type n'ont pas besoin de label visible
-// (le placeholder ou la valeur par défaut "Tous" suffisent) — mais `<input
-// type="date">` n'affiche PAS de placeholder personnalisé (juste le format
-// dd/mm/yyyy du navigateur, illisible comme seul indice) : son label reste visible.
+// directement en haut de l'écran sur fond jaune Mobili (même couleur que le header),
+// Départ/Arrivée sur une ligne puis Date/Type sur la suivante. Tous les labels sont
+// masqués — chaque champ porte son indice directement dedans (placeholder natif pour
+// Départ/Arrivée, valeur par défaut "Tous" pour le type, overlay `.date-field__placeholder`
+// pour la date puisque `input[type=date]` n'a pas de vrai placeholder natif).
 @include mixins.mobile {
   .hero { display: none; }
 
@@ -489,20 +489,14 @@
     border-radius: 0;
     box-shadow: none;
     border: none;
-    background: variables.$mobili-blue;
+    background: rgba(variables.$mobili-yellow, 0.96);
 
     .search-form {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
 
-      .input-block:not(.input-block--date) label { @include mixins.visually-hidden; }
-
-      .input-block--date label {
-        color: rgba(variables.$white, 0.85);
-        font-size: 0.68rem;
-        margin-bottom: 2px;
-      }
+      .input-block label { @include mixins.visually-hidden; }
 
       .input-block input,
       .input-block select {
@@ -511,6 +505,26 @@
       }
 
       .input-block--transport { grid-column: auto; }
+
+      .date-field {
+        position: relative;
+
+        input[type='date'] { width: 100%; }
+
+        &__placeholder {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          padding: 0 12px;
+          border-radius: variables.$radius-md;
+          border: 1.5px solid variables.$gray-200;
+          background: variables.$white;
+          color: variables.$gray-400;
+          font-size: 0.88rem;
+          pointer-events: none;
+        }
+      }
     }
   }
 }

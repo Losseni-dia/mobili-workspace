@@ -23,7 +23,12 @@
 
             <div class="input-block input-block--date">
                 <label>Date</label>
-                <input type="date" formControlName="date">
+                <div class="date-field">
+                    <input type="date" formControlName="date">
+                    @if (!searchForm.get('date')?.value) {
+                        <span class="date-field__placeholder">Date</span>
+                    }
+                </div>
             </div>
 
             <div class="input-block input-block--transport">
