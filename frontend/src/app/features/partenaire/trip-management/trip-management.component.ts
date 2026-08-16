@@ -96,11 +96,6 @@ export class TripManagementComponent implements OnInit {
   deletingId = signal<number | null>(null);
   deleteError = signal<string | null>(null);
 
-  // Gestion du blocage des places
-  selectedTripForSeats = signal<Trip | null>(null);
-  occupiedSeatsForTrip = signal<string[]>([]);
-  tempSelectedSeats = signal<string[]>([]);
-
   // ====== Passagers (aligné sur PassengersSheet mobile) ======
   passengersTrip = signal<Trip | null>(null);
   passengersList = signal<BookingResponse[]>([]);
@@ -182,38 +177,6 @@ export class TripManagementComponent implements OnInit {
         this.myTrips.set([]);
         this.isLoading.set(false);
       },
-    });
-  }
-
-  openSeatManager(trip: Trip) {
-    this.selectedTripForSeats.set(trip);
-    this.tempSelectedSeats.set([]);
-
-    this.bookingService.getOccupiedSeats(trip.id).subscribe({
-      next: (occupiedSeats: string[]) => {
-        this.occupiedSeatsForTrip.set(occupiedSeats);
-      },
-      error: (err) => {
-        console.error('Erreur chargement places occupées', err);
-        this.occupiedSeatsForTrip.set([]);
-      },
-    });
-  }
-
-  onSeatsSelected(seats: string[]) {
-    this.tempSelectedSeats.set(seats);
-  }
-
-  confirmDeactivation() {
-    const tripId = this.selectedTripForSeats()?.id;
-    if (!tripId || this.tempSelectedSeats().length === 0) return;
-
-    this.bookingService.deactivateSeats(tripId, this.tempSelectedSeats()).subscribe({
-      next: () => {
-        this.selectedTripForSeats.set(null);
-        this.loadTrips(); // Rafraîchit le tableau pour voir la baisse de places disponibles
-      },
-      error: (err) => console.error('Erreur lors de la désactivation', err),
     });
   }
 
