@@ -437,7 +437,10 @@
 
 // Aligné sur trips_list_page.dart (mobile_app) : pas de hero marketing, filtre
 // directement en haut de l'écran sur fond bleu, Départ/Arrivée sur une ligne puis
-// Date/Type sur la suivante, sans label visible (juste le placeholder dans le champ).
+// Date/Type sur la suivante. Départ/Arrivée/Type n'ont pas besoin de label visible
+// (le placeholder ou la valeur par défaut "Tous" suffisent) — mais `<input
+// type="date">` n'affiche PAS de placeholder personnalisé (juste le format
+// dd/mm/yyyy du navigateur, illisible comme seul indice) : son label reste visible.
 @include mixins.mobile {
   .hero { display: none; }
 
@@ -455,7 +458,13 @@
       grid-template-columns: 1fr 1fr;
       gap: 8px;
 
-      .input-block label { @include mixins.visually-hidden; }
+      .input-block:not(.input-block--date) label { @include mixins.visually-hidden; }
+
+      .input-block--date label {
+        color: rgba(variables.$white, 0.85);
+        font-size: 0.68rem;
+        margin-bottom: 2px;
+      }
 
       .input-block input,
       .input-block select {
