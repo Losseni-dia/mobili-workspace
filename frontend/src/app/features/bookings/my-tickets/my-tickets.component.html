@@ -23,7 +23,7 @@
                     <div class="route-display">
                         <div class="point">
                             <span class="time">{{ ticket.departureDateTime | date:'HH:mm' }}</span>
-                            <span class="city">{{ ticket.departureCity }}</span>
+                            <span class="city">{{ ticket.boardingCity ?? ticket.departureCity }}</span>
                         </div>
 
                         <div class="connector">
@@ -33,7 +33,7 @@
 
                         <div class="point">
                             <span class="time"></span>
-                            <span class="city">{{ ticket.arrivalCity }}</span>
+                            <span class="city">{{ ticket.alightingCity ?? ticket.arrivalCity }}</span>
                         </div>
                     </div>
 
@@ -50,6 +50,12 @@
                             <span class="label">PRIX</span>
                             <span class="value">{{ ticket.price | number }} FCFA</span>
                         </div>
+                        @if (ticket.bookingDate) {
+                            <div class="info-group">
+                                <span class="label">RÉSERVÉ LE</span>
+                                <span class="value">{{ ticket.bookingDate | date:'dd MMM yyyy à HH:mm' }}</span>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -97,9 +103,9 @@
                 </div>
 
                 <div class="mt-route">
-                    <strong>{{ ticket.departureCity }}</strong>
+                    <strong>{{ ticket.boardingCity ?? ticket.departureCity }}</strong>
                     <span class="mt-route__arrow">→</span>
-                    <strong>{{ ticket.arrivalCity }}</strong>
+                    <strong>{{ ticket.alightingCity ?? ticket.arrivalCity }}</strong>
                 </div>
 
                 <div class="mt-info">
@@ -115,6 +121,12 @@
                         <span class="label">Siège</span>
                         <span class="value">{{ ticket.seatNumber || 'N/A' }}</span>
                     </div>
+                    @if (ticket.bookingDate) {
+                        <div class="mt-info__item">
+                            <span class="label">Réservé le</span>
+                            <span class="value">{{ ticket.bookingDate | date:'dd MMM yyyy à HH:mm' }}</span>
+                        </div>
+                    }
                 </div>
 
                 <button type="button" class="mt-qr-toggle" (click)="toggleQr(ticket.ticketNumber)">
@@ -154,7 +166,7 @@
             <div class="hide-modal-content" (click)="$event.stopPropagation()">
                 <h3>Masquer ce billet ?</h3>
                 <p>
-                    Le billet <strong>#{{ t.ticketNumber }}</strong> ({{ t.departureCity }} → {{ t.arrivalCity }})
+                    Le billet <strong>#{{ t.ticketNumber }}</strong> ({{ t.boardingCity ?? t.departureCity }} → {{ t.alightingCity ?? t.arrivalCity }})
                     ne s'affichera plus ici. Il reste valable pour l'embarquement et consultable via votre historique
                     de réservations.
                 </p>
