@@ -238,6 +238,7 @@ public class AdminService {
                         b.getBookingDate(),
                         b.getNumberOfSeats(),
                         b.getTotalPrice(),
+                        b.getGrossAmount() + (b.getServiceFee() != null ? b.getServiceFee() : 0),
                         b.getStatus() != null ? b.getStatus().name() : "—"))
                 .toList();
     }
@@ -278,7 +279,11 @@ public class AdminService {
                             luggageFee,
                             commissionTotal,
                             companyNet,
-                            b.getTotalPrice(),
+                            // Doit suivre l'annulation partielle comme ticketsAmount/luggageFee
+                            // ci-dessus (b.getTotalPrice() brut restait figé au montant de vente
+                            // initial même après annulation d'un ou plusieurs tickets — décalage
+                            // avec companyNet/commissionTotal qui, eux, se réduisaient déjà).
+                            ticketsAmount + serviceFee + luggageFee,
                             b.getStatus() != null ? b.getStatus().name() : "—");
                 })
                 .toList();

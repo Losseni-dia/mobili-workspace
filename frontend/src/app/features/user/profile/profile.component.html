@@ -65,7 +65,7 @@
                                 <span class="dot"></span>
                                 {{ b.status }}
                             </span>
-                            <strong class="price">{{ (b.totalPrice || b.amount) | number: '1.0-0' }} FCFA</strong>
+                            <strong class="price">{{ (b.amount || b.totalPrice) | number: '1.0-0' }} FCFA</strong>
                         </div>
                     </li>
                 }
@@ -124,7 +124,7 @@
                                     {{ b.status }}
                                 </span>
                             </td>
-                            <td class="right amount">{{ (b.totalPrice || b.amount) | number: '1.0-0' }} FCFA</td>
+                            <td class="right amount">{{ (b.amount || b.totalPrice) | number: '1.0-0' }} FCFA</td>
                         </tr>
                     }
                 </tbody>
