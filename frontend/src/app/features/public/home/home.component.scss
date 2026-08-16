@@ -434,3 +434,36 @@
     }
   }
 }
+
+// Aligné sur trips_list_page.dart (mobile_app) : pas de hero marketing, filtre
+// directement en haut de l'écran sur fond bleu, Départ/Arrivée sur une ligne puis
+// Date/Type sur la suivante, sans label visible (juste le placeholder dans le champ).
+@include mixins.mobile {
+  .hero { display: none; }
+
+  .search-card {
+    margin: 0;
+    max-width: none;
+    padding: 12px 16px;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    background: variables.$mobili-blue;
+
+    .search-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+
+      .input-block label { @include mixins.visually-hidden; }
+
+      .input-block input,
+      .input-block select {
+        padding: 10px 12px;
+        font-size: 0.88rem;
+      }
+
+      .input-block--transport { grid-column: auto; }
+    }
+  }
+}
