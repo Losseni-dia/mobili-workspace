@@ -256,29 +256,13 @@
             </div>
 
             <div class="modal-body">
-                <p class="modal-subtitle">Sélectionnez les places vendues au guichet, puis renseignez le nom de chaque passager.</p>
+                <p class="modal-subtitle">Sélectionnez les places vendues au guichet.</p>
 
                 <app-seat-picker
                     [totalSeats]="trip.totalSeats"
                     [occupiedSeats]="saleOccupiedSeats()"
                     (seatToggle)="onSaleSeatsSelected($event)"
                 />
-
-                @if (saleSelectedSeats().length > 0) {
-                    <div class="sale-names">
-                        @for (seat of saleSelectedSeats(); track seat) {
-                            <label class="sale-name-field">
-                                <span>Siège {{ seat }}</span>
-                                <input
-                                    type="text"
-                                    placeholder="Nom du passager"
-                                    [ngModel]="salePassengerNames()[seat] || ''"
-                                    (ngModelChange)="setSalePassengerName(seat, $event)"
-                                />
-                            </label>
-                        }
-                    </div>
-                }
 
                 @if (saleError()) {
                     <p class="modal-error" role="alert">{{ saleError() }}</p>
@@ -287,8 +271,33 @@
 
             <div class="modal-footer">
                 <button class="btn-cancel" [disabled]="saleSubmitting()" (click)="closeSale()">Annuler</button>
-                <button class="btn-confirm" [disabled]="saleSubmitting() || saleSelectedSeats().length === 0" (click)="confirmSale()">
-                    {{ saleSubmitting() ? 'Enregistrement…' : 'Confirmer la vente (' + saleSelectedSeats().length + ')' }}
+                <button class="btn-confirm" [disabled]="saleSubmitting() || saleSelectedSeats().length === 0" (click)="askConfirmSale()">
+                    Bloquer ({{ saleSelectedSeats().length }})
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (saleConfirmOpen()) {
+    <div class="modal-overlay" (click)="cancelConfirmSale()">
+        <div class="modal-content modal-content--sm" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Confirmer le blocage ?</h3>
+                <button class="close-btn" (click)="cancelConfirmSale()">×</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-subtitle">
+                    {{ saleSelectedSeats().length }} place{{ saleSelectedSeats().length > 1 ? 's' : '' }}
+                    ({{ saleSelectedSeats().join(', ') }}) seront bloquées pour ce trajet.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" [disabled]="saleSubmitting()" (click)="cancelConfirmSale()">Annuler</button>
+                <button class="btn-confirm" [disabled]="saleSubmitting()" (click)="confirmSale()">
+                    {{ saleSubmitting() ? 'Blocage…' : 'Confirmer' }}
                 </button>
             </div>
         </div>
