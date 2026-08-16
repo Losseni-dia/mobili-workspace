@@ -28,7 +28,9 @@ export class TripChannelPageComponent implements OnInit {
 
   canPost = computed(() => {
     const a = this.auth;
-    return a.hasRole('PARTNER') || a.hasRole('GARE') || a.hasRole('ADMIN');
+    // STATION = connexion gare par code (StationPrincipal), distinct du rôle GARE
+    // (compte GareUser classique) — oublié ici, la gare ne voyait jamais le formulaire.
+    return a.hasRole('PARTNER') || a.hasRole('GARE') || a.hasRole('STATION') || a.hasRole('ADMIN');
   });
 
   ngOnInit() {
