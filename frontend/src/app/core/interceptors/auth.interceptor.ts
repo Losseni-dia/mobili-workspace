@@ -52,7 +52,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             }),
           );
         }
-        if (u && (error.status === 401 || error.status === 403)) {
+        // 401 = session invalide (token expiré/révoqué) -> déconnexion légitime. 403 =
+        // utilisateur authentifié mais sans le droit sur CETTE ressource précise (ex. gare
+        // pas encore validée par le dirigeant, compagnie pas encore activée par l'admin) :
+        // le déconnecter et le renvoyer au login n'a aucun sens (se reconnecter avec le même
+        // compte ne change rien) et donnait l'impression d'un bug de session côté gare.
+        if (u && error.status === 401) {
           authService.logout();
           router.navigate(['/auth/login']);
         }
