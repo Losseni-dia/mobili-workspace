@@ -218,6 +218,36 @@
   &.info { background: rgba(variables.$mobili-blue, 0.1); color: variables.$mobili-blue; }
 }
 
+// ---- Filtres période (Aujourd'hui / Semaine / Mois) ----
+// Vient toujours au-dessus des dates "intervalle" (inputs date déjà existants sur chaque page :
+// choisir un préset renseigne ces inputs, l'édition manuelle désélectionne le préset actif).
+.period-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.period-btn {
+  padding: 6px 14px;
+  border-radius: variables.$radius-pill;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all variables.$t-fast;
+
+  &:hover { border-color: variables.$mobili-blue; }
+
+  &.active {
+    background: variables.$mobili-blue-deep;
+    border-color: variables.$mobili-blue-deep;
+    color: variables.$white;
+  }
+}
+
 // ---- Bouton de ligne ----
 .row-btn {
   padding: 7px 14px;

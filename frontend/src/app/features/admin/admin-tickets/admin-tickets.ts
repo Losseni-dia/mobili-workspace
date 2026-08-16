@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTicketListItem } from '../../../core/services/admin/admin.service';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type StatusFilter = 'CONFIRME' | 'ANNULE';
 
@@ -32,6 +33,7 @@ export class AdminTickets implements OnInit {
   toDate = signal('');
   search = signal('');
   statusFilter = signal<StatusFilter>('CONFIRME');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -77,5 +79,19 @@ export class AdminTickets implements OnInit {
 
   setStatusFilter(f: StatusFilter): void {
     this.statusFilter.set(f);
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.load();
+  }
+
+  /** Édition manuelle des dates : désactive le préset actif (l'intervalle n'y correspond plus). */
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.load();
   }
 }

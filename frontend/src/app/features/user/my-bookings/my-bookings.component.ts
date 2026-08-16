@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type StatusFilter = 'ALL' | 'CONFIRMED' | 'PENDING' | 'CANCELLED';
 
@@ -27,10 +28,21 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   filter = signal<StatusFilter>('ALL');
   search = signal<string>('');
 
+  /**
+   * Filtre période — purement client-side (pas d'endpoint /user/{id}/range côté backend) :
+   * toutes les réservations de l'utilisateur sont déjà chargées en un seul appel, on filtre
+   * ensuite sur la date de création (`b.date`, repli sur `departureDateTime` si absente).
+   */
+  fromDate = signal('');
+  toDate = signal('');
+  activePeriod = signal<PeriodPreset | null>(null);
+
   filtered = computed(() => {
     const raw = this.bookings();
     const f = this.filter();
     const q = this.search().trim().toLowerCase();
+    const from = this.fromDate();
+    const to = this.toDate();
 
     return raw
       .filter((b) => {
@@ -39,6 +51,15 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
         if (f === 'CONFIRMED') return s === 'CONFIRMED' || s === 'PAID' || s === 'CONFIRME';
         if (f === 'PENDING') return s === 'PENDING' || s === 'WAITING' || s === 'EN_ATTENTE';
         if (f === 'CANCELLED') return s === 'CANCELLED' || s === 'ANNULE' || s === 'REFUSED';
+        return true;
+      })
+      .filter((b) => {
+        if (!from && !to) return true;
+        const bookingDate = b.date || b.departureDateTime;
+        if (!bookingDate) return true;
+        const day = bookingDate.slice(0, 10);
+        if (from && day < from) return false;
+        if (to && day > to) return false;
         return true;
       })
       .filter((b) => {
@@ -57,6 +78,23 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
         return tb - ta;
       });
   });
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+  }
+
+  clearPeriod(): void {
+    this.activePeriod.set(null);
+    this.fromDate.set('');
+    this.toDate.set('');
+  }
 
   // ====== STATS ======
   countByStatus = computed(() => {

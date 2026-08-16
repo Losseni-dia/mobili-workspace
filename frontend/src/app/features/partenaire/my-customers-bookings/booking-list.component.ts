@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 type BookingStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -43,18 +44,21 @@ export class BookingListComponent implements OnInit {
 
   // État des filtres
   searchTerm = signal('');
-  filterDate = signal('');
   filterRoute = signal('');
   /** Confirmé par défaut : correspond à ce qui compte réellement comme revenu. */
   statusFilter = signal<BookingStatusFilter>('CONFIRME');
 
+  fromDate = signal('');
+  toDate = signal('');
+  activePeriod = signal<PeriodPreset | null>('month');
+
   ngOnInit(): void {
-    this.loadBookings();
+    this.setPeriodPreset('month');
   }
 
   loadBookings(): void {
     this.isLoading.set(true);
-    this.bookingService.getPartnerBookings().subscribe({
+    this.bookingService.getPartnerBookingsInRange(this.fromDate(), this.toDate()).subscribe({
       next: (data) => {
         this.bookings.set(data || []);
         this.isLoading.set(false);
@@ -66,10 +70,22 @@ export class BookingListComponent implements OnInit {
     });
   }
 
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.loadBookings();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.loadBookings();
+  }
+
   // Filtrage combiné réactif avec sécurités (null checks)
   filteredBookings = computed(() => {
     const term = (this.searchTerm() || '').toLowerCase();
-    const date = this.filterDate();
     const route = this.filterRoute();
     const status = this.statusFilter();
 
@@ -80,7 +96,6 @@ export class BookingListComponent implements OnInit {
       const tripRoute = b.tripRoute || '';
 
       const matchSearch = customer.includes(term) || ref.includes(term);
-      const matchDate = date ? b.date && b.date.startsWith(date) : true;
       const matchRoute = route ? tripRoute === route : true;
       const matchStatus =
         status === 'TOUS'
@@ -89,7 +104,7 @@ export class BookingListComponent implements OnInit {
             ? isConfirmedBooking(b.status)
             : isCancelledBooking(b.status);
 
-      return matchSearch && matchDate && matchRoute && matchStatus;
+      return matchSearch && matchRoute && matchStatus;
     });
   });
 

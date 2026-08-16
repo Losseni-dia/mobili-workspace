@@ -35,6 +35,11 @@
             <button type="button" class="period-btn" [class.active]="period() === 'today'" (click)="setPeriod('today')">Aujourd'hui</button>
             <button type="button" class="period-btn" [class.active]="period() === 'week'" (click)="setPeriod('week')">Semaine</button>
             <button type="button" class="period-btn" [class.active]="period() === 'month'" (click)="setPeriod('month')">Mois</button>
+            <button type="button" class="period-btn" [class.active]="period() === 'custom'" (click)="setPeriod('custom')">Intervalle</button>
+            @if (period() === 'custom') {
+                <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onManualDateChange()">
+                <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onManualDateChange()">
+            }
         </div>
         <div class="status-filters">
             @for (f of STATUS_FILTERS; track f.value) {

@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTransaction } from '../../../core/services/admin/admin.service';
+import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
 
 /**
  * Page Transactions — frais Mobili (forfait), commission prélevée et net compagnie, par
@@ -27,6 +28,7 @@ export class AdminTransactions implements OnInit {
   fromDate = signal('');
   toDate = signal('');
   search = signal('');
+  activePeriod = signal<PeriodPreset | null>(null);
 
   filtered = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -62,5 +64,18 @@ export class AdminTransactions implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  setPeriodPreset(preset: PeriodPreset): void {
+    const { from, to } = computePeriodRange(preset);
+    this.activePeriod.set(preset);
+    this.fromDate.set(from);
+    this.toDate.set(to);
+    this.load();
+  }
+
+  onManualDateChange(): void {
+    this.activePeriod.set(null);
+    this.load();
   }
 }
