@@ -139,11 +139,6 @@
                 <a routerLink="/partenaire/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }" class="mobile-drawer__item" (click)="mobileMenuOpen.set(false)">🏢 Partenaire</a>
             }
 
-            <a [routerLink]="notificationsPath()" routerLinkActive="active" class="mobile-drawer__item" (click)="mobileMenuOpen.set(false)">
-                🔔 Notifications
-                @if (mobiliInbox.hasUnread()) { ({{ mobiliInbox.unreadCount() > 9 ? '9+' : mobiliInbox.unreadCount() }}) }
-            </a>
-
             @for (item of myAccountItems; track item.path) {
                 <a [routerLink]="item.path" routerLinkActive="active" class="mobile-drawer__item" (click)="mobileMenuOpen.set(false)">
                     {{ item.icon }} {{ item.label }}

@@ -25,9 +25,11 @@ export class UserShellComponent {
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
 
+  // "Notifications" retiré (doublon) : la cloche du header global (desktop ET mobile,
+  // topbar) donne déjà un accès direct en un tap — la page /my-account/notifications
+  // reste fonctionnelle, seul le lien listé ici disparaît.
   navItems: NavItem[] = [
     { label: 'Vue d\'ensemble', icon: '🏠', path: '/my-account/profile' },
-    { label: 'Notifications', icon: '🔔', path: '/my-account/notifications' },
     { label: 'Mes billets', icon: '🎫', path: '/my-account/my-tickets' },
     { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
     // "Support" retiré côté client (feedback testeurs) : doublon avec "Réclamations", et le
