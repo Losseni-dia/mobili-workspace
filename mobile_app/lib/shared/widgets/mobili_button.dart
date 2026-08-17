@@ -177,14 +177,14 @@ class MobiliButton extends StatelessWidget {
     }
 
     return switch (variant) {
-      // ── Primary : gradient gold ──────────────────────────────────────
+      // ── Primary : bleu Mobili uni ─────────────────────────────────────
       MobiliButtonVariant.primary => _BtnConfig(
-          gradient: AppColors.gradientGold,
-          bgColor: null,
-          fgColor: AppColors.mobiliBlueDeep,
+          gradient: null,
+          bgColor: isDark ? AppColors.mobiliBlueLight : AppColors.mobiliBlue,
+          fgColor: AppColors.white,
           borderColor: null,
-          shadow: showShadow ? AppColors.shadowGold : null,
-          loaderColor: AppColors.mobiliBlueDeep,
+          shadow: showShadow ? AppColors.shadowBlue : null,
+          loaderColor: AppColors.white,
         ),
 
       // ── Secondary : bleu uni ──────────────────────────────────────────
