@@ -24,7 +24,11 @@ export class InboxPageComponent implements OnInit {
 
   ngOnInit() {
     this.load(0);
-    this.inbox.refreshUnreadCount(true);
+    // "Vu" (vide le badge) dès l'ouverture de la page, quel que soit le point d'entrée
+    // (cloche du header, lien direct, tiroir mobile...) — aligné sur le comportement mobile
+    // (tap de l'onglet Notifications). Distinct de "lu" (markRead/markAll), qui ne change que
+    // le style visuel de chaque ligne dans la liste.
+    this.inbox.markAllSeen().subscribe({ error: () => this.inbox.refreshUnreadCount(true) });
   }
 
   load(p: number) {
