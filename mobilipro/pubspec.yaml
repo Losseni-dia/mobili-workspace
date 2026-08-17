@@ -48,11 +48,17 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
-  image_path: "assets/icons/launcher_icon.png"
+  # Repli "à plat" (Android < 8 / API < 26, sans icône adaptative) : le PNG source est
+  # transparent, et flutter_launcher_icons l'aplatit sur fond BLANC pour cette variante --
+  # jamais bleu Mobili sans ce fichier pré-composité. adaptive_icon_foreground, lui, reste sur
+  # l'original transparent (le fond bleu y est géré via adaptive_icon_background).
+  image_path: "assets/icons/launcher_icon_legacy_blue_bg.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#092990"
+  adaptive_icon_foreground: "assets/icons/launcher_icon.png"
 
 flutter_native_splash:
-  color: "#1B2A6B"
+  color: "#092990"
   fullscreen: true
   android: true
   ios: false
