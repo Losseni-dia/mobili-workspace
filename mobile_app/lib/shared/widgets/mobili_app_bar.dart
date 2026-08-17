@@ -69,7 +69,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: subtitle == null
           ? (_isHome
               ? Image.asset('assets/icons/ecrito_bleu.png',
-                  height: 30, fit: BoxFit.contain)
+                  height: 42, fit: BoxFit.contain)
               : Text(title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
