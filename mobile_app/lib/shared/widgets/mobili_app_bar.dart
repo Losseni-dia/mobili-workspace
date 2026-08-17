@@ -38,9 +38,10 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   bool get _isHome => title == 'Mobili';
 
-  // Toolbar plus haute sur l'accueil : le logo écrit (96px) ne rentrerait
-  // pas dans la hauteur standard (kToolbarHeight = 56) sans être rogné.
-  double get _toolbarHeight => _isHome ? 110 : kToolbarHeight;
+  // Toolbar légèrement plus haute sur l'accueil pour le logo écrit — sans
+  // excès d'espace vide autour (96/110 laissait trop de marge, ressenti
+  // comme un header trop grand).
+  double get _toolbarHeight => _isHome ? 76 : kToolbarHeight;
 
   @override
   Size get preferredSize => Size.fromHeight(
@@ -74,7 +75,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: subtitle == null
           ? (_isHome
               ? Image.asset('assets/icons/ecrito_bleu.png',
-                  height: 96, fit: BoxFit.contain)
+                  height: 64, fit: BoxFit.contain)
               : Text(title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -154,7 +155,7 @@ class _AppBarPattern extends StatelessWidget {
         items.add(Positioned(
           left: c * cellW + offset,
           top: r * cellH.toDouble(),
-          child: Icon(icon, size: 22, color: color.withValues(alpha: 0.07)),
+          child: Icon(icon, size: 22, color: color.withValues(alpha: 0.18)),
         ));
       }
     }
