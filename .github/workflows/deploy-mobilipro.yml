@@ -47,10 +47,14 @@ jobs:
       # Meme fragilite que deploy-mobileapp.yml (voir son commentaire) :
       # wzieba/Firebase-Distribution-Github-Action n'a pas de retry, un upload
       # lent fait echouer tout le job sans nouvelle tentative.
+      # NODE_OPTIONS=--dns-result-order=ipv4first : voir le commentaire dans
+      # deploy-mobileapp.yml (meme fragilite reseau IPv6 sur les runners
+      # GitHub Actions, meme correctif).
       - name: Distribute via Firebase (avec retry)
         uses: nick-fields/retry@v3
         env:
           FIREBASE_TOKEN_FILE_CONTENT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
         with:
           timeout_minutes: 6
           max_attempts: 3

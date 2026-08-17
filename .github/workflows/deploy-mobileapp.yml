@@ -51,10 +51,18 @@ jobs:
       # retry/timeout : un upload qui traine (reseau runner <-> Firebase) fait
       # echouer tout le job apres 300000ms, sans nouvelle tentative (vu 2 fois
       # de suite). nick-fields/retry relance la meme commande jusqu'a 3 fois.
+      # NODE_OPTIONS=--dns-result-order=ipv4first : les runners GitHub Actions
+      # resolvent souvent les endpoints Google/Firebase en IPv6, une route
+      # qui peut rester injoignable et faire "hang" la connexion jusqu'au
+      # timeout (300000ms observe a l'identique sur 3 tentatives independantes
+      # du retry, y compris apres remplacement complet du mecanisme d'upload
+      # -> pas de la flakiness aleatoire, un blocage reseau systematique).
+      # Forcer l'IPv4 est le contournement standard pour ce symptome.
       - name: Distribute via Firebase (avec retry)
         uses: nick-fields/retry@v3
         env:
           FIREBASE_TOKEN_FILE_CONTENT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
         with:
           timeout_minutes: 6
           max_attempts: 3
