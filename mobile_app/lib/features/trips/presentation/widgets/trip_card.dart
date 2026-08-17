@@ -447,8 +447,8 @@ class _RightBlock extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onTap,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliYellow,
-                  foregroundColor: AppColors.mobiliBlueDeep,
+                  backgroundColor: AppColors.mobiliBlue,
+                  foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   minimumSize: const Size(0, 34),
                   shape: RoundedRectangleBorder(
@@ -459,7 +459,7 @@ class _RightBlock extends StatelessWidget {
                 child: Text(
                   'Réserver',
                   style: AppTextStyles.buttonSmall.copyWith(
-                    color: AppColors.mobiliBlueDeep,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
