@@ -110,7 +110,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
     final bookingsAsync = ref.watch(_bookingsDetailProvider(profile.id));
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Mes réservations',
         backRoute: '/profile',

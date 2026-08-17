@@ -10,7 +10,7 @@ class CguPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(
         title: "Conditions Générales d'Utilisation",
         showBackButton: true,

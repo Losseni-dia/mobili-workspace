@@ -77,7 +77,7 @@ class _TripSearchPageState extends ConsumerState<TripSearchPage> {
     final searchParams = ref.watch(tripSearchParamsProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.gray50,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Trouver un trajet',
          backRoute: '/',

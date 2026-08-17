@@ -10,7 +10,7 @@ class ConfidentialitePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(
         title: "Politique de Confidentialité",
         showBackButton: true,

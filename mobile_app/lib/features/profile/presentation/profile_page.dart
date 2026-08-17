@@ -103,7 +103,7 @@ class ProfilePage extends ConsumerWidget {
     final bookingsAsync = ref.watch(_userBookingsProvider(profile.id));
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       body: CustomScrollView(
         slivers: [
         SliverAppBar(

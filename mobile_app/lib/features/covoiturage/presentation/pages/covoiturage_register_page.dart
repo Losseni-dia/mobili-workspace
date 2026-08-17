@@ -145,7 +145,7 @@ class _CovoiturageRegisterPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(
         title: 'Devenir conducteur',
         showBackButton: true,

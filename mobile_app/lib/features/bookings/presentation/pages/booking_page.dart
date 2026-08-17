@@ -345,7 +345,7 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Réservation',
         subtitle: '${widget.trip.departureCity} → ${widget.trip.arrivalCity}',

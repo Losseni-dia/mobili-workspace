@@ -65,7 +65,7 @@ class BookingReceiptPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusConfig = _statusConfig(booking.status);
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Reçu',
         showBackButton: true,

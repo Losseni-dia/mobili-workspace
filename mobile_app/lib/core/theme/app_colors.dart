@@ -10,6 +10,10 @@ abstract final class AppColors {
   static const Color mobiliYellow     = Color(0xFFFFCC00);
   static const Color mobiliYellowSoft = Color(0xFFFFE27A);
   static const Color mobiliYellowDark = Color(0xFFE6B800);
+  /// Jaune très doux — fond d'écran app-wide (header, filtre, arrière-plan
+  /// de page) : le jaune plein (mobiliYellow) est trop agressif à l'œil en
+  /// grande surface, réservé désormais aux accents (CTA, badges).
+  static const Color mobiliYellowPale = Color(0xFFFFF4D6);
 
   static const Color mobiliBlue      = Color(0xFF092990);
   static const Color mobiliBlueDeep  = Color(0xFF05164D);

@@ -84,7 +84,7 @@ class SupportPage extends ConsumerWidget {
     final threadsAsync = ref.watch(_supportThreadsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Support Mobili',
         subtitle: 'Nous sommes là pour vous aider',
@@ -394,7 +394,7 @@ class _SupportConversationPageState
     final myId = profile?.id;
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: widget.thread.subject,
         subtitle: 'Support Mobili',

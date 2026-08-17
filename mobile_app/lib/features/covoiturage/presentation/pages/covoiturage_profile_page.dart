@@ -94,7 +94,7 @@ class _CovoiturageProfilePageState
     final saveState = ref.watch(covoiturageProfileNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
     appBar: const MobiliAppBar(
         title: 'Mon profil conducteur',
         showBackButton: true,

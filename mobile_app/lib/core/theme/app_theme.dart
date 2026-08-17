@@ -31,7 +31,7 @@ abstract final class AppTheme {
         colorScheme: _lightScheme,
         textTheme: _textTheme(Brightness.light),
         fontFamily: GoogleFonts.inter().fontFamily,
-        scaffoldBackgroundColor: AppColors.gray50,
+        scaffoldBackgroundColor: AppColors.mobiliYellowPale,
 
         // ── AppBar ────────────────────────────────────────────────────
         appBarTheme: AppBarTheme(
