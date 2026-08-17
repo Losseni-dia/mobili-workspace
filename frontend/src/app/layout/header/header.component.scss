@@ -485,17 +485,24 @@
     padding: 0 16px;
   }
 
-  // Nav complète + actions desktop (cloche, avatar-link, logout) remplacées par le seul
-  // avatar mobile ci-dessous, qui révèle le tiroir. Connexion/Inscription (déconnecté)
-  // restent visibles tel quel — pas de tiroir pertinent sans compte.
+  // Nav complète + avatar-link/logout desktop remplacés par le seul avatar mobile
+  // ci-dessous, qui révèle le tiroir. La cloche notifications, elle, reste visible en
+  // accès direct sur le topbar mobile (un seul tap, pas besoin d'ouvrir le tiroir) —
+  // le tiroir n'a donc plus son propre lien "Notifications" (voir mobile-drawer ci-dessous).
+  // Connexion/Inscription (déconnecté) restent visibles tel quel — pas de tiroir pertinent
+  // sans compte.
   // Spécificité `.header .nav-container` (0,2,0) : doit égaler/dépasser la règle
   // desktop nichée dans `.header { .nav-container {...} }` (même spécificité), sinon
   // le flat `.nav-container { display:none }` perd et la pill nav reste visible.
   .header .nav-container,
-  .actions .header-bell,
   .actions .avatar-link,
   .actions .btn-logout {
     display: none;
+  }
+
+  .actions .header-bell {
+    width: 38px;
+    height: 38px;
   }
 
   .mobile-only {
