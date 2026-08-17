@@ -129,8 +129,9 @@
                       </span>
                     </td>
                     @if (isPartnerManager()) {
-                      <td class="right">
+                      <td class="right gares-actions-cell">
                         <button type="button" class="btn-cancel" (click)="startEdit(g)">Modifier</button>
+                        <button type="button" class="btn-danger" (click)="askDelete(g)">Supprimer</button>
                       </td>
                     }
                   </tr>
@@ -166,4 +167,25 @@
       </form>
     </section>
   </div>
+
+  @if (pendingDelete(); as g) {
+    <div class="hide-modal-overlay" (click)="cancelDelete()">
+      <div class="hide-modal-content" (click)="$event.stopPropagation()">
+        <h3>Supprimer cette gare ?</h3>
+        <p>
+          La gare <strong>{{ g.name }}</strong> ({{ g.city }}) sera définitivement supprimée.
+          Cette action est irréversible.
+        </p>
+        @if (deleteError()) {
+          <div class="gares-alert gares-alert--err" role="alert">{{ deleteError() }}</div>
+        }
+        <div class="hide-modal-actions">
+          <button type="button" class="btn-cancel" (click)="cancelDelete()">Annuler</button>
+          <button type="button" class="btn-danger" [disabled]="deleteSubmitting()" (click)="confirmDelete()">
+            {{ deleteSubmitting() ? 'Suppression…' : 'Supprimer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

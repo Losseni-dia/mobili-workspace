@@ -43,22 +43,38 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Prénom</label>
-                    <input type="text" name="firstName" [(ngModel)]="user.firstname" required placeholder="Jean">
+                    <input type="text" name="firstName" [(ngModel)]="user.firstname" #firstNameField="ngModel"
+                        required placeholder="Jean">
+                    @if (firstNameField.touched && firstNameField.invalid) {
+                    <small class="text-error">Le prénom est requis.</small>
+                    }
                 </div>
                 <div class="form-group">
                     <label>Nom</label>
-                    <input type="text" name="lastName" [(ngModel)]="user.lastname" required placeholder="Dia">
+                    <input type="text" name="lastName" [(ngModel)]="user.lastname" #lastNameField="ngModel" required
+                        placeholder="Dia">
+                    @if (lastNameField.touched && lastNameField.invalid) {
+                    <small class="text-error">Le nom est requis.</small>
+                    }
                 </div>
             </div>
 
             <div class="form-group">
                 <label>Nom d'utilisateur</label>
-                <input type="text" name="login" [(ngModel)]="user.login" required minlength="3" placeholder="dia">
+                <input type="text" name="login" [(ngModel)]="user.login" #loginField="ngModel" required
+                    minlength="3" placeholder="dia">
+                @if (loginField.touched && loginField.invalid) {
+                <small class="text-error">Au moins 3 caractères.</small>
+                }
             </div>
 
             <div class="form-group">
                 <label>Email (facultatif)</label>
-                <input type="email" name="email" [(ngModel)]="user.email" email placeholder="exemple@mail.com">
+                <input type="email" name="email" [(ngModel)]="user.email" #emailField="ngModel" email
+                    placeholder="exemple@mail.com">
+                @if (emailField.touched && emailField.invalid) {
+                <small class="text-error">Format d'email invalide.</small>
+                }
             </div>
 
             <div class="form-group">
@@ -74,11 +90,14 @@
                 <label>Mot de passe</label>
                 <div class="input-wrapper">
                     <input [type]="showPassword() ? 'text' : 'password'" name="password" [(ngModel)]="user.password"
-                        required minlength="6">
+                        #passwordField="ngModel" required minlength="6">
                     <button type="button" class="eye-icon" (click)="togglePassword()">
                         {{ showPassword() ? '🙈' : '👁️' }}
                     </button>
                 </div>
+                @if (passwordField.touched && passwordField.invalid) {
+                <small class="text-error">Au moins 6 caractères.</small>
+                }
             </div>
 
             <div class="form-group">
@@ -95,11 +114,26 @@
                 }
             </div>
 
+            <div class="form-group form-group--checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="acceptTerms" [(ngModel)]="acceptTerms" #acceptTermsField="ngModel"
+                        required>
+                    <span>
+                        J'accepte les <a routerLink="/cgu" target="_blank">Conditions Générales d'Utilisation</a>
+                        et la <a routerLink="/confidentialite" target="_blank">Politique de confidentialité</a>.
+                    </span>
+                </label>
+                @if (acceptTermsField.touched && acceptTermsField.invalid) {
+                <small class="text-error">Vous devez accepter les CGU et la politique de confidentialité.</small>
+                }
+            </div>
+
             @if (errorMessage()) {
             <div class="error-banner">{{ errorMessage() }}</div>
             }
 
-            <button type="submit" class="btn-submit" [disabled]="regForm.invalid || !passwordsMatch() || isLoading()">
+            <button type="submit" class="btn-submit"
+                [disabled]="regForm.invalid || !passwordsMatch() || !acceptTerms || isLoading()">
                 <span *ngIf="!isLoading()">S'inscrire</span>
                 <span *ngIf="isLoading()" class="loader"></span>
             </button>

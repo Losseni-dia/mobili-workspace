@@ -12,6 +12,7 @@ import {
 } from '../../../core/services/claim/claim.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { NotificationService } from '../../../core/services/notification/notification.service';
 
 /** Réclamations voyageur — parité mobile_app (claim_form_page.dart, my_claims_page.dart). */
 @Component({
@@ -26,6 +27,7 @@ export class ClaimsComponent implements OnInit {
   private bookingService = inject(BookingService);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
+  private toast = inject(NotificationService);
 
   readonly reasonLabels = CLAIM_REASON_LABELS;
   readonly statusLabels = CLAIM_STATUS_LABELS;
@@ -117,6 +119,7 @@ export class ClaimsComponent implements OnInit {
           this.reason.set('OTHER');
           this.showNewForm.set(false);
           this.claims.update((list) => [claim, ...list]);
+          this.toast.show('Votre réclamation a bien été envoyée.', 'success');
         },
         error: (e) => {
           this.createError.set(e?.error?.message || "Impossible d'envoyer cette réclamation.");

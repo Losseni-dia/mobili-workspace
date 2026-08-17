@@ -1,5 +1,5 @@
 import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
@@ -25,7 +25,13 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthService],
       multi: true,
     },
-    provideRouter(routes),
+    // scrollPositionRestoration: 'top' — sans ça, une page ouverte via routerLink hérite du
+    // scroll de la page précédente (feedback testeurs : CGU/Confidentialité s'ouvraient au
+    // milieu/en bas de l'écran).
+    provideRouter(
+      routes,
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+    ),
     provideBrowserGlobalErrorListeners(),
 
     provideHttpClient(

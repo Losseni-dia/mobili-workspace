@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { bookingStatusLabel } from '../../../core/utils/booking-status-label.util';
 
 type StatusFilter = 'ALL' | 'CONFIRMED' | 'PENDING' | 'CANCELLED';
 
@@ -186,5 +187,9 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
     if (['PENDING', 'WAITING', 'EN_ATTENTE'].includes(s)) return 'warn';
     if (['CANCELLED', 'ANNULE', 'REFUSED'].includes(s)) return 'blocked';
     return 'info';
+  }
+
+  statusLabel(status: string | undefined | null): string {
+    return bookingStatusLabel(status);
   }
 }

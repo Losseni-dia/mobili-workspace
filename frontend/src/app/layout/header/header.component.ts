@@ -22,14 +22,14 @@ export class HeaderComponent {
   /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */
   mobileMenuOpen = signal(false);
 
-  /** Même 6 pages que `UserShellComponent.navItems` (sidebar « Mon compte ») — dupliqué ici
-   *  volontairement : petite liste statique, pas de service partagé entre les deux composants. */
+  /** Même 5 pages que `UserShellComponent.navItems` (sidebar « Mon compte ») — dupliqué ici
+   *  volontairement : petite liste statique, pas de service partagé entre les deux composants.
+   *  "Support" retiré côté client (feedback testeurs), voir UserShellComponent.navItems. */
   readonly myAccountItems = [
     { label: "Vue d'ensemble", icon: '🏠', path: '/my-account/profile' },
     { label: 'Mes billets', icon: '🎫', path: '/my-account/my-tickets' },
     { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
     { label: 'Réclamations', icon: '📮', path: '/my-account/claims' },
-    { label: 'Support', icon: '💬', path: '/my-account/support' },
   ];
 
   getAvatarUrl(avatarPath: string | undefined): string | null {

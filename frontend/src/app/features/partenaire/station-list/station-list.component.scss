@@ -415,3 +415,53 @@
 .gares-chauffeurs-empty {
   color: variables.$gray-500;
 }
+
+.gares-actions-cell {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-danger {
+  @include mixins.btn-danger;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+// Modal de confirmation de suppression — même pattern que my-tickets (hide-modal-*).
+.hide-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.hide-modal-content {
+  background: variables.$white;
+  border-radius: variables.$radius-lg;
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+
+  h3 {
+    margin: 0 0 12px;
+    color: variables.$mobili-blue-deep;
+  }
+
+  p {
+    margin: 0 0 20px;
+    color: variables.$gray-600;
+    line-height: 1.5;
+  }
+}
+
+.hide-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

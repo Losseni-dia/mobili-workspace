@@ -42,6 +42,9 @@ export class RegisterComponent implements OnInit {
 
   selectedFile: File | undefined;
   isConfirmTouched = false;
+  /** Consentement CGU/Confidentialité — jamais envoyé au backend, garde purement côté UI
+   *  (feedback testeurs : aucune checkbox obligatoire n'existait avant l'inscription). */
+  acceptTerms = false;
   imgPos = signal({ x: 50, y: 50 });
   imageZoom = signal(1);
 
@@ -110,7 +113,8 @@ export class RegisterComponent implements OnInit {
       !this.passwordsMatch() ||
       !this.isEmailValid() ||
       !this.isPhoneValid() ||
-      this.user.login.length < 3
+      this.user.login.length < 3 ||
+      !this.acceptTerms
     )
       return;
 

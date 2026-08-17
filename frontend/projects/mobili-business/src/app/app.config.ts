@@ -1,6 +1,6 @@
 import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
@@ -24,7 +24,10 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthService],
       multi: true,
     },
-    provideRouter(businessRoutes),
+    provideRouter(
+      businessRoutes,
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+    ),
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(
       withInterceptors([apiInterceptor, authInterceptor]),

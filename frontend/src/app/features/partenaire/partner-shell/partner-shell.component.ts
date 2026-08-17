@@ -35,6 +35,13 @@ export class PartnerShellComponent implements OnInit {
   private partenaireService = inject(PartenaireService);
   private configuration = inject(ConfigurationService);
 
+  /**
+   * Lien "Retour site" — ce shell est partagé entre l'app voyageur et Mobili Business
+   * (`@mobili-app/*`) : un simple `routerLink="/"` était résolu dans le routeur business
+   * (accueil connexion pro) au lieu du site public voyageur (feedback testeurs).
+   */
+  travelerSiteUrl = this.configuration.getTravelerWebBaseUrl();
+
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal<boolean>(false);
   /** Tiroir mobile (< 768px) : logo + avatar seuls dans la barre, l'avatar révèle ce menu. */

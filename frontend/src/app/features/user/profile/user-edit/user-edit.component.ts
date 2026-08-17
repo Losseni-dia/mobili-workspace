@@ -29,7 +29,11 @@ export class UserEditComponent implements OnInit {
   userForm = this.fb.group({
     firstname: ['', [Validators.required]],
     lastname: ['', [Validators.required]],
-    email: ['', [Validators.required, Validators.email]],
+    // Email optionnel — aligné sur l'inscription (RegisterDTO backend : @Email seul, pas
+    // @NotBlank) et sur la création d'un compte Gare (email jamais requis). Ce même composant
+    // sert aussi à l'auto-édition du compte Gare (route /gare/compte) : le rendre required ici
+    // bloquait l'enregistrement des comptes créés sans email (feedback testeurs).
+    email: ['', [Validators.email]],
     login: ['', [Validators.required]],
     phone: [''],
     password: [''],
