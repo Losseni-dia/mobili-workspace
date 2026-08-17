@@ -80,8 +80,8 @@ class ProfilePage extends ConsumerWidget {
                   ElevatedButton(
                     onPressed: () => context.push('/login'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mobiliYellow,
-                      foregroundColor: AppColors.mobiliBlueDeep,
+                      backgroundColor: AppColors.mobiliBlue,
+                      foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 36, vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -90,7 +90,7 @@ class ProfilePage extends ConsumerWidget {
                     ),
                     child: Text('Se connecter',
                         style: AppTextStyles.buttonPrimary
-                            .copyWith(color: AppColors.mobiliBlueDeep)),
+                            .copyWith(color: AppColors.white)),
                   ),
                 ],
               ),
@@ -374,12 +374,12 @@ class ProfilePage extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.logout_rounded,
-                          color: AppColors.mobiliBlueDeep, size: 20),
+                          color: AppColors.white, size: 20),
                       label: Text('Se déconnecter',
                           style: AppTextStyles.buttonPrimary
-                              .copyWith(color: AppColors.mobiliBlueDeep)),
+                              .copyWith(color: AppColors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.mobiliYellow,
+                        backgroundColor: AppColors.mobiliBlue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),

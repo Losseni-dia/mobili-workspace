@@ -607,8 +607,8 @@ class _BookingCard extends StatelessWidget {
                     icon: const Icon(Icons.payment_rounded, size: 16),
                     label: const Text('Payer maintenant'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mobiliYellow,
-                      foregroundColor: AppColors.mobiliBlueDeep,
+                      backgroundColor: AppColors.mobiliBlue,
+                      foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
@@ -637,11 +637,11 @@ class _BookingCard extends StatelessWidget {
                             onPressed: () =>
                                 context.go('/tickets?tripId=${booking.tripId}'),
                             icon: const Icon(Icons.confirmation_number_rounded,
-                                size: 16, color: AppColors.mobiliBlueDeep),
+                                size: 16, color: AppColors.white),
                             label: const Text('Voir les billets'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.mobiliYellow,
-                              foregroundColor: AppColors.mobiliBlueDeep,
+                              backgroundColor: AppColors.mobiliBlue,
+                              foregroundColor: AppColors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
