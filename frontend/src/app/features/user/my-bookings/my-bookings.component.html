@@ -43,90 +43,131 @@
     </label>
 </section>
 
-<section class="data-panel">
-    <header class="panel-head">
-        <div>
-            <h2>Toutes mes réservations</h2>
-            <p>Suis l'état de tes réservations et accède à tes billets.</p>
-        </div>
-        <span class="count-chip">{{ filtered().length }} résultat{{ filtered().length > 1 ? 's' : '' }}</span>
-    </header>
-
-    @if (isLoading()) {
+@if (isLoading()) {
+    <section class="data-panel">
         <div class="loader">Chargement de tes réservations…</div>
-    } @else if (filtered().length > 0) {
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Référence</th>
-                        <th>Trajet</th>
-                        <th>Date de départ</th>
-                        <th>Places</th>
-                        <th>Statut</th>
-                        <th class="right">Montant</th>
-                        <th class="right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (b of filtered(); track b.id) {
-                        <tr>
-                            <td class="mono">#{{ b.reference }}</td>
-                            <td>
-                                <div class="route-mini">
-                                    <strong>{{ b.boardingCity || b.departureCity }}</strong>
-                                    <span class="arrow">→</span>
-                                    <strong>{{ b.alightingCity || b.arrivalCity }}</strong>
-                                </div>
-                                @if ((b.boardingCity && b.departureCity && b.boardingCity !== b.departureCity)
-                                  || (b.alightingCity && b.arrivalCity && b.alightingCity !== b.arrivalCity)) {
-                                    <div class="full-route">
-                                        Voyage complet : {{ b.departureCity }} → {{ b.arrivalCity }}
-                                    </div>
-                                }
-                            </td>
-                            <td class="mono">{{ b.departureDateTime | date: 'EEE d MMM · HH:mm' }}</td>
-                            <td>
-                                <div class="seats">
-                                    <span>{{ b.numberOfSeats }} place{{ b.numberOfSeats > 1 ? 's' : '' }}</span>
-                                    @if (b.seatNumbers.length) {
-                                        <span class="seat-mini">
-                                            (Siège{{ b.seatNumbers.length > 1 ? 's' : '' }} n°
-                                            @for (s of b.seatNumbers; track s; let last = $last) { {{ s }}{{ last ? '' : ', ' }} })
-                                        </span>
-                                    }
-                                </div>
-                            </td>
-                            <td>
-                                <span class="status-pill" [ngClass]="statusClass(b.status)">
-                                    <span class="dot"></span>
-                                    {{ statusLabel(b.status) }}
-                                </span>
-                            </td>
-                            <td class="right amount">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
-                            <td class="right">
-                                <div class="row-actions">
-                                    @if (paymentCountdown(b); as countdown) {
-                                        <a class="pay-link" [routerLink]="['/booking/confirmation', b.id]">
-                                            💳 Payer ({{ countdown }})
-                                        </a>
-                                    }
-                                    <a class="claim-link" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
-                                        Signaler
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    } @else {
+    </section>
+} @else if (filtered().length === 0) {
+    <section class="data-panel">
         <div class="empty">
             <div class="empty-icon">📭</div>
             <strong>Aucune réservation</strong>
             <p>Aucune réservation ne correspond à tes filtres.</p>
             <a routerLink="/" class="primary-btn">Trouver un voyage</a>
         </div>
+    </section>
+} @else {
+    @if (activeBookings().length > 0) {
+        <section class="data-panel">
+            <header class="panel-head">
+                <div>
+                    <h2>Réservations à venir</h2>
+                    <p>Suis l'état de tes réservations et accède à tes billets.</p>
+                </div>
+                <span class="count-chip">{{ activeBookings().length }} résultat{{ activeBookings().length > 1 ? 's' : '' }}</span>
+            </header>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Trajet</th>
+                            <th>Date de départ</th>
+                            <th>Places</th>
+                            <th>Statut</th>
+                            <th class="right">Montant</th>
+                            <th class="right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (b of activeBookings(); track b.id) {
+                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b }" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
     }
-</section>
+
+    @if (historicalBookings().length > 0) {
+        <section class="data-panel historical-panel">
+            <header class="panel-head">
+                <div>
+                    <h2>🕓 Historique</h2>
+                    <p>Voyages passés, terminés, annulés ou refusés.</p>
+                </div>
+                <span class="count-chip">{{ historicalBookings().length }} résultat{{ historicalBookings().length > 1 ? 's' : '' }}</span>
+            </header>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Trajet</th>
+                            <th>Date de départ</th>
+                            <th>Places</th>
+                            <th>Statut</th>
+                            <th class="right">Montant</th>
+                            <th class="right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (b of historicalBookings(); track b.id) {
+                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b }" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+}
+
+<ng-template #bookingRow let-b>
+    <tr>
+        <td class="mono">#{{ b.reference }}</td>
+        <td>
+            <div class="route-mini">
+                <strong>{{ b.boardingCity || b.departureCity }}</strong>
+                <span class="arrow">→</span>
+                <strong>{{ b.alightingCity || b.arrivalCity }}</strong>
+            </div>
+            @if ((b.boardingCity && b.departureCity && b.boardingCity !== b.departureCity)
+              || (b.alightingCity && b.arrivalCity && b.alightingCity !== b.arrivalCity)) {
+                <div class="full-route">
+                    Voyage complet : {{ b.departureCity }} → {{ b.arrivalCity }}
+                </div>
+            }
+        </td>
+        <td class="mono">{{ b.departureDateTime | date: 'EEE d MMM · HH:mm' }}</td>
+        <td>
+            <div class="seats">
+                <span>{{ b.numberOfSeats }} place{{ b.numberOfSeats > 1 ? 's' : '' }}</span>
+                @if (b.seatNumbers.length) {
+                    <span class="seat-mini">
+                        (Siège{{ b.seatNumbers.length > 1 ? 's' : '' }} n°
+                        @for (s of b.seatNumbers; track s; let last = $last) { {{ s }}{{ last ? '' : ', ' }} })
+                    </span>
+                }
+            </div>
+        </td>
+        <td>
+            <span class="status-pill" [ngClass]="statusClass(b.status)">
+                <span class="dot"></span>
+                {{ statusLabel(b.status) }}
+            </span>
+        </td>
+        <td class="right amount">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
+        <td class="right">
+            <div class="row-actions">
+                @if (paymentCountdown(b); as countdown) {
+                    <a class="pay-link" [routerLink]="['/booking/confirmation', b.id]">
+                        💳 Payer ({{ countdown }})
+                    </a>
+                }
+                <a class="claim-link" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
+                    Signaler
+                </a>
+            </div>
+        </td>
+    </tr>
+</ng-template>

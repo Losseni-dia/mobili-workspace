@@ -1,14 +1,19 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { TicketService } from '../../../core/services/ticket/ticket.service';
+import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import html2canvas from 'html2canvas'; // ✅ Importation indispensable
+
+/** VALIDÉ, UTILISÉ, ARRIVÉ, ANNULÉ (backend TicketStatus) + ALL. */
+type TicketStatusFilter = 'ALL' | 'VALIDÉ' | 'UTILISÉ' | 'ARRIVÉ' | 'ANNULÉ';
+type TicketSort = 'DEPARTURE_ASC' | 'DEPARTURE_DESC' | 'BOOKED_DESC';
 
 @Component({
   selector: 'app-my-tickets',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './my-tickets.component.html',
   styleUrl: './my-tickets.component.scss',
 })
@@ -18,13 +23,93 @@ export class MyTicketsComponent implements OnInit {
 
   private static readonly HIDDEN_KEY = 'mobili.tickets.hidden';
 
-  allTickets = signal<any[]>([]);
+  allTickets = signal<TicketResponse[]>([]);
   /** Numéros masqués localement (aucune suppression serveur — un billet émis reste émis). */
   hiddenNumbers = signal<Set<string>>(this.readHidden());
   isLoading = signal(true);
 
   /** Ticket en attente de confirmation de masquage (modale, pas de confirm() natif). */
-  pendingHide = signal<any | null>(null);
+  pendingHide = signal<TicketResponse | null>(null);
+
+  // ====== Recherche / filtre / tri ======
+  search = signal('');
+  statusFilter = signal<TicketStatusFilter>('ALL');
+  /** Par défaut : réservé le plus récemment en premier (comme "Activité récente", profil). */
+  sort = signal<TicketSort>('BOOKED_DESC');
+
+  onSearch(value: string): void {
+    this.search.set(value);
+  }
+
+  setStatusFilter(f: TicketStatusFilter): void {
+    this.statusFilter.set(f);
+  }
+
+  setSort(s: TicketSort): void {
+    this.sort.set(s);
+  }
+
+  resetFilters(): void {
+    this.search.set('');
+    this.statusFilter.set('ALL');
+  }
+
+  /** Compte par statut sur les billets visibles (non masqués) — alimente les badges des chips. */
+  countByStatus = computed(() => {
+    const list = this.tickets();
+    // Clés ASCII (pas d'accent) : le parser de template Angular n'accepte pas les caractères
+    // accentués dans un accès de propriété ({{ countByStatus().validé }} casse le build).
+    return {
+      all: list.length,
+      valide: list.filter((t) => t.status === 'VALIDÉ').length,
+      utilise: list.filter((t) => t.status === 'UTILISÉ').length,
+      arrive: list.filter((t) => t.status === 'ARRIVÉ').length,
+      annule: list.filter((t) => t.status === 'ANNULÉ').length,
+    };
+  });
+
+  filteredTickets = computed(() => {
+    const list = this.tickets();
+    const f = this.statusFilter();
+    const q = this.search().trim().toLowerCase();
+    const s = this.sort();
+
+    return list
+      .filter((t) => f === 'ALL' || t.status === f)
+      .filter((t) => {
+        if (!q) return true;
+        return (
+          (t.ticketNumber || '').toLowerCase().includes(q) ||
+          (t.passengerFullName || '').toLowerCase().includes(q) ||
+          (t.boardingCity || t.departureCity || '').toLowerCase().includes(q) ||
+          (t.alightingCity || t.arrivalCity || '').toLowerCase().includes(q) ||
+          (t.partnerName || '').toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        if (s === 'BOOKED_DESC') {
+          const ta = a.bookingDate ? Date.parse(a.bookingDate) : 0;
+          const tb = b.bookingDate ? Date.parse(b.bookingDate) : 0;
+          return tb - ta;
+        }
+        const ta = a.departureDateTime ? Date.parse(a.departureDateTime) : 0;
+        const tb = b.departureDateTime ? Date.parse(b.departureDateTime) : 0;
+        return s === 'DEPARTURE_DESC' ? tb - ta : ta - tb;
+      });
+  });
+
+  /** Voyage déjà passé ou billet déjà utilisé — n'a plus sa place dans "À venir". */
+  private isHistorical(t: TicketResponse): boolean {
+    if (t.status === 'UTILISÉ' || t.status === 'ANNULÉ') return true;
+    const dep = t.departureDateTime ? Date.parse(t.departureDateTime) : NaN;
+    return !Number.isNaN(dep) && dep < Date.now();
+  }
+
+  /** Billets à venir — mis en avant, tri appliqué (voir `sort`). */
+  upcomingTickets = computed(() => this.filteredTickets().filter((t) => !this.isHistorical(t)));
+
+  /** Voyages passés / annulés / déjà utilisés — relégués en bas, hors du flux principal. */
+  historicalTickets = computed(() => this.filteredTickets().filter((t) => this.isHistorical(t)));
 
   /**
    * QR replié par défaut sur mobile (bouton "Afficher le code QR", aligné sur

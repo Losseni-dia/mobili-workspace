@@ -81,11 +81,27 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
         );
       })
       .sort((a, b) => {
-        const ta = a.departureDateTime ? Date.parse(a.departureDateTime) : 0;
-        const tb = b.departureDateTime ? Date.parse(b.departureDateTime) : 0;
+        // Par défaut : réservation la plus récente en premier (comme "Activité récente",
+        // profil) — jamais la date de départ, qui mélangeait passé/futur de façon peu lisible.
+        const ta = a.bookingDate ? Date.parse(a.bookingDate) : (a.departureDateTime ? Date.parse(a.departureDateTime) : 0);
+        const tb = b.bookingDate ? Date.parse(b.bookingDate) : (b.departureDateTime ? Date.parse(b.departureDateTime) : 0);
         return tb - ta;
       });
   });
+
+  /** Voyage déjà passé, terminé, annulé ou refusé — n'a plus sa place dans la liste active. */
+  private isHistorical(b: BookingResponse): boolean {
+    const s = (b.status || '').toUpperCase();
+    if (['CANCELLED', 'ANNULE', 'REFUSED', 'COMPLETED', 'EXPIRED', 'REJECTED_BY_DRIVER'].includes(s)) return true;
+    const dep = b.departureDateTime ? Date.parse(b.departureDateTime) : NaN;
+    return !Number.isNaN(dep) && dep < Date.now();
+  }
+
+  /** Réservations actives/à venir — mises en avant. */
+  activeBookings = computed(() => this.filtered().filter((b) => !this.isHistorical(b)));
+
+  /** Voyages passés / terminés / annulés / refusés — relégués dans « Historique ». */
+  historicalBookings = computed(() => this.filtered().filter((b) => this.isHistorical(b)));
 
   setPeriodPreset(preset: PeriodPreset): void {
     const { from, to } = computePeriodRange(preset);

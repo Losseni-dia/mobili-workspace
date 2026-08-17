@@ -11,6 +11,20 @@
   margin-bottom: 18px;
 }
 
+.data-panel {
+  margin-bottom: 24px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+// Historique : même structure que la liste active, juste visuellement en retrait pour bien
+// marquer que ces réservations sont derrière nous (voyage passé/terminé/annulé/refusé).
+.historical-panel {
+  opacity: 0.85;
+
+  .panel-head h2 { color: variables.$gray-600; }
+}
+
 .revenue-chip {
   display: flex;
   flex-direction: column;

@@ -11,6 +11,147 @@
   display: none;
 }
 
+// ======================================================================
+//  TOOLBAR — recherche / filtre statut / tri
+//  Deux rangées explicites (recherche+tri // chips statut) plutôt qu'un seul
+//  flex row à plat : évite le déséquilibre visuel constaté ailleurs (badges
+//  collés à un bloc, grand vide au centre — feedback testeurs).
+// ======================================================================
+.tickets-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  background: variables.$white;
+  border-radius: variables.$radius-lg;
+  box-shadow: variables.$shadow-sm;
+}
+
+.status-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  order: 2;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: variables.$radius-pill;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  color: variables.$gray-600;
+  font-weight: 700;
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: all variables.$t-base;
+
+  .count {
+    padding: 1px 8px;
+    border-radius: variables.$radius-pill;
+    background: variables.$gray-100;
+    color: variables.$gray-600;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  &:hover {
+    background: variables.$mobili-blue-fog;
+    color: variables.$mobili-blue;
+    border-color: rgba(variables.$mobili-blue, 0.25);
+  }
+
+  &.active {
+    background: variables.$mobili-blue;
+    color: variables.$white;
+    border-color: variables.$mobili-blue;
+    box-shadow: 0 8px 16px rgba(variables.$mobili-blue, 0.25);
+    .count { background: rgba(variables.$white, 0.18); color: variables.$white; }
+  }
+
+  &.success.active { background: variables.$success; border-color: variables.$success; box-shadow: 0 8px 16px rgba(variables.$success, 0.25); }
+  &.info.active { background: variables.$mobili-blue; border-color: variables.$mobili-blue; }
+  &.muted.active { background: variables.$gray-500; border-color: variables.$gray-500; box-shadow: none; }
+  &.danger.active { background: variables.$danger; border-color: variables.$danger; box-shadow: 0 8px 16px rgba(variables.$danger, 0.25); }
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  transition: all variables.$t-base;
+  flex: 1;
+  min-width: 220px;
+  order: 1;
+
+  &:focus-within { border-color: variables.$mobili-blue; box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12); }
+
+  .s-ico { opacity: 0.6; }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.9rem;
+    color: variables.$mobili-blue-deep;
+    width: 100%;
+  }
+}
+
+.sort-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  order: 1;
+
+  .sort-ico { opacity: 0.7; font-size: 0.85rem; }
+
+  select {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: variables.$mobili-blue-deep;
+    cursor: pointer;
+  }
+}
+
+@include mixins.mobile {
+  .tickets-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input,
+  .sort-select {
+    order: initial;
+  }
+}
+
+@media (min-width: variables.$breakpoint-mobile) {
+  .tickets-toolbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-input { order: 1; }
+  .sort-select { order: 3; margin-left: auto; }
+  .status-filters { order: 2; flex: 1 1 auto; justify-content: center; }
+}
+
 .loader {
   text-align: center;
   padding: 60px 20px;
@@ -22,6 +163,21 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
+
+  & + .tickets-section-title {
+    margin-top: 36px;
+  }
+}
+
+.tickets-section-title {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 900;
+  color: variables.$mobili-blue-deep;
+
+  &.muted {
+    color: variables.$gray-500;
+  }
 }
 
 // ======================================================================
