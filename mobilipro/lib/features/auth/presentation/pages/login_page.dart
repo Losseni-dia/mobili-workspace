@@ -64,10 +64,10 @@ Future<void> _submit() async {
                   children: [
                     Image.asset(
                       'assets/icons/ecrito_jaune.png',
-                      height: 76,
+                      height: 130,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     const Text(
                       'PROFESSIONNEL',
                       style: TextStyle(
