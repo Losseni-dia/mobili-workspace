@@ -104,7 +104,7 @@ class _CovoiturageApplyPageState extends ConsumerState<CovoiturageApplyPage> {
             : null);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
      appBar: const MobiliAppBar(
         title: 'Devenir conducteur',
         showBackButton: true,

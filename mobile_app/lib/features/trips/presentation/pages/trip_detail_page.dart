@@ -37,7 +37,7 @@ class TripDetailPage extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.gray50,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.mobiliYellowPale,
       body: tripAsync.when(
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
@@ -79,7 +79,7 @@ class _TripDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.gray50,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.mobiliYellowPale,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(

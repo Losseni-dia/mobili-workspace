@@ -174,7 +174,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final profile = ref.watch(currentProfileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(
         title: 'Modifier le profil',
         showBackButton: true,

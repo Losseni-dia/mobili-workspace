@@ -322,7 +322,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     final unreadCount = notifications.where((n) => !n.read).length;
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Notifications',
         actions: [

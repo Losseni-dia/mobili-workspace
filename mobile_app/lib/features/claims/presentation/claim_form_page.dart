@@ -247,7 +247,7 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(title: 'Signaler un problème', showBackButton: true),
       body: ListView(
         padding: const EdgeInsets.all(16),

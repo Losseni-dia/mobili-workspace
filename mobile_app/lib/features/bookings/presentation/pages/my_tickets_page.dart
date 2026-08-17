@@ -63,7 +63,7 @@ class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
     final ticketsAsync = ref.watch(ticketsProvider(profile.id));
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Mes billets',
         backRoute: '/profile',

@@ -79,7 +79,7 @@ class _MyClaimsPageState extends ConsumerState<MyClaimsPage> {
     final claimsAsync = ref.watch(_myClaimsProvider(profile.id));
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: const MobiliAppBar(title: 'Mes réclamations', showBackButton: true),
       body: claimsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.mobiliBlue)),

@@ -49,7 +49,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = _isHome ? AppColors.mobiliYellow : AppColors.mobiliBlue;
+    final bgColor = _isHome ? AppColors.mobiliYellowPale : AppColors.mobiliBlue;
     final iconColor = _isHome ? AppColors.mobiliBlueDeep : AppColors.white;
 
     return AppBar(

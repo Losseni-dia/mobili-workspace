@@ -98,7 +98,7 @@ class _TripChannelThreadPageState extends ConsumerState<TripChannelThreadPage> {
     final messagesAsync = ref.watch(tripChannelMessagesProvider(widget.tripId));
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Annonces du voyage',
       ),

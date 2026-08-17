@@ -148,7 +148,7 @@ class _CovoiturageTripFormPageState
     final saveState = ref.watch(covoiturageTripNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
      appBar: MobiliAppBar(
         title: _isEditing ? 'Modifier le trajet' : 'Publier un trajet',
         showBackButton: true,

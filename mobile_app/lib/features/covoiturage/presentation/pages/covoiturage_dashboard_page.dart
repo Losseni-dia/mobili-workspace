@@ -61,7 +61,7 @@ class _CovoiturageDashboardPageState
         if (!didPop) context.go('/profile');
       },
       child: Scaffold(
-        backgroundColor: AppColors.gray50,
+        backgroundColor: AppColors.mobiliYellowPale,
         appBar: MobiliAppBar(
           title: 'Dashboard covoiturage',
           backRoute: '/profile',
@@ -1012,7 +1012,7 @@ class CovoiturageHistoryPage extends ConsumerWidget {
     final pendingCountsAsync = ref.watch(pendingRequestsCountByTripProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(title: title, showBackButton: true, showPattern: true),
       body: trips.isEmpty
           ? Center(

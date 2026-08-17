@@ -142,7 +142,7 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
     final tripsAsync = ref.watch(tripsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.mobiliYellow,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Mobili',
         actions: [
@@ -262,7 +262,7 @@ class _FilterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.mobiliYellow,
+      color: AppColors.mobiliYellowPale,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

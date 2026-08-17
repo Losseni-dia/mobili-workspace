@@ -107,7 +107,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellowPale,
       appBar: AppBar(
         backgroundColor: AppColors.mobiliBlue,
         foregroundColor: AppColors.white,
