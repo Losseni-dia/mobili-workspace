@@ -4,11 +4,89 @@
         <p>Retrouvez ici vos billets pour vos prochains voyages Mobili.</p>
     </header>
 
+    @if (!isLoading() && tickets().length > 0) {
+    <section class="tickets-toolbar">
+        <label class="search-input">
+            <span class="s-ico">🔍</span>
+            <input type="text" placeholder="Référence, ville, passager…" [ngModel]="search()"
+                (ngModelChange)="onSearch($event)">
+        </label>
+
+        <div class="status-filters">
+            <button type="button" class="filter-chip" [class.active]="statusFilter() === 'ALL'"
+                (click)="setStatusFilter('ALL')">
+                Tous
+                <span class="count">{{ countByStatus().all }}</span>
+            </button>
+            <button type="button" class="filter-chip success" [class.active]="statusFilter() === 'VALIDÉ'"
+                (click)="setStatusFilter('VALIDÉ')">
+                Validé
+                <span class="count">{{ countByStatus().valide }}</span>
+            </button>
+            <button type="button" class="filter-chip info" [class.active]="statusFilter() === 'ARRIVÉ'"
+                (click)="setStatusFilter('ARRIVÉ')">
+                Arrivé
+                <span class="count">{{ countByStatus().arrive }}</span>
+            </button>
+            <button type="button" class="filter-chip muted" [class.active]="statusFilter() === 'UTILISÉ'"
+                (click)="setStatusFilter('UTILISÉ')">
+                Utilisé
+                <span class="count">{{ countByStatus().utilise }}</span>
+            </button>
+            <button type="button" class="filter-chip danger" [class.active]="statusFilter() === 'ANNULÉ'"
+                (click)="setStatusFilter('ANNULÉ')">
+                Annulé
+                <span class="count">{{ countByStatus().annule }}</span>
+            </button>
+        </div>
+
+        <label class="sort-select">
+            <span class="sort-ico">↕️</span>
+            <select [ngModel]="sort()" (ngModelChange)="setSort($event)">
+                <option value="BOOKED_DESC">Réservé récemment</option>
+                <option value="DEPARTURE_ASC">Départ le plus proche</option>
+                <option value="DEPARTURE_DESC">Départ le plus lointain</option>
+            </select>
+        </label>
+    </section>
+    }
+
     @if (isLoading()) {
     <div class="loader">Chargement de vos titres...</div>
-    } @else if (tickets().length > 0) {
+    } @else if (tickets().length === 0) {
+    <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h2>Aucun ticket trouvé</h2>
+        <p>Vous n'avez pas encore effectué de réservation.</p>
+        <button routerLink="/" class="btn-primary">Rechercher un trajet</button>
+    </div>
+    } @else if (filteredTickets().length === 0) {
+    <div class="empty-state">
+        <div class="icon">🗂️</div>
+        <h2>Aucun résultat</h2>
+        <p>Aucun billet ne correspond à ta recherche ou aux filtres sélectionnés.</p>
+        <button type="button" (click)="resetFilters()" class="btn-primary">Réinitialiser les filtres</button>
+    </div>
+    } @else {
+    @if (upcomingTickets().length > 0) {
+    <h2 class="tickets-section-title">🚀 À venir</h2>
     <div class="tickets-grid">
-        @for (ticket of tickets(); track ticket.ticketNumber) {
+        @for (ticket of upcomingTickets(); track ticket.ticketNumber) {
+        <ng-container [ngTemplateOutlet]="ticketCard" [ngTemplateOutletContext]="{ $implicit: ticket }" />
+        }
+    </div>
+    }
+    @if (historicalTickets().length > 0) {
+    <h2 class="tickets-section-title muted">🕓 Historique</h2>
+    <div class="tickets-grid">
+        @for (ticket of historicalTickets(); track ticket.ticketNumber) {
+        <ng-container [ngTemplateOutlet]="ticketCard" [ngTemplateOutletContext]="{ $implicit: ticket }" />
+        }
+    </div>
+    }
+    }
+
+    <ng-template #ticketCard let-ticket>
         <div class="ticket-wrapper">
             <!-- Desktop / tablette : carte "billet physique" 2 colonnes -->
             <div class="ticket-card desktop-only" [id]="'ticket-' + ticket.ticketNumber">
@@ -150,16 +228,7 @@
                 </div>
             </div>
         </div>
-        }
-    </div>
-    } @else {
-    <div class="empty-state">
-        <div class="icon">🔍</div>
-        <h2>Aucun ticket trouvé</h2>
-        <p>Vous n'avez pas encore effectué de réservation.</p>
-        <button routerLink="/" class="btn-primary">Rechercher un trajet</button>
-    </div>
-    }
+    </ng-template>
 
     @if (pendingHide(); as t) {
         <div class="hide-modal-overlay" (click)="cancelHide()">
