@@ -6,6 +6,9 @@ import '../../core/theme/app_text_styles.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MobiliAppBar — AppBar bleu Mobili avec pattern icônes transport
+// Cas spécial title == 'Mobili' (page d'accueil) : fond jaune Mobili + logo
+// écrit (ecrito_bleu.png, wordmark bleu) au lieu du texte — aligné sur le
+// header web (fond clair, logo "MOBILI" bleu).
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -33,44 +36,49 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// passe alors en une seule ligne tronquée pour laisser la place.
   final String? subtitle;
 
+  bool get _isHome => title == 'Mobili';
+
   @override
   Size get preferredSize => Size.fromHeight(
         kToolbarHeight + (bottom?.preferredSize.height ?? 0),
       );
 
   @override
- @override
   Widget build(BuildContext context) {
+    final bgColor = _isHome ? AppColors.mobiliYellow : AppColors.mobiliBlue;
+    final iconColor = _isHome ? AppColors.mobiliBlueDeep : AppColors.white;
+
     return AppBar(
-      backgroundColor: AppColors.mobiliBlue,
-      foregroundColor: AppColors.white,
+      backgroundColor: bgColor,
+      foregroundColor: iconColor,
       elevation: 0,
-     leading: backRoute != null
+      leading: backRoute != null
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.white, size: 20),
+              icon: Icon(Icons.arrow_back_ios_new_rounded,
+                  color: iconColor, size: 20),
               onPressed: () => context.go(backRoute!),
             )
           : showBackButton
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.white, size: 20),
+                  icon: Icon(Icons.arrow_back_ios_new_rounded,
+                      color: iconColor, size: 20),
                   onPressed: () => context.pop(),
                 )
               : null,
       automaticallyImplyLeading: false,
-title: subtitle == null
-          ? Text(title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.titleLarge.copyWith(
-                color: title == 'Mobili'
-                    ? AppColors.mobiliYellow
-                    : AppColors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: title == 'Mobili' ? 28 : titleFontSize,
-                letterSpacing: title == 'Mobili' ? -0.5 : 0.5,
-              ))
+      title: subtitle == null
+          ? (_isHome
+              ? Image.asset('assets/icons/ecrito_bleu.png',
+                  height: 30, fit: BoxFit.contain)
+              : Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: titleFontSize,
+                    letterSpacing: 0.5,
+                  )))
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -79,16 +87,18 @@ title: subtitle == null
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: AppColors.white,
+                      color: iconColor,
                       fontWeight: FontWeight.w700,
                       fontSize: titleFontSize ?? 16,
                     )),
                 Text(subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xCCFFFFFF),
+                      color: _isHome
+                          ? AppColors.mobiliBlueDeep.withValues(alpha: 0.8)
+                          : const Color(0xCCFFFFFF),
                     )),
               ],
             ),
@@ -97,8 +107,8 @@ title: subtitle == null
       flexibleSpace: showPattern
           ? Stack(
               children: [
-                Container(color: AppColors.mobiliBlue),
-                const Positioned.fill(child: _AppBarPattern()),
+                Container(color: bgColor),
+                Positioned.fill(child: _AppBarPattern(color: iconColor)),
               ],
             )
           : null,
@@ -111,7 +121,9 @@ title: subtitle == null
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AppBarPattern extends StatelessWidget {
-  const _AppBarPattern();
+  const _AppBarPattern({required this.color});
+
+  final Color color;
 
   static const _icons = [
     Icons.directions_bus_rounded,
@@ -137,8 +149,7 @@ class _AppBarPattern extends StatelessWidget {
         items.add(Positioned(
           left: c * cellW + offset,
           top: r * cellH.toDouble(),
-          child: Icon(icon,
-              size: 22, color: AppColors.white.withValues(alpha: 0.07)),
+          child: Icon(icon, size: 22, color: color.withValues(alpha: 0.07)),
         ));
       }
     }

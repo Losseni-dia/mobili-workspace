@@ -152,8 +152,8 @@ void didChangeDependencies() {
         title: 'Mobili',
        actions: [
           IconButton(
-            icon:
-                const Icon(Icons.support_agent_rounded, color: AppColors.white),
+            icon: const Icon(Icons.support_agent_rounded,
+                color: AppColors.mobiliBlueDeep),
             tooltip: 'Support',
             onPressed: () => Navigator.push(
               context,
@@ -251,7 +251,7 @@ class _FilterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.mobiliBlue,
+      color: AppColors.mobiliYellow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
