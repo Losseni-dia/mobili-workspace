@@ -185,6 +185,8 @@ public class TripService {
         trip.setIncludedHoldBagsPerPassenger(1);
         trip.setMaxExtraHoldBagsPerPassenger(1);
         trip.setExtraHoldBagPrice(0.0);
+        // Pas de formulaire "Bagages" côté covoiturage solo — jamais configuré explicitement.
+        trip.setLuggagePolicyEnabled(false);
         trip.setStops(new ArrayList<>());
         tripStopSyncService.syncStopsForTrip(trip);
         Trip saved = tripRepository.save(trip);
@@ -612,6 +614,15 @@ public class TripService {
         }
         if (trip.getExtraHoldBagPrice() == null) {
             trip.setExtraHoldBagPrice(0.0);
+        }
+
+        if (req.getLuggagePolicyEnabled() != null) {
+            trip.setLuggagePolicyEnabled(req.getLuggagePolicyEnabled());
+        } else if (existing != null && existing.getLuggagePolicyEnabled() != null) {
+            trip.setLuggagePolicyEnabled(existing.getLuggagePolicyEnabled());
+        }
+        if (trip.getLuggagePolicyEnabled() == null) {
+            trip.setLuggagePolicyEnabled(false);
         }
     }
 

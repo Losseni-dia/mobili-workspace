@@ -95,6 +95,7 @@ export class TripEditComponent implements OnInit {
     vehicleType: ['', Validators.required],
     transportType: ['PUBLIC' as 'PUBLIC' | 'COVOITURAGE', Validators.required],
     assignedChauffeurId: [null as number | null],
+    luggagePolicyEnabled: [false],
     includedCabinBagsPerPassenger: [1, [Validators.min(0)]],
     includedHoldBagsPerPassenger: [1, [Validators.min(0)]],
     maxExtraHoldBagsPerPassenger: [1, [Validators.min(0)]],
@@ -165,6 +166,7 @@ export class TripEditComponent implements OnInit {
         includedHoldBagsPerPassenger?: number;
         maxExtraHoldBagsPerPassenger?: number;
         extraHoldBagPrice?: number;
+        luggagePolicyEnabled?: boolean;
       }) => {
         const covoit = trip.covoiturageOrganizerId != null && trip.covoiturageOrganizerId > 0;
         this.showChauffeurPicker.set(!covoit);
@@ -198,6 +200,7 @@ export class TripEditComponent implements OnInit {
               trip.transportType === 'COVOITURAGE' || trip.transportType === 'PUBLIC'
                 ? trip.transportType
                 : 'PUBLIC',
+            luggagePolicyEnabled: trip.luggagePolicyEnabled ?? false,
             includedCabinBagsPerPassenger: trip.includedCabinBagsPerPassenger ?? 1,
             includedHoldBagsPerPassenger: trip.includedHoldBagsPerPassenger ?? 1,
             maxExtraHoldBagsPerPassenger: trip.maxExtraHoldBagsPerPassenger ?? 1,
@@ -344,6 +347,7 @@ export class TripEditComponent implements OnInit {
       tripPayload['assignedChauffeurId'] = aid != null && aid > 0 ? aid : 0;
     }
 
+    tripPayload['luggagePolicyEnabled'] = formValue.luggagePolicyEnabled === true;
     tripPayload['includedCabinBagsPerPassenger'] = Number(formValue.includedCabinBagsPerPassenger ?? 1);
     tripPayload['includedHoldBagsPerPassenger'] = Number(formValue.includedHoldBagsPerPassenger ?? 1);
     tripPayload['maxExtraHoldBagsPerPassenger'] = Number(formValue.maxExtraHoldBagsPerPassenger ?? 1);

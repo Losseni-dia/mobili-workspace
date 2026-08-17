@@ -185,27 +185,37 @@
 
       <section class="form-section" aria-label="Politique bagages">
         <h2 class="form-section__title">Bagages (passagers)</h2>
-        <p class="field-hint field-hint--block">
-          Style transporteur : places × quotas inclus, option payante pour bagages soute supplémentaires.
-        </p>
-        <div class="form-grid">
-          <div class="field">
-            <label for="cabN">Cabine / petit bag inclus par passager</label>
-            <input id="cabN" type="number" formControlName="includedCabinBagsPerPassenger" min="0" step="1" />
+        <label class="field field--checkbox">
+          <input type="checkbox" formControlName="luggagePolicyEnabled" />
+          <span>Configurer une politique bagages pour ce trajet</span>
+        </label>
+        @if (tripForm.get('luggagePolicyEnabled')?.value) {
+          <p class="field-hint field-hint--block">
+            Style transporteur : places × quotas inclus, option payante pour bagages soute supplémentaires.
+          </p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="cabN">Cabine / petit bag inclus par passager</label>
+              <input id="cabN" type="number" formControlName="includedCabinBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label for="holdN">Soute (compartiment) incluse par passager</label>
+              <input id="holdN" type="number" formControlName="includedHoldBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label for="maxEx">Soute en plus max / passager (réservable)</label>
+              <input id="maxEx" type="number" formControlName="maxExtraHoldBagsPerPassenger" min="0" step="1" />
+            </div>
+            <div class="field">
+              <label for="bagPrice">Prix d’une soute suppl. (FCFA / unité)</label>
+              <input id="bagPrice" type="number" formControlName="extraHoldBagPrice" min="0" step="1" />
+            </div>
           </div>
-          <div class="field">
-            <label for="holdN">Soute (compartiment) incluse par passager</label>
-            <input id="holdN" type="number" formControlName="includedHoldBagsPerPassenger" min="0" step="1" />
-          </div>
-          <div class="field">
-            <label for="maxEx">Soute en plus max / passager (réservable)</label>
-            <input id="maxEx" type="number" formControlName="maxExtraHoldBagsPerPassenger" min="0" step="1" />
-          </div>
-          <div class="field">
-            <label for="bagPrice">Prix d’une soute suppl. (FCFA / unité)</label>
-            <input id="bagPrice" type="number" formControlName="extraHoldBagPrice" min="0" step="1" />
-          </div>
-        </div>
+        } @else {
+          <p class="field-hint field-hint--block">
+            Non coché : aucune section "Bagages" ne sera affichée aux passagers pour ce trajet.
+          </p>
+        }
       </section>
 
       <section class="form-section" aria-label="Détails embarquement et véhicule">

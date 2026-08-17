@@ -80,6 +80,9 @@ export interface Trip {
   includedHoldBagsPerPassenger?: number;
   maxExtraHoldBagsPerPassenger?: number;
   extraHoldBagPrice?: number;
+  /** Faux si le partenaire n'a jamais configuré de politique bagages pour ce trajet — la
+   *  section "Bagages" ne doit alors pas s'afficher côté réservation. */
+  luggagePolicyEnabled?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

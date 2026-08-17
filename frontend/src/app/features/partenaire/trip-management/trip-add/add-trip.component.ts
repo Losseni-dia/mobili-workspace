@@ -105,6 +105,10 @@ export class AddTripComponent implements OnInit {
     assignedChauffeurId: [null as number | null],
     /** PUBLIC = ligne / transport public ; COVOITURAGE */
     transportType: ['PUBLIC' as 'PUBLIC' | 'COVOITURAGE', Validators.required],
+    /** Décoché par défaut : tant que le partenaire ne configure rien, la section "Bagages"
+     *  ne doit pas apparaître à la réservation (feedback testeurs — trop verbeux/inattendu
+     *  sur des trajets où personne n'a choisi de politique bagages). */
+    luggagePolicyEnabled: [false],
     includedCabinBagsPerPassenger: [1, [Validators.min(0)]],
     includedHoldBagsPerPassenger: [1, [Validators.min(0)]],
     maxExtraHoldBagsPerPassenger: [1, [Validators.min(0)]],
@@ -321,6 +325,7 @@ export class AddTripComponent implements OnInit {
       tripPayload['assignedChauffeurId'] = aid;
     }
 
+    tripPayload['luggagePolicyEnabled'] = formValue.luggagePolicyEnabled === true;
     tripPayload['includedCabinBagsPerPassenger'] = Number(formValue.includedCabinBagsPerPassenger ?? 1);
     tripPayload['includedHoldBagsPerPassenger'] = Number(formValue.includedHoldBagsPerPassenger ?? 1);
     tripPayload['maxExtraHoldBagsPerPassenger'] = Number(formValue.maxExtraHoldBagsPerPassenger ?? 1);

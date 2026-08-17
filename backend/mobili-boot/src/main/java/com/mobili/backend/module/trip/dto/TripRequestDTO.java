@@ -96,4 +96,7 @@ public class TripRequestDTO {
 
     @Min(0)
     private Double extraHoldBagPrice;
+
+    /** {@code null} à la mise à jour = ne pas modifier ; voir TripService.applyLuggagePolicyFromRequest. */
+    private Boolean luggagePolicyEnabled;
 }

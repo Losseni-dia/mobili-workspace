@@ -129,6 +129,16 @@ public class Trip extends AbstractEntity {
     @Column(name = "extra_hold_bag_price", nullable = false)
     private Double extraHoldBagPrice = 0.0;
 
+    /**
+     * Vrai seulement si le partenaire a explicitement rempli le formulaire "Bagages
+     * (passagers)" à la création/édition de ce trajet — sinon les 4 champs ci-dessus portent
+     * une politique par défaut jamais choisie (1 cabine + 1 soute) qui ne doit pas être
+     * affichée à la réservation (feedback testeurs : section jugée trop verbeuse/inattendue
+     * sur des trajets où personne n'a configuré de politique bagages).
+     */
+    @Column(name = "luggage_policy_enabled", nullable = false)
+    private Boolean luggagePolicyEnabled = false;
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("stopIndex ASC")
     private List<TripStop> stops = new ArrayList<>();
