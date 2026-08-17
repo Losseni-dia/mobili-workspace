@@ -5,10 +5,10 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MobiliAppBar — AppBar bleu Mobili avec pattern icônes transport
-// Cas spécial title == 'Mobili' (page d'accueil) : fond jaune Mobili + logo
-// écrit (ecrito_bleu.png, wordmark bleu) au lieu du texte — aligné sur le
-// header web (fond clair, logo "MOBILI" bleu).
+// MobiliAppBar — fond jaune doux Mobili partout, avec pattern icônes
+// transport. Cas spécial title == 'Mobili' (page d'accueil) : logo écrit
+// (ecrito_bleu.png, wordmark bleu) au lieu du texte — aligné sur le header
+// web (fond clair, logo "MOBILI" bleu).
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -49,8 +49,8 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = _isHome ? AppColors.mobiliYellowPale : AppColors.mobiliBlue;
-    final iconColor = _isHome ? AppColors.mobiliBlueDeep : AppColors.white;
+    const bgColor = AppColors.mobiliYellowPale;
+    const iconColor = AppColors.mobiliBlueDeep;
 
     return AppBar(
       backgroundColor: bgColor,
@@ -79,7 +79,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleLarge.copyWith(
-                    color: AppColors.white,
+                    color: iconColor,
                     fontWeight: FontWeight.w900,
                     fontSize: titleFontSize,
                     letterSpacing: 0.5,
@@ -101,9 +101,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
-                      color: _isHome
-                          ? AppColors.mobiliBlueDeep.withValues(alpha: 0.8)
-                          : const Color(0xCCFFFFFF),
+                      color: AppColors.mobiliBlueDeep.withValues(alpha: 0.8),
                     )),
               ],
             ),
