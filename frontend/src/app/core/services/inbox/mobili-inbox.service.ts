@@ -161,4 +161,19 @@ export class MobiliInboxService {
       }),
     );
   }
+
+  /**
+   * "Vu" (badge du compteur) ≠ "lu" (style visuel de chaque notification dans la liste) :
+   * même distinction que côté mobile (`NotificationService.markAllSeen`, appelé au tap de
+   * l'onglet Notifications, jamais lié à `markAllRead`). Sans cet appel, le badge du compteur
+   * ne se videait qu'après un clic manuel sur "Tout marquer comme lu" — jamais simplement en
+   * ouvrant la page.
+   */
+  markAllSeen(): Observable<{ updated: number }> {
+    return this.http.patch<{ updated: number }>(`${this.base}/notifications/mark-all-seen`, {}).pipe(
+      tap(() => {
+        this.unreadCount.set(0);
+      }),
+    );
+  }
 }
