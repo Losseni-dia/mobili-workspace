@@ -90,9 +90,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         // LEFT JOIN FETCH b.tickets : Booking.getGrossAmount() (appelée par PartnerMapper sur
         // cette liste) lit les tickets pour exclure ceux ANNULÉ — sans ce fetch, chaque appel
         // déclencherait un lazy-load N+1 par réservation.
+        // status IN (...) : exclut les tentatives de paiement échouées/abandonnées (PENDING,
+        // CANCELLED, EXPIRED...) de "Dernières réservations" (feedback testeurs) — seules les
+        // réservations réellement payées/valides doivent y figurer.
         @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer " +
                         "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers LEFT JOIN FETCH b.tickets " +
-                        "WHERE t.partner.id = :partnerId AND t.station.id = :stationId ORDER BY b.createdAt DESC")
+                        "WHERE t.partner.id = :partnerId AND t.station.id = :stationId " +
+                        "AND b.status IN ('CONFIRMED', 'OFFLINE_SALE', 'COMPLETED') ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartnerAndStation(
                         @Param("partnerId") Long partnerId,
                         @Param("stationId") Long stationId);
@@ -103,10 +107,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.trip.partner.id = :partnerId AND b.trip.station.id = :stationId AND b.status = 'CONFIRMED'")
         Double calculateRevenueByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 
-        // LEFT JOIN FETCH b.tickets : voir findRecentBookingsByPartnerAndStation.
+        // LEFT JOIN FETCH b.tickets : voir findRecentBookingsByPartnerAndStation. status IN (...) :
+        // même exclusion des tentatives échouées/abandonnées, voir commentaire ci-dessus.
         @Query("SELECT DISTINCT b FROM Booking b JOIN FETCH b.trip t JOIN FETCH b.customer c " +
                         "LEFT JOIN FETCH b.passengerNames LEFT JOIN FETCH b.seatNumbers LEFT JOIN FETCH b.tickets " +
-                        "WHERE t.partner.id = :partnerId ORDER BY b.createdAt DESC")
+                        "WHERE t.partner.id = :partnerId " +
+                        "AND b.status IN ('CONFIRMED', 'OFFLINE_SALE', 'COMPLETED') ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartner(@Param("partnerId") Long partnerId);
 
         /** Dashboard conducteur covoiturage : réservations sur SES trajets, jamais ceux du pool entier. */

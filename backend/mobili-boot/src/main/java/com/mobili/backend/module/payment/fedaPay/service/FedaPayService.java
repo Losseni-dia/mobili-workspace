@@ -66,7 +66,9 @@ public class FedaPayService {
             // URL (api.my-mobili.com/v1/payments/callback) ne correspondait d'ailleurs à aucun
             // endpoint existant (le vrai webhook est /v1/payments/fedapay/callback, configuré
             // séparément côté dashboard FedaPay, sans rapport avec ce paramètre).
-            params.put("callback_url", frontendBaseUrl + "/payment/success?id=" + bookingId);
+            // provider=FEDAPAY : la page /payment/success (Angular) doit savoir quel gateway
+            // vérifier, sinon elle appelle verifyFedaPayPayment() même pour un paiement Stripe.
+            params.put("callback_url", frontendBaseUrl + "/payment/success?id=" + bookingId + "&provider=FEDAPAY");
 
             // Le SDK attend souvent les métadonnées ainsi :
             Map<String, Object> metadata = new HashMap<>();

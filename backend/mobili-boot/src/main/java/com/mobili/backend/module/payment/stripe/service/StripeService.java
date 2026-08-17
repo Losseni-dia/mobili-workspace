@@ -30,7 +30,10 @@ public class StripeService {
             SessionCreateParams.Builder builder = SessionCreateParams.builder()
                     .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl(frontendBaseUrl + "/payment/success?id=" + bookingId)
+                    // provider=STRIPE : la page /payment/success ne doit PAS appeler la
+                    // vérification FedaPay pour un paiement Stripe (elle échouerait, faisant
+                    // expirer/annuler une réservation pourtant réglée — voir feedback testeurs).
+                    .setSuccessUrl(frontendBaseUrl + "/payment/success?id=" + bookingId + "&provider=STRIPE")
                     .setCancelUrl(frontendBaseUrl + "/booking/confirmation/" + bookingId)
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
