@@ -165,7 +165,13 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
           // Fond de page jaune Mobili : mêmes petites icônes (bus, horaire...)
           // que celles de l'AppBar, réutilisées telles quelles.
           const Positioned.fill(
-            child: MobiliIconPattern(color: AppColors.mobiliBlueDeep),
+            child: MobiliIconPattern(
+              color: AppColors.mobiliBlueDeep,
+              cols: 5,
+              rows: 14,
+              iconSize: 26,
+              alpha: 0.14,
+            ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
