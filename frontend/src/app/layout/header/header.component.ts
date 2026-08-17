@@ -79,20 +79,15 @@ export class HeaderComponent {
     );
   }
 
-  /** Page inbox : covoiturage solo, compagnie, gare, ou voyageur. */
+  /**
+   * Toujours l'inbox voyageur : ce header n'est rendu que dans l'app voyageur (jamais dans
+   * Mobili Business, voir app.html). `/partenaire`, `/gare` et `/covoiturage` n'existent ici
+   * que comme redirections automatiques (RedirectToBusinessComponent, window.location.replace)
+   * vers le site Mobili Business — un compte "mixte" (aussi PARTNER/GARE/chauffeur covoiturage)
+   * cliquant la cloche depuis le site voyageur se faisait donc éjecter vers Mobili Business
+   * (feedback testeurs), au lieu de voir ses notifications voyageur.
+   */
   notificationsPath(): string {
-    if (!this.authService.isLoggedIn()) {
-      return '/my-account/notifications';
-    }
-    if (this.showCovoiturageEspaceLink()) {
-      return '/covoiturage/notifications';
-    }
-    if (this.showPartenaireEspaceLink()) {
-      return '/partenaire/notifications';
-    }
-    if (this.authService.hasRole('GARE')) {
-      return '/gare/notifications';
-    }
     return '/my-account/notifications';
   }
 
