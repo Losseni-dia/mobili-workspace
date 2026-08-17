@@ -141,25 +141,38 @@ class MobiliIconPattern extends StatelessWidget {
     Icons.train_rounded,
   ];
 
+  static const cellW = 56.0;
+  static const cellH = 28.0;
+
   @override
   Widget build(BuildContext context) {
-    final items = <Widget>[];
-    const cols = 7;
-    const rows = 3;
-    const cellW = 56.0;
-    const cellH = 28.0;
+    // LayoutBuilder : la grille se répète sur toute la hauteur/largeur
+    // disponibles (AppBar compacte OU pleine page en fond de liste) — un
+    // nombre de lignes/colonnes fixe ne couvrait que le coin haut-gauche
+    // et laissait le reste de la page (derrière la liste des trajets) sans
+    // motif.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth.isFinite ? constraints.maxWidth : 400.0;
+        final h = constraints.maxHeight.isFinite ? constraints.maxHeight : 84.0;
+        final cols = (w / cellW).ceil() + 1;
+        final rows = (h / cellH).ceil() + 1;
 
-    for (var r = 0; r < rows; r++) {
-      for (var c = 0; c < cols; c++) {
-        final icon = _icons[(r * cols + c) % _icons.length];
-        final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
-        items.add(Positioned(
-          left: c * cellW + offset,
-          top: r * cellH.toDouble(),
-          child: Icon(icon, size: 22, color: color.withValues(alpha: 0.18)),
-        ));
-      }
-    }
-    return Stack(children: items);
+        final items = <Widget>[];
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            final icon = _icons[(r * cols + c) % _icons.length];
+            final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
+            items.add(Positioned(
+              left: c * cellW + offset,
+              top: r * cellH,
+              child:
+                  Icon(icon, size: 22, color: color.withValues(alpha: 0.18)),
+            ));
+          }
+        }
+        return Stack(children: items);
+      },
+    );
   }
 }
