@@ -38,10 +38,10 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   bool get _isHome => title == 'Mobili';
 
-  // Toolbar légèrement plus haute sur l'accueil pour le logo écrit — sans
-  // excès d'espace vide autour (96/110 laissait trop de marge, ressenti
-  // comme un header trop grand).
-  double get _toolbarHeight => _isHome ? 76 : kToolbarHeight;
+  // Toolbar ajustée à la taille du logo écrit (asset recadré à son contenu
+  // réel, voir ecrito_bleu.png — plus de marge transparente cachée) : juste
+  // assez de hauteur pour l'afficher sans excès d'espace vide autour.
+  double get _toolbarHeight => _isHome ? 148 : kToolbarHeight;
 
   @override
   Size get preferredSize => Size.fromHeight(
@@ -75,7 +75,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: subtitle == null
           ? (_isHome
               ? Image.asset('assets/icons/ecrito_bleu.png',
-                  height: 64, fit: BoxFit.contain)
+                  height: 128, fit: BoxFit.contain)
               : Text(title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -114,7 +114,7 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? Stack(
               children: [
                 Container(color: bgColor),
-                Positioned.fill(child: _AppBarPattern(color: iconColor)),
+                Positioned.fill(child: MobiliIconPattern(color: iconColor)),
               ],
             )
           : null,
@@ -123,11 +123,13 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pattern icônes transport
+// Pattern icônes transport — public : réutilisé tel quel en fond de page
+// (ex. trips_list_page, fond jaune de l'accueil) pour garder exactement le
+// même motif que celui de l'AppBar, jamais une resémantisation approchante.
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AppBarPattern extends StatelessWidget {
-  const _AppBarPattern({required this.color});
+class MobiliIconPattern extends StatelessWidget {
+  const MobiliIconPattern({super.key, required this.color});
 
   final Color color;
 
