@@ -462,8 +462,8 @@ class QrScanResultOverlay extends StatelessWidget {
                           ),
                           label: const Text('Scanner un autre ticket'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.mobiliBlue,
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.mobiliYellow,
+                            foregroundColor: AppColors.mobiliBlueDeep,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),

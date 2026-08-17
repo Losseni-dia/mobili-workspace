@@ -441,8 +441,8 @@ class _OfflineSaleSheetState extends ConsumerState<OfflineSaleSheet> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : () => _submit(stops),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.mobiliBlue,
-                            foregroundColor: AppColors.white,
+                            backgroundColor: AppColors.mobiliYellow,
+                            foregroundColor: AppColors.mobiliBlueDeep,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -453,7 +453,7 @@ class _OfflineSaleSheetState extends ConsumerState<OfflineSaleSheet> {
                                   width: 22,
                                   height: 22,
                                   child: CircularProgressIndicator(
-                                    color: AppColors.white,
+                                    color: AppColors.mobiliBlueDeep,
                                     strokeWidth: 2,
                                   ),
                                 )

@@ -436,11 +436,11 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
           final result = await context.push('/gare/trips/create');
           if (result == true) ref.invalidate(_myTripsProvider(_period));
         },
-        backgroundColor: AppColors.mobiliBlue,
-        icon: const Icon(Icons.add_rounded, color: AppColors.white),
+        backgroundColor: AppColors.mobiliYellow,
+        icon: const Icon(Icons.add_rounded, color: AppColors.mobiliBlueDeep),
         label: const Text(
           'Nouveau trajet',
-          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: AppColors.mobiliBlueDeep, fontWeight: FontWeight.w700),
         ),
       ),
      body: Column(
@@ -1724,8 +1724,8 @@ class _OfflineSaleSheetState extends State<_OfflineSaleSheet> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mobiliBlue,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.mobiliYellow,
+                foregroundColor: AppColors.mobiliBlueDeep,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1736,7 +1736,7 @@ class _OfflineSaleSheetState extends State<_OfflineSaleSheet> {
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(
-                        color: AppColors.white,
+                        color: AppColors.mobiliBlueDeep,
                         strokeWidth: 2,
                       ),
                     )

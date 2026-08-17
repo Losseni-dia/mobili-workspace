@@ -482,11 +482,11 @@ class _PassengersTabState extends ConsumerState<_PassengersTab> {
               onPressed: () =>
                   ref.invalidate(_tripPassengersProvider(widget.tripId)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mobiliBlue,
+                backgroundColor: AppColors.mobiliYellow,
               ),
               child: const Text(
                 'Réessayer',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.mobiliBlueDeep),
               ),
             ),
           ],

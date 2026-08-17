@@ -145,10 +145,10 @@ class _AdminCouponsPageState extends ConsumerState<AdminCouponsPage> {
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mobiliBlue,
+                backgroundColor: AppColors.mobiliYellow,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Créer', style: TextStyle(color: Colors.white)),
+              child: const Text('Créer', style: TextStyle(color: AppColors.mobiliBlueDeep)),
             ),
           ],
         ),
@@ -250,9 +250,9 @@ class _AdminCouponsPageState extends ConsumerState<AdminCouponsPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.mobiliBlue,
+        backgroundColor: AppColors.mobiliYellow,
         onPressed: _openCreateDialog,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+        child: const Icon(Icons.add_rounded, color: AppColors.mobiliBlueDeep),
       ),
       body: RefreshIndicator(
         color: AppColors.mobiliBlue,

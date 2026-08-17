@@ -130,10 +130,10 @@ class _AdminRefundsPageState extends ConsumerState<AdminRefundsPage> {
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mobiliBlue,
+                backgroundColor: AppColors.mobiliYellow,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('OK', style: TextStyle(color: Colors.white)),
+              child: const Text('OK', style: TextStyle(color: AppColors.mobiliBlueDeep)),
             ),
           ],
         ),

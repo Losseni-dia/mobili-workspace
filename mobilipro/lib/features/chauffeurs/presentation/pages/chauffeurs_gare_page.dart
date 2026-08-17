@@ -124,11 +124,11 @@ class _ChauffeursGarePageState extends ConsumerState<ChauffeursGarePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showChauffeurSheet(context, null),
-        backgroundColor: AppColors.mobiliBlue,
-        icon: const Icon(Icons.person_add_rounded, color: AppColors.white),
+        backgroundColor: AppColors.mobiliYellow,
+        icon: const Icon(Icons.person_add_rounded, color: AppColors.mobiliBlueDeep),
         label: const Text(
           'Nouveau chauffeur',
-          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: AppColors.mobiliBlueDeep, fontWeight: FontWeight.w700),
         ),
       ),
       body: Column(
@@ -1102,8 +1102,8 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mobiliBlue,
-                foregroundColor: AppColors.white,
+                backgroundColor: AppColors.mobiliYellow,
+                foregroundColor: AppColors.mobiliBlueDeep,
                 disabledBackgroundColor: AppColors.gray200,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1115,7 +1115,7 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(
-                        color: AppColors.white,
+                        color: AppColors.mobiliBlueDeep,
                         strokeWidth: 2,
                       ),
                     )

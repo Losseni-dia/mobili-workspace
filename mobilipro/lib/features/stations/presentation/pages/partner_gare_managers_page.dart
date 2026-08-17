@@ -298,8 +298,8 @@ class _PartnerGareManagersPageState
               break;
           }
         },
-        backgroundColor: AppColors.mobiliBlue,
-        icon: const Icon(Icons.add_rounded, color: AppColors.white),
+        backgroundColor: AppColors.mobiliYellow,
+        icon: const Icon(Icons.add_rounded, color: AppColors.mobiliBlueDeep),
         label: Text(
           switch (_tabController.index) {
             0 => 'Nouvelle gare',
@@ -307,7 +307,7 @@ class _PartnerGareManagersPageState
             _ => 'Nouveau chef de gare',
           },
           style: const TextStyle(
-            color: AppColors.white,
+            color: AppColors.mobiliBlueDeep,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1009,8 +1009,8 @@ class _StationFormSheetState extends State<_StationFormSheet> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1021,7 +1021,7 @@ class _StationFormSheetState extends State<_StationFormSheet> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                            color: AppColors.white,
+                            color: AppColors.mobiliBlueDeep,
                             strokeWidth: 2,
                           ),
                         )
@@ -1746,8 +1746,8 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
                   child: ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mobiliBlue,
-                      foregroundColor: AppColors.white,
+                      backgroundColor: AppColors.mobiliYellow,
+                      foregroundColor: AppColors.mobiliBlueDeep,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1758,7 +1758,7 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                              color: AppColors.white,
+                              color: AppColors.mobiliBlueDeep,
                               strokeWidth: 2,
                             ),
                           )

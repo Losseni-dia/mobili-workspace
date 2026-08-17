@@ -23,8 +23,8 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.mobiliBlue,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppColors.mobiliYellow,
+        foregroundColor: AppColors.mobiliBlueDeep,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(vertical: 14),
