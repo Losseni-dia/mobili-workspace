@@ -34,7 +34,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
   int? _highlightedBookingId;
   final Map<int, GlobalKey> _cardKeys = {};
 
- bool _readQueryParam = false;
+  bool _readQueryParam = false;
 
   @override
   void initState() {
@@ -129,71 +129,88 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
           ],
         ),
       ),
-      body: bookingsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.mobiliBlue),
-        ),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline_rounded,
-                    color: AppColors.danger, size: 48),
-                const SizedBox(height: 12),
-                Text('Erreur : $e',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.gray500),
-                    textAlign: TextAlign.center),
-              ],
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: MobiliIconPattern(
+              color: AppColors.mobiliBlueDeep,
+              cols: 5,
+              rows: 14,
+              iconSize: 26,
+              alpha: 0.14,
             ),
           ),
-        ),
-        data: (bookings) {
-        final upcoming = bookings.where((b) => b.belongsToUpcoming).toList()
-            ..sort(
-                (a, b) => a.departureDateTime.compareTo(b.departureDateTime));
-          final past = bookings.where((b) => !b.belongsToUpcoming).toList()
-            ..sort(
-                (a, b) => b.departureDateTime.compareTo(a.departureDateTime));
-
-       // Si la réservation surlignée est dans "Passées", on bascule
-          // automatiquement sur cet onglet pour qu'elle soit visible.
-          if (_highlightedBookingId != null) {
-            final isPast = past.any((b) => b.id == _highlightedBookingId);
-            if (isPast && _tabController.index != 1) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) _tabController.animateTo(1);
-              });
-            }
-          }
-          _scrollToHighlighted();
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _BookingList(
-                bookings: upcoming,
-                emptyMessage: 'Aucun voyage à venir',
-                emptyIcon: Icons.flight_takeoff_rounded,
-                ratedTripIds: _ratedTripIds,
-                onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
-                highlightedBookingId: _highlightedBookingId,
-                keyFor: _keyFor,
+          bookingsAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.mobiliBlue),
+            ),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.danger, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Erreur : $e',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.gray500),
+                        textAlign: TextAlign.center),
+                  ],
+                ),
               ),
-              _BookingList(
-                bookings: past,
-                emptyMessage: 'Aucun voyage passé',
-                emptyIcon: Icons.history_rounded,
-                ratedTripIds: _ratedTripIds,
-                onRated: (tripId) => setState(() => _ratedTripIds.add(tripId)),
-                highlightedBookingId: _highlightedBookingId,
-                keyFor: _keyFor,
-              ),
-            ],
-          );
-        },
+            ),
+            data: (bookings) {
+              final upcoming = bookings
+                  .where((b) => b.belongsToUpcoming)
+                  .toList()
+                ..sort((a, b) =>
+                    a.departureDateTime.compareTo(b.departureDateTime));
+              final past = bookings.where((b) => !b.belongsToUpcoming).toList()
+                ..sort((a, b) =>
+                    b.departureDateTime.compareTo(a.departureDateTime));
+
+              // Si la réservation surlignée est dans "Passées", on bascule
+              // automatiquement sur cet onglet pour qu'elle soit visible.
+              if (_highlightedBookingId != null) {
+                final isPast = past.any((b) => b.id == _highlightedBookingId);
+                if (isPast && _tabController.index != 1) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _tabController.animateTo(1);
+                  });
+                }
+              }
+              _scrollToHighlighted();
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _BookingList(
+                    bookings: upcoming,
+                    emptyMessage: 'Aucun voyage à venir',
+                    emptyIcon: Icons.flight_takeoff_rounded,
+                    ratedTripIds: _ratedTripIds,
+                    onRated: (tripId) =>
+                        setState(() => _ratedTripIds.add(tripId)),
+                    highlightedBookingId: _highlightedBookingId,
+                    keyFor: _keyFor,
+                  ),
+                  _BookingList(
+                    bookings: past,
+                    emptyMessage: 'Aucun voyage passé',
+                    emptyIcon: Icons.history_rounded,
+                    ratedTripIds: _ratedTripIds,
+                    onRated: (tripId) =>
+                        setState(() => _ratedTripIds.add(tripId)),
+                    highlightedBookingId: _highlightedBookingId,
+                    keyFor: _keyFor,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -217,7 +234,7 @@ class _BookingList extends StatelessWidget {
   final ValueChanged<int> onRated;
   final int? highlightedBookingId;
   final GlobalKey Function(int bookingId) keyFor;
-  
+
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
@@ -243,7 +260,7 @@ class _BookingList extends StatelessWidget {
       );
     }
 
-return ListView.builder(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: bookings.length,
       itemBuilder: (context, index) {
@@ -276,7 +293,6 @@ class _BookingCard extends StatelessWidget {
   final ValueChanged<int> onRated;
   final bool isHighlighted;
 
-
   @override
   Widget build(BuildContext context) {
     final statusConfig = _statusConfig(booking.status);
@@ -286,7 +302,7 @@ class _BookingCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Container(
-       decoration: BoxDecoration(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isHighlighted ? AppColors.mobiliBlue : AppColors.gray200,
@@ -389,7 +405,7 @@ class _BookingCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                       Container(
+                        Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -980,89 +996,90 @@ class _BookingCard extends StatelessWidget {
     );
   }
 
- Future<void> _payNow(BuildContext context) async {
-   // 1. Choix du provider via une dialog simple
-   final provider = await showDialog<String>(
-     context: context,
-     builder: (ctx) => SimpleDialog(
-       title: const Text('Choisir un moyen de paiement'),
-       children: [
-         SimpleDialogOption(
-           onPressed: () => Navigator.pop(ctx, 'FEDAPAY'),
-           child: const ListTile(
-             leading: Icon(Icons.money, color: AppColors.mobiliBlue),
-             title: Text('Mobile Money'),
-           ),
-         ),
-         SimpleDialogOption(
-           onPressed: () => Navigator.pop(ctx, 'STRIPE'),
-           child: const ListTile(
-             leading: Icon(Icons.credit_card, color: AppColors.mobiliBlue),
-             title: Text('Carte bancaire'),
-           ),
-         ),
-       ],
-     ),
-   );
+  Future<void> _payNow(BuildContext context) async {
+    // 1. Choix du provider via une dialog simple
+    final provider = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Choisir un moyen de paiement'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, 'FEDAPAY'),
+            child: const ListTile(
+              leading: Icon(Icons.money, color: AppColors.mobiliBlue),
+              title: Text('Mobile Money'),
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, 'STRIPE'),
+            child: const ListTile(
+              leading: Icon(Icons.credit_card, color: AppColors.mobiliBlue),
+              title: Text('Carte bancaire'),
+            ),
+          ),
+        ],
+      ),
+    );
 
-   if (provider == null) return; // Annulé
+    if (provider == null) return; // Annulé
 
-   try {
-     final service = BookingService();
-     final request = PaymentRequest(provider: provider);
-     final response = await service.checkout(booking.id, request);
-     if (context.mounted) {
-       await Navigator.push(
-         context,
-         MaterialPageRoute(
-           builder: (_) => PaymentWebViewPage(
-             paymentUrl: response.paymentUrl,
-             providerLabel: provider == 'STRIPE' ? 'Carte bancaire' : 'Mobile Money',
-             onSuccess: () async {
-               try {
-                 final result = await service.pollUntilConfirmed(
-                   booking.id,
-                 );
-                 if (context.mounted) {
-                   if (result.confirmed) {
-                     _showPaymentConfirmed(context);
-                   } else {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       const SnackBar(
-                         content: Text(
-                             'Paiement non confirmé. Réessayez ou contactez le support.'),
-                         backgroundColor: AppColors.warning,
-                       ),
-                     );
-                   }
-                 }
-               } catch (e) {
-                 if (context.mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     SnackBar(
-                       content: Text('Erreur de vérification : $e'),
-                       backgroundColor: AppColors.danger,
-                     ),
-                   );
-                 }
-               }
-             },
-             onCancel: () {},
-           ),
-         ),
-       );
-     }
-   } catch (e) {
-     if (context.mounted) {
-       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(
-           content: Text('Erreur lors du paiement : $e'),
-           backgroundColor: AppColors.danger,
-         ),
-       );
-     }
-   }
- }
+    try {
+      final service = BookingService();
+      final request = PaymentRequest(provider: provider);
+      final response = await service.checkout(booking.id, request);
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentWebViewPage(
+              paymentUrl: response.paymentUrl,
+              providerLabel:
+                  provider == 'STRIPE' ? 'Carte bancaire' : 'Mobile Money',
+              onSuccess: () async {
+                try {
+                  final result = await service.pollUntilConfirmed(
+                    booking.id,
+                  );
+                  if (context.mounted) {
+                    if (result.confirmed) {
+                      _showPaymentConfirmed(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Paiement non confirmé. Réessayez ou contactez le support.'),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur de vérification : $e'),
+                        backgroundColor: AppColors.danger,
+                      ),
+                    );
+                  }
+                }
+              },
+              onCancel: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors du paiement : $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
 
   void _showPaymentConfirmed(BuildContext context) {
     showDialog<void>(

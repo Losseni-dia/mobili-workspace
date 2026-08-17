@@ -9,6 +9,7 @@ import '../../../features/bookings/data/booking_service.dart';
 import '../../../features/bookings/domain/models/booking.dart';
 import '../../../features/claims/presentation/claim_form_page.dart';
 import '../../../features/claims/presentation/my_claims_page.dart';
+import '../../../shared/widgets/mobili_app_bar.dart';
 
 final _userBookingsProvider =
     FutureProvider.autoDispose.family<List<Booking>, int>((ref, userId) async {
@@ -24,7 +25,7 @@ class ProfilePage extends ConsumerWidget {
     final profile = authState.valueOrNull?.profile;
 
     if (profile == null) {
-     return Scaffold(
+      return Scaffold(
         body: Stack(
           children: [
             Container(
@@ -104,293 +105,319 @@ class ProfilePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.mobiliYellowPale,
-      body: CustomScrollView(
-        slivers: [
-        SliverAppBar(
-            expandedHeight: 240,
-            pinned: true,
-            backgroundColor: AppColors.mobiliBlue,
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.home_rounded, color: AppColors.white),
-                tooltip: 'Accueil',
-                onPressed: () => context.go('/'),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  // Dégradé bleu
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF0D2280), AppColors.mobiliBlueDeep],
-                      ),
-                    ),
-                  ),
-                  // Pattern icônes transport
-                  const Positioned.fill(child: _TransportPattern()),
-                  // Overlay sombre
-                  Container(
-                      color: AppColors.mobiliBlueDeep.withValues(alpha: 0.3)),
-                  // Contenu
-                  SafeArea(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 16),
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: AppColors.mobiliYellow,
-                              shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: AppColors.white, width: 3),
-                            ),
-                            child: profile.avatarUrl != null
-                                ? ClipOval(
-                                    child: Image.network(
-                                      'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          _Initials(name: profile.fullName),
-                                    ),
-                                  )
-                                : _Initials(name: profile.fullName),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(profile.fullName,
-                              style: AppTextStyles.titleLarge.copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w800,
-                              )),
-                          const SizedBox(height: 4),
-                          Text(profile.email ?? profile.phone ?? '',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.white.withValues(alpha: 0.7),
-                              )),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 6,
-                            children: profile.roles
-                                .where((r) => r != 'USER')
-                                .map((r) => _RoleBadge(role: r))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 10),
-                         OutlinedButton.icon(
-                            onPressed: () => context.push('/edit-profile'),
-                            icon: const Icon(Icons.edit_rounded,
-                                size: 14, color: AppColors.white),
-                            label: Text('Modifier le profil',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.white)),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                  color: AppColors.white, width: 1),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 6),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: MobiliIconPattern(
+              color: AppColors.mobiliBlueDeep,
+              cols: 5,
+              rows: 14,
+              iconSize: 26,
+              alpha: 0.14,
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats
-                  bookingsAsync.when(
-                    loading: () => const _StatsLoading(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (bookings) => _StatsGrid(bookings: bookings),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 240,
+                pinned: true,
+                backgroundColor: AppColors.mobiliBlue,
+                automaticallyImplyLeading: false,
+                actions: [
+                  IconButton(
+                    icon:
+                        const Icon(Icons.home_rounded, color: AppColors.white),
+                    tooltip: 'Accueil',
+                    onPressed: () => context.go('/'),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Mon compte
-                  _Card(
-                    child: Column(
-                      children: [
-                        const _SectionHeader(
-                            icon: Icons.person_rounded, title: 'Mon compte'),
-                        _InfoRow(
-                            icon: Icons.badge_outlined,
-                            label: 'Identifiant',
-                            value: profile.login),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _InfoRow(
-                            icon: Icons.email_outlined,
-                            label: 'Email',
-                            value: profile.email ?? 'Non renseigné'),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _InfoRow(
-                            icon: Icons.phone_outlined,
-                            label: 'Téléphone',
-                            value: profile.phone ?? 'Non renseigné'),
-                        _InfoRow(
-                          icon: Icons.verified_outlined,
-                          label: 'Statut',
-                          value: profile.enabled ? 'Actif' : 'Inactif',
-                          valueColor: profile.enabled
-                              ? AppColors.success
-                              : AppColors.danger,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Raccourcis
-                  _Card(
-                    child: Column(
-                      children: [
-                        const _SectionHeader(
-                            icon: Icons.grid_view_rounded, title: 'Raccourcis'),
-                        _ActionRow(
-                          icon: Icons.bookmark_rounded,
-                          iconColor: AppColors.mobiliBlue,
-                          label: 'Mes réservations',
-                          onTap: () => context.go('/my-bookings'),
-                        ),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _ActionRow(
-                          icon: Icons.confirmation_number_rounded,
-                          iconColor: AppColors.mobiliYellow,
-                          label: 'Mes billets',
-                          onTap: () => context.go('/tickets'),
-                        ),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _ActionRow(
-                          icon: Icons.directions_car_filled_rounded,
-                          iconColor: AppColors.stationGreen,
-                          label: profile.isChauffeur && profile.hasCovoiturageProfile
-                              ? 'Espace covoiturage'
-                              : 'Devenir conducteur covoiturage',
-                          onTap: () => context.push('/covoiturage'),
-                        ),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _ActionRow(
-                          icon: Icons.report_problem_outlined,
-                          iconColor: AppColors.danger,
-                          label: 'Signaler un problème',
-                          onTap: () => Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ClaimFormPage(),
-                            ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    children: [
+                      // Dégradé bleu
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF0D2280),
+                              AppColors.mobiliBlueDeep
+                            ],
                           ),
                         ),
-                        const Divider(height: 1, color: AppColors.gray100),
-                        _ActionRow(
-                          icon: Icons.history_rounded,
-                          iconColor: AppColors.mobiliBlue,
-                          label: 'Mes réclamations',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MyClaimsPage(),
-                            ),
-                          ),
-                        ),
-                        const Divider(height: 1, color: AppColors.gray100),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Déconnexion
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                    onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                            title: const Text('Se déconnecter ?'),
-                            content: const Text(
-                                'Voulez-vous vraiment vous déconnecter de Mobili ?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Annuler'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.danger,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8)),
+                      ),
+                      // Pattern icônes transport
+                      const Positioned.fill(child: _TransportPattern()),
+                      // Overlay sombre
+                      Container(
+                          color:
+                              AppColors.mobiliBlueDeep.withValues(alpha: 0.3)),
+                      // Contenu
+                      SafeArea(
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 16),
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: AppColors.mobiliYellow,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: AppColors.white, width: 3),
                                 ),
-                                child: const Text('Se déconnecter',
-                                    style: TextStyle(color: Colors.white)),
+                                child: profile.avatarUrl != null
+                                    ? ClipOval(
+                                        child: Image.network(
+                                          'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              _Initials(name: profile.fullName),
+                                        ),
+                                      )
+                                    : _Initials(name: profile.fullName),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(profile.fullName,
+                                  style: AppTextStyles.titleLarge.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w800,
+                                  )),
+                              const SizedBox(height: 4),
+                              Text(profile.email ?? profile.phone ?? '',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color:
+                                        AppColors.white.withValues(alpha: 0.7),
+                                  )),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 6,
+                                children: profile.roles
+                                    .where((r) => r != 'USER')
+                                    .map((r) => _RoleBadge(role: r))
+                                    .toList(),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                onPressed: () => context.push('/edit-profile'),
+                                icon: const Icon(Icons.edit_rounded,
+                                    size: 14, color: AppColors.white),
+                                label: Text('Modifier le profil',
+                                    style: AppTextStyles.bodySmall
+                                        .copyWith(color: AppColors.white)),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                      color: AppColors.white, width: 1),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 6),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
                               ),
                             ],
                           ),
-                        );
-                      if (confirm == true) {
-                          await ref.read(authProvider.notifier).logout();
-                          if (context.mounted) {
-                            context.go('/');
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(children: [
-                                    Icon(Icons.logout_rounded,
-                                        color: Colors.white, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Vous avez été déconnecté.'),
-                                  ]),
-                                  backgroundColor: AppColors.mobiliBlue,
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 2),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                ),
-                              );
-                            });
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.logout_rounded,
-                          color: AppColors.white, size: 20),
-                      label: Text('Se déconnecter',
-                          style: AppTextStyles.buttonPrimary
-                              .copyWith(color: AppColors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.mobiliBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
-            ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stats
+                      bookingsAsync.when(
+                        loading: () => const _StatsLoading(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (bookings) => _StatsGrid(bookings: bookings),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Mon compte
+                      _Card(
+                        child: Column(
+                          children: [
+                            const _SectionHeader(
+                                icon: Icons.person_rounded,
+                                title: 'Mon compte'),
+                            _InfoRow(
+                                icon: Icons.badge_outlined,
+                                label: 'Identifiant',
+                                value: profile.login),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _InfoRow(
+                                icon: Icons.email_outlined,
+                                label: 'Email',
+                                value: profile.email ?? 'Non renseigné'),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _InfoRow(
+                                icon: Icons.phone_outlined,
+                                label: 'Téléphone',
+                                value: profile.phone ?? 'Non renseigné'),
+                            _InfoRow(
+                              icon: Icons.verified_outlined,
+                              label: 'Statut',
+                              value: profile.enabled ? 'Actif' : 'Inactif',
+                              valueColor: profile.enabled
+                                  ? AppColors.success
+                                  : AppColors.danger,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Raccourcis
+                      _Card(
+                        child: Column(
+                          children: [
+                            const _SectionHeader(
+                                icon: Icons.grid_view_rounded,
+                                title: 'Raccourcis'),
+                            _ActionRow(
+                              icon: Icons.bookmark_rounded,
+                              iconColor: AppColors.mobiliBlue,
+                              label: 'Mes réservations',
+                              onTap: () => context.go('/my-bookings'),
+                            ),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _ActionRow(
+                              icon: Icons.confirmation_number_rounded,
+                              iconColor: AppColors.mobiliYellow,
+                              label: 'Mes billets',
+                              onTap: () => context.go('/tickets'),
+                            ),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _ActionRow(
+                              icon: Icons.directions_car_filled_rounded,
+                              iconColor: AppColors.stationGreen,
+                              label: profile.isChauffeur &&
+                                      profile.hasCovoiturageProfile
+                                  ? 'Espace covoiturage'
+                                  : 'Devenir conducteur covoiturage',
+                              onTap: () => context.push('/covoiturage'),
+                            ),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _ActionRow(
+                              icon: Icons.report_problem_outlined,
+                              iconColor: AppColors.danger,
+                              label: 'Signaler un problème',
+                              onTap: () => Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ClaimFormPage(),
+                                ),
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.gray100),
+                            _ActionRow(
+                              icon: Icons.history_rounded,
+                              iconColor: AppColors.mobiliBlue,
+                              label: 'Mes réclamations',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MyClaimsPage(),
+                                ),
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.gray100),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Déconnexion
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16)),
+                                title: const Text('Se déconnecter ?'),
+                                content: const Text(
+                                    'Voulez-vous vraiment vous déconnecter de Mobili ?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Annuler'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.danger,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
+                                    ),
+                                    child: const Text('Se déconnecter',
+                                        style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await ref.read(authProvider.notifier).logout();
+                              if (context.mounted) {
+                                context.go('/');
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Row(children: [
+                                        Icon(Icons.logout_rounded,
+                                            color: Colors.white, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Vous avez été déconnecté.'),
+                                      ]),
+                                      backgroundColor: AppColors.mobiliBlue,
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 2),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10)),
+                                    ),
+                                  );
+                                });
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.logout_rounded,
+                              color: AppColors.white, size: 20),
+                          label: Text('Se déconnecter',
+                              style: AppTextStyles.buttonPrimary
+                                  .copyWith(color: AppColors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.mobiliBlue,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -463,7 +490,7 @@ class _StatsGrid extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.6,
       children: [
-       _StatCard(
+        _StatCard(
           icon: Icons.confirmation_number_rounded,
           iconColor: AppColors.mobiliBlue,
           iconBg: AppColors.mobiliBlueFog,

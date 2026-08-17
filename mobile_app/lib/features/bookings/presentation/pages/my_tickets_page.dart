@@ -82,85 +82,104 @@ class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
           ],
         ),
       ),
-      body: ticketsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.mobiliBlue),
-        ),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline_rounded,
-                    color: AppColors.danger, size: 48),
-                const SizedBox(height: 12),
-                Text('Erreur : $e',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.gray500),
-                    textAlign: TextAlign.center),
-              ],
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: MobiliIconPattern(
+              color: AppColors.mobiliBlueDeep,
+              cols: 5,
+              rows: 14,
+              iconSize: 26,
+              alpha: 0.14,
             ),
           ),
-        ),
-        data: (tickets) {
-          final filtered = widget.filterTripId != null
-              ? tickets.where((t) => t.tripId == widget.filterTripId).toList()
-              : tickets;
+          ticketsAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.mobiliBlue),
+            ),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.danger, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Erreur : $e',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: AppColors.gray500),
+                        textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+            data: (tickets) {
+              final filtered = widget.filterTripId != null
+                  ? tickets
+                      .where((t) => t.tripId == widget.filterTripId)
+                      .toList()
+                  : tickets;
 
-          if (filtered.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.mobiliBlueFog,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.confirmation_number_outlined,
-                        color: AppColors.mobiliBlue, size: 40),
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.mobiliBlueFog,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.confirmation_number_outlined,
+                            color: AppColors.mobiliBlue, size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Aucun billet',
+                          style: AppTextStyles.titleLarge
+                              .copyWith(color: AppColors.mobiliBlueDeep)),
+                      const SizedBox(height: 8),
+                      Text('Vos billets apparaîtront ici après réservation.',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.gray400),
+                          textAlign: TextAlign.center),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text('Aucun billet',
-                      style: AppTextStyles.titleLarge
-                          .copyWith(color: AppColors.mobiliBlueDeep)),
-                  const SizedBox(height: 8),
-                  Text('Vos billets apparaîtront ici après réservation.',
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.gray400),
-                      textAlign: TextAlign.center),
+                );
+              }
+
+              // À venir : trajets pas encore effectués — les plus proches en
+              // premier. Historique : trajets déjà effectués/annulés — les plus
+              // récents en premier.
+              final upcoming = filtered
+                  .where((t) => t.belongsToUpcoming)
+                  .toList()
+                ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
+                    .compareTo(a.bookingDate ?? a.departureDateTime));
+              final history = filtered
+                  .where((t) => !t.belongsToUpcoming)
+                  .toList()
+                ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
+                    .compareTo(a.bookingDate ?? a.departureDateTime));
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _TicketsList(
+                    tickets: upcoming,
+                    emptyLabel: 'Aucun billet à venir',
+                  ),
+                  _TicketsList(
+                    tickets: history,
+                    emptyLabel: 'Aucun billet dans l\'historique',
+                  ),
                 ],
-              ),
-            );
-          }
-
-          // À venir : trajets pas encore effectués — les plus proches en
-          // premier. Historique : trajets déjà effectués/annulés — les plus
-          // récents en premier.
-        final upcoming = filtered.where((t) => t.belongsToUpcoming).toList()
-            ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
-                .compareTo(a.bookingDate ?? a.departureDateTime));
-          final history = filtered.where((t) => !t.belongsToUpcoming).toList()
-            ..sort((a, b) => (b.bookingDate ?? b.departureDateTime)
-                .compareTo(a.bookingDate ?? a.departureDateTime));
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _TicketsList(
-                tickets: upcoming,
-                emptyLabel: 'Aucun billet à venir',
-              ),
-              _TicketsList(
-                tickets: history,
-                emptyLabel: 'Aucun billet dans l\'historique',
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -256,7 +275,7 @@ class _TicketCardState extends State<_TicketCard> {
   bool _isSharing = false;
   bool _qrExpanded = false;
 
-Future<void> _shareTicket() async {
+  Future<void> _shareTicket() async {
     final wasCollapsed = !_qrExpanded;
     if (wasCollapsed) setState(() => _qrExpanded = true);
     setState(() => _isSharing = true);
@@ -277,7 +296,7 @@ Future<void> _shareTicket() async {
         text:
             'Mon billet Mobili — ${widget.ticket.effectiveBoardingCity} → ${widget.ticket.effectiveAlightingCity}\n${widget.ticket.ticketNumber}',
       );
-  } finally {
+    } finally {
       setState(() => _isSharing = false);
       if (wasCollapsed) setState(() => _qrExpanded = false);
     }
@@ -539,7 +558,6 @@ Future<void> _shareTicket() async {
                                 label: 'PASSAGER',
                                 value: ticket.passengerFullName),
                             const SizedBox(height: 12),
-                            
                             const SizedBox(height: 12),
                             _InfoItem(
                                 label: 'VÉHICULE',
@@ -580,7 +598,7 @@ Future<void> _shareTicket() async {
                   ),
                 ),
 
-               if (ticket.formattedBookingDate != null)
+                if (ticket.formattedBookingDate != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: Text(
