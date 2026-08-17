@@ -157,6 +157,26 @@
     }
   }
 
+  &--checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      all: revert;
+      width: 17px;
+      height: 17px;
+      cursor: pointer;
+    }
+
+    span {
+      @include mixins.input-label;
+      margin-bottom: 0;
+    }
+  }
+
   input,
   select {
     @include mixins.input;

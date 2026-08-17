@@ -58,6 +58,8 @@ public class TripResponseDTO {
     private Integer includedHoldBagsPerPassenger;
     private Integer maxExtraHoldBagsPerPassenger;
     private Double extraHoldBagPrice;
+    /** Faux sur les trajets où le partenaire n'a jamais configuré de politique bagages. */
+    private Boolean luggagePolicyEnabled;
 
     /** Catalogue voyageur : ville du prochain arrêt, renseignée seulement si {@code status = EN_COURS}. */
     private String nextStopCity;

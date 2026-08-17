@@ -102,22 +102,32 @@
 
         <div class="form-grid full-width" style="margin-top: 1rem">
             <h3 class="form-group full-width" style="grid-column: 1 / -1; margin: 0">Bagages (passagers)</h3>
-            <div class="form-group">
-                <label for="teCab">Cabine incluse / passager</label>
-                <input id="teCab" type="number" formControlName="includedCabinBagsPerPassenger" min="0" step="1" />
-            </div>
-            <div class="form-group">
-                <label for="teHold">Soute incluse / passager</label>
-                <input id="teHold" type="number" formControlName="includedHoldBagsPerPassenger" min="0" step="1" />
-            </div>
-            <div class="form-group">
-                <label for="teMax">Soute en plus max / passager</label>
-                <input id="teMax" type="number" formControlName="maxExtraHoldBagsPerPassenger" min="0" step="1" />
-            </div>
-            <div class="form-group">
-                <label for="tePrice">Prix soute suppl. (FCFA / unité)</label>
-                <input id="tePrice" type="number" formControlName="extraHoldBagPrice" min="0" step="1" />
-            </div>
+            <label class="form-group full-width" style="grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" formControlName="luggagePolicyEnabled" style="all: revert; width: 17px; height: 17px; cursor: pointer;" />
+                <span>Configurer une politique bagages pour ce trajet</span>
+            </label>
+            @if (tripForm.get('luggagePolicyEnabled')?.value) {
+                <div class="form-group">
+                    <label for="teCab">Cabine incluse / passager</label>
+                    <input id="teCab" type="number" formControlName="includedCabinBagsPerPassenger" min="0" step="1" />
+                </div>
+                <div class="form-group">
+                    <label for="teHold">Soute incluse / passager</label>
+                    <input id="teHold" type="number" formControlName="includedHoldBagsPerPassenger" min="0" step="1" />
+                </div>
+                <div class="form-group">
+                    <label for="teMax">Soute en plus max / passager</label>
+                    <input id="teMax" type="number" formControlName="maxExtraHoldBagsPerPassenger" min="0" step="1" />
+                </div>
+                <div class="form-group">
+                    <label for="tePrice">Prix soute suppl. (FCFA / unité)</label>
+                    <input id="tePrice" type="number" formControlName="extraHoldBagPrice" min="0" step="1" />
+                </div>
+            } @else {
+                <p class="form-group full-width" style="grid-column: 1 / -1; margin: 0; font-size: 0.85rem; color: #666;">
+                    Non coché : aucune section "Bagages" ne sera affichée aux passagers pour ce trajet.
+                </p>
+            }
         </div>
 
         @if (needsOriginDestinationPrice()) {

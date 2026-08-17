@@ -105,28 +105,32 @@
                 }
             </div>
 
-            @if ((bookingForm.get('selectedSeats')?.value?.length ?? 0) > 0) {
+            @if ((bookingForm.get('selectedSeats')?.value?.length ?? 0) > 0 && tripDetails()?.luggagePolicyEnabled) {
                 <div class="luggage-block">
-                    <h3 class="luggage-block__title">Bagages (soute)</h3>
+                    <h3 class="luggage-block__title">🧳 Bagages</h3>
                     <p class="luggage-block__hint">
-                        Inclus par passager (ce voyage) : {{ tripDetails()?.includedHoldBagsPerPassenger ?? 1 }} en soute,
-                        {{ tripDetails()?.includedCabinBagsPerPassenger ?? 1 }} en cabine. Bagages soute
-                        <strong>supplémentaires</strong> (payants) :
+                        Inclus par passager : {{ tripDetails()?.includedCabinBagsPerPassenger ?? 1 }} cabine +
+                        {{ tripDetails()?.includedHoldBagsPerPassenger ?? 1 }} soute.
+                        @if (maxExtraHoldForSelection() > 0) {
+                            Soute en plus (payant) :
+                        }
                     </p>
-                    <label class="input-field">
-                        <span>Nombre de bagages soute en plus (max. {{ maxExtraHoldForSelection() }})</span>
-                        <input
-                            type="number"
-                            formControlName="extraHoldBags"
-                            min="0"
-                            [max]="maxExtraHoldForSelection()"
-                            step="1"
-                        />
-                    </label>
-                    @if ((tripDetails()?.extraHoldBagPrice ?? 0) > 0) {
-                        <p class="luggage-block__fee">
-                            Supplément unitaire : {{ tripDetails()?.extraHoldBagPrice | number: '1.0-0' }} FCFA
-                        </p>
+                    @if (maxExtraHoldForSelection() > 0) {
+                        <label class="input-field">
+                            <span>Nombre de bagages soute en plus (max. {{ maxExtraHoldForSelection() }})</span>
+                            <input
+                                type="number"
+                                formControlName="extraHoldBags"
+                                min="0"
+                                [max]="maxExtraHoldForSelection()"
+                                step="1"
+                            />
+                        </label>
+                        @if ((tripDetails()?.extraHoldBagPrice ?? 0) > 0) {
+                            <p class="luggage-block__fee">
+                                Supplément unitaire : {{ tripDetails()?.extraHoldBagPrice | number: '1.0-0' }} FCFA
+                            </p>
+                        }
                     }
                 </div>
             }
