@@ -119,8 +119,8 @@
                     <input type="checkbox" name="acceptTerms" [(ngModel)]="acceptTerms" #acceptTermsField="ngModel"
                         required>
                     <span>
-                        J'accepte les <a routerLink="/cgu" target="_blank">Conditions Générales d'Utilisation</a>
-                        et la <a routerLink="/confidentialite" target="_blank">Politique de confidentialité</a>.
+                        J'accepte les <a routerLink="/cgu">Conditions Générales d'Utilisation</a>
+                        et la <a routerLink="/confidentialite">Politique de confidentialité</a>.
                     </span>
                 </label>
                 @if (acceptTermsField.touched && acceptTermsField.invalid) {
