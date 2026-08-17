@@ -58,19 +58,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isLoading = state?.isLoading ?? false;
 
     return Scaffold(
+      backgroundColor: AppColors.mobiliYellowPale,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0D2280), AppColors.mobiliBlueDeep],
-              ),
-            ),
-          ),
           const _TransportPattern(),
-          Container(color: AppColors.mobiliBlueDeep.withValues(alpha: 0.45)),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -85,25 +76,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: AppColors.mobiliYellow,
+                            color: AppColors.mobiliBlue,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
                             Icons.directions_bus_rounded,
-                            color: AppColors.mobiliBlueDeep,
+                            color: AppColors.mobiliYellow,
                             size: 36,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text('Mobili',
                             style: AppTextStyles.displayMedium.copyWith(
-                              color: AppColors.white,
+                              color: AppColors.mobiliBlueDeep,
                               fontWeight: FontWeight.w900,
                             )),
                         const SizedBox(height: 6),
                         Text('Votre transport en Afrique',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.white.withValues(alpha: 0.75),
+                              color: AppColors.mobiliBlueDeep
+                                  .withValues(alpha: 0.7),
                             )),
                       ],
                     ),
@@ -190,13 +182,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       children: [
                         Text('Pas encore de compte ? ',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.white.withValues(alpha: 0.8),
+                              color: AppColors.mobiliBlueDeep
+                                  .withValues(alpha: 0.75),
                             )),
                         GestureDetector(
                           onTap: () => context.push('/register'),
                           child: Text("S'inscrire",
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.mobiliYellow,
+                                color: AppColors.mobiliBlue,
                                 fontWeight: FontWeight.w700,
                               )),
                         ),
@@ -243,7 +236,7 @@ class _TransportPattern extends StatelessWidget {
           left: c * cellW + offset - cellW * 0.1,
           top: r * cellH,
           child: Icon(icon,
-              size: 28, color: AppColors.white.withValues(alpha: 0.08)),
+              size: 28, color: AppColors.mobiliBlueDeep.withValues(alpha: 0.1)),
         ));
       }
     }
