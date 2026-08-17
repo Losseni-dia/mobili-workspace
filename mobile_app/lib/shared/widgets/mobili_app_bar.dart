@@ -113,7 +113,12 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? Stack(
               children: [
                 Container(color: bgColor),
-                Positioned.fill(child: MobiliIconPattern(color: iconColor)),
+                Positioned.fill(
+                  child: MobiliIconPattern(
+                    color: iconColor,
+                    size: const Size(392, 84),
+                  ),
+                ),
               ],
             )
           : null,
@@ -128,9 +133,27 @@ class MobiliAppBar extends StatelessWidget implements PreferredSizeWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class MobiliIconPattern extends StatelessWidget {
-  const MobiliIconPattern({super.key, required this.color});
+  const MobiliIconPattern({
+    super.key,
+    required this.color,
+    this.cols = 7,
+    this.rows = 3,
+    this.iconSize = 22,
+    this.alpha = 0.18,
+    this.size,
+  });
 
   final Color color;
+  final int cols;
+  final int rows;
+  final double iconSize;
+  final double alpha;
+
+  /// Zone à couvrir. `null` = pleine page (MediaQuery, pour un fond de page
+  /// complet) ; sinon une taille fixe (ex. la petite zone d'une AppBar, où
+  /// caler sur la taille de l'écran entier donnerait des lignes trop
+  /// espacées pour être visibles dans une barre compacte).
+  final Size? size;
 
   static const _icons = [
     Icons.directions_bus_rounded,
@@ -141,38 +164,30 @@ class MobiliIconPattern extends StatelessWidget {
     Icons.train_rounded,
   ];
 
-  static const cellW = 56.0;
-  static const cellH = 28.0;
-
+  // Même technique que _TransportPattern (login_page.dart, déjà en prod et
+  // fonctionnelle) : la grille se cale sur une taille connue à l'avance
+  // (MediaQuery en plein écran, ou une taille fixe passée explicitement),
+  // jamais sur les contraintes du parent — un LayoutBuilder derrière un
+  // Positioned.fill dans un Stack imbriqué ne donnait pas le résultat
+  // attendu en pratique.
   @override
   Widget build(BuildContext context) {
-    // LayoutBuilder : la grille se répète sur toute la hauteur/largeur
-    // disponibles (AppBar compacte OU pleine page en fond de liste) — un
-    // nombre de lignes/colonnes fixe ne couvrait que le coin haut-gauche
-    // et laissait le reste de la page (derrière la liste des trajets) sans
-    // motif.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth.isFinite ? constraints.maxWidth : 400.0;
-        final h = constraints.maxHeight.isFinite ? constraints.maxHeight : 84.0;
-        final cols = (w / cellW).ceil() + 1;
-        final rows = (h / cellH).ceil() + 1;
-
-        final items = <Widget>[];
-        for (var r = 0; r < rows; r++) {
-          for (var c = 0; c < cols; c++) {
-            final icon = _icons[(r * cols + c) % _icons.length];
-            final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
-            items.add(Positioned(
-              left: c * cellW + offset,
-              top: r * cellH,
-              child:
-                  Icon(icon, size: 22, color: color.withValues(alpha: 0.18)),
-            ));
-          }
-        }
-        return Stack(children: items);
-      },
-    );
+    final effectiveSize = size ?? MediaQuery.of(context).size;
+    final cellW = effectiveSize.width / cols;
+    final cellH = effectiveSize.height / rows;
+    final items = <Widget>[];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        final icon = _icons[(r * cols + c) % _icons.length];
+        final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
+        items.add(Positioned(
+          left: c * cellW + offset - cellW * 0.1,
+          top: r * cellH,
+          child:
+              Icon(icon, size: iconSize, color: color.withValues(alpha: alpha)),
+        ));
+      }
+    }
+    return Stack(children: items);
   }
 }
