@@ -158,7 +158,7 @@ export class BookingConfirmationComponent implements OnInit {
     }
 
     this.isProcessingCard.set(true);
-    this.bookingService.getStripeCheckoutUrl(cleanId, this.totalPrice(), 'XOF', email).subscribe({
+    this.bookingService.getStripeCheckoutUrl(cleanId, email).subscribe({
       next: (response) => {
         window.location.href = response.paymentUrl;
       },
