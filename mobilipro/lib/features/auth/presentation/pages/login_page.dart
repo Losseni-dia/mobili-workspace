@@ -52,9 +52,10 @@ Future<void> _submit() async {
         child: Column(
           children: [
             // ── Header logo ──────────────────────────────────────
-            // Icône + logo écrit (ecrito_jaune.png, wordmark MOBILI jaune) sur
-            // fond bleu Mobili, "PROFESSIONNEL" en dessous — remplace l'ancien
-            // badge "M"+"Pro" dessiné à la main et le texte "MobiliPro".
+            // Choix entre l'icône seule et le logo écrit : on garde l'écrit
+            // (ecrito_jaune.png, wordmark MOBILI jaune) car il porte le nom de
+            // marque, l'icône seule (juste "M") ferait doublon sans plus-value.
+            // "PROFESSIONNEL" en jaune Mobili en dessous, sur fond bleu.
             Expanded(
               flex: 2,
               child: Center(
@@ -62,24 +63,17 @@ Future<void> _submit() async {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/icons/launcher_icon.png',
-                      width: 88,
-                      height: 88,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 18),
-                    Image.asset(
                       'assets/icons/ecrito_jaune.png',
-                      height: 34,
+                      height: 46,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       'PROFESSIONNEL',
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.white.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.mobiliYellow,
                         letterSpacing: 4,
                       ),
                     ),
@@ -294,8 +288,8 @@ Future<void> _submit() async {
                         child: ElevatedButton(
                           onPressed: isLoading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.mobiliBlue,
-                            foregroundColor: AppColors.white,
+                            backgroundColor: AppColors.mobiliYellow,
+                            foregroundColor: AppColors.mobiliBlueDeep,
                             disabledBackgroundColor: AppColors.gray200,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -307,7 +301,7 @@ Future<void> _submit() async {
                                   width: 22,
                                   height: 22,
                                   child: CircularProgressIndicator(
-                                    color: AppColors.white,
+                                    color: AppColors.mobiliBlueDeep,
                                     strokeWidth: 2,
                                   ),
                                 )
