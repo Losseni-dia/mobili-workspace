@@ -413,7 +413,7 @@ class _TripDetailContent extends StatelessWidget {
         // prix via Row+Column+Expanded ici est suspecté d'être la cause du
         // rendu cassé constaté en test réel (contenu de la page invisible,
         // bouton flottant) — retiré le temps de confirmer par isolation.
-        child: MobiliButton(
+        child: MobiliButton.secondary(
           label: trip.availableSeats > 0 ? 'Réserver ce trajet' : 'Complet',
           enabled: trip.availableSeats > 0,
           onPressed: () => Navigator.push(
