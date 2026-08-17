@@ -96,6 +96,81 @@ export class InboxPageComponent implements OnInit {
     return null;
   }
 
+  /**
+   * Lien précis vers l'objet concerné par la notification (jamais une simple page d'accueil
+   * vague) — même principe que côté mobile (`notifications_page.dart`, switch sur `notif.type`).
+   * `null` : soit déjà couvert par `channelLink`/`companyComBasePath` (fil de voyage,
+   * messagerie), soit aucune page cible n'existe côté web pour ce type (ex. types réservés à
+   * l'admin, qui n'a pas d'inbox partagée).
+   */
+  itemLink(n: InboxItem): any[] | null {
+    switch (n.type) {
+      case 'TICKET_ISSUED':
+        return ['/my-account/my-tickets'];
+      case 'BOOKING_CANCELLED':
+      case 'COVOITURAGE_BOOKING_ACCEPTED':
+      case 'COVOITURAGE_BOOKING_REJECTED':
+      case 'COVOITURAGE_BOOKING_NO_RESPONSE':
+      case 'COVOITURAGE_BOOKING_PAYMENT_EXPIRED':
+        // Résa concernée : passager, toujours dans "Mes réservations".
+        return ['/my-account/bookings'];
+      case 'COVOITURAGE_BOOKING_REQUEST':
+        // Destiné au conducteur organisateur : ses demandes en attente.
+        return ['/covoiturage/piloter'];
+      case 'COV_KYC_EXPIRING_SOON':
+      case 'COV_KYC_EXPIRED':
+      case 'COV_KYC_APPROVED':
+      case 'COV_KYC_REJECTED':
+        return ['/covoiturage/profil'];
+      case 'CLAIM_STATUS_UPDATED':
+        return ['/my-account/claims'];
+      case 'PARTNER_NEW_BOOKING':
+        return ['/partenaire/bookings'];
+      case 'GARE_STATION_NEW_BOOKING':
+        // Pas de liste "réservations" dédiée côté gare — "Tickets" en tient lieu.
+        return ['/gare/tickets'];
+      case 'PARTNER_APPROVED':
+      case 'PARTNER_REJECTED':
+        return ['/partenaire/dashboard'];
+      case 'MOBILI_ADMIN_INFO_PARTNER':
+        return ['/partenaire/support'];
+      default:
+        return null;
+    }
+  }
+
+  itemLinkLabel(n: InboxItem): string {
+    switch (n.type) {
+      case 'TICKET_ISSUED':
+        return 'Voir mes billets';
+      case 'BOOKING_CANCELLED':
+      case 'COVOITURAGE_BOOKING_ACCEPTED':
+      case 'COVOITURAGE_BOOKING_REJECTED':
+      case 'COVOITURAGE_BOOKING_NO_RESPONSE':
+      case 'COVOITURAGE_BOOKING_PAYMENT_EXPIRED':
+        return 'Voir la réservation';
+      case 'COVOITURAGE_BOOKING_REQUEST':
+        return 'Voir la demande';
+      case 'COV_KYC_EXPIRING_SOON':
+      case 'COV_KYC_EXPIRED':
+      case 'COV_KYC_APPROVED':
+      case 'COV_KYC_REJECTED':
+        return 'Voir mon profil covoiturage';
+      case 'CLAIM_STATUS_UPDATED':
+        return 'Voir la réclamation';
+      case 'PARTNER_NEW_BOOKING':
+      case 'GARE_STATION_NEW_BOOKING':
+        return 'Voir la réservation';
+      case 'PARTNER_APPROVED':
+      case 'PARTNER_REJECTED':
+        return 'Voir mon espace';
+      case 'MOBILI_ADMIN_INFO_PARTNER':
+        return 'Voir le message';
+      default:
+        return 'Voir';
+    }
+  }
+
   typeLabel(t: InboxItem): string {
     switch (t.type) {
       case 'TICKET_ISSUED':
@@ -114,6 +189,29 @@ export class InboxPageComponent implements OnInit {
         return 'CNI (expiration)';
       case 'COV_KYC_EXPIRED':
         return 'CNI expirée';
+      case 'COV_KYC_APPROVED':
+        return 'CNI validée';
+      case 'COV_KYC_REJECTED':
+        return 'CNI refusée';
+      case 'BOOKING_CANCELLED':
+        return 'Réservation annulée';
+      case 'PARTNER_APPROVED':
+        return 'Société approuvée';
+      case 'PARTNER_REJECTED':
+        return 'Société refusée';
+      case 'COVOITURAGE_BOOKING_REQUEST':
+        return 'Demande covoiturage';
+      case 'COVOITURAGE_BOOKING_ACCEPTED':
+        return 'Covoiturage accepté';
+      case 'COVOITURAGE_BOOKING_REJECTED':
+        return 'Covoiturage refusé';
+      case 'COVOITURAGE_BOOKING_NO_RESPONSE':
+        return 'Covoiturage expiré';
+      case 'COVOITURAGE_BOOKING_PAYMENT_EXPIRED':
+        return 'Paiement expiré';
+      case 'CLAIM_SUBMITTED':
+      case 'CLAIM_STATUS_UPDATED':
+        return 'Réclamation';
       default:
         return 'Info';
     }

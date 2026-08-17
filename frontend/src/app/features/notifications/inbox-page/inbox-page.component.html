@@ -27,20 +27,25 @@
           </div>
           <h2 class="title">{{ n.title }}</h2>
           <p class="body">{{ n.body }}</p>
-          @if (n.tripId && channelLink(n.tripId)) {
+          @if (n.type === 'TRIP_CHANNEL_MESSAGE' && n.tripId && channelLink(n.tripId)) {
             <a
               class="link-channel"
               [routerLink]="channelLink(n.tripId)!"
               (click)="$event.stopPropagation()"
             >Voir le fil du voyage</a>
-          }
-          @if (n.partnerGareComThreadId != null && companyComBasePath()) {
+          } @else if (n.partnerGareComThreadId != null && companyComBasePath()) {
             <a
               class="link-channel"
               [routerLink]="companyComBasePath()!"
               [queryParams]="{ thread: n.partnerGareComThreadId }"
               (click)="$event.stopPropagation()"
             >Ouvrir la conversation</a>
+          } @else if (itemLink(n); as target) {
+            <a
+              class="link-channel"
+              [routerLink]="target"
+              (click)="$event.stopPropagation()"
+            >{{ itemLinkLabel(n) }}</a>
           }
         </li>
       }

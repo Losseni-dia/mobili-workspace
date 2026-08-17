@@ -6,6 +6,8 @@ import { Page } from './page.model';
 import { AuthService } from '../auth/auth.service';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
 
+/** Aligné sur MobiliNotificationType (backend) — liste complète, pas seulement les types
+ *  déjà routés côté web (voir InboxPageComponent.itemLink). */
 export type MobiliInboxType =
   | 'TICKET_ISSUED'
   | 'TRIP_CHANNEL_MESSAGE'
@@ -14,7 +16,20 @@ export type MobiliInboxType =
   | 'PARTNER_GARE_COM_MESSAGE'
   | 'COV_KYC_EXPIRING_SOON'
   | 'COV_KYC_EXPIRED'
-  | 'MOBILI_ADMIN_INFO_PARTNER';
+  | 'COV_KYC_APPROVED'
+  | 'COV_KYC_REJECTED'
+  | 'MOBILI_ADMIN_INFO_PARTNER'
+  | 'PARTNER_SUBMISSION_PENDING'
+  | 'BOOKING_CANCELLED'
+  | 'PARTNER_APPROVED'
+  | 'PARTNER_REJECTED'
+  | 'COVOITURAGE_BOOKING_REQUEST'
+  | 'COVOITURAGE_BOOKING_ACCEPTED'
+  | 'COVOITURAGE_BOOKING_REJECTED'
+  | 'COVOITURAGE_BOOKING_NO_RESPONSE'
+  | 'COVOITURAGE_BOOKING_PAYMENT_EXPIRED'
+  | 'CLAIM_SUBMITTED'
+  | 'CLAIM_STATUS_UPDATED';
 
 export interface InboxItem {
   id: number;
@@ -28,6 +43,10 @@ export interface InboxItem {
   channelMessageId: number | null;
   /** Fils messagerie partenaire / gares → `/…/company-messages?thread=…` */
   partnerGareComThreadId?: number | null;
+  bookingId?: number | null;
+  partnerId?: number | null;
+  /** Réclamation concernée : permet d'ouvrir directement la bonne réclamation. */
+  claimId?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
