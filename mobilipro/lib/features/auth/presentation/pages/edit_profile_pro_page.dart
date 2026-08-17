@@ -289,7 +289,7 @@ class _EditProfileProPageState extends ConsumerState<EditProfileProPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
+                    backgroundColor: AppColors.mobiliYellow,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

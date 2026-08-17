@@ -158,11 +158,11 @@ class DashboardChauffeurPage extends ConsumerWidget {
                           onPressed: () =>
                               ref.invalidate(chauffeurOverviewProvider),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.mobiliBlue,
+                            backgroundColor: AppColors.mobiliYellow,
                           ),
                           child: const Text(
                             'Réessayer',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: AppColors.mobiliBlueDeep),
                           ),
                         ),
                       ],

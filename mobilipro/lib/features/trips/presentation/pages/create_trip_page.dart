@@ -539,8 +539,8 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _nextStep,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliBlue,
-                  foregroundColor: AppColors.white,
+                  backgroundColor: AppColors.mobiliYellow,
+                  foregroundColor: AppColors.mobiliBlueDeep,
                   disabledBackgroundColor: AppColors.gray200,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -552,7 +552,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
-                          color: AppColors.white,
+                          color: AppColors.mobiliBlueDeep,
                           strokeWidth: 2,
                         ),
                       )

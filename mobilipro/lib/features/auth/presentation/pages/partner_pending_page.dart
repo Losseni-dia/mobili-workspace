@@ -143,8 +143,8 @@ class PartnerPendingPage extends ConsumerWidget {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

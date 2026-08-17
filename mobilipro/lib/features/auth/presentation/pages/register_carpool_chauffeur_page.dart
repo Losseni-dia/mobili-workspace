@@ -357,8 +357,8 @@ class _RegisterCarpoolChauffeurPageState
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
@@ -366,7 +366,7 @@ class _RegisterCarpoolChauffeurPageState
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: AppColors.mobiliBlueDeep, strokeWidth: 2),
                         )
                       : const Text('Envoyer mon dossier',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),

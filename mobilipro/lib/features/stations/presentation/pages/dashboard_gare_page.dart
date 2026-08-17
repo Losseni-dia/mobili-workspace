@@ -212,11 +212,11 @@ class DashboardGarePage extends ConsumerWidget {
       backgroundColor: AppColors.gray50,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/gare/trips/create'),
-        backgroundColor: AppColors.mobiliBlue,
-        icon: const Icon(Icons.add_rounded, color: AppColors.white),
+        backgroundColor: AppColors.mobiliYellow,
+        icon: const Icon(Icons.add_rounded, color: AppColors.mobiliBlueDeep),
         label: const Text(
           'Nouveau trajet',
-          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: AppColors.mobiliBlueDeep, fontWeight: FontWeight.w700),
         ),
       ),
       body: RefreshIndicator(

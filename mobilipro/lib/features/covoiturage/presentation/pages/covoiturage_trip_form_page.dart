@@ -360,8 +360,8 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.mobiliBlue,
-                          foregroundColor: AppColors.white,
+                          backgroundColor: AppColors.mobiliYellow,
+                          foregroundColor: AppColors.mobiliBlueDeep,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
@@ -370,7 +370,7 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
                                 width: 22,
                                 height: 22,
                                 child:
-                                    CircularProgressIndicator(color: AppColors.white, strokeWidth: 2),
+                                    CircularProgressIndicator(color: AppColors.mobiliBlueDeep, strokeWidth: 2),
                               )
                             : Text(
                                 _isEditing ? 'Enregistrer les modifications' : 'Publier le trajet',

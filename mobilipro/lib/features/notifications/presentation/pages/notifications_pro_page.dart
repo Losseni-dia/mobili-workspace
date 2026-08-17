@@ -175,8 +175,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.business_rounded, size: 16),
                   label: const Text('Voir la fiche société'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -222,8 +222,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.business_rounded, size: 16),
                   label: const Text('Voir la fiche société'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -249,8 +249,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.report_problem_outlined, size: 16),
                   label: const Text('Voir la réclamation'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -280,8 +280,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.badge_outlined, size: 16),
                   label: const Text('Voir le chauffeur'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -315,8 +315,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.forum_rounded, size: 16),
                   label: const Text('Voir le fil de discussion'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -342,8 +342,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.forum_rounded, size: 16),
                   label: const Text('Voir le message'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -369,8 +369,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.bookmark_add_rounded, size: 16),
                   label: const Text('Voir la réservation'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -396,8 +396,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.directions_bus_rounded, size: 16),
                   label: const Text('Voir le trajet'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -416,8 +416,8 @@ class _NotificationsProPageState extends ConsumerState<NotificationsProPage> {
                   icon: const Icon(Icons.directions_bus_rounded, size: 16),
                   label: const Text('Voir les trajets'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliBlue,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: AppColors.mobiliYellow,
+                    foregroundColor: AppColors.mobiliBlueDeep,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

@@ -712,7 +712,7 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliBlue,
+                  backgroundColor: AppColors.mobiliYellow,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),

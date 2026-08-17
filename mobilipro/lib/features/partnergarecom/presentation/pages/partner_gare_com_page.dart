@@ -250,8 +250,8 @@ class _CanalSocieteTab extends ConsumerWidget {
       ),
       floatingActionButton: canCreateThread
           ? FloatingActionButton.extended(
-              backgroundColor: AppColors.mobiliBlue,
-              foregroundColor: AppColors.white,
+              backgroundColor: AppColors.mobiliYellow,
+              foregroundColor: AppColors.mobiliBlueDeep,
               icon: const Icon(Icons.add_rounded),
               label: const Text('Nouveau fil'),
               onPressed: () => _showCreateDialog(context, ref, profile),
@@ -1736,7 +1736,7 @@ class _CreateThreadDialogState extends ConsumerState<_CreateThreadDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.mobiliBlue,
+            backgroundColor: AppColors.mobiliYellow,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -1966,7 +1966,7 @@ class _ErrorView extends StatelessWidget {
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.mobiliBlue,
+              backgroundColor: AppColors.mobiliYellow,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

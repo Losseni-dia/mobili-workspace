@@ -267,8 +267,8 @@ class _PartnerResubmitPageState extends ConsumerState<PartnerResubmitPage> {
                       child: ElevatedButton(
                         onPressed: _submitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.mobiliBlue,
-                          foregroundColor: AppColors.white,
+                          backgroundColor: AppColors.mobiliYellow,
+                          foregroundColor: AppColors.mobiliBlueDeep,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -278,7 +278,7 @@ class _PartnerResubmitPageState extends ConsumerState<PartnerResubmitPage> {
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  color: AppColors.white,
+                                  color: AppColors.mobiliBlueDeep,
                                   strokeWidth: 2,
                                 ),
                               )
