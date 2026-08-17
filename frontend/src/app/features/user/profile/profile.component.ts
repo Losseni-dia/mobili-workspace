@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { bookingStatusLabel } from '../../../core/utils/booking-status-label.util';
 
 @Component({
   selector: 'app-profile',
@@ -101,5 +102,9 @@ export class ProfileComponent implements OnInit {
     if (s === 'PENDING' || s === 'EN_ATTENTE' || s === 'WAITING') return 'warn';
     if (s === 'CANCELLED' || s === 'ANNULE' || s === 'REFUSED') return 'blocked';
     return 'info';
+  }
+
+  statusLabel(status: string | undefined | null): string {
+    return bookingStatusLabel(status);
   }
 }

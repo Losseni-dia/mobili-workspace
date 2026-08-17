@@ -30,8 +30,9 @@ export class UserShellComponent {
     { label: 'Notifications', icon: '🔔', path: '/my-account/notifications' },
     { label: 'Mes billets', icon: '🎫', path: '/my-account/my-tickets' },
     { label: 'Mes réservations', icon: '🧾', path: '/my-account/bookings' },
+    // "Support" retiré côté client (feedback testeurs) : doublon avec "Réclamations", et le
+    // support conversationnel reste réservé au pro (partenaire/gare) — voir SupportChatComponent.
     { label: 'Réclamations', icon: '📮', path: '/my-account/claims' },
-    { label: 'Support', icon: '💬', path: '/my-account/support' },
   ];
 
   pageInfo = computed(() => {

@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { NotificationService } from '../../../core/services/notification/notification.service';
 
 @Component({
   selector: 'app-station-list',
@@ -17,6 +18,7 @@ export class StationListComponent implements OnInit {
   private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
+  private toast = inject(NotificationService);
 
   stations = signal<Station[]>([]);
   isLoading = signal(false);
@@ -94,6 +96,41 @@ export class StationListComponent implements OnInit {
   cancelEdit() {
     this.editingId.set(null);
     this.editError.set(null);
+  }
+
+  // Suppression de gare : endpoint backend (DELETE /partenaire/stations/{id}) et service
+  // frontend (PartenaireService.deleteStation) existaient déjà mais n'étaient câblés à aucun
+  // bouton — la fonctionnalité était donc invisible côté UI (feedback testeurs).
+  pendingDelete = signal<Station | null>(null);
+  deleteSubmitting = signal(false);
+  deleteError = signal<string | null>(null);
+
+  askDelete(g: Station) {
+    this.deleteError.set(null);
+    this.pendingDelete.set(g);
+  }
+
+  cancelDelete() {
+    this.pendingDelete.set(null);
+    this.deleteError.set(null);
+  }
+
+  confirmDelete() {
+    const g = this.pendingDelete();
+    if (!g || this.deleteSubmitting()) return;
+    this.deleteSubmitting.set(true);
+    this.partenaire.deleteStation(g.id).subscribe({
+      next: () => {
+        this.stations.update((list) => list.filter((x) => x.id !== g.id));
+        this.deleteSubmitting.set(false);
+        this.pendingDelete.set(null);
+        this.toast.show(`Gare « ${g.name} » supprimée.`, 'success');
+      },
+      error: (e) => {
+        this.deleteError.set(e?.error?.message || 'Impossible de supprimer cette gare.');
+        this.deleteSubmitting.set(false);
+      },
+    });
   }
 
   saveEdit(g: Station) {

@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
 
 interface GareNavItem {
   label: string;
@@ -19,7 +20,15 @@ interface GareNavItem {
 })
 export class GareShellComponent implements OnInit {
   private router = inject(Router);
+  private configurationService = inject(ConfigurationService);
   authService = inject(AuthService);
+
+  /**
+   * Lien "Retour site" — ce shell est partagé entre l'app voyageur et Mobili Business
+   * (`@mobili-app/*`) : un simple `routerLink="/"` était résolu dans le routeur business
+   * (accueil connexion pro) au lieu du site public voyageur (feedback testeurs).
+   */
+  travelerSiteUrl = this.configurationService.getTravelerWebBaseUrl();
 
   private currentUrl = signal<string>(this.router.url);
   collapsed = signal(false);

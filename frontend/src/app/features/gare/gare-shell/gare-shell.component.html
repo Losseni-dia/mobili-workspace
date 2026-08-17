@@ -38,7 +38,7 @@
             }
         }
 
-        <a routerLink="/" class="mobile-drawer__item soft" (click)="mobileMenuOpen.set(false)">🏠 Retour site</a>
+        <a [href]="travelerSiteUrl" class="mobile-drawer__item soft" (click)="mobileMenuOpen.set(false)">🏠 Retour site</a>
         <button type="button" class="mobile-drawer__item soft" (click)="logout()">⏻ Déconnexion</button>
     </nav>
 </div>
@@ -147,7 +147,7 @@
         </div>
 
         <div class="sidebar-footer">
-            <a routerLink="/" class="nav-link soft" title="Retour au site">
+            <a [href]="travelerSiteUrl" class="nav-link soft" title="Retour au site">
                 <span class="nav-icon">🏠</span>
                 @if (!collapsed()) {
                     <span class="nav-label">Retour site</span>

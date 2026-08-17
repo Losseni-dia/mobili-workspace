@@ -63,7 +63,7 @@
                         <div class="trip-side">
                             <span class="status-pill" [ngClass]="statusClass(b.status)">
                                 <span class="dot"></span>
-                                {{ b.status }}
+                                {{ statusLabel(b.status) }}
                             </span>
                             <strong class="price">{{ (b.amount || b.totalPrice) | number: '1.0-0' }} FCFA</strong>
                         </div>
@@ -121,7 +121,7 @@
                             <td>
                                 <span class="status-pill" [ngClass]="statusClass(b.status)">
                                     <span class="dot"></span>
-                                    {{ b.status }}
+                                    {{ statusLabel(b.status) }}
                                 </span>
                             </td>
                             <td class="right amount">{{ (b.amount || b.totalPrice) | number: '1.0-0' }} FCFA</td>
