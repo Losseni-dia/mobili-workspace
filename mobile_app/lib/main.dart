@@ -1,4 +1,4 @@
-// retrigger: precedent upload Firebase timeout apres 5min (transitoire).
+// retrigger: valide le nouveau retry CI (upload Firebase).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
