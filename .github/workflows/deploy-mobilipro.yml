@@ -44,10 +44,21 @@ jobs:
           MOBILIPRO_KEY_PASSWORD: ${{ secrets.MOBILIPRO_KEY_PASSWORD }}
         run: flutter build apk --release
 
-      - name: Distribute via Firebase
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+      # Meme fragilite que deploy-mobileapp.yml (voir son commentaire) :
+      # wzieba/Firebase-Distribution-Github-Action n'a pas de retry, un upload
+      # lent fait echouer tout le job sans nouvelle tentative.
+      - name: Distribute via Firebase (avec retry)
+        uses: nick-fields/retry@v3
+        env:
+          FIREBASE_TOKEN_FILE_CONTENT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         with:
-          appId: '1:908432245037:android:0b00c6f5d27550d72bd3a4'
-          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          groups: Mobili-business
-          file: mobilipro/build/app/outputs/flutter-apk/app-release.apk
+          timeout_minutes: 6
+          max_attempts: 3
+          retry_wait_seconds: 20
+          command: |
+            echo "$FIREBASE_TOKEN_FILE_CONTENT" > /tmp/firebase-sa.json
+            export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
+            npx --yes firebase-tools@13 appdistribution:distribute \
+              mobilipro/build/app/outputs/flutter-apk/app-release.apk \
+              --app "1:908432245037:android:0b00c6f5d27550d72bd3a4" \
+              --groups "Mobili-business"
