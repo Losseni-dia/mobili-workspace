@@ -52,62 +52,30 @@ Future<void> _submit() async {
         child: Column(
           children: [
             // ── Header logo ──────────────────────────────────────
+            // Icône + logo écrit (ecrito_jaune.png, wordmark MOBILI jaune) sur
+            // fond bleu Mobili, "PROFESSIONNEL" en dessous — remplace l'ancien
+            // badge "M"+"Pro" dessiné à la main et le texte "MobiliPro".
             Expanded(
               flex: 2,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo M
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: AppColors.mobiliYellow,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: const Stack(
-                        children: [
-                          Center(
-                            child: Text(
-                              'M',
-                              style: TextStyle(
-                                fontSize: 58,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.mobiliBlue,
-                                height: 1,
-                              ),
-                            ),
-                          ),
-                          // Pro exposant
-                          Positioned(
-                            top: 10,
-                            right: 8,
-                            child: Text(
-                              'Pro',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.mobiliBlue,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    Image.asset(
+                      'assets/icons/launcher_icon.png',
+                      width: 88,
+                      height: 88,
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'MobiliPro',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.white,
-                        letterSpacing: 0.5,
-                      ),
+                    const SizedBox(height: 18),
+                    Image.asset(
+                      'assets/icons/ecrito_jaune.png',
+                      height: 34,
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
-                      'PROFESSIONAL',
+                      'PROFESSIONNEL',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
