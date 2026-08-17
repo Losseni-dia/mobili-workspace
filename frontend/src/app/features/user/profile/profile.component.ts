@@ -19,24 +19,40 @@ export class ProfileComponent implements OnInit {
   bookings = signal<BookingResponse[]>([]);
   isLoadingBookings = signal<boolean>(true);
 
+  /**
+   * Statuts considérés comme une réservation réellement payée/valide — PENDING, CANCELLED,
+   * EXPIRED, AWAITING_PAYMENT, etc. ne doivent jamais entrer dans les stats/listes affichées
+   * au client (feedback testeurs : "Total dépensé" et "Prochains voyages" comptaient des
+   * réservations annulées ou jamais payées).
+   */
+  private readonly PAID_STATUSES = new Set(['CONFIRMED', 'OFFLINE_SALE', 'COMPLETED']);
+  private isPaid(b: BookingResponse): boolean {
+    return this.PAID_STATUSES.has(b.status);
+  }
+
   // ====== STATS ======
-  totalBookings = computed(() => this.bookings().length);
+  totalBookings = computed(() => this.bookings().filter((b) => this.isPaid(b)).length);
 
   totalSeats = computed(() =>
-    this.bookings().reduce((sum, b) => sum + (Number(b.numberOfSeats) || 0), 0),
+    this.bookings()
+      .filter((b) => this.isPaid(b))
+      .reduce((sum, b) => sum + (Number(b.numberOfSeats) || 0), 0),
   );
 
   totalSpent = computed(() =>
-    this.bookings().reduce((sum, b) => {
-      const value = Number(b.totalPrice ?? b.amount ?? 0);
-      return sum + (Number.isNaN(value) ? 0 : value);
-    }, 0),
+    this.bookings()
+      .filter((b) => this.isPaid(b))
+      .reduce((sum, b) => {
+        const value = Number(b.totalPrice ?? b.amount ?? 0);
+        return sum + (Number.isNaN(value) ? 0 : value);
+      }, 0),
   );
 
   upcomingBookings = computed(() => {
     const now = Date.now();
     return this.bookings()
       .filter((b) => {
+        if (!this.isPaid(b)) return false;
         const t = b.departureDateTime ? Date.parse(b.departureDateTime) : NaN;
         return !Number.isNaN(t) && t >= now;
       })

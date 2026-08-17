@@ -45,7 +45,12 @@ export function postLoginNavigateUrl(options: {
   if (a.hasRole('ADMIN')) return '/admin/dashboard';
   if (a.hasRole('PARTNER')) return `${biz}/partenaire/dashboard`;
   if (a.hasRole('GARE') || a.hasRole('STATION')) return `${biz}/gare/accueil`;
-  if (a.hasRole('CHAUFFEUR')) return `${biz}/covoiturage/accueil`;
+  // ⚠️ Ne PAS rediriger automatiquement vers /covoiturage sur la seule présence du rôle
+  // CHAUFFEUR : un compte "mixte" (passager qui a aussi été validé chauffeur covoiturage,
+  // cf. UserService.registerCarpoolChauffeur qui ajoute CHAUFFEUR à un compte USER existant)
+  // se connectant depuis l'app voyageur doit atterrir sur son dashboard passager, pas être
+  // renvoyé de force vers l'espace conducteur (feedback testeurs). L'accès covoiturage reste
+  // disponible via la nav normale.
   if (a.isLoggedIn()) return '/my-account/profile';
   return '/';
 }

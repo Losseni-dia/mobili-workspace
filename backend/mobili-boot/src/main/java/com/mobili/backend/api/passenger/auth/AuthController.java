@@ -69,7 +69,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         log.info("[Login] Tentative de connexion pour login={}", request.getLogin());
 
-        var userOpt = userRepository.findByLogin(request.getLogin());
+        // UserService.registerUser stocke le login normalisé (trim + lowercase) — sans la même
+        // normalisation ici, une casse/espace différent au login (ex. autofill qui capitalise,
+        // copier-coller mobile) échoue avec "Identifiant incorrect" alors que le compte existe
+        // (feedback testeurs : connexion impossible juste après inscription).
+        String normalizedLogin = request.getLogin() != null ? request.getLogin().trim().toLowerCase() : null;
+        var userOpt = userRepository.findByLogin(normalizedLogin);
         if (userOpt.isEmpty()) {
             return loginAsStation(request, response);
         }

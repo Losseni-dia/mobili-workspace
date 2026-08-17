@@ -47,6 +47,19 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
         }
         this.bookingId = parsed;
 
+        // ⚠️ Stripe redirige aussi vers cette page (voir StripeService.setSuccessUrl) : sans
+        // ce garde, on appelait verifyFedaPayPayment() même pour un paiement Stripe (aucune
+        // transaction FedaPay correspondante côté API), ce qui faisait échouer la vérification
+        // et laissait la réservation en PENDING jusqu'à expiration — malgré un paiement Stripe
+        // déjà validé. Seule FedaPay a une vérification synchrone ; Stripe se confirme par
+        // webhook (voir booking.service.ts), donc on va direct au polling.
+        const providerParam = params['provider'];
+        const provider = Array.isArray(providerParam) ? providerParam[0] : providerParam;
+        if (provider === 'STRIPE') {
+          this.startPollingBookingDetails();
+          return;
+        }
+
         this.bookingService
           .verifyFedaPayPayment(this.bookingId)
           .pipe(catchError(() => of(null)))
