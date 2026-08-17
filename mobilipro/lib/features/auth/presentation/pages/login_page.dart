@@ -62,12 +62,14 @@ Future<void> _submit() async {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Image recadrée à son contenu réel (voir asset) : la marge
+                    // transparente d'origine faussait le rapport taille/espace.
                     Image.asset(
                       'assets/icons/ecrito_jaune.png',
-                      height: 130,
+                      height: 56,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     const Text(
                       'PROFESSIONNEL',
                       style: TextStyle(
