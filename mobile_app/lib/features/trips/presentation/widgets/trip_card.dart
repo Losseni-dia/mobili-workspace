@@ -21,11 +21,10 @@ class TripCard extends StatelessWidget {
     return GestureDetector(
       onTap: isFull ? null : onTap,
       child: Container(
-        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: AppColors.mobiliYellow,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.mobiliYellowDark),
+          border: Border.all(color: AppColors.gray200),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A000000),
@@ -36,164 +35,118 @@ class TripCard extends StatelessWidget {
         ),
         child: Opacity(
           opacity: isFull ? 0.6 : 1.0,
-          child: Stack(
-            children: [
-              const Positioned.fill(child: _CardIconPattern()),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _VehicleImage(url: trip.vehicleImageUrl),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 14, 4, 14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _VehicleImage(url: trip.vehicleImageUrl),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 14, 4, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Route
+                        _RouteRow(
+                          departure: trip.departureCity,
+                          arrival: trip.arrivalCity,
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Date + heure
+                        Row(
                           children: [
-                            // Route
-                            _RouteRow(
-                              departure: trip.departureCity,
-                              arrival: trip.arrivalCity,
-                            ),
-                            const SizedBox(height: 4),
-
-                            // Date + heure
-                            Row(
-                              children: [
-                                const Icon(Icons.calendar_today_rounded,
-                                    size: 12, color: AppColors.gray400),
-                                const SizedBox(width: 4),
-                                Text(
-                                  trip.formattedDepartureFull,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.gray600,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-
-                            // Trajet déjà parti : "En cours" ou "En route vers X"
-                            if (trip.isInProgress) _InProgressBadge(trip: trip),
-                            if (trip.isInProgress) const SizedBox(height: 6),
-
-                            // Point d'embarquement — pleine largeur
-                            if (trip.boardingPoint != null &&
-                                trip.boardingPoint!.isNotEmpty)
-                              Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 6),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white.withValues(alpha: 0.7),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Text('📍',
-                                        style: TextStyle(fontSize: 11)),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Emb. : ${trip.boardingPoint}',
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.mobiliBlueDeep,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            const Icon(Icons.calendar_today_rounded,
+                                size: 12, color: AppColors.gray400),
+                            const SizedBox(width: 4),
+                            Text(
+                              trip.formattedDepartureFull,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.gray600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
                               ),
-
-                            // Escales en chips
-                            if (trip.moreInfo != null &&
-                                trip.moreInfo!.isNotEmpty)
-                              _EscalesChips(moreInfo: trip.moreInfo!),
-
-                            const SizedBox(height: 6),
-
-                            // Bas : type véhicule • partenaire (sans badge transport)
-                            Wrap(
-                              spacing: 4,
-                              runSpacing: 4,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                if (trip.vehicleTypeLabel.isNotEmpty)
-                                  _VehicleTypeBadge(
-                                      label: trip.vehicleTypeLabel),
-                                if (trip.partnerName != null)
-                                  Text(
-                                    trip.partnerName!
-                                        .replaceAll(
-                                            RegExp(r'\s*\(.*?\)\s*'), '')
-                                        .trim(),
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.gray500,
-                                      fontSize: 11,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 6),
+
+                        // Trajet déjà parti : "En cours" ou "En route vers X"
+                        if (trip.isInProgress) _InProgressBadge(trip: trip),
+                        if (trip.isInProgress) const SizedBox(height: 6),
+
+                        // Point d'embarquement — pleine largeur
+                        if (trip.boardingPoint != null &&
+                            trip.boardingPoint!.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.mobiliYellow
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                const Text('📍',
+                                    style: TextStyle(fontSize: 11)),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Emb. : ${trip.boardingPoint}',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.mobiliBlueDeep,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Escales en chips
+                        if (trip.moreInfo != null && trip.moreInfo!.isNotEmpty)
+                          _EscalesChips(moreInfo: trip.moreInfo!),
+
+                        const SizedBox(height: 6),
+
+                        // Bas : type véhicule • partenaire (sans badge transport)
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (trip.vehicleTypeLabel.isNotEmpty)
+                              _VehicleTypeBadge(label: trip.vehicleTypeLabel),
+                            if (trip.partnerName != null)
+                              Text(
+                                trip.partnerName!
+                                    .replaceAll(RegExp(r'\s*\(.*?\)\s*'), '')
+                                    .trim(),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.gray500,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
-                    _RightBlock(trip: trip, onTap: onTap, isFull: isFull),
-                  ],
+                  ),
                 ),
-              ), // ← ferme Row/IntrinsicHeight
-            ],
-          ), // ← ferme Stack
-        ), // ← ferme Opacity
-      ), // ← ferme Container
+                _RightBlock(trip: trip, onTap: onTap, isFull: isFull),
+              ],
+            ),
+          ), // ← ferme Row
+        ), // ← ferme IntrinsicHeight
+      ), // ← ferme Opacity
+      // ← ferme Container
     );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Petit motif d'icônes transport en filigrane — même principe que le fond
-// d'AppBar (mobili_app_bar.dart), version compacte pour une carte trajet.
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CardIconPattern extends StatelessWidget {
-  const _CardIconPattern();
-
-  static const _icons = [
-    Icons.directions_bus_rounded,
-    Icons.confirmation_number_rounded,
-    Icons.location_on_rounded,
-    Icons.schedule_rounded,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final items = <Widget>[];
-    const cols = 4;
-    const rows = 3;
-    const cellW = 60.0;
-    const cellH = 40.0;
-
-    for (var r = 0; r < rows; r++) {
-      for (var c = 0; c < cols; c++) {
-        final icon = _icons[(r * cols + c) % _icons.length];
-        final offset = (r % 2 == 0) ? 0.0 : cellW * 0.5;
-        items.add(Positioned(
-          left: c * cellW + offset,
-          top: r * cellH,
-          child: Icon(icon,
-              size: 18,
-              color: AppColors.mobiliBlueDeep.withValues(alpha: 0.08)),
-        ));
-      }
-    }
-    return Stack(children: items);
   }
 }
 
@@ -206,7 +159,7 @@ class _VehicleImage extends StatelessWidget {
   final String? url;
 
   @override
-  Widget build(BuildContext context) {
+ Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(16),
@@ -220,7 +173,7 @@ class _VehicleImage extends StatelessWidget {
               ? Container(
                   color: AppColors.gray100,
                   child: Image.network(
-                    'https://api.my-mobili.com/v1/uploads/$url',
+                   'https://api.my-mobili.com/v1/uploads/$url',
                     fit: BoxFit.contain,
                     alignment: Alignment.center,
                     errorBuilder: (_, __, ___) => _placeholder(),
@@ -231,7 +184,7 @@ class _VehicleImage extends StatelessWidget {
       ),
     );
   }
-
+  
   Widget _placeholder() => Container(
         color: AppColors.mobiliBlueFog,
         child: const Center(

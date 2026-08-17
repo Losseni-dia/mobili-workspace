@@ -23,33 +23,31 @@ class TripsListPage extends ConsumerStatefulWidget {
 }
 
 class _TripsListPageState extends ConsumerState<TripsListPage> {
-
   final _departureCtrl = TextEditingController();
   final _arrivalCtrl = TextEditingController();
   DateTime? _selectedDate;
   String? _selectedType;
   bool _paramsInitialized = false;
 
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  final uri = GoRouterState.of(context).uri;
-  final dep = uri.queryParameters['departure'];
-  final arr = uri.queryParameters['arrival'];
-  if (dep != null && dep.isNotEmpty) {
-    _departureCtrl.text = dep;
-    _paramsInitialized = true;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final uri = GoRouterState.of(context).uri;
+    final dep = uri.queryParameters['departure'];
+    final arr = uri.queryParameters['arrival'];
+    if (dep != null && dep.isNotEmpty) {
+      _departureCtrl.text = dep;
+      _paramsInitialized = true;
+    }
+    if (arr != null && arr.isNotEmpty) {
+      _arrivalCtrl.text = arr;
+      _paramsInitialized = true;
+    }
+    if (_paramsInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateParams());
+      _paramsInitialized = false;
+    }
   }
-  if (arr != null && arr.isNotEmpty) {
-    _arrivalCtrl.text = arr;
-    _paramsInitialized = true;
-  }
-  if (_paramsInitialized) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateParams());
-    _paramsInitialized = false;
-  }
-}
-
 
   @override
   void dispose() {
@@ -97,8 +95,8 @@ void didChangeDependencies() {
 
   @override
   Widget build(BuildContext context) {
-  final showWelcome = ref.watch(showWelcomeProvider);
-  if (showWelcome) {
+    final showWelcome = ref.watch(showWelcomeProvider);
+    if (showWelcome) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref.read(showWelcomeProvider.notifier).state = false;
@@ -117,8 +115,7 @@ void didChangeDependencies() {
           ),
         );
       });
-      
-      }
+    }
 
     final showRegisterSuccess = ref.watch(showRegisterSuccessProvider);
     if (showRegisterSuccess) {
@@ -142,15 +139,13 @@ void didChangeDependencies() {
       });
     }
 
-    
-    
     final tripsAsync = ref.watch(tripsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.mobiliYellow,
       appBar: MobiliAppBar(
         title: 'Mobili',
-       actions: [
+        actions: [
           IconButton(
             icon: const Icon(Icons.support_agent_rounded,
                 color: AppColors.mobiliBlueDeep),
@@ -165,57 +160,67 @@ void didChangeDependencies() {
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          _FilterSection(
-            departureCtrl: _departureCtrl,
-            arrivalCtrl: _arrivalCtrl,
-            selectedDate: _selectedDate,
-            selectedType: _selectedType,
-            onFieldChanged: (_) => _updateParams(),
-            onDateTap: _pickDate,
-            onDateClear: _clearDate,
-            onTypeSelected: _selectType,
+          // Fond de page jaune Mobili : mêmes petites icônes (bus, horaire...)
+          // que celles de l'AppBar, réutilisées telles quelles.
+          const Positioned.fill(
+            child: MobiliIconPattern(color: AppColors.mobiliBlueDeep),
           ),
-          Container(height: 1, color: AppColors.gray200),
-          Expanded(
-            child: tripsAsync.when(
-              loading: () => const _SkeletonList(),
-              error: (error, _) => MobiliErrorWidget(
-                error: MobiliErrorData.generic(error.toString()),
-                onRetry: () => ref.invalidate(tripsProvider),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _FilterSection(
+                departureCtrl: _departureCtrl,
+                arrivalCtrl: _arrivalCtrl,
+                selectedDate: _selectedDate,
+                selectedType: _selectedType,
+                onFieldChanged: (_) => _updateParams(),
+                onDateTap: _pickDate,
+                onDateClear: _clearDate,
+                onTypeSelected: _selectType,
               ),
-              data: (trips) {
-                if (trips.isEmpty) {
-                  return const EmptyStateWidget(type: MobiliEmptyType.trips);
-                }
-                return RefreshIndicator(
-                  color: AppColors.mobiliBlue,
-                  onRefresh: () async {
-                    // Le cache local (jusqu'à 45s) peut renvoyer une liste
-                    // périmée si on se contente d'invalider le provider :
-                    // on vide le cache pour forcer un vrai appel réseau.
-                    await ref.read(tripServiceProvider).invalidateCache();
-                    ref.invalidate(tripsProvider);
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    itemCount: trips.length,
-                    itemBuilder: (context, index) {
-                      final trip = trips[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: TripCard(
-                          trip: trip,
-                          onTap: () => context.go('/trips/${trip.id}'),
-                        ),
-                      );
-                    },
+              Container(height: 1, color: AppColors.gray200),
+              Expanded(
+                child: tripsAsync.when(
+                  loading: () => const _SkeletonList(),
+                  error: (error, _) => MobiliErrorWidget(
+                    error: MobiliErrorData.generic(error.toString()),
+                    onRetry: () => ref.invalidate(tripsProvider),
                   ),
-                );
-              },
-            ),
+                  data: (trips) {
+                    if (trips.isEmpty) {
+                      return const EmptyStateWidget(
+                          type: MobiliEmptyType.trips);
+                    }
+                    return RefreshIndicator(
+                      color: AppColors.mobiliBlue,
+                      onRefresh: () async {
+                        // Le cache local (jusqu'à 45s) peut renvoyer une liste
+                        // périmée si on se contente d'invalider le provider :
+                        // on vide le cache pour forcer un vrai appel réseau.
+                        await ref.read(tripServiceProvider).invalidateCache();
+                        ref.invalidate(tripsProvider);
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        itemCount: trips.length,
+                        itemBuilder: (context, index) {
+                          final trip = trips[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: TripCard(
+                              trip: trip,
+                              onTap: () => context.go('/trips/${trip.id}'),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -260,7 +265,7 @@ class _FilterSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-               Row(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
