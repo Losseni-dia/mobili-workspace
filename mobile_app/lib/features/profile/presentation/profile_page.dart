@@ -121,12 +121,12 @@ class ProfilePage extends ConsumerWidget {
               SliverAppBar(
                 expandedHeight: 240,
                 pinned: true,
-                backgroundColor: AppColors.mobiliBlue,
+                backgroundColor: AppColors.mobiliYellowPale,
                 automaticallyImplyLeading: false,
                 actions: [
                   IconButton(
-                    icon:
-                        const Icon(Icons.home_rounded, color: AppColors.white),
+                    icon: const Icon(Icons.home_rounded,
+                        color: AppColors.mobiliBlueDeep),
                     tooltip: 'Accueil',
                     onPressed: () => context.go('/'),
                   ),
@@ -134,25 +134,10 @@ class ProfilePage extends ConsumerWidget {
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     children: [
-                      // Dégradé bleu
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF0D2280),
-                              AppColors.mobiliBlueDeep
-                            ],
-                          ),
-                        ),
-                      ),
+                      // Fond jaune doux Mobili
+                      Container(color: AppColors.mobiliYellowPale),
                       // Pattern icônes transport
                       const Positioned.fill(child: _TransportPattern()),
-                      // Overlay sombre
-                      Container(
-                          color:
-                              AppColors.mobiliBlueDeep.withValues(alpha: 0.3)),
                       // Contenu
                       SafeArea(
                         child: SizedBox(
@@ -166,7 +151,7 @@ class ProfilePage extends ConsumerWidget {
                                 width: 80,
                                 height: 80,
                                 decoration: BoxDecoration(
-                                  color: AppColors.mobiliYellow,
+                                  color: AppColors.mobiliBlue,
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                       color: AppColors.white, width: 3),
@@ -177,42 +162,33 @@ class ProfilePage extends ConsumerWidget {
                                           'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
-                                              _Initials(name: profile.fullName),
+                                              _Initials(
+                                                  name: profile.fullName,
+                                                  color: AppColors.white),
                                         ),
                                       )
-                                    : _Initials(name: profile.fullName),
+                                    : _Initials(
+                                        name: profile.fullName,
+                                        color: AppColors.white),
                               ),
                               const SizedBox(height: 10),
                               Text(profile.fullName,
                                   style: AppTextStyles.titleLarge.copyWith(
-                                    color: AppColors.white,
+                                    color: AppColors.mobiliBlueDeep,
                                     fontWeight: FontWeight.w800,
                                   )),
-                              const SizedBox(height: 4),
-                              Text(profile.email ?? profile.phone ?? '',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color:
-                                        AppColors.white.withValues(alpha: 0.7),
-                                  )),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 6,
-                                children: profile.roles
-                                    .where((r) => r != 'USER')
-                                    .map((r) => _RoleBadge(role: r))
-                                    .toList(),
-                              ),
                               const SizedBox(height: 10),
                               OutlinedButton.icon(
                                 onPressed: () => context.push('/edit-profile'),
                                 icon: const Icon(Icons.edit_rounded,
-                                    size: 14, color: AppColors.white),
+                                    size: 14, color: AppColors.mobiliBlueDeep),
                                 label: Text('Modifier le profil',
-                                    style: AppTextStyles.bodySmall
-                                        .copyWith(color: AppColors.white)),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.mobiliBlueDeep)),
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(
-                                      color: AppColors.white, width: 1),
+                                      color: AppColors.mobiliBlueDeep,
+                                      width: 1),
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20)),
                                   padding: const EdgeInsets.symmetric(
@@ -244,37 +220,58 @@ class ProfilePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Mon compte
+                      // Mon compte — liste dépliable (chevron à droite)
                       _Card(
-                        child: Column(
-                          children: [
-                            const _SectionHeader(
-                                icon: Icons.person_rounded,
-                                title: 'Mon compte'),
-                            _InfoRow(
-                                icon: Icons.badge_outlined,
-                                label: 'Identifiant',
-                                value: profile.login),
-                            const Divider(height: 1, color: AppColors.gray100),
-                            _InfoRow(
-                                icon: Icons.email_outlined,
-                                label: 'Email',
-                                value: profile.email ?? 'Non renseigné'),
-                            const Divider(height: 1, color: AppColors.gray100),
-                            const Divider(height: 1, color: AppColors.gray100),
-                            _InfoRow(
-                                icon: Icons.phone_outlined,
-                                label: 'Téléphone',
-                                value: profile.phone ?? 'Non renseigné'),
-                            _InfoRow(
-                              icon: Icons.verified_outlined,
-                              label: 'Statut',
-                              value: profile.enabled ? 'Actif' : 'Inactif',
-                              valueColor: profile.enabled
-                                  ? AppColors.success
-                                  : AppColors.danger,
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            dividerColor: Colors.transparent,
+                            splashColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                          ),
+                          child: ExpansionTile(
+                            tilePadding:
+                                const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                            childrenPadding: EdgeInsets.zero,
+                            iconColor: AppColors.mobiliBlue,
+                            collapsedIconColor: AppColors.mobiliBlue,
+                            title: Row(
+                              children: [
+                                const Icon(Icons.person_rounded,
+                                    size: 18, color: AppColors.mobiliBlue),
+                                const SizedBox(width: 8),
+                                Text('Mon compte',
+                                    style: AppTextStyles.titleMedium),
+                              ],
                             ),
-                          ],
+                            children: [
+                              _InfoRow(
+                                  icon: Icons.badge_outlined,
+                                  label: 'Identifiant',
+                                  value: profile.login),
+                              const Divider(
+                                  height: 1, color: AppColors.gray100),
+                              _InfoRow(
+                                  icon: Icons.email_outlined,
+                                  label: 'Email',
+                                  value: profile.email ?? 'Non renseigné'),
+                              const Divider(
+                                  height: 1, color: AppColors.gray100),
+                              _InfoRow(
+                                  icon: Icons.phone_outlined,
+                                  label: 'Téléphone',
+                                  value: profile.phone ?? 'Non renseigné'),
+                              const Divider(
+                                  height: 1, color: AppColors.gray100),
+                              _InfoRow(
+                                icon: Icons.verified_outlined,
+                                label: 'Statut',
+                                value: profile.enabled ? 'Actif' : 'Inactif',
+                                valueColor: profile.enabled
+                                    ? AppColors.success
+                                    : AppColors.danger,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -459,7 +456,7 @@ class _TransportPattern extends StatelessWidget {
           left: c * cellW + offset,
           top: r * cellH,
           child: Icon(icon,
-              size: 26, color: AppColors.white.withValues(alpha: 0.07)),
+              size: 26, color: AppColors.mobiliBlueDeep.withValues(alpha: 0.1)),
         ));
       }
     }
@@ -738,38 +735,10 @@ class _ActionRow extends StatelessWidget {
       );
 }
 
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role});
-  final String role;
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg) = switch (role) {
-      'ADMIN' => (AppColors.adminPurpleSoft, AppColors.adminPurple),
-      'PARTNER' => (const Color(0xFFEEF1FF), AppColors.mobiliBlue),
-      'CHAUFFEUR' => (AppColors.stationGreenSoft, AppColors.stationGreen),
-      'GARE' => (AppColors.warningSoft, AppColors.warning),
-      _ => (AppColors.gray100, AppColors.gray600),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(role,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: fg,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          )),
-    );
-  }
-}
-
 class _Initials extends StatelessWidget {
-  const _Initials({required this.name});
+  const _Initials({required this.name, this.color = AppColors.mobiliBlueDeep});
   final String name;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -779,8 +748,8 @@ class _Initials extends StatelessWidget {
         : name.substring(0, 1).toUpperCase();
     return Center(
       child: Text(initials,
-          style: const TextStyle(
-            color: AppColors.mobiliBlueDeep,
+          style: TextStyle(
+            color: color,
             fontSize: 28,
             fontWeight: FontWeight.w900,
           )),
