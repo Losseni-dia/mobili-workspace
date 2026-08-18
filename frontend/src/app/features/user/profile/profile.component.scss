@@ -17,6 +17,69 @@
 }
 
 // ======================================================================
+//  VOYAGES À VENIR — carte cliquable unique (vers Mes réservations),
+//  parité mobile_app (profile_page.dart, même carte).
+// ======================================================================
+.upcoming-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  text-decoration: none;
+  transition: all variables.$t-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(variables.$mobili-blue, 0.3);
+    box-shadow: variables.$shadow-md;
+  }
+}
+
+.upcoming-card-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  border-radius: variables.$radius-sm;
+  background: variables.$mobili-blue-fog;
+}
+
+.upcoming-card-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.upcoming-card-label {
+  color: variables.$gray-500;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.upcoming-card-value {
+  margin-top: 2px;
+  font-family: variables.$font-display;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: variables.$mobili-blue-deep;
+  line-height: 1.1;
+}
+
+.upcoming-card-arrow {
+  color: variables.$mobili-blue;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+// ======================================================================
 //  PANELS
 // ======================================================================
 .panel-grid {

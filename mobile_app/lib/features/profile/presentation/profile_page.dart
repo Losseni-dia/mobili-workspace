@@ -5,9 +5,20 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../features/bookings/data/booking_service.dart';
+import '../../../features/bookings/domain/models/booking_detail.dart';
 import '../../../features/claims/presentation/claim_form_page.dart';
 import '../../../features/claims/presentation/my_claims_page.dart';
 import '../../../shared/widgets/mobili_app_bar.dart';
+
+// `belongsToUpcoming` (BookingDetail) : même filtre que l'onglet « à venir »
+// de my_bookings_page.dart — la carte doit compter exactement ce que
+// l'utilisateur verra en y accédant.
+final _upcomingBookingsProvider = FutureProvider.autoDispose
+    .family<List<BookingDetail>, int>((ref, userId) async {
+  final bookings = await BookingService().getBookingDetailsForUser(userId);
+  return bookings.where((b) => b.belongsToUpcoming).toList();
+});
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -93,6 +104,8 @@ class ProfilePage extends ConsumerWidget {
         ),
       );
     }
+
+    final upcomingAsync = ref.watch(_upcomingBookingsProvider(profile.id));
 
     return Scaffold(
       backgroundColor: AppColors.mobiliYellowPale,
@@ -203,6 +216,72 @@ class ProfilePage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Voyages à venir — carte cliquable vers Mes réservations.
+                      _Card(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => context.go('/my-bookings'),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.mobiliBlueFog,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.explore_rounded,
+                                      color: AppColors.mobiliBlue, size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Voyages à venir',
+                                          style:
+                                              AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.gray500,
+                                            fontWeight: FontWeight.w700,
+                                          )),
+                                      const SizedBox(height: 2),
+                                      upcomingAsync.when(
+                                        data: (list) => Text('${list.length}',
+                                            style: AppTextStyles.headlineMedium
+                                                .copyWith(
+                                              color: AppColors.mobiliBlueDeep,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 22,
+                                            )),
+                                        loading: () => const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            color: AppColors.mobiliBlue,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        error: (_, __) => Text('—',
+                                            style: AppTextStyles.headlineMedium
+                                                .copyWith(
+                                              color: AppColors.gray400,
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right_rounded,
+                                    color: AppColors.gray300),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       // Mon compte — liste dépliable (chevron à droite)
                       _Card(
                         child: Theme(
