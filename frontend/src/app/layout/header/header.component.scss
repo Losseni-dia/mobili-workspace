@@ -19,11 +19,8 @@
   border-bottom: 1px solid rgba(variables.$mobili-blue, 0.06);
 
   .logo {
-    font-family: variables.$font-display;
-    font-weight: 900;
-    font-size: 1.8rem;
-    letter-spacing: -1px;
-    color: variables.$mobili-blue;
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
     position: relative;
     padding-right: 14px;
@@ -40,6 +37,12 @@
       background: variables.$mobili-blue-deep;
       opacity: 0.15;
     }
+  }
+
+  .logo-img {
+    height: 34px;
+    width: auto;
+    display: block;
   }
 
   .nav-container {
