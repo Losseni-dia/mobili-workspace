@@ -208,4 +208,33 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   statusLabel(status: string | undefined | null): string {
     return bookingStatusLabel(status);
   }
+
+  /** Aligné sur statusClass('active') / mobile (`booking.status == 'CONFIRMED'`) : conditionne
+   *  l'affichage de « Voir le reçu » et « Voir le billet », dans les deux sections (à venir et
+   *  historique) — mêmes alias de statut que le filtre « Confirmées » plus haut. */
+  isConfirmed(b: BookingResponse): boolean {
+    return ['CONFIRMED', 'PAID', 'CONFIRME'].includes((b.status || '').toUpperCase());
+  }
+
+  /** Aligné sur mobile (`BookingDetail.canCancel` : PENDING/CONFIRMED + à venir) — n'apparaît
+   *  donc que dans la section « à venir » (voir `upcoming` passé au template). */
+  canCancel(b: BookingResponse): boolean {
+    return ['PENDING', 'WAITING', 'EN_ATTENTE', 'CONFIRMED', 'PAID', 'CONFIRME'].includes(
+      (b.status || '').toUpperCase(),
+    );
+  }
+
+  // ====== Reçu (modale) ======
+  // Pas de page dédiée côté web (contrairement à `BookingReceiptPage`, mobile) : une modale
+  // suffit, alimentée par les mêmes données déjà chargées ici (`BookingResponse`), sans appel
+  // réseau supplémentaire.
+  receiptBooking = signal<BookingResponse | null>(null);
+
+  openReceipt(b: BookingResponse): void {
+    this.receiptBooking.set(b);
+  }
+
+  closeReceipt(): void {
+    this.receiptBooking.set(null);
+  }
 }

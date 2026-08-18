@@ -41,6 +41,9 @@ export class ClaimsComponent implements OnInit {
 
   showNewForm = signal(false);
   reason = signal<ClaimReason>('OTHER');
+  /** true quand le motif arrive préréglé par lien (ex. « Annuler » depuis Mes réservations) —
+   *  verrouille le select pour ne pas laisser l'utilisateur dévier du motif attendu par ce lien. */
+  reasonLocked = signal(false);
   bookingId = signal<number | null>(null);
   message = signal('');
   submitting = signal(false);
@@ -55,7 +58,15 @@ export class ClaimsComponent implements OnInit {
       const id = Number(prefBooking);
       if (!Number.isNaN(id)) {
         this.bookingId.set(id);
-        this.reason.set('REFUND_REQUEST');
+        // Le lien « Signaler » ne passe pas de `reason` (comportement historique : motif
+        // « Remboursement » par défaut) ; le lien « Annuler » passe `reason=CANCELLATION`.
+        const prefReason = this.route.snapshot.queryParamMap.get('reason') as ClaimReason | null;
+        if (prefReason && this.reasons.includes(prefReason)) {
+          this.reason.set(prefReason);
+          this.reasonLocked.set(true);
+        } else {
+          this.reason.set('REFUND_REQUEST');
+        }
         this.showNewForm.set(true);
       }
     }
@@ -88,6 +99,7 @@ export class ClaimsComponent implements OnInit {
 
   openNewForm(): void {
     this.createError.set(null);
+    this.reasonLocked.set(false);
     this.showNewForm.set(true);
   }
 
@@ -117,6 +129,7 @@ export class ClaimsComponent implements OnInit {
           this.message.set('');
           this.bookingId.set(null);
           this.reason.set('OTHER');
+          this.reasonLocked.set(false);
           this.showNewForm.set(false);
           this.claims.update((list) => [claim, ...list]);
           this.toast.show('Votre réclamation a bien été envoyée.', 'success');
