@@ -81,7 +81,7 @@
                     </thead>
                     <tbody>
                         @for (b of activeBookings(); track b.id) {
-                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b }" />
+                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b, upcoming: true }" />
                         }
                     </tbody>
                 </table>
@@ -113,7 +113,7 @@
                     </thead>
                     <tbody>
                         @for (b of historicalBookings(); track b.id) {
-                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b }" />
+                            <ng-container [ngTemplateOutlet]="bookingRow" [ngTemplateOutletContext]="{ $implicit: b, upcoming: false }" />
                         }
                     </tbody>
                 </table>
@@ -122,10 +122,10 @@
     }
 }
 
-<ng-template #bookingRow let-b>
+<ng-template #bookingRow let-b let-upcoming="upcoming">
     <tr>
-        <td class="mono">#{{ b.reference }}</td>
-        <td>
+        <td class="mono" data-label="Référence">#{{ b.reference }}</td>
+        <td data-label="Trajet">
             <div class="route-mini">
                 <strong>{{ b.boardingCity || b.departureCity }}</strong>
                 <span class="arrow">→</span>
@@ -138,8 +138,8 @@
                 </div>
             }
         </td>
-        <td class="mono">{{ b.departureDateTime | date: 'EEE d MMM · HH:mm' }}</td>
-        <td>
+        <td class="mono" data-label="Date de départ">{{ b.departureDateTime | date: 'EEE d MMM · HH:mm' }}</td>
+        <td data-label="Places">
             <div class="seats">
                 <span>{{ b.numberOfSeats }} place{{ b.numberOfSeats > 1 ? 's' : '' }}</span>
                 @if (b.seatNumbers.length) {
@@ -150,18 +150,31 @@
                 }
             </div>
         </td>
-        <td>
+        <td data-label="Statut">
             <span class="status-pill" [ngClass]="statusClass(b.status)">
                 <span class="dot"></span>
                 {{ statusLabel(b.status) }}
             </span>
         </td>
-        <td class="right amount">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
-        <td class="right">
+        <td class="right amount" data-label="Montant">{{ displayAmount(b) | number: '1.0-0' }} FCFA</td>
+        <td class="right" data-label="Actions">
             <div class="row-actions">
                 @if (paymentCountdown(b); as countdown) {
                     <a class="pay-link" [routerLink]="['/booking/confirmation', b.id]">
                         💳 Payer ({{ countdown }})
+                    </a>
+                }
+                @if (isConfirmed(b)) {
+                    <button type="button" class="action-link" (click)="openReceipt(b)">
+                        🧾 Voir le reçu
+                    </button>
+                    <a class="action-link" [routerLink]="['/my-account/my-tickets']" [queryParams]="{ bookingId: b.id }">
+                        🎫 Voir le billet
+                    </a>
+                }
+                @if (upcoming && canCancel(b)) {
+                    <a class="action-link danger" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id, reason: 'CANCELLATION' }">
+                        Annuler
                     </a>
                 }
                 <a class="claim-link" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
@@ -171,3 +184,54 @@
         </td>
     </tr>
 </ng-template>
+
+@if (receiptBooking(); as rb) {
+    <div class="receipt-modal-overlay" (click)="closeReceipt()">
+        <div class="receipt-modal-content" (click)="$event.stopPropagation()">
+            <div class="receipt-head">
+                <div>
+                    <h3>{{ rb.boardingCity || rb.departureCity }} → {{ rb.alightingCity || rb.arrivalCity }}</h3>
+                    <span class="status-pill" [ngClass]="statusClass(rb.status)">
+                        <span class="dot"></span>
+                        {{ statusLabel(rb.status) }}
+                    </span>
+                </div>
+                <button type="button" class="receipt-close" (click)="closeReceipt()" aria-label="Fermer">✕</button>
+            </div>
+
+            <p class="receipt-date">{{ rb.departureDateTime | date: 'EEEE d MMMM y · HH:mm' }}</p>
+            <p class="receipt-ref">Réf. #{{ rb.reference }}</p>
+
+            <div class="receipt-dashed"></div>
+
+            @if (rb.extraHoldBags) {
+                <div class="receipt-row">
+                    <span>Bagages supplémentaires ({{ rb.extraHoldBags }})</span>
+                    <strong>{{ rb.luggageFee | number: '1.0-0' }} FCFA</strong>
+                </div>
+                <div class="receipt-dashed"></div>
+            }
+
+            <div class="receipt-row receipt-total">
+                <span>Montant total</span>
+                <strong>{{ displayAmount(rb) | number: '1.0-0' }} FCFA</strong>
+            </div>
+            <p class="receipt-seats">{{ rb.numberOfSeats }} place{{ rb.numberOfSeats > 1 ? 's' : '' }}</p>
+
+            @if (rb.passengerNames?.length) {
+                <div class="receipt-dashed"></div>
+                <span class="receipt-label">Passagers</span>
+                @for (name of rb.passengerNames; track name; let i = $index) {
+                    <div class="receipt-row">
+                        <span>{{ name }}</span>
+                        <span class="receipt-seat">Siège {{ rb.seatNumbers[i] || '—' }}</span>
+                    </div>
+                }
+            }
+
+            @if (rb.bookingDate) {
+                <p class="receipt-footer">Acheté le {{ rb.bookingDate | date: 'dd/MM/y à HH:mm' }}</p>
+            }
+        </div>
+    </div>
+}

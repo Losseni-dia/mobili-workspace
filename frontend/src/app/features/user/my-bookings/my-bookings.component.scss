@@ -197,3 +197,200 @@
   white-space: nowrap;
   &:hover { text-decoration: underline; }
 }
+
+// « Voir le reçu » / « Voir le billet » / « Annuler » — même famille visuelle que
+// .claim-link (lien discret, pas un bouton plein), sans bordure/fond pour rester léger
+// dans une colonne où plusieurs actions peuvent déjà coexister.
+.action-link {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: variables.$mobili-blue;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { text-decoration: underline; }
+
+  &.danger { color: variables.$danger; }
+}
+
+// ======================================================================
+//  MODALE REÇU — même gabarit que .hide-modal-* (my-tickets)
+// ======================================================================
+.receipt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(variables.$mobili-blue-deep, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.receipt-modal-content {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: variables.$white;
+  padding: 24px;
+  border-radius: variables.$radius-md;
+  box-shadow: variables.$shadow-xl;
+}
+
+.receipt-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: variables.$mobili-blue-deep;
+    text-transform: capitalize;
+  }
+}
+
+.receipt-close {
+  border: none;
+  background: variables.$gray-100;
+  color: variables.$gray-600;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+
+  &:hover { background: variables.$gray-200; }
+}
+
+.receipt-date {
+  margin: 0 0 4px;
+  color: variables.$gray-600;
+  font-size: 0.88rem;
+  text-transform: capitalize;
+}
+
+.receipt-ref {
+  margin: 0;
+  color: variables.$gray-400;
+  font-size: 0.78rem;
+}
+
+.receipt-dashed {
+  margin: 14px 0;
+  border-top: 1px dashed variables.$gray-200;
+}
+
+.receipt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  color: variables.$gray-600;
+}
+
+.receipt-total {
+  font-size: 1rem;
+  font-weight: 900;
+  color: variables.$mobili-blue-deep;
+
+  strong { color: variables.$mobili-blue; font-size: 1.1rem; }
+}
+
+.receipt-seats {
+  margin: 0;
+  font-size: 0.78rem;
+  color: variables.$gray-400;
+}
+
+.receipt-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: variables.$gray-400;
+}
+
+.receipt-seat {
+  color: variables.$gray-400;
+  font-size: 0.78rem;
+}
+
+.receipt-footer {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: variables.$gray-400;
+}
+
+// ======================================================================
+//  RESPONSIVE — sous 768px, le tableau se transforme en liste de cartes
+//  empilées (une carte par réservation) : un tableau large avec 7 colonnes
+//  ne tient pas sur un écran mobile, contrairement au reste de l'app déjà
+//  traité (voir _mixins.scss, mixins.mobile).
+// ======================================================================
+@include mixins.mobile {
+  .bookings-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+
+    .revenue-chip { min-width: 0; }
+    .search-input input { min-width: 0; width: 100%; }
+  }
+
+  .table-container { overflow: visible; }
+
+  table.data-table {
+    thead { display: none; }
+
+    tbody, tr, td { display: block; width: 100%; }
+
+    tr {
+      margin-bottom: 12px;
+      border: 1px solid variables.$gray-200;
+      border-radius: variables.$radius-md;
+      padding: 12px 14px;
+      background: variables.$white;
+
+      &:last-child { margin-bottom: 0; }
+    }
+
+    td {
+      padding: 6px 0;
+      text-align: left !important;
+      border: none;
+
+      &::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: variables.$gray-400;
+        margin-bottom: 2px;
+      }
+    }
+
+    .row-actions {
+      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+    }
+  }
+}

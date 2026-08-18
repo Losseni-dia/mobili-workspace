@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import html2canvas from 'html2canvas'; // ✅ Importation indispensable
@@ -20,6 +20,7 @@ type TicketSort = 'DEPARTURE_ASC' | 'DEPARTURE_DESC' | 'BOOKED_DESC';
 export class MyTicketsComponent implements OnInit {
   private ticketService = inject(TicketService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   private static readonly HIDDEN_KEY = 'mobili.tickets.hidden';
 
@@ -37,6 +38,16 @@ export class MyTicketsComponent implements OnInit {
   /** Par défaut : réservé le plus récemment en premier (comme "Activité récente", profil). */
   sort = signal<TicketSort>('BOOKED_DESC');
 
+  /** Filtre reçu via `?bookingId=` (lien « Voir le billet » depuis Mes réservations) — aligné
+   *  sur mobile (`context.go('/tickets?tripId=...')`, my_bookings_page.dart), ici par réservation
+   *  plutôt que par trajet (un `TicketResponse` porte `bookingId`, pas directement filtrable par
+   *  trajet côté web sans appel réseau supplémentaire). */
+  filterBookingId = signal<number | null>(null);
+
+  clearBookingFilter(): void {
+    this.filterBookingId.set(null);
+  }
+
   onSearch(value: string): void {
     this.search.set(value);
   }
@@ -52,6 +63,7 @@ export class MyTicketsComponent implements OnInit {
   resetFilters(): void {
     this.search.set('');
     this.statusFilter.set('ALL');
+    this.filterBookingId.set(null);
   }
 
   /** Compte par statut sur les billets visibles (non masqués) — alimente les badges des chips. */
@@ -74,7 +86,9 @@ export class MyTicketsComponent implements OnInit {
     const q = this.search().trim().toLowerCase();
     const s = this.sort();
 
+    const bookingId = this.filterBookingId();
     return list
+      .filter((t) => bookingId == null || t.bookingId === bookingId)
       .filter((t) => f === 'ALL' || t.status === f)
       .filter((t) => {
         if (!q) return true;
@@ -136,6 +150,11 @@ export class MyTicketsComponent implements OnInit {
   );
 
   ngOnInit() {
+    const bookingIdParam = this.route.snapshot.queryParamMap.get('bookingId');
+    if (bookingIdParam) {
+      const id = Number(bookingIdParam);
+      if (!Number.isNaN(id)) this.filterBookingId.set(id);
+    }
     this.loadUserTickets();
   }
 

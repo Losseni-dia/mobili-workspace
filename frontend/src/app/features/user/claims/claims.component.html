@@ -18,7 +18,7 @@
 
             <label class="claims-field">
                 <span>Motif</span>
-                <select [ngModel]="reason()" (ngModelChange)="reason.set($event)">
+                <select [ngModel]="reason()" (ngModelChange)="reason.set($event)" [disabled]="reasonLocked()">
                     @for (r of reasons; track r) {
                         <option [value]="r">{{ reasonLabels[r] }}</option>
                     }

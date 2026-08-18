@@ -4,6 +4,13 @@
         <p>Retrouvez ici vos billets pour vos prochains voyages Mobili.</p>
     </header>
 
+    @if (filterBookingId(); as fbid) {
+        <div class="booking-filter-banner">
+            Filtré pour la réservation #{{ fbid }}
+            <button type="button" (click)="clearBookingFilter()" aria-label="Retirer le filtre">✕</button>
+        </div>
+    }
+
     @if (!isLoading() && tickets().length > 0) {
     <section class="tickets-toolbar">
         <label class="search-input">

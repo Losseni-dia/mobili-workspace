@@ -11,6 +11,33 @@
   display: none;
 }
 
+.booking-filter-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: variables.$mobili-blue-fog;
+  border: 1px solid rgba(variables.$mobili-blue, 0.25);
+  border-radius: variables.$radius-sm;
+  color: variables.$mobili-blue-deep;
+  font-size: 0.85rem;
+  font-weight: 700;
+
+  button {
+    margin-left: auto;
+    border: none;
+    background: none;
+    color: variables.$mobili-blue;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 800;
+    padding: 2px 6px;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
 // ======================================================================
 //  TOOLBAR — recherche / filtre statut / tri
 //  Deux rangées explicites (recherche+tri // chips statut) plutôt qu'un seul
