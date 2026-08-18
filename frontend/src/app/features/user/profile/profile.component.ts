@@ -31,24 +31,6 @@ export class ProfileComponent implements OnInit {
     return this.PAID_STATUSES.has(b.status);
   }
 
-  // ====== STATS ======
-  totalBookings = computed(() => this.bookings().filter((b) => this.isPaid(b)).length);
-
-  totalSeats = computed(() =>
-    this.bookings()
-      .filter((b) => this.isPaid(b))
-      .reduce((sum, b) => sum + (Number(b.numberOfSeats) || 0), 0),
-  );
-
-  totalSpent = computed(() =>
-    this.bookings()
-      .filter((b) => this.isPaid(b))
-      .reduce((sum, b) => {
-        const value = Number(b.totalPrice ?? b.amount ?? 0);
-        return sum + (Number.isNaN(value) ? 0 : value);
-      }, 0),
-  );
-
   upcomingBookings = computed(() => {
     const now = Date.now();
     return this.bookings()

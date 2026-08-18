@@ -2,32 +2,6 @@
     <a routerLink="/my-account/profile-edit" class="edit-profile-btn">✎ Modifier mon profil</a>
 </header>
 
-<section class="kpi-grid">
-    <article class="kpi">
-        <div class="kpi-label">Réservations</div>
-        <div class="kpi-value">{{ totalBookings() }}</div>
-        <div class="kpi-bar"><span></span></div>
-    </article>
-
-    <article class="kpi">
-        <div class="kpi-label">Places réservées</div>
-        <div class="kpi-value">{{ totalSeats() }}</div>
-        <div class="kpi-bar gold"><span></span></div>
-    </article>
-
-    <article class="kpi">
-        <div class="kpi-label">Total dépensé</div>
-        <div class="kpi-value">{{ totalSpent() | number: '1.0-0' }} <span class="kpi-suffix">FCFA</span></div>
-        <div class="kpi-bar green"><span></span></div>
-    </article>
-
-    <article class="kpi">
-        <div class="kpi-label">Voyages à venir</div>
-        <div class="kpi-value">{{ upcomingBookings().length }}</div>
-        <div class="kpi-bar purple"><span></span></div>
-    </article>
-</section>
-
 <section class="panel-grid panel-grid--single">
     <article class="data-panel upcoming">
         <header class="panel-head">

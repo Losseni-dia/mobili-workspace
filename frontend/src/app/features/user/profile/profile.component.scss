@@ -17,59 +17,6 @@
 }
 
 // ======================================================================
-//  KPI
-// ======================================================================
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.kpi {
-  background: variables.$white;
-  border: 1px solid variables.$gray-200;
-  border-radius: variables.$radius-md;
-  padding: 20px 22px;
-  transition: all variables.$t-base;
-
-  &:hover { transform: translateY(-2px); border-color: rgba(variables.$mobili-blue, 0.3); box-shadow: variables.$shadow-md; }
-
-  .kpi-label { color: variables.$gray-500; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
-
-  .kpi-value {
-    margin-top: 8px;
-    font-family: variables.$font-display;
-    font-size: 1.85rem;
-    font-weight: 900;
-    color: variables.$mobili-blue-deep;
-    letter-spacing: -0.6px;
-    line-height: 1.1;
-
-    .kpi-suffix {
-      margin-left: 4px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: variables.$gray-500;
-    }
-  }
-
-  .kpi-bar {
-    margin-top: 14px;
-    height: 4px;
-    border-radius: 4px;
-    background: variables.$gray-100;
-    overflow: hidden;
-
-    span { display: block; height: 100%; border-radius: inherit; background: variables.$mobili-blue; width: 60%; }
-
-    &.gold span { background: variables.$gradient-gold; width: 78%; }
-    &.green span { background: variables.$success; width: 70%; }
-    &.purple span { background: variables.$admin-purple; width: 88%; }
-  }
-}
-
-// ======================================================================
 //  PANELS
 // ======================================================================
 .panel-grid {
