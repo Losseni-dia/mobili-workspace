@@ -2,6 +2,15 @@
     <a routerLink="/my-account/profile-edit" class="edit-profile-btn">✎ Modifier mon profil</a>
 </header>
 
+<a routerLink="/my-account/bookings" class="upcoming-card">
+    <div class="upcoming-card-icon">🧭</div>
+    <div class="upcoming-card-text">
+        <span class="upcoming-card-label">Voyages à venir</span>
+        <strong class="upcoming-card-value">{{ upcomingBookings().length }}</strong>
+    </div>
+    <span class="upcoming-card-arrow">→</span>
+</a>
+
 <section class="panel-grid panel-grid--single">
     <article class="data-panel upcoming">
         <header class="panel-head">
