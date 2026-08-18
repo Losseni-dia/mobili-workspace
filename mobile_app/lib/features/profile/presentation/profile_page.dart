@@ -5,16 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../features/auth/providers/auth_provider.dart';
-import '../../../features/bookings/data/booking_service.dart';
-import '../../../features/bookings/domain/models/booking.dart';
 import '../../../features/claims/presentation/claim_form_page.dart';
 import '../../../features/claims/presentation/my_claims_page.dart';
 import '../../../shared/widgets/mobili_app_bar.dart';
-
-final _userBookingsProvider =
-    FutureProvider.autoDispose.family<List<Booking>, int>((ref, userId) async {
-  return BookingService().getBookingsForUser(userId);
-});
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -100,8 +93,6 @@ class ProfilePage extends ConsumerWidget {
         ),
       );
     }
-
-    final bookingsAsync = ref.watch(_userBookingsProvider(profile.id));
 
     return Scaffold(
       backgroundColor: AppColors.mobiliYellowPale,
@@ -212,14 +203,6 @@ class ProfilePage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Stats
-                      bookingsAsync.when(
-                        loading: () => const _StatsLoading(),
-                        error: (_, __) => const SizedBox.shrink(),
-                        data: (bookings) => _StatsGrid(bookings: bookings),
-                      ),
-                      const SizedBox(height: 20),
-
                       // Mon compte — liste dépliable (chevron à droite)
                       _Card(
                         child: Theme(
@@ -461,156 +444,6 @@ class _TransportPattern extends StatelessWidget {
       }
     }
     return Stack(children: items);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stats
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.bookings});
-  final List<Booking> bookings;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = bookings.length;
-    final confirmed = bookings.where((b) => b.status == 'CONFIRMED').length;
-    final pending = bookings.where((b) => b.status == 'PENDING').length;
-    final cancelled = bookings.where((b) => b.status == 'CANCELLED').length;
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.6,
-      children: [
-        _StatCard(
-          icon: Icons.confirmation_number_rounded,
-          iconColor: AppColors.mobiliBlue,
-          iconBg: AppColors.mobiliBlueFog,
-          label: 'Réservations',
-          value: '$total',
-          onTap: () => context.go('/my-bookings'),
-        ),
-        _StatCard(
-          icon: Icons.check_circle_rounded,
-          iconColor: AppColors.success,
-          iconBg: AppColors.successSoft,
-          label: 'Confirmées',
-          value: '$confirmed',
-          onTap: () => context.go('/my-bookings?status=CONFIRMED'),
-        ),
-        _StatCard(
-          icon: Icons.hourglass_empty_rounded,
-          iconColor: AppColors.warning,
-          iconBg: AppColors.warningSoft,
-          label: 'En attente',
-          value: '$pending',
-          onTap: () => context.go('/my-bookings?status=PENDING'),
-        ),
-        _StatCard(
-          icon: Icons.cancel_rounded,
-          iconColor: AppColors.danger,
-          iconBg: AppColors.dangerSoft,
-          label: 'Annulées',
-          value: '$cancelled',
-          onTap: () => context.go('/my-bookings?status=CANCELLED'),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.iconBg,
-    required this.label,
-    required this.value,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String label;
-  final String value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.gray200),
-          boxShadow: AppColors.shadowSm,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(value,
-                      style: AppTextStyles.headlineMedium.copyWith(
-                        color: AppColors.mobiliBlueDeep,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 22,
-                      )),
-                  Text(label,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.gray500, fontSize: 11)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatsLoading extends StatelessWidget {
-  const _StatsLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.6,
-      children: List.generate(
-        4,
-        (_) => Container(
-          decoration: BoxDecoration(
-            color: AppColors.gray100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      ),
-    );
   }
 }
 
