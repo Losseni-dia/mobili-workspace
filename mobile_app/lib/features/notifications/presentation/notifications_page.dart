@@ -70,7 +70,7 @@ class InboxNotification {
     return '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}';
   }
 
-factory InboxNotification.fromJson(Map<String, dynamic> json) =>
+  factory InboxNotification.fromJson(Map<String, dynamic> json) =>
       InboxNotification(
         id: json['id'] as int,
         type: json['type'] as String? ?? 'INFO',
@@ -168,7 +168,7 @@ class NotificationService {
     await _dio.patch<void>('/inbox/notifications/$id/read');
   }
 
-Future<void> markAllRead() async {
+  Future<void> markAllRead() async {
     await _dio.patch<void>('/inbox/notifications/read-all');
   }
 
@@ -331,12 +331,13 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               onPressed: _markAllRead,
               child: Text('Tout lire',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.mobiliYellow,
+                    color: AppColors.mobiliBlueDeep,
                     fontWeight: FontWeight.w600,
                   )),
             ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded, color: AppColors.white),
+            icon: const Icon(Icons.more_vert_rounded,
+                color: AppColors.mobiliBlueDeep),
             onSelected: (value) async {
               if (value == 'delete_all') {
                 final confirm = await showDialog<bool>(
@@ -382,222 +383,246 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           ),
         ],
       ),
-      body: notifAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.mobiliBlue),
-        ),
-        error: (e, _) => Center(
-          child: Text('Erreur : $e',
-              style:
-                  AppTextStyles.bodyMedium.copyWith(color: AppColors.gray500)),
-        ),
-        data: (_) {
-          if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.mobiliBlueFog,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.notifications_none_rounded,
-                        color: AppColors.mobiliBlue, size: 40),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Aucune notification',
-                      style: AppTextStyles.titleLarge
-                          .copyWith(color: AppColors.mobiliBlueDeep)),
-                  const SizedBox(height: 8),
-                  Text('Vos notifications apparaîtront ici.',
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.gray400)),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            color: AppColors.mobiliBlue,
-            onRefresh: () async {
-              setState(() {
-                _notifications = null;
-                _currentPage = 0;
-              });
-              ref.invalidate(notificationsProvider);
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: notifications.length + (_hasMore ? 1 : 0),
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                if (index == notifications.length) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Center(
-                      child: _loadingMore
-                          ? const CircularProgressIndicator(
-                              color: AppColors.mobiliBlue)
-                          : OutlinedButton.icon(
-                              onPressed: _loadMore,
-                              icon: const Icon(Icons.expand_more_rounded,
-                                  size: 18),
-                              label: const Text('Voir plus'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.mobiliBlue,
-                                side: const BorderSide(
-                                    color: AppColors.mobiliBlue),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                    ),
-                  );
-                }
-
-             final notif = notifications[index];
-                return _NotifCard(
-                  notification: notif,
-                  onDelete: () => _delete(notif),
-                  onTap: () async {
-                    await _markRead(notif);
-                    if (!context.mounted) return;
-
-                    // Canal trajet : ouvre directement le fil, pas de modale.
-                    if (notif.type == 'TRIP_CHANNEL_MESSAGE' &&
-                        notif.tripId != null) {
-                      context.push(
-                        '/trips/${notif.tripId}/channel?label=${Uri.encodeComponent(notif.tripRoute ?? '')}',
-                      );
-                      return;
-                    }
-
-                    if (context.mounted) {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: MobiliIconPattern(
+              color: AppColors.mobiliBlueDeep,
+              cols: 5,
+              rows: 14,
+              iconSize: 26,
+              alpha: 0.14,
+            ),
+          ),
+          notifAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.mobiliBlue),
+            ),
+            error: (e, _) => Center(
+              child: Text('Erreur : $e',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.gray500)),
+            ),
+            data: (_) {
+              if (notifications.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: AppColors.mobiliBlueFog,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        builder: (sheetContext) => Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(notif.title,
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: AppColors.mobiliBlueDeep,
-                                    fontWeight: FontWeight.w700,
-                                  )),
-                              const SizedBox(height: 8),
-                              Text(notif.body,
-                                  style: AppTextStyles.bodyMedium
-                                      .copyWith(color: AppColors.gray600)),
-                              const SizedBox(height: 8),
-                              Text(notif.formattedDate,
-                                  style: AppTextStyles.bodySmall
-                                      .copyWith(color: AppColors.gray400)),
-                              if (notif.tripId != null ||
-                                  notif.claimId != null ||
-                                  notif.bookingId != null) ...[
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                 onPressed: () {
-                                      Navigator.of(sheetContext).pop();
-                                      if (notif.type == 'TICKET_ISSUED') {
-                                        context.go(
-                                            '/tickets?tripId=${notif.tripId}');
-                                      } else if (notif.type ==
-                                              'BOOKING_CONFIRMED' ||
-                                          notif.type == 'BOOKING_CANCELLED' ||
-                                          notif.type ==
-                                              'COVOITURAGE_BOOKING_ACCEPTED' ||
-                                          notif.type ==
-                                              'COVOITURAGE_BOOKING_REJECTED' ||
-                                          notif.type ==
-                                              'COVOITURAGE_BOOKING_NO_RESPONSE' ||
-                                          notif.type ==
-                                              'COVOITURAGE_BOOKING_PAYMENT_EXPIRED') {
-                                        context.go(notif.bookingId != null
-                                            ? '/my-bookings?bookingId=${notif.bookingId}'
-                                            : '/my-bookings');
-                                      } else if (notif.type ==
-                                              'TRIP_CHANNEL_MESSAGE' ||
-                                          notif.type == 'TRIP_DELAY' ||
-                                          notif.type == 'TRIP_GATE_CHANGE') {
-                                        context.go('/my-bookings');
-                                      } else if (notif.type ==
-                                              'COV_KYC_EXPIRING_SOON' ||
-                                          notif.type == 'COV_KYC_EXPIRED' ||
-                                          notif.type == 'COV_KYC_APPROVED' ||
-                                          notif.type == 'COV_KYC_REJECTED') {
-                                        // Concerne toujours le compte destinataire lui-même
-                                        // (son propre dossier KYC covoiturage) — pas besoin
-                                        // d'ID, on ouvre directement son profil covoiturage.
-                                        context.push('/covoiturage/profile');
-                                      } else if (notif.type ==
-                                              'MOBILI_ADMIN_INFO_PARTNER' ||
-                                          notif.type ==
-                                              'MOBILI_ADMIN_INFO_SUPPORT') {
-                                        context.push('/support');
-                                      } else if (notif.type ==
-                                              'CLAIM_STATUS_UPDATED' ||
-                                          notif.type == 'CLAIM_SUBMITTED') {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => MyClaimsPage(
-                                              highlightClaimId: notif.claimId,
-                                            ),
-                                          ),
-                                        );
-                                      } else if (notif.bookingId != null) {
-                                        context.go(
-                                            '/my-bookings?bookingId=${notif.bookingId}');
-                                      } else if (notif.tripId != null) {
-                                        context.go('/trips/${notif.tripId}');
-                                      }
-                                    },
-                                    icon: Icon(
-                                      notif.type == 'TICKET_ISSUED'
-                                          ? Icons.confirmation_number_rounded
-                                          : (notif.type ==
-                                                      'CLAIM_STATUS_UPDATED' ||
-                                                  notif.type ==
-                                                      'CLAIM_SUBMITTED')
-                                              ? Icons.report_problem_outlined
-                                              : Icons.directions_bus_rounded,
-                                      size: 16,
-                                    ),
-                                    label: Text(_ctaLabel(notif)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.mobiliBlue,
-                                      foregroundColor: AppColors.white,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10)),
-                                    ),
+                        child: const Icon(Icons.notifications_none_rounded,
+                            color: AppColors.mobiliBlue, size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Aucune notification',
+                          style: AppTextStyles.titleLarge
+                              .copyWith(color: AppColors.mobiliBlueDeep)),
+                      const SizedBox(height: 8),
+                      Text('Vos notifications apparaîtront ici.',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.gray400)),
+                    ],
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                color: AppColors.mobiliBlue,
+                onRefresh: () async {
+                  setState(() {
+                    _notifications = null;
+                    _currentPage = 0;
+                  });
+                  ref.invalidate(notificationsProvider);
+                },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: notifications.length + (_hasMore ? 1 : 0),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    if (index == notifications.length) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: _loadingMore
+                              ? const CircularProgressIndicator(
+                                  color: AppColors.mobiliBlue)
+                              : OutlinedButton.icon(
+                                  onPressed: _loadMore,
+                                  icon: const Icon(Icons.expand_more_rounded,
+                                      size: 18),
+                                  label: const Text('Voir plus'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.mobiliBlue,
+                                    side: const BorderSide(
+                                        color: AppColors.mobiliBlue),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
                                   ),
                                 ),
-                              ],
-                              const SizedBox(height: 8),
-                            ],
-                          ),
                         ),
                       );
                     }
+
+                    final notif = notifications[index];
+                    return _NotifCard(
+                      notification: notif,
+                      onDelete: () => _delete(notif),
+                      onTap: () async {
+                        await _markRead(notif);
+                        if (!context.mounted) return;
+
+                        // Canal trajet : ouvre directement le fil, pas de modale.
+                        if (notif.type == 'TRIP_CHANNEL_MESSAGE' &&
+                            notif.tripId != null) {
+                          context.push(
+                            '/trips/${notif.tripId}/channel?label=${Uri.encodeComponent(notif.tripRoute ?? '')}',
+                          );
+                          return;
+                        }
+
+                        if (context.mounted) {
+                          showModalBottomSheet(
+                            context: context,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                            ),
+                            builder: (sheetContext) => Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(notif.title,
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: AppColors.mobiliBlueDeep,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                  const SizedBox(height: 8),
+                                  Text(notif.body,
+                                      style: AppTextStyles.bodyMedium
+                                          .copyWith(color: AppColors.gray600)),
+                                  const SizedBox(height: 8),
+                                  Text(notif.formattedDate,
+                                      style: AppTextStyles.bodySmall
+                                          .copyWith(color: AppColors.gray400)),
+                                  if (notif.tripId != null ||
+                                      notif.claimId != null ||
+                                      notif.bookingId != null) ...[
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: () {
+                                          Navigator.of(sheetContext).pop();
+                                          if (notif.type == 'TICKET_ISSUED') {
+                                            context.go(
+                                                '/tickets?tripId=${notif.tripId}');
+                                          } else if (notif.type ==
+                                                  'BOOKING_CONFIRMED' ||
+                                              notif.type ==
+                                                  'BOOKING_CANCELLED' ||
+                                              notif.type ==
+                                                  'COVOITURAGE_BOOKING_ACCEPTED' ||
+                                              notif.type ==
+                                                  'COVOITURAGE_BOOKING_REJECTED' ||
+                                              notif.type ==
+                                                  'COVOITURAGE_BOOKING_NO_RESPONSE' ||
+                                              notif.type ==
+                                                  'COVOITURAGE_BOOKING_PAYMENT_EXPIRED') {
+                                            context.go(notif.bookingId != null
+                                                ? '/my-bookings?bookingId=${notif.bookingId}'
+                                                : '/my-bookings');
+                                          } else if (notif.type ==
+                                                  'TRIP_CHANNEL_MESSAGE' ||
+                                              notif.type == 'TRIP_DELAY' ||
+                                              notif.type ==
+                                                  'TRIP_GATE_CHANGE') {
+                                            context.go('/my-bookings');
+                                          } else if (notif.type ==
+                                                  'COV_KYC_EXPIRING_SOON' ||
+                                              notif.type == 'COV_KYC_EXPIRED' ||
+                                              notif.type ==
+                                                  'COV_KYC_APPROVED' ||
+                                              notif.type ==
+                                                  'COV_KYC_REJECTED') {
+                                            // Concerne toujours le compte destinataire lui-même
+                                            // (son propre dossier KYC covoiturage) — pas besoin
+                                            // d'ID, on ouvre directement son profil covoiturage.
+                                            context
+                                                .push('/covoiturage/profile');
+                                          } else if (notif.type ==
+                                                  'MOBILI_ADMIN_INFO_PARTNER' ||
+                                              notif.type ==
+                                                  'MOBILI_ADMIN_INFO_SUPPORT') {
+                                            context.push('/support');
+                                          } else if (notif.type ==
+                                                  'CLAIM_STATUS_UPDATED' ||
+                                              notif.type == 'CLAIM_SUBMITTED') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => MyClaimsPage(
+                                                  highlightClaimId:
+                                                      notif.claimId,
+                                                ),
+                                              ),
+                                            );
+                                          } else if (notif.bookingId != null) {
+                                            context.go(
+                                                '/my-bookings?bookingId=${notif.bookingId}');
+                                          } else if (notif.tripId != null) {
+                                            context
+                                                .go('/trips/${notif.tripId}');
+                                          }
+                                        },
+                                        icon: Icon(
+                                          notif.type == 'TICKET_ISSUED'
+                                              ? Icons
+                                                  .confirmation_number_rounded
+                                              : (notif.type ==
+                                                          'CLAIM_STATUS_UPDATED' ||
+                                                      notif.type ==
+                                                          'CLAIM_SUBMITTED')
+                                                  ? Icons
+                                                      .report_problem_outlined
+                                                  : Icons
+                                                      .directions_bus_rounded,
+                                          size: 16,
+                                        ),
+                                        label: Text(_ctaLabel(notif)),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.mobiliBlue,
+                                          foregroundColor: AppColors.white,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    );
                   },
-                );
-              },
-            ),
-          );
-        },
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -787,7 +812,7 @@ class _NotifCard extends StatelessWidget {
         return (Icons.schedule_rounded, AppColors.warning);
       case 'TRIP_GATE_CHANGE':
         return (Icons.location_on_rounded, AppColors.warning);
-        case 'MOBILI_ADMIN_INFO_PARTNER':
+      case 'MOBILI_ADMIN_INFO_PARTNER':
         return (Icons.support_agent_rounded, AppColors.mobiliBlue);
       case 'MOBILI_ADMIN_INFO_SUPPORT':
         return (Icons.support_agent_rounded, AppColors.mobiliBlue);
