@@ -69,10 +69,10 @@ class _MyTicketsPageState extends ConsumerState<MyTicketsPage>
         backRoute: '/profile',
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.mobiliYellow,
+          indicatorColor: AppColors.mobiliBlue,
           indicatorWeight: 3,
-          labelColor: AppColors.white,
-          unselectedLabelColor: AppColors.white.withValues(alpha: 0.6),
+          labelColor: AppColors.mobiliBlueDeep,
+          unselectedLabelColor: AppColors.mobiliBlueDeep.withValues(alpha: 0.5),
           labelStyle: AppTextStyles.bodyMedium
               .copyWith(fontWeight: FontWeight.w700, fontSize: 14),
           unselectedLabelStyle: AppTextStyles.bodyMedium.copyWith(fontSize: 14),
