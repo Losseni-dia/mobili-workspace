@@ -72,7 +72,8 @@ class BookingReceiptPage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: _share,
-            icon: const Icon(Icons.ios_share_rounded, color: AppColors.white),
+            icon: const Icon(Icons.ios_share_rounded,
+                color: AppColors.mobiliBlueDeep),
             tooltip: 'Partager',
           ),
         ],

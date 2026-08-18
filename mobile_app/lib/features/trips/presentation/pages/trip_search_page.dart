@@ -80,13 +80,14 @@ class _TripSearchPageState extends ConsumerState<TripSearchPage> {
       backgroundColor: isDark ? AppColors.darkBg : AppColors.mobiliYellowPale,
       appBar: MobiliAppBar(
         title: 'Trouver un trajet',
-         backRoute: '/',
+        backRoute: '/',
         showBackButton: true,
         actions: [
           if (!searchParams.isEmpty)
             TextButton(
               onPressed: _clearSearch,
-              style: TextButton.styleFrom(foregroundColor: AppColors.white),
+              style: TextButton.styleFrom(
+                  foregroundColor: AppColors.mobiliBlueDeep),
               child: const Text('Effacer'),
             ),
         ],
@@ -102,7 +103,7 @@ class _TripSearchPageState extends ConsumerState<TripSearchPage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                 Expanded(
+                    Expanded(
                       child: CityAutocompleteField(
                         controller: _departureCtrl,
                         validator: (v) =>

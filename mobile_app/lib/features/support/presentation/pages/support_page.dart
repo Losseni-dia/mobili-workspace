@@ -91,7 +91,8 @@ class SupportPage extends ConsumerWidget {
         showBackButton: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppColors.mobiliBlueDeep),
             onPressed: () => ref.invalidate(_supportThreadsProvider),
           ),
         ],
@@ -403,7 +404,8 @@ class _SupportConversationPageState
         showPattern: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppColors.mobiliBlueDeep),
             onPressed: () =>
                 ref.invalidate(_supportMessagesProvider(widget.thread.id)),
           ),

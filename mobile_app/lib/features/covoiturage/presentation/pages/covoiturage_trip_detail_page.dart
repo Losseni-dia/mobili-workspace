@@ -102,33 +102,37 @@ class _TripStop {
 
 final _tripPassengersProvider = FutureProvider.autoDispose
     .family<List<_PassengerLine>, int>((ref, tripId) async {
-  final res = await ApiClient.instance.dio.get<List<dynamic>>('/tickets/trip/$tripId');
+  final res =
+      await ApiClient.instance.dio.get<List<dynamic>>('/tickets/trip/$tripId');
   return (res.data ?? [])
       .map((e) => _PassengerLine.fromJson(e as Map<String, dynamic>))
       .toList();
 });
 
 final _boardingsProvider = FutureProvider.autoDispose
-    .family<List<_StopPassenger>, ({int tripId, int stopIndex})>((ref, p) async {
-  final res = await ApiClient.instance.dio
-      .get<List<dynamic>>('/trips/${p.tripId}/driver/stops/${p.stopIndex}/boardings');
+    .family<List<_StopPassenger>, ({int tripId, int stopIndex})>(
+        (ref, p) async {
+  final res = await ApiClient.instance.dio.get<List<dynamic>>(
+      '/trips/${p.tripId}/driver/stops/${p.stopIndex}/boardings');
   return (res.data ?? [])
       .map((e) => _StopPassenger.fromJson(e as Map<String, dynamic>))
       .toList();
 });
 
 final _alightingsProvider = FutureProvider.autoDispose
-    .family<List<_StopPassenger>, ({int tripId, int stopIndex})>((ref, p) async {
-  final res = await ApiClient.instance.dio
-      .get<List<dynamic>>('/trips/${p.tripId}/driver/stops/${p.stopIndex}/alightings');
+    .family<List<_StopPassenger>, ({int tripId, int stopIndex})>(
+        (ref, p) async {
+  final res = await ApiClient.instance.dio.get<List<dynamic>>(
+      '/trips/${p.tripId}/driver/stops/${p.stopIndex}/alightings');
   return (res.data ?? [])
       .map((e) => _StopPassenger.fromJson(e as Map<String, dynamic>))
       .toList();
 });
 
-final _tripStopsProvider =
-    FutureProvider.autoDispose.family<List<_TripStop>, int>((ref, tripId) async {
-  final res = await ApiClient.instance.dio.get<List<dynamic>>('/trips/$tripId/stops');
+final _tripStopsProvider = FutureProvider.autoDispose
+    .family<List<_TripStop>, int>((ref, tripId) async {
+  final res =
+      await ApiClient.instance.dio.get<List<dynamic>>('/trips/$tripId/stops');
   return (res.data ?? [])
       .map((e) => _TripStop.fromJson(e as Map<String, dynamic>))
       .toList()
@@ -156,7 +160,7 @@ class _CovoiturageTripDetailPageState
   late Trip _trip;
   bool _isStarting = false;
 
-@override
+  @override
   void initState() {
     super.initState();
     _trip = widget.trip;
@@ -172,7 +176,8 @@ class _CovoiturageTripDetailPageState
   Future<void> _startTrip() async {
     setState(() => _isStarting = true);
     try {
-      await ApiClient.instance.dio.post<void>('/trips/${_trip.id}/driver/start');
+      await ApiClient.instance.dio
+          .post<void>('/trips/${_trip.id}/driver/start');
       if (mounted) {
         setState(() {
           _trip = Trip(
@@ -208,7 +213,8 @@ class _CovoiturageTripDetailPageState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
+          SnackBar(
+              content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -223,16 +229,21 @@ class _CovoiturageTripDetailPageState
         title: const Text('Supprimer ce trajet ?'),
         content: const Text('Cette action est irréversible.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+            child: const Text('Supprimer',
+                style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
     );
     if (confirmed == true) {
-      final ok = await ref.read(covoiturageTripNotifierProvider.notifier).delete(_trip.id);
+      final ok = await ref
+          .read(covoiturageTripNotifierProvider.notifier)
+          .delete(_trip.id);
       if (ok && mounted) context.pop();
     }
   }
@@ -254,7 +265,7 @@ class _CovoiturageTripDetailPageState
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                          color: AppColors.mobiliBlueDeep, strokeWidth: 2),
                     )
                   : const Icon(Icons.play_arrow_rounded),
               tooltip: 'Démarrer',
@@ -297,7 +308,7 @@ class _CovoiturageTripDetailPageState
       body: Column(
         children: [
           _TripInfoBanner(trip: _trip),
-         Expanded(
+          Expanded(
             child: TabBarView(
               controller: _tabCtrl,
               children: [
@@ -333,8 +344,14 @@ class _TripInfoBanner extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           if (trip.vehicleTypeLabel.isNotEmpty)
-            _Chip(icon: Icons.category_rounded, label: trip.vehicleTypeLabel, color: AppColors.gray500),
-          _Chip(icon: Icons.payments_rounded, label: trip.formattedPrice, color: AppColors.mobiliBlue),
+            _Chip(
+                icon: Icons.category_rounded,
+                label: trip.vehicleTypeLabel,
+                color: AppColors.gray500),
+          _Chip(
+              icon: Icons.payments_rounded,
+              label: trip.formattedPrice,
+              color: AppColors.mobiliBlue),
           _StatusBadge(status: trip.status ?? 'PROGRAMMÉ'),
         ],
       ),
@@ -355,8 +372,10 @@ class _PassengersTab extends ConsumerWidget {
     final linesAsync = ref.watch(_tripPassengersProvider(tripId));
 
     return linesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
-      error: (e, _) => Center(child: Text('$e', style: const TextStyle(color: AppColors.danger))),
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
+      error: (e, _) => Center(
+          child: Text('$e', style: const TextStyle(color: AppColors.danger))),
       data: (lines) {
         if (lines.isEmpty) {
           return const Center(
@@ -365,7 +384,8 @@ class _PassengersTab extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people_outline_rounded, size: 48, color: AppColors.gray300),
+                  Icon(Icons.people_outline_rounded,
+                      size: 48, color: AppColors.gray300),
                   SizedBox(height: 12),
                   Text('Aucun passager pour le moment',
                       style: TextStyle(color: AppColors.gray400, fontSize: 15)),
@@ -375,15 +395,20 @@ class _PassengersTab extends ConsumerWidget {
           );
         }
 
-        final aboard = lines.where((l) => l.ticketStatus.toUpperCase().startsWith('UTILIS')).length;
-        final arrived = lines.where((l) => l.ticketStatus.toUpperCase().startsWith('ARRIV')).length;
+        final aboard = lines
+            .where((l) => l.ticketStatus.toUpperCase().startsWith('UTILIS'))
+            .length;
+        final arrived = lines
+            .where((l) => l.ticketStatus.toUpperCase().startsWith('ARRIV'))
+            .length;
         final revenue = lines
             .where((l) => !l.ticketStatus.toUpperCase().startsWith('ANNUL'))
             .fold(0.0, (s, l) => s + l.price);
 
         return RefreshIndicator(
           color: AppColors.mobiliBlue,
-          onRefresh: () async => ref.invalidate(_tripPassengersProvider(tripId)),
+          onRefresh: () async =>
+              ref.invalidate(_tripPassengersProvider(tripId)),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -396,9 +421,18 @@ class _PassengersTab extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _MiniStat(label: 'Total', value: '${lines.length}', color: AppColors.mobiliBlue),
-                    _MiniStat(label: 'À bord', value: '$aboard', color: AppColors.success),
-                    _MiniStat(label: 'Arrivés', value: '$arrived', color: AppColors.mobiliBlue),
+                    _MiniStat(
+                        label: 'Total',
+                        value: '${lines.length}',
+                        color: AppColors.mobiliBlue),
+                    _MiniStat(
+                        label: 'À bord',
+                        value: '$aboard',
+                        color: AppColors.success),
+                    _MiniStat(
+                        label: 'Arrivés',
+                        value: '$arrived',
+                        color: AppColors.mobiliBlue),
                     _MiniStat(
                       label: 'Revenus',
                       value: '${revenue.toStringAsFixed(0)} F',
@@ -419,7 +453,6 @@ class _PassengersTab extends ConsumerWidget {
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Onglet Demandes en attente (covoiturage)
@@ -655,8 +688,13 @@ class _PassengerCard extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                line.passengerName.isNotEmpty ? line.passengerName[0].toUpperCase() : '?',
-                style: TextStyle(fontWeight: FontWeight.w900, color: statusColor, fontSize: 16),
+                line.passengerName.isNotEmpty
+                    ? line.passengerName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                    fontSize: 16),
               ),
             ),
           ),
@@ -672,9 +710,11 @@ class _PassengerCard extends StatelessWidget {
                     )),
                 if (line.boardingCity.isNotEmpty)
                   Text('${line.boardingCity} → ${line.alightingCity}',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.mobiliBlue, fontSize: 11)),
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.mobiliBlue, fontSize: 11)),
                 Text('${line.price.toStringAsFixed(0)} FCFA',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray400, fontSize: 11)),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.gray400, fontSize: 11)),
               ],
             ),
           ),
@@ -688,7 +728,10 @@ class _PassengerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text('Siège ${line.seatNumber}',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 4),
               Container(
@@ -698,7 +741,10 @@ class _PassengerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(statusLabel,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor)),
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor)),
               ),
             ],
           ),
@@ -726,8 +772,10 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   bool _tripEnded = false;
 
   void _refresh() {
-    ref.invalidate(_boardingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
-    ref.invalidate(_alightingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
+    ref.invalidate(
+        _boardingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
+    ref.invalidate(
+        _alightingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
   }
 
   Future<void> _recordDeparture(String cityLabel, bool isLast) async {
@@ -746,7 +794,9 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isLast ? 'Trajet terminé 🏁' : 'Départ de $cityLabel enregistré ✅'),
+            content: Text(isLast
+                ? 'Trajet terminé 🏁'
+                : 'Départ de $cityLabel enregistré ✅'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -755,7 +805,8 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
+          SnackBar(
+              content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -766,8 +817,8 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   Future<void> _undoLastDeparture() async {
     setState(() => _isRecording = true);
     try {
-      final res = await ApiClient.instance.dio
-          .post<Map<String, dynamic>>('/trips/${widget.trip.id}/driver/departures/undo');
+      final res = await ApiClient.instance.dio.post<Map<String, dynamic>>(
+          '/trips/${widget.trip.id}/driver/departures/undo');
       final newCurrentStop = res.data?['currentStopIndex'] as int? ?? 0;
       if (mounted) {
         setState(() {
@@ -776,13 +827,16 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         });
         _refresh();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dernier départ annulé'), backgroundColor: AppColors.warning),
+          const SnackBar(
+              content: Text('Dernier départ annulé'),
+              backgroundColor: AppColors.warning),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
+          SnackBar(
+              content: Text('Erreur : $e'), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -793,19 +847,24 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   @override
   Widget build(BuildContext context) {
     final stopsAsync = ref.watch(_tripStopsProvider(widget.trip.id));
-    final boardingsAsync =
-        ref.watch(_boardingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
-    final alightingsAsync =
-        ref.watch(_alightingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
+    final boardingsAsync = ref.watch(
+        _boardingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
+    final alightingsAsync = ref.watch(
+        _alightingsProvider((tripId: widget.trip.id, stopIndex: _currentStop)));
 
     return stopsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
-      error: (e, _) => Center(child: Text('$e', style: const TextStyle(color: AppColors.danger))),
+      loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
+      error: (e, _) => Center(
+          child: Text('$e', style: const TextStyle(color: AppColors.danger))),
       data: (stops) {
-        final currentStopObj = stops.where((s) => s.stopIndex == _currentStop).firstOrNull;
-        final currentStopName = currentStopObj?.cityLabel ?? 'Arrêt $_currentStop';
-        final maxStop =
-            stops.isNotEmpty ? stops.map((s) => s.stopIndex).reduce((a, b) => a > b ? a : b) : 0;
+        final currentStopObj =
+            stops.where((s) => s.stopIndex == _currentStop).firstOrNull;
+        final currentStopName =
+            currentStopObj?.cityLabel ?? 'Arrêt $_currentStop';
+        final maxStop = stops.isNotEmpty
+            ? stops.map((s) => s.stopIndex).reduce((a, b) => a > b ? a : b)
+            : 0;
         final isLastStop = _currentStop == maxStop;
 
         return Column(
@@ -823,20 +882,28 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                           }
                         : null,
                     icon: const Icon(Icons.chevron_left_rounded),
-                    color: _currentStop > 0 ? AppColors.mobiliBlue : AppColors.gray300,
+                    color: _currentStop > 0
+                        ? AppColors.mobiliBlue
+                        : AppColors.gray300,
                   ),
                   Expanded(
                     child: Column(
                       children: [
                         Text(currentStopName,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.mobiliBlueDeep),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: AppColors.mobiliBlueDeep),
                             textAlign: TextAlign.center),
                         Text(
-                          _tripEnded ? 'Trajet terminé 🏁' : 'Arrêt $_currentStop / $maxStop',
+                          _tripEnded
+                              ? 'Trajet terminé 🏁'
+                              : 'Arrêt $_currentStop / $maxStop',
                           style: TextStyle(
                             fontSize: 11,
-                            color: _tripEnded ? AppColors.success : AppColors.gray400,
+                            color: _tripEnded
+                                ? AppColors.success
+                                : AppColors.gray400,
                           ),
                         ),
                       ],
@@ -862,15 +929,19 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.flag_rounded, color: AppColors.success, size: 48),
+                          const Icon(Icons.flag_rounded,
+                              color: AppColors.success, size: 48),
                           const SizedBox(height: 12),
                           const Text('Trajet terminé !',
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.mobiliBlueDeep)),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.mobiliBlueDeep)),
                           const SizedBox(height: 16),
                           TextButton.icon(
                             onPressed: _isRecording ? null : _undoLastDeparture,
-                            icon: const Icon(Icons.undo_rounded, size: 16, color: AppColors.gray500),
+                            icon: const Icon(Icons.undo_rounded,
+                                size: 16, color: AppColors.gray500),
                             label: const Text('Annuler (clic par erreur)',
                                 style: TextStyle(color: AppColors.gray500)),
                           ),
@@ -884,27 +955,47 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                         padding: const EdgeInsets.all(16),
                         children: [
                           const _SectionHeader(
-                              icon: Icons.login_rounded, label: 'Passagers qui montent', color: AppColors.success),
+                              icon: Icons.login_rounded,
+                              label: 'Passagers qui montent',
+                              color: AppColors.success),
                           const SizedBox(height: 8),
                           boardingsAsync.when(
-                            loading: () =>
-                                const Center(child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
-                            error: (e, _) => Text('$e', style: const TextStyle(color: AppColors.danger)),
+                            loading: () => const Center(
+                                child: CircularProgressIndicator(
+                                    color: AppColors.mobiliBlue)),
+                            error: (e, _) => Text('$e',
+                                style:
+                                    const TextStyle(color: AppColors.danger)),
                             data: (boardings) => boardings.isEmpty
-                                ? const _EmptyStop(label: 'Aucun montant à cet arrêt')
-                                : Column(children: boardings.map((p) => _StopPassengerCard(passenger: p, isBoarding: true)).toList()),
+                                ? const _EmptyStop(
+                                    label: 'Aucun montant à cet arrêt')
+                                : Column(
+                                    children: boardings
+                                        .map((p) => _StopPassengerCard(
+                                            passenger: p, isBoarding: true))
+                                        .toList()),
                           ),
                           const SizedBox(height: 16),
                           const _SectionHeader(
-                              icon: Icons.logout_rounded, label: 'Passagers qui descendent', color: AppColors.warning),
+                              icon: Icons.logout_rounded,
+                              label: 'Passagers qui descendent',
+                              color: AppColors.warning),
                           const SizedBox(height: 8),
                           alightingsAsync.when(
-                            loading: () =>
-                                const Center(child: CircularProgressIndicator(color: AppColors.mobiliBlue)),
-                            error: (e, _) => Text('$e', style: const TextStyle(color: AppColors.danger)),
+                            loading: () => const Center(
+                                child: CircularProgressIndicator(
+                                    color: AppColors.mobiliBlue)),
+                            error: (e, _) => Text('$e',
+                                style:
+                                    const TextStyle(color: AppColors.danger)),
                             data: (alightings) => alightings.isEmpty
-                                ? const _EmptyStop(label: 'Aucun descendant à cet arrêt')
-                                : Column(children: alightings.map((p) => _StopPassengerCard(passenger: p, isBoarding: false)).toList()),
+                                ? const _EmptyStop(
+                                    label: 'Aucun descendant à cet arrêt')
+                                : Column(
+                                    children: alightings
+                                        .map((p) => _StopPassengerCard(
+                                            passenger: p, isBoarding: false))
+                                        .toList()),
                           ),
                           const SizedBox(height: 20),
                           SizedBox(
@@ -912,36 +1003,50 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                             child: ElevatedButton.icon(
                               onPressed: _isRecording
                                   ? null
-                                  : () => _recordDeparture(currentStopName, isLastStop),
+                                  : () => _recordDeparture(
+                                      currentStopName, isLastStop),
                               icon: _isRecording
                                   ? const SizedBox(
                                       width: 16,
                                       height: 16,
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                          color: Colors.white, strokeWidth: 2),
                                     )
-                                  : Icon(isLastStop ? Icons.flag_rounded : Icons.directions_car_rounded, size: 18),
+                                  : Icon(
+                                      isLastStop
+                                          ? Icons.flag_rounded
+                                          : Icons.directions_car_rounded,
+                                      size: 18),
                               label: Text(
                                 _isRecording
                                     ? 'Enregistrement...'
                                     : isLastStop
                                         ? 'Terminer le trajet'
                                         : 'Quitter $currentStopName',
-                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w700),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isLastStop ? AppColors.danger : AppColors.mobiliBlue,
+                                backgroundColor: isLastStop
+                                    ? AppColors.danger
+                                    : AppColors.mobiliBlue,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                               ),
                             ),
                           ),
                           Center(
                             child: TextButton.icon(
-                              onPressed: _isRecording ? null : _undoLastDeparture,
-                              icon: const Icon(Icons.undo_rounded, size: 14, color: AppColors.gray400),
+                              onPressed:
+                                  _isRecording ? null : _undoLastDeparture,
+                              icon: const Icon(Icons.undo_rounded,
+                                  size: 14, color: AppColors.gray400),
                               label: const Text('Annuler le dernier départ',
-                                  style: TextStyle(color: AppColors.gray400, fontSize: 12)),
+                                  style: TextStyle(
+                                      color: AppColors.gray400, fontSize: 12)),
                             ),
                           ),
                         ],
@@ -962,7 +1067,8 @@ class _StopPassengerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (statusLabel, statusColor) = ticketStatusConfig(passenger.ticketStatus);
+    final (statusLabel, statusColor) =
+        ticketStatusConfig(passenger.ticketStatus);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -978,7 +1084,8 @@ class _StopPassengerCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(isBoarding ? Icons.login_rounded : Icons.logout_rounded,
-              size: 18, color: isBoarding ? AppColors.success : AppColors.warning),
+              size: 18,
+              color: isBoarding ? AppColors.success : AppColors.warning),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -986,9 +1093,12 @@ class _StopPassengerCard extends StatelessWidget {
               children: [
                 Text(passenger.passengerName,
                     style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.mobiliBlueDeep, fontWeight: FontWeight.w700, fontSize: 13)),
+                        color: AppColors.mobiliBlueDeep,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13)),
                 Text('Siège ${passenger.seatNumber}',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500, fontSize: 11)),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.gray500, fontSize: 11)),
               ],
             ),
           ),
@@ -999,7 +1109,10 @@ class _StopPassengerCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(statusLabel,
-                style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w700)),
+                style: TextStyle(
+                    fontSize: 10,
+                    color: statusColor,
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -1012,7 +1125,8 @@ class _StopPassengerCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.icon, required this.label, required this.color});
+  const _SectionHeader(
+      {required this.icon, required this.label, required this.color});
   final IconData icon;
   final String label;
   final Color color;
@@ -1022,7 +1136,9 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: color)),
         ],
       );
 }
@@ -1034,12 +1150,15 @@ class _EmptyStop extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.gray100, borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+            color: AppColors.gray100, borderRadius: BorderRadius.circular(10)),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_outline_rounded, size: 16, color: AppColors.gray400),
+            const Icon(Icons.check_circle_outline_rounded,
+                size: 16, color: AppColors.gray400),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: AppColors.gray400, fontSize: 13)),
+            Text(label,
+                style: const TextStyle(color: AppColors.gray400, fontSize: 13)),
           ],
         ),
       );
@@ -1053,15 +1172,30 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, bg, fg) = switch (status.toUpperCase()) {
       'EN_COURS' => ('En cours', AppColors.successSoft, AppColors.success),
-      'PROGRAMMÉ' || 'PROGRAMME' => ('Programmé', AppColors.mobiliBlueFog, AppColors.mobiliBlue),
-      'TERMINÉ' || 'TERMINE' => ('Terminé', AppColors.gray100, AppColors.gray500),
-      'ANNULÉ' || 'ANNULE' => ('Annulé', AppColors.dangerSoft, AppColors.danger),
+      'PROGRAMMÉ' || 'PROGRAMME' => (
+          'Programmé',
+          AppColors.mobiliBlueFog,
+          AppColors.mobiliBlue
+        ),
+      'TERMINÉ' || 'TERMINE' => (
+          'Terminé',
+          AppColors.gray100,
+          AppColors.gray500
+        ),
+      'ANNULÉ' || 'ANNULE' => (
+          'Annulé',
+          AppColors.dangerSoft,
+          AppColors.danger
+        ),
       _ => (status, AppColors.gray100, AppColors.gray500),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w700)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(label,
+          style:
+              TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -1084,14 +1218,17 @@ class _Chip extends StatelessWidget {
           children: [
             Icon(icon, size: 13, color: color),
             const SizedBox(width: 5),
-            Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11, color: color, fontWeight: FontWeight.w600)),
           ],
         ),
       );
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.label, required this.value, required this.color});
+  const _MiniStat(
+      {required this.label, required this.value, required this.color});
   final String label;
   final String value;
   final Color color;
@@ -1099,8 +1236,11 @@ class _MiniStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
         children: [
-          Text(value, style: TextStyle(fontWeight: FontWeight.w900, color: color, fontSize: 16)),
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.gray500)),
+          Text(value,
+              style: TextStyle(
+                  fontWeight: FontWeight.w900, color: color, fontSize: 16)),
+          Text(label,
+              style: const TextStyle(fontSize: 10, color: AppColors.gray500)),
         ],
       );
 }
