@@ -160,25 +160,25 @@
         <td class="right" data-label="Actions">
             <div class="row-actions">
                 @if (paymentCountdown(b); as countdown) {
-                    <a class="pay-link" [routerLink]="['/booking/confirmation', b.id]">
+                    <a class="action-btn action-btn--pay" [routerLink]="['/booking/confirmation', b.id]">
                         💳 Payer ({{ countdown }})
                     </a>
                 }
                 @if (isConfirmed(b)) {
-                    <button type="button" class="action-link" (click)="openReceipt(b)">
-                        🧾 Voir le reçu
+                    <button type="button" class="action-btn action-btn--ghost" (click)="openReceipt(b)">
+                        🧾 Reçu
                     </button>
-                    <a class="action-link" [routerLink]="['/my-account/my-tickets']" [queryParams]="{ bookingId: b.id }">
-                        🎫 Voir le billet
+                    <a class="action-btn action-btn--ghost" [routerLink]="['/my-account/my-tickets']" [queryParams]="{ bookingId: b.id }">
+                        🎫 Billet
                     </a>
                 }
                 @if (upcoming && canCancel(b)) {
-                    <a class="action-link danger" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id, reason: 'CANCELLATION' }">
-                        Annuler
+                    <a class="action-btn action-btn--danger" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id, reason: 'CANCELLATION' }">
+                        ✕ Annuler
                     </a>
                 }
-                <a class="claim-link" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
-                    Signaler
+                <a class="action-btn action-btn--muted" [routerLink]="['/my-account/claims']" [queryParams]="{ bookingId: b.id }">
+                    ⚑ Signaler
                 </a>
             </div>
         </td>
