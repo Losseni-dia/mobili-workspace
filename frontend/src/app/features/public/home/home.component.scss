@@ -35,13 +35,6 @@
     color: variables.$white;
     max-width: 780px;
     margin: 0 auto 14px;
-
-    .accent {
-      background: variables.$gradient-gold;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
   }
 
   .hero-subtitle {
