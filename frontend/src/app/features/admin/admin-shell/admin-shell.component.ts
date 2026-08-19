@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
@@ -23,6 +24,7 @@ interface NavSection {
 })
 export class AdminShellComponent {
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
   authService = inject(AuthService);
 
   private currentUrl = signal<string>(this.router.url);
@@ -96,7 +98,10 @@ export class AdminShellComponent {
   });
 
   constructor() {
-    this.router.events.subscribe((event) => {
+    // AUDIT-MOBILI.md §2.4 : router.events vit pour toute la durée de l'app — sans
+    // takeUntilDestroyed, chaque navigation hors/vers ce shell accumulait un abonnement
+    // supplémentaire jamais nettoyé (fuite mémoire progressive).
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.currentUrl.set(event.urlAfterRedirects || event.url);
       }
