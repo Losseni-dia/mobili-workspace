@@ -5,6 +5,8 @@ import com.mobili.backend.module.claim.dto.UpdateClaimStatusRequest;
 import com.mobili.backend.module.claim.enums.ClaimStatus;
 import com.mobili.backend.module.claim.service.ClaimService;
 
+import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -34,7 +36,7 @@ public class AdminClaimController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ClaimResponse> updateStatus(
-            @PathVariable Long id, @RequestBody UpdateClaimStatusRequest request) {
+            @PathVariable Long id, @Valid @RequestBody UpdateClaimStatusRequest request) {
         return ResponseEntity.ok(claimService.updateStatus(
                 id, request.status(), request.adminNote(), request.resolutionMessage()));
     }

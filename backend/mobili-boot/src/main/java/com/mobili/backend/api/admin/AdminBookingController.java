@@ -6,6 +6,8 @@ import com.mobili.backend.module.payment.entity.Payment;
 import com.mobili.backend.module.payment.enums.PaymentProvider;
 import com.mobili.backend.module.payment.enums.PaymentStatus;
 import com.mobili.backend.module.payment.repository.PaymentRepository;
+import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
+import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +72,16 @@ public class AdminBookingController {
     @PostMapping("/{bookingId}/cancel-tickets")
     public ResponseEntity<CancelBookingResponse> cancelTickets(
             @PathVariable Long bookingId, @RequestBody List<Long> ticketIds) {
+        // AUDIT-MOBILI.md §1.1 : List<Long> brut, aucune contrainte de taille/format
+        // auparavant — un corps vide/null n'était pas rejeté explicitement. Vérification
+        // manuelle plutôt que @Validated + @NotEmpty sur le paramètre : GlobalExceptionHandler
+        // ne gère aujourd'hui que MethodArgumentNotValidException (@Valid sur un objet), pas
+        // ConstraintViolationException (contrainte directe sur un paramètre de méthode) — un
+        // ticketIds vide serait retombé sur le fallback générique 500 plutôt qu'un vrai 400.
+        if (ticketIds == null || ticketIds.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Aucun ticket à annuler.");
+        }
+
         PaymentProvider provider = paymentRepository
                 .findByBookingIdAndStatus(bookingId, PaymentStatus.SUCCESS)
                 .map(Payment::getProvider)

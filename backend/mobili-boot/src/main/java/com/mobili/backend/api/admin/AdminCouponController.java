@@ -4,6 +4,8 @@ import com.mobili.backend.module.coupon.dto.CouponResponse;
 import com.mobili.backend.module.coupon.dto.CreateCouponRequest;
 import com.mobili.backend.module.coupon.service.CouponService;
 
+import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -31,7 +33,7 @@ public class AdminCouponController {
     private final CouponService couponService;
 
     @PostMapping
-    public ResponseEntity<CouponResponse> createCoupon(@RequestBody CreateCouponRequest request) {
+    public ResponseEntity<CouponResponse> createCoupon(@Valid @RequestBody CreateCouponRequest request) {
         var coupon = couponService.createCoupon(
                 request.code(), request.type(), request.value(), request.expiresAt());
         return ResponseEntity.ok(CouponResponse.from(coupon));

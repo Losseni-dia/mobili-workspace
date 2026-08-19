@@ -25,8 +25,17 @@ public class CouponService {
      * Création admin — le code doit être unique (contrainte DB "code" déjà
      * en place sur l'entité Coupon ; un doublon remonte en DataIntegrityViolationException,
      * déjà gérée par GlobalExceptionHandler).
+     *
+     * AUDIT-MOBILI.md §1.1 : code/type/value non-null déjà garantis par la validation Bean
+     * sur CreateCouponRequest (@NotBlank/@NotNull/@Positive) — le bornage métier ci-dessous
+     * (PERCENTAGE ≤ 100) n'est en revanche pas exprimable proprement en annotation simple,
+     * donc vérifié ici explicitement plutôt que d'accepter silencieusement un coupon à 150%.
      */
     public Coupon createCoupon(String code, CouponType type, BigDecimal value, LocalDateTime expiresAt) {
+        if (type == CouponType.PERCENTAGE && value.compareTo(new BigDecimal("100")) > 0) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Un coupon en pourcentage ne peut pas dépasser 100%.");
+        }
         Coupon coupon = new Coupon();
         coupon.setCode(code.trim().toUpperCase());
         coupon.setType(type);
