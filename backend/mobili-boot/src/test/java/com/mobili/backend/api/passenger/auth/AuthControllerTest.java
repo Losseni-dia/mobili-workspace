@@ -109,11 +109,15 @@ class AuthControllerTest {
         saved.setLogin("dirigeant01");
         MultipartFile kycFront = mock(MultipartFile.class);
         MultipartFile kycBack = mock(MultipartFile.class);
+        MultipartFile transportCardFront = mock(MultipartFile.class);
+        MultipartFile transportCardBack = mock(MultipartFile.class);
 
-        when(userService.registerCompanyPublic(eq(dto), isNull(), eq(kycFront), eq(kycBack))).thenReturn(saved);
+        when(userService.registerCompanyPublic(eq(dto), isNull(), eq(kycFront), eq(kycBack),
+                eq(transportCardFront), eq(transportCardBack))).thenReturn(saved);
         when(jwtService.generateToken(saved)).thenReturn("jwt-access-token");
 
-        AuthResponse response = authController.registerCompany(dto, null, kycFront, kycBack, httpServletResponse);
+        AuthResponse response = authController.registerCompany(dto, null, kycFront, kycBack,
+                transportCardFront, transportCardBack, httpServletResponse);
 
         assertEquals("jwt-access-token", response.getToken());
         assertEquals("dirigeant01", response.getLogin());
@@ -135,13 +139,18 @@ class AuthControllerTest {
         MultipartFile logo = mock(MultipartFile.class);
         MultipartFile kycFront = mock(MultipartFile.class);
         MultipartFile kycBack = mock(MultipartFile.class);
+        MultipartFile transportCardFront = mock(MultipartFile.class);
+        MultipartFile transportCardBack = mock(MultipartFile.class);
 
-        when(userService.registerCompanyPublic(dto, logo, kycFront, kycBack)).thenReturn(saved);
+        when(userService.registerCompanyPublic(dto, logo, kycFront, kycBack, transportCardFront, transportCardBack))
+                .thenReturn(saved);
         when(jwtService.generateToken(saved)).thenReturn("t");
 
-        authController.registerCompany(dto, logo, kycFront, kycBack, httpServletResponse);
+        authController.registerCompany(dto, logo, kycFront, kycBack, transportCardFront, transportCardBack,
+                httpServletResponse);
 
-        verify(userService).registerCompanyPublic(dto, logo, kycFront, kycBack);
+        verify(userService).registerCompanyPublic(dto, logo, kycFront, kycBack, transportCardFront,
+                transportCardBack);
     }
 
     @Test
@@ -149,12 +158,15 @@ class AuthControllerTest {
         RegisterCompanyPublicDTO dto = sampleRegisterCompanyDto();
         MultipartFile kycFront = mock(MultipartFile.class);
         MultipartFile kycBack = mock(MultipartFile.class);
+        MultipartFile transportCardFront = mock(MultipartFile.class);
+        MultipartFile transportCardBack = mock(MultipartFile.class);
         when(userService.registerCompanyPublic(any(RegisterCompanyPublicDTO.class), isNull(), eq(kycFront),
-                eq(kycBack)))
+                eq(kycBack), eq(transportCardFront), eq(transportCardBack)))
                 .thenThrow(new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Ce login est déjà utilisé."));
 
         MobiliException ex = assertThrows(MobiliException.class,
-                () -> authController.registerCompany(dto, null, kycFront, kycBack, httpServletResponse));
+                () -> authController.registerCompany(dto, null, kycFront, kycBack, transportCardFront,
+                        transportCardBack, httpServletResponse));
 
         assertEquals(MobiliErrorCode.DUPLICATE_RESOURCE, ex.getErrorCode());
         verify(jwtService, never()).generateToken(any());

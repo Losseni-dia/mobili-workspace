@@ -126,6 +126,22 @@ public class User extends AbstractEntity {
     @Column(name = "covoiturage_grey_card_number")
     private String covoiturageGreyCardNumber;
 
+    /** Recto permis de conduire (chauffeur covoiturage). */
+    @Column(name = "covoiturage_license_front_url")
+    private String covoiturageLicenseFrontUrl;
+
+    /** Verso permis de conduire. */
+    @Column(name = "covoiturage_license_back_url")
+    private String covoiturageLicenseBackUrl;
+
+    /** Recto carte grise — photo, distincte de {@link #covoiturageGreyCardNumber} (le numéro seul). */
+    @Column(name = "covoiturage_grey_card_front_url")
+    private String covoiturageGreyCardFrontUrl;
+
+    /** Verso carte grise. */
+    @Column(name = "covoiturage_grey_card_back_url")
+    private String covoiturageGreyCardBackUrl;
+
     @Column(name = "covoiturage_vehicle_photo_url")
     private String covoiturageVehiclePhotoUrl;
 
@@ -151,5 +167,21 @@ public class User extends AbstractEntity {
      */
     @Column(name = "covoiturage_solo_profile")
     private Boolean covoiturageSoloProfile;
+
+    /** Recto CNI (chauffeur employé d'une société de transport — distinct du covoiturage solo). */
+    @Column(name = "chauffeur_id_front_url")
+    private String chauffeurIdFrontUrl;
+
+    /** Verso CNI. */
+    @Column(name = "chauffeur_id_back_url")
+    private String chauffeurIdBackUrl;
+
+    /** Recto permis de conduire (chauffeur société). */
+    @Column(name = "chauffeur_license_front_url")
+    private String chauffeurLicenseFrontUrl;
+
+    /** Verso permis de conduire. */
+    @Column(name = "chauffeur_license_back_url")
+    private String chauffeurLicenseBackUrl;
 
 }

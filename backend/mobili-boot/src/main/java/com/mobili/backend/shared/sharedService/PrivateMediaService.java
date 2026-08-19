@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.admincom.repository.AdminComMessageRepository;
 import com.mobili.backend.module.claim.repository.ClaimRepository;
+import com.mobili.backend.module.partner.entity.Partner;
+import com.mobili.backend.module.partner.repository.PartnerRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
@@ -32,6 +34,7 @@ public class PrivateMediaService {
     private final TripRepository tripRepository;
     private final ClaimRepository claimRepository;
     private final AdminComMessageRepository adminComMessageRepository;
+    private final PartnerRepository partnerRepository;
 
     @Value("${mobili.backend.upload.root-directory}")
     private String rootDirectory;
@@ -46,11 +49,13 @@ public class PrivateMediaService {
     public PrivateMediaService(UserRepository userRepository,
             com.mobili.backend.module.trip.repository.TripRepository tripRepository,
             ClaimRepository claimRepository,
-            AdminComMessageRepository adminComMessageRepository) {
+            AdminComMessageRepository adminComMessageRepository,
+            PartnerRepository partnerRepository) {
         this.userRepository = userRepository;
         this.tripRepository = tripRepository;
         this.claimRepository = claimRepository;
         this.adminComMessageRepository = adminComMessageRepository;
+        this.partnerRepository = partnerRepository;
     }
 
     /**
@@ -176,14 +181,66 @@ public class PrivateMediaService {
         if (matchesNormalized(relative, u.getCovoiturageIdFrontUrl())
                 || matchesNormalized(relative, u.getCovoiturageIdBackUrl())
                 || matchesNormalized(relative, u.getCovoiturageDriverPhotoUrl())
-                || matchesNormalized(relative, u.getCovoiturageVehiclePhotoUrl())) {
+                || matchesNormalized(relative, u.getCovoiturageVehiclePhotoUrl())
+                || matchesNormalized(relative, u.getCovoiturageLicenseFrontUrl())
+                || matchesNormalized(relative, u.getCovoiturageLicenseBackUrl())
+                || matchesNormalized(relative, u.getCovoiturageGreyCardFrontUrl())
+                || matchesNormalized(relative, u.getCovoiturageGreyCardBackUrl())) {
             return true;
+        }
+        // Documents chauffeur société (CNI + permis) : le chauffeur lui-même, ou toute personne
+        // de la même société (dirigeant propriétaire, ou gare/employé rattaché à cette société —
+        // même périmètre que qui peut créer/gérer ce chauffeur, voir PartnerChauffeurController).
+        if (relative.startsWith(UploadService.FOLDER_SENSITIVE_CHAUFFEUR_IDS + "/")
+                || relative.startsWith(UploadService.FOLDER_SENSITIVE_CHAUFFEUR_LICENSE + "/")) {
+            return mayAccessChauffeurDocument(u, relative);
+        }
+        // Carte de transporteur société : le dirigeant propriétaire ou un employé (gare) de la
+        // même société.
+        if (relative.startsWith(UploadService.FOLDER_SENSITIVE_PARTNER_LEGAL + "/")) {
+            return mayAccessPartnerLegalDocument(u, relative);
         }
         // Tout utilisateur authentifié peut voir la photo du CONDUCTEUR (pas la
         // CNI) d'un trajet covoiturage publié — même logique d'ouverture que la
         // photo du véhicule, déjà publique sur la carte du trajet. Ça permet à
         // un passager de voir qui va le conduire avant de réserver.
         return isDriverPhotoOfAnyCovoiturageTrip(relative);
+    }
+
+    private boolean mayAccessChauffeurDocument(User principalUser, String relative) {
+        User chauffeur = userRepository.findByChauffeurDocumentPath(relative).orElse(null);
+        if (chauffeur == null) {
+            return false;
+        }
+        if (chauffeur.getId().equals(principalUser.getId())) {
+            return true;
+        }
+        Long chauffeurPartnerId = chauffeur.getEmployerPartner() != null
+                ? chauffeur.getEmployerPartner().getId()
+                : null;
+        if (chauffeurPartnerId == null) {
+            return false;
+        }
+        return chauffeurPartnerId.equals(samePartnerCompanyId(principalUser));
+    }
+
+    private boolean mayAccessPartnerLegalDocument(User principalUser, String relative) {
+        Partner partner = partnerRepository.findByTransportCardPath(relative).orElse(null);
+        if (partner == null) {
+            return false;
+        }
+        return partner.getId().equals(samePartnerCompanyId(principalUser));
+    }
+
+    /** ID de la société (dirigeant propriétaire, ou société employeuse si gare/employé) — {@code null} sinon. */
+    private Long samePartnerCompanyId(User u) {
+        if (u.getPartner() != null) {
+            return u.getPartner().getId();
+        }
+        if (u.getEmployerPartner() != null) {
+            return u.getEmployerPartner().getId();
+        }
+        return null;
     }
 
     private boolean isDriverPhotoOfAnyCovoiturageTrip(String relative) {

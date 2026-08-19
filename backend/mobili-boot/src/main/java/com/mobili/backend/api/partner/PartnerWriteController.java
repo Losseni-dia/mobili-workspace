@@ -40,11 +40,14 @@ public class PartnerWriteController {
             @RequestPart(value = "logo", required = false) MultipartFile logoFile,
             @RequestPart(value = "kycFront", required = false) MultipartFile kycFrontFile,
             @RequestPart(value = "kycBack", required = false) MultipartFile kycBackFile,
+            @RequestPart(value = "transportCardFront", required = false) MultipartFile transportCardFrontFile,
+            @RequestPart(value = "transportCardBack", required = false) MultipartFile transportCardBackFile,
             @AuthenticationPrincipal UserPrincipal principal) {
 
         Partner entity = partenaireMapper.toEntity(dto);
 
-        Partner savedPartner = partenaireService.save(entity, logoFile, kycFrontFile, kycBackFile, principal);
+        Partner savedPartner = partenaireService.save(entity, logoFile, kycFrontFile, kycBackFile,
+                transportCardFrontFile, transportCardBackFile, principal);
 
         return partenaireMapper.toProfileDto(savedPartner);
     }
@@ -57,13 +60,16 @@ public class PartnerWriteController {
             @RequestPart(value = "logo", required = false) MultipartFile logoFile,
             @RequestPart(value = "kycFront", required = false) MultipartFile kycFrontFile,
             @RequestPart(value = "kycBack", required = false) MultipartFile kycBackFile,
+            @RequestPart(value = "transportCardFront", required = false) MultipartFile transportCardFrontFile,
+            @RequestPart(value = "transportCardBack", required = false) MultipartFile transportCardBackFile,
             @AuthenticationPrincipal UserPrincipal principal) {
 
         dto.setId(id);
         Partner entity = partenaireMapper.toEntity(dto);
 
         return partenaireMapper.toProfileDto(
-                partenaireService.save(entity, logoFile, kycFrontFile, kycBackFile, principal));
+                partenaireService.save(entity, logoFile, kycFrontFile, kycBackFile,
+                        transportCardFrontFile, transportCardBackFile, principal));
     }
 
     @PatchMapping("/{id}/toggle")

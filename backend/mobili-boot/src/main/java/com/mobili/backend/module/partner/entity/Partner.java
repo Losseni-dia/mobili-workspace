@@ -40,6 +40,14 @@ public class Partner extends AbstractEntity {
     @Column(name = "kyc_back_url")
     private String kycBackUrl;
 
+    /** Recto carte de transporteur (licence professionnelle de la société, distincte de la CNI du dirigeant). */
+    @Column(name = "transport_card_front_url")
+    private String transportCardFrontUrl;
+
+    /** Verso carte de transporteur. */
+    @Column(name = "transport_card_back_url")
+    private String transportCardBackUrl;
+
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 

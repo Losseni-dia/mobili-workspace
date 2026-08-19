@@ -46,8 +46,13 @@ public class PartnerChauffeurController {
     public PartnerChauffeurListItem create(
             @RequestPart("chauffeur") @Valid PartnerChauffeurCreateRequest body,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @RequestPart("idFront") MultipartFile idFront,
+            @RequestPart("idBack") MultipartFile idBack,
+            @RequestPart("licenseFront") MultipartFile licenseFront,
+            @RequestPart("licenseBack") MultipartFile licenseBack,
             org.springframework.security.core.Authentication authentication) {
-        return partnerChauffeurService.registerCompanyChauffeur(authentication.getPrincipal(), body, avatar);
+        return partnerChauffeurService.registerCompanyChauffeur(authentication.getPrincipal(), body, avatar,
+                idFront, idBack, licenseFront, licenseBack);
     }
 
     @PatchMapping("/{id}/affiliation")

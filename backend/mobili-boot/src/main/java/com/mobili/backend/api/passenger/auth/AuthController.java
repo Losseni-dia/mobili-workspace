@@ -187,9 +187,12 @@ public class AuthController {
             @RequestPart(value = "logo", required = false) MultipartFile logo,
             @RequestPart("kycFront") MultipartFile kycFront,
             @RequestPart("kycBack") MultipartFile kycBack,
+            @RequestPart("transportCardFront") MultipartFile transportCardFront,
+            @RequestPart("transportCardBack") MultipartFile transportCardBack,
             HttpServletResponse response) {
 
-        User saved = userService.registerCompanyPublic(dto, logo, kycFront, kycBack);
+        User saved = userService.registerCompanyPublic(dto, logo, kycFront, kycBack,
+                transportCardFront, transportCardBack);
         String token = jwtService.generateToken(saved);
         refreshTokenCookieWriter.write(response, saved);
         loginEventRepository.save(new LoginEvent(saved.getId(), saved.getLogin()));
@@ -205,9 +208,14 @@ public class AuthController {
             @RequestPart("idFront") MultipartFile idFront,
             @RequestPart("idBack") MultipartFile idBack,
             @RequestPart("driverPhoto") MultipartFile driverPhoto,
-            @RequestPart("vehiclePhoto") MultipartFile vehiclePhoto) {
+            @RequestPart("vehiclePhoto") MultipartFile vehiclePhoto,
+            @RequestPart("licenseFront") MultipartFile licenseFront,
+            @RequestPart("licenseBack") MultipartFile licenseBack,
+            @RequestPart("greyCardFront") MultipartFile greyCardFront,
+            @RequestPart("greyCardBack") MultipartFile greyCardBack) {
 
-        User saved = userService.registerCarpoolChauffeur(dto, idFront, idBack, driverPhoto, vehiclePhoto);
+        User saved = userService.registerCarpoolChauffeur(dto, idFront, idBack, driverPhoto, vehiclePhoto,
+                licenseFront, licenseBack, greyCardFront, greyCardBack);
         return userMapper.toProfileDto(saved);
     }
 

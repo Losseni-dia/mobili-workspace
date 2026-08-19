@@ -31,11 +31,23 @@ public class UploadService {
 
     public static final String FOLDER_SENSITIVE_COVOITURAGE_VEHICLES = "sensitive/covoiturage/vehicles";
 
+    /** Permis de conduire — chauffeur covoiturage. */
+    public static final String FOLDER_SENSITIVE_COVOITURAGE_LICENSE = "sensitive/covoiturage/license";
+
+    /** Photo carte grise — chauffeur covoiturage (distinct de covoiturageGreyCardNumber, le numéro seul). */
+    public static final String FOLDER_SENSITIVE_COVOITURAGE_GREYCARD = "sensitive/covoiturage/greycard";
+
     /**
-     * Pièces légales partenaire (KBIS, etc.) — prévoir une colonne URL sur {@link com.mobili.backend.module.partner.entity.Partner}
-     * et le même contrôle d’accès que les autres préfixes {@code sensitive/}.
+     * Pièces légales partenaire (carte de transporteur, KBIS, etc.) — même contrôle d’accès que
+     * les autres préfixes {@code sensitive/}, voir {@link com.mobili.backend.shared.sharedService.PrivateMediaService}.
      */
     public static final String FOLDER_SENSITIVE_PARTNER_LEGAL = "sensitive/partners/legal";
+
+    /** CNI — chauffeur employé d'une société (distinct du covoiturage solo). */
+    public static final String FOLDER_SENSITIVE_CHAUFFEUR_IDS = "sensitive/chauffeurs/ids";
+
+    /** Permis de conduire — chauffeur employé d'une société. */
+    public static final String FOLDER_SENSITIVE_CHAUFFEUR_LICENSE = "sensitive/chauffeurs/license";
 
     /** Pièces jointes (preuves) sur les messages support/admin-com. */
     public static final String FOLDER_SENSITIVE_SUPPORT_ATTACHMENTS = "sensitive/support/attachments";

@@ -36,4 +36,8 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
             "WHERE created_at >= :from AND created_at <= :to GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
     java.util.List<Object[]> dailyPartnersRegisteredBetween(@Param("from") java.time.LocalDateTime from,
             @Param("to") java.time.LocalDateTime to);
+
+    /** Contrôle d'accès pièce jointe — voir PrivateMediaService.mayAccess. */
+    @Query("SELECT p FROM Partner p WHERE p.transportCardFrontUrl = :path OR p.transportCardBackUrl = :path")
+    Optional<Partner> findByTransportCardPath(@Param("path") String path);
 }

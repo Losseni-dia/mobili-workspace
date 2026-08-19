@@ -200,7 +200,8 @@ public class PartnerService {
      */
     @Transactional
     public Partner createPartnerForOwner(User owner, PartnerRegisterDTO dto, MultipartFile logoFile,
-            MultipartFile kycFrontFile, MultipartFile kycBackFile) {
+            MultipartFile kycFrontFile, MultipartFile kycBackFile,
+            MultipartFile transportCardFrontFile, MultipartFile transportCardBackFile) {
         if (owner == null || owner.getId() == null) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Utilisateur invalide pour la société.");
         }
@@ -222,6 +223,11 @@ public class PartnerService {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
                     "Les photos recto et verso de la carte d'identité du gérant sont obligatoires.");
         }
+        if (transportCardFrontFile == null || transportCardFrontFile.isEmpty()
+                || transportCardBackFile == null || transportCardBackFile.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso de la carte de transporteur sont obligatoires.");
+        }
 
         Partner partenaire = partnerMapper.toEntity(dto);
         partenaire.setOwner(owner);
@@ -232,6 +238,7 @@ public class PartnerService {
 
         handleLogoUpload(partenaire, logoFile);
         handleKycUpload(partenaire, kycFrontFile, kycBackFile);
+        handleTransportCardUpload(partenaire, transportCardFrontFile, transportCardBackFile);
 
         if (partenaire.getRegistrationCode() == null || partenaire.getRegistrationCode().isBlank()) {
             partenaire.setRegistrationCode(generateUniqueRegistrationCode());
@@ -243,12 +250,19 @@ public class PartnerService {
 
     @Transactional
     public Partner save(Partner partenaire, MultipartFile logoFile, UserPrincipal principal) {
-        return save(partenaire, logoFile, null, null, principal);
+        return save(partenaire, logoFile, null, null, null, null, principal);
     }
 
     @Transactional
     public Partner save(Partner partenaire, MultipartFile logoFile, MultipartFile kycFrontFile,
             MultipartFile kycBackFile, UserPrincipal principal) {
+        return save(partenaire, logoFile, kycFrontFile, kycBackFile, null, null, principal);
+    }
+
+    @Transactional
+    public Partner save(Partner partenaire, MultipartFile logoFile, MultipartFile kycFrontFile,
+            MultipartFile kycBackFile, MultipartFile transportCardFrontFile, MultipartFile transportCardBackFile,
+            UserPrincipal principal) {
         if (partenaire.getId() == null) {
             User user = userRepository.findByLogin(principal.getUsername())
                     .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "User non trouvé"));
@@ -258,7 +272,8 @@ public class PartnerService {
             dto.setEmail(partenaire.getEmail());
             dto.setPhone(partenaire.getPhone());
             dto.setBusinessNumber(partenaire.getBusinessNumber());
-            return createPartnerForOwner(user, dto, logoFile, kycFrontFile, kycBackFile);
+            return createPartnerForOwner(user, dto, logoFile, kycFrontFile, kycBackFile,
+                    transportCardFrontFile, transportCardBackFile);
         }
 
         return partenaireRepository.findById(partenaire.getId())
@@ -285,6 +300,7 @@ public class PartnerService {
 
                     handleLogoUpload(existing, logoFile);
                     handleKycUpload(existing, kycFrontFile, kycBackFile);
+                    handleTransportCardUpload(existing, transportCardFrontFile, transportCardBackFile);
 
                     // Resoumission après rejet : repasse en attente, motif effacé.
                     if (existing
@@ -331,6 +347,16 @@ public class PartnerService {
         }
         if (back != null && !back.isEmpty()) {
             partner.setKycBackUrl(uploadService.saveImage(back, "partners/kyc"));
+        }
+    }
+
+    /** Carte de transporteur — image ou PDF, dossier sensible (contrairement à la CNI dirigeant ci-dessus, publique par historique). */
+    private void handleTransportCardUpload(Partner partner, MultipartFile front, MultipartFile back) {
+        if (front != null && !front.isEmpty()) {
+            partner.setTransportCardFrontUrl(uploadService.saveAttachment(front, UploadService.FOLDER_SENSITIVE_PARTNER_LEGAL));
+        }
+        if (back != null && !back.isEmpty()) {
+            partner.setTransportCardBackUrl(uploadService.saveAttachment(back, UploadService.FOLDER_SENSITIVE_PARTNER_LEGAL));
         }
     }
 

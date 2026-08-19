@@ -59,9 +59,14 @@ public class CovoiturageProfileController {
             @RequestPart("idBack") MultipartFile idBack,
             @RequestPart("driverPhoto") MultipartFile driverPhoto,
             @RequestPart("vehiclePhoto") MultipartFile vehiclePhoto,
+            @RequestPart("licenseFront") MultipartFile licenseFront,
+            @RequestPart("licenseBack") MultipartFile licenseBack,
+            @RequestPart("greyCardFront") MultipartFile greyCardFront,
+            @RequestPart("greyCardBack") MultipartFile greyCardBack,
             @AuthenticationPrincipal UserPrincipal principal) {
         User updated = userService.applyAsCovoiturageDriver(
-                principal.getUser().getId(), dto, idFront, idBack, driverPhoto, vehiclePhoto);
+                principal.getUser().getId(), dto, idFront, idBack, driverPhoto, vehiclePhoto,
+                licenseFront, licenseBack, greyCardFront, greyCardBack);
         ProfileDTO profileDTO = userMapper.toProfileDto(updated);
         covoiturageProfileEnricher.enrich(profileDTO, updated);
         return profileDTO;

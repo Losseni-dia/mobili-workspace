@@ -175,7 +175,9 @@ public class UserService {
     public User registerCompanyPublic(RegisterCompanyPublicDTO dto,
             org.springframework.web.multipart.MultipartFile logo,
             org.springframework.web.multipart.MultipartFile kycFront,
-            org.springframework.web.multipart.MultipartFile kycBack) {
+            org.springframework.web.multipart.MultipartFile kycBack,
+            org.springframework.web.multipart.MultipartFile transportCardFront,
+            org.springframework.web.multipart.MultipartFile transportCardBack) {
         // Normalisation AVANT vérification et sauvegarde — même casse partout,
         // sinon "Test"/"test" ou " test " passeraient pour des comptes
         // différents alors qu'ils doivent être bloqués comme doublons.
@@ -228,7 +230,8 @@ public class UserService {
             pr.setBusinessNumber(normalizedBusinessNumber);
         }
 
-        var createdPartner = partnerService.createPartnerForOwner(user, pr, logo, kycFront, kycBack);
+        var createdPartner = partnerService.createPartnerForOwner(user, pr, logo, kycFront, kycBack,
+                transportCardFront, transportCardBack);
         inboxNotificationService.notifyAdmins(
                 "Nouvelle société inscrite",
                 "« " + pr.getName() + " » vient de s'inscrire et attend votre approbation.",
@@ -251,7 +254,11 @@ public class UserService {
             MultipartFile idFront,
             MultipartFile idBack,
             MultipartFile driverPhoto,
-            MultipartFile vehiclePhoto) {
+            MultipartFile vehiclePhoto,
+            MultipartFile licenseFront,
+            MultipartFile licenseBack,
+            MultipartFile greyCardFront,
+            MultipartFile greyCardBack) {
         if (idFront == null || idFront.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
                     "Le recto de la pièce d'identité est obligatoire.");
@@ -265,6 +272,14 @@ public class UserService {
         }
         if (vehiclePhoto == null || vehiclePhoto.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du véhicule est obligatoire.");
+        }
+        if (licenseFront == null || licenseFront.isEmpty() || licenseBack == null || licenseBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso du permis de conduire sont obligatoires.");
+        }
+        if (greyCardFront == null || greyCardFront.isEmpty() || greyCardBack == null || greyCardBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso de la carte grise sont obligatoires.");
         }
         if (userRepository.existsByEmailIgnoreCase(dto.getEmail())) {
             throw new MobiliException(MobiliErrorCode.DUPLICATE_RESOURCE, "Cet email est déjà utilisé.");
@@ -299,6 +314,14 @@ public class UserService {
         user.setCovoiturageDriverPhotoUrl(driverPath);
         String vehPath = uploadService.saveImage(vehiclePhoto, UploadService.FOLDER_SENSITIVE_COVOITURAGE_VEHICLES);
         user.setCovoiturageVehiclePhotoUrl(vehPath);
+        user.setCovoiturageLicenseFrontUrl(
+                uploadService.saveAttachment(licenseFront, UploadService.FOLDER_SENSITIVE_COVOITURAGE_LICENSE));
+        user.setCovoiturageLicenseBackUrl(
+                uploadService.saveAttachment(licenseBack, UploadService.FOLDER_SENSITIVE_COVOITURAGE_LICENSE));
+        user.setCovoiturageGreyCardFrontUrl(
+                uploadService.saveAttachment(greyCardFront, UploadService.FOLDER_SENSITIVE_COVOITURAGE_GREYCARD));
+        user.setCovoiturageGreyCardBackUrl(
+                uploadService.saveAttachment(greyCardBack, UploadService.FOLDER_SENSITIVE_COVOITURAGE_GREYCARD));
         user.setCovoiturageKycExpiringNotifiedFor(null);
         user.setCovoiturageKycExpiredNotified(false);
         user.setCovoiturageSoloProfile(true);
@@ -389,7 +412,11 @@ public class UserService {
             MultipartFile idFront,
             MultipartFile idBack,
             MultipartFile driverPhoto,
-            MultipartFile vehiclePhoto) {
+            MultipartFile vehiclePhoto,
+            MultipartFile licenseFront,
+            MultipartFile licenseBack,
+            MultipartFile greyCardFront,
+            MultipartFile greyCardBack) {
         if (idFront == null || idFront.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
                     "Le recto de la pièce d'identité est obligatoire.");
@@ -403,6 +430,14 @@ public class UserService {
         }
         if (vehiclePhoto == null || vehiclePhoto.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "La photo du véhicule est obligatoire.");
+        }
+        if (licenseFront == null || licenseFront.isEmpty() || licenseBack == null || licenseBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso du permis de conduire sont obligatoires.");
+        }
+        if (greyCardFront == null || greyCardFront.isEmpty() || greyCardBack == null || greyCardBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso de la carte grise sont obligatoires.");
         }
 
         User user = findById(userId);
@@ -425,6 +460,14 @@ public class UserService {
                 uploadService.saveImage(driverPhoto, UploadService.FOLDER_SENSITIVE_COVOITURAGE_DRIVERS));
         user.setCovoiturageVehiclePhotoUrl(
                 uploadService.saveImage(vehiclePhoto, UploadService.FOLDER_SENSITIVE_COVOITURAGE_VEHICLES));
+        user.setCovoiturageLicenseFrontUrl(
+                uploadService.saveAttachment(licenseFront, UploadService.FOLDER_SENSITIVE_COVOITURAGE_LICENSE));
+        user.setCovoiturageLicenseBackUrl(
+                uploadService.saveAttachment(licenseBack, UploadService.FOLDER_SENSITIVE_COVOITURAGE_LICENSE));
+        user.setCovoiturageGreyCardFrontUrl(
+                uploadService.saveAttachment(greyCardFront, UploadService.FOLDER_SENSITIVE_COVOITURAGE_GREYCARD));
+        user.setCovoiturageGreyCardBackUrl(
+                uploadService.saveAttachment(greyCardBack, UploadService.FOLDER_SENSITIVE_COVOITURAGE_GREYCARD));
         user.setCovoiturageKycExpiringNotifiedFor(null);
         user.setCovoiturageKycExpiredNotified(false);
         user.setCovoiturageSoloProfile(true);
@@ -465,11 +508,20 @@ public class UserService {
      * partenaire).
      */
     @Transactional
-    public User registerCompanyChauffeur(Partner employer, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
+    public User registerCompanyChauffeur(Partner employer, PartnerChauffeurCreateRequest dto, MultipartFile avatar,
+            MultipartFile idFront, MultipartFile idBack, MultipartFile licenseFront, MultipartFile licenseBack) {
         if (employer.isCovoiturageSoloPool()) {
             throw new MobiliException(
                     MobiliErrorCode.VALIDATION_ERROR,
                     "Opération interdite pour le partenaire piscine covoiturage.");
+        }
+        if (idFront == null || idFront.isEmpty() || idBack == null || idBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso de la carte d'identité du chauffeur sont obligatoires.");
+        }
+        if (licenseFront == null || licenseFront.isEmpty() || licenseBack == null || licenseBack.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Les photos recto et verso du permis de conduire sont obligatoires.");
         }
         String email = dto.email() != null ? dto.email().trim().toLowerCase() : null;
         String login = dto.login().trim();
@@ -505,6 +557,12 @@ public class UserService {
             String path = uploadService.saveImage(avatar, "users");
             u.setAvatarUrl(path);
         }
+        u.setChauffeurIdFrontUrl(uploadService.saveAttachment(idFront, UploadService.FOLDER_SENSITIVE_CHAUFFEUR_IDS));
+        u.setChauffeurIdBackUrl(uploadService.saveAttachment(idBack, UploadService.FOLDER_SENSITIVE_CHAUFFEUR_IDS));
+        u.setChauffeurLicenseFrontUrl(
+                uploadService.saveAttachment(licenseFront, UploadService.FOLDER_SENSITIVE_CHAUFFEUR_LICENSE));
+        u.setChauffeurLicenseBackUrl(
+                uploadService.saveAttachment(licenseBack, UploadService.FOLDER_SENSITIVE_CHAUFFEUR_LICENSE));
         return userRepository.save(u);
     }
 

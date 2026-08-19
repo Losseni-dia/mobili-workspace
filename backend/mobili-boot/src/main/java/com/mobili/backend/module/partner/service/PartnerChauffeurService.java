@@ -182,9 +182,10 @@ public class PartnerChauffeurService {
     }
 
     public PartnerChauffeurListItem registerCompanyChauffeur(
-            Object principal, PartnerChauffeurCreateRequest dto, MultipartFile avatar) {
+            Object principal, PartnerChauffeurCreateRequest dto, MultipartFile avatar,
+            MultipartFile idFront, MultipartFile idBack, MultipartFile licenseFront, MultipartFile licenseBack) {
     partnerService.requireDirigeantOuGareDeLaCompagnie(principal);
     Partner comp = partnerService.getCurrentPartnerForOperations();
-    return toItem(userService.registerCompanyChauffeur(comp, dto, avatar));
+    return toItem(userService.registerCompanyChauffeur(comp, dto, avatar, idFront, idBack, licenseFront, licenseBack));
 }
 }

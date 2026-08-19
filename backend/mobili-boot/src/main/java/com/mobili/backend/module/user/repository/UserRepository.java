@@ -153,4 +153,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
                         "GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC", nativeQuery = true)
         List<Object[]> dailyCovoiturageRegistrationsBetween(@Param("from") LocalDateTime from,
                         @Param("to") LocalDateTime to);
+
+        /** Contrôle d'accès pièce jointe (CNI/permis chauffeur société) — voir PrivateMediaService.mayAccess. */
+        @Query("SELECT u FROM User u WHERE u.chauffeurIdFrontUrl = :path OR u.chauffeurIdBackUrl = :path "
+                        + "OR u.chauffeurLicenseFrontUrl = :path OR u.chauffeurLicenseBackUrl = :path")
+        Optional<User> findByChauffeurDocumentPath(@Param("path") String path);
 }
