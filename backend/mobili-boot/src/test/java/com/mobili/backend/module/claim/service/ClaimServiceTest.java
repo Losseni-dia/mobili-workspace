@@ -173,7 +173,7 @@ class ClaimServiceTest {
     }
 
     @Test
-    void updateStatus_toInProgress_doesNotSetResolvedAtAndDoesNotNotify() {
+    void updateStatus_toInProgress_doesNotSetResolvedAtButNotifies() {
         Claim claim = new Claim();
         claim.setStatus(ClaimStatus.RECEIVED);
         when(claimRepository.findById(5L)).thenReturn(Optional.of(claim));
@@ -182,6 +182,20 @@ class ClaimServiceTest {
         ClaimResponse response = claimService.updateStatus(5L, ClaimStatus.IN_PROGRESS, null, null);
 
         assertNull(response.resolvedAt());
+        // Notification à chaque changement de statut désormais, pas seulement à la clôture
+        // (feedback testeurs : l'auteur doit suivre l'avancement, pas seulement le résultat final).
+        verify(inboxNotificationService).notifyUser(any(), anyString(), anyString(), any(), any(Claim.class));
+    }
+
+    @Test
+    void updateStatus_sameStatusAgain_doesNotNotifyTwice() {
+        Claim claim = new Claim();
+        claim.setStatus(ClaimStatus.IN_PROGRESS);
+        when(claimRepository.findById(5L)).thenReturn(Optional.of(claim));
+        when(claimRepository.save(any(Claim.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        claimService.updateStatus(5L, ClaimStatus.IN_PROGRESS, "note interne", null);
+
         verify(inboxNotificationService, never()).notifyUser(any(), anyString(), anyString(), any(), any(Claim.class));
     }
 

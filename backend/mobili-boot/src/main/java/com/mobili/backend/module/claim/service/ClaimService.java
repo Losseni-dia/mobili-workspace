@@ -147,6 +147,7 @@ public class ClaimService {
         Claim claim = claimRepository.findById(claimId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réclamation introuvable : " + claimId));
 
+        ClaimStatus previousStatus = claim.getStatus();
         claim.setStatus(newStatus);
         if (adminNote != null && !adminNote.isBlank()) {
             claim.setAdminNote(adminNote.trim());
@@ -163,20 +164,44 @@ public class ClaimService {
         Claim saved = claimRepository.save(claim);
         log.info("📋 Réclamation #{} passée à {}", saved.getId(), newStatus);
 
-        // Notification de clôture uniquement — pas de bruit à chaque changement de statut
-        // intermédiaire (ex. RECEIVED → IN_PROGRESS). Même appel que
-        // PartnerService.rejectPartner (notifyUser avec le message rédigé par l'admin).
-        if (isClosing) {
-            String title = newStatus == ClaimStatus.RESOLVED ? "Réclamation traitée ✅" : "Réclamation rejetée";
-            String body = saved.getResolutionMessage() != null
-                    ? saved.getResolutionMessage()
-                    : (newStatus == ClaimStatus.RESOLVED
-                            ? "Votre réclamation a été traitée."
-                            : "Votre réclamation a été rejetée.");
+        // Notification à CHAQUE changement de statut (pas seulement à la clôture) — le
+        // passager suit ainsi l'avancement (reçue → en cours → traitée/rejetée), avec un lien
+        // vers la réclamation concernée (InboxNotificationService.notifyUser(..., claim) —
+        // claimId déjà exposé côté DTO, voir toDto/InboxNotificationResponseDTO). Pas de
+        // notification si le statut n'a en fait pas changé (ex. l'admin resauvegarde une note
+        // sans changer le statut).
+        if (previousStatus != newStatus) {
+            String title = statusNotificationTitle(newStatus);
+            String body = isClosing
+                    ? (saved.getResolutionMessage() != null
+                            ? saved.getResolutionMessage()
+                            : statusNotificationBody(newStatus))
+                    : statusNotificationBody(newStatus);
             inboxNotificationService.notifyUser(saved.getUser(), title, body, MobiliNotificationType.CLAIM_STATUS_UPDATED, saved);
         }
 
         return toResponse(saved);
+    }
+
+    /** Titre de notification par statut — jamais le nom brut de l'enum (toujours du français). */
+    private String statusNotificationTitle(ClaimStatus status) {
+        return switch (status) {
+            case RECEIVED -> "Réclamation reçue";
+            case IN_PROGRESS -> "Réclamation en cours de traitement";
+            case RESOLVED -> "Réclamation traitée ✅";
+            case REJECTED -> "Réclamation rejetée";
+        };
+    }
+
+    /** Corps par défaut par statut — utilisé pour les statuts intermédiaires, et en repli si
+     * l'admin n'a pas rédigé de message de clôture pour RESOLVED/REJECTED. */
+    private String statusNotificationBody(ClaimStatus status) {
+        return switch (status) {
+            case RECEIVED -> "Votre réclamation a bien été reçue et sera examinée par notre équipe.";
+            case IN_PROGRESS -> "Notre équipe a commencé à traiter votre réclamation.";
+            case RESOLVED -> "Votre réclamation a été traitée.";
+            case REJECTED -> "Votre réclamation a été rejetée.";
+        };
     }
 
     private ClaimResponse toResponse(Claim claim) {

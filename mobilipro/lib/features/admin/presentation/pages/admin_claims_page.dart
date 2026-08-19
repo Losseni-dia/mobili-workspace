@@ -1,10 +1,16 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:mobilipro/core/network/api_client.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/private_network_image.dart';
 import '../widgets/admin_common_widgets.dart';
 import 'admin_refunds_page.dart' show CancelBookingResult;
 
@@ -48,6 +54,9 @@ class AdminClaim {
     this.adminNote,
     this.resolutionMessage,
     this.resolvedAt,
+    this.attachmentPath,
+    this.attachmentOriginalName,
+    this.attachmentContentType,
   });
 
   final int id;
@@ -60,6 +69,13 @@ class AdminClaim {
   final String? resolutionMessage;
   final DateTime createdAt;
   final DateTime? resolvedAt;
+  final String? attachmentPath;
+  final String? attachmentOriginalName;
+  final String? attachmentContentType;
+
+  bool get isPdfAttachment =>
+      (attachmentContentType?.contains('pdf') ?? false) ||
+      (attachmentPath?.toLowerCase().endsWith('.pdf') ?? false);
 
   factory AdminClaim.fromJson(Map<String, dynamic> j) => AdminClaim(
         id: (j['id'] as num).toInt(),
@@ -76,6 +92,9 @@ class AdminClaim {
         createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
         resolvedAt:
             j['resolvedAt'] != null ? DateTime.tryParse(j['resolvedAt'] as String) : null,
+        attachmentPath: j['attachmentPath'] as String?,
+        attachmentOriginalName: j['attachmentOriginalName'] as String?,
+        attachmentContentType: j['attachmentContentType'] as String?,
       );
 }
 
@@ -345,11 +364,21 @@ class _ClaimCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 4),
-              Text(
-                claim.message,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: AppColors.gray600),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      claim.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: AppColors.gray600),
+                    ),
+                  ),
+                  if (claim.attachmentPath != null) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.attach_file_rounded, size: 14, color: AppColors.gray400),
+                  ],
+                ],
               ),
               const SizedBox(height: 4),
               Text(
@@ -414,6 +443,32 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     _noteCtrl.dispose();
     _resolutionCtrl.dispose();
     super.dispose();
+  }
+
+  /// Ouvre une preuve PDF via le partage système — `/media/private` exige un header
+  /// Authorization, donc pas de lien externe direct : on télécharge les octets avec le Dio
+  /// authentifié puis on délègue l'ouverture au OS (même pattern que partner_gare_com_page.dart).
+  Future<void> _openPdfAttachment() async {
+    final path = widget.claim.attachmentPath;
+    if (path == null) return;
+    try {
+      final res = await ApiClient.instance.dio.get<List<int>>(
+        '/media/private',
+        queryParameters: {'rel': path},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final dir = await getTemporaryDirectory();
+      final name = widget.claim.attachmentOriginalName ?? 'preuve.pdf';
+      final file = File('${dir.path}/$name');
+      await file.writeAsBytes(res.data!);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Impossible d\'ouvrir la pièce jointe : $e'),
+            backgroundColor: AppColors.danger));
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -602,6 +657,44 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.gray500)),
             const SizedBox(height: 4),
             Text(claim.message, style: const TextStyle(fontSize: 13, color: AppColors.gray700)),
+            if (claim.attachmentPath != null) ...[
+              const SizedBox(height: 10),
+              const Text('Preuve jointe',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.gray500)),
+              const SizedBox(height: 6),
+              if (claim.isPdfAttachment)
+                GestureDetector(
+                  onTap: _openPdfAttachment,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.mobiliBlueFog,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.picture_as_pdf_rounded, size: 16, color: AppColors.mobiliBlue),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(claim.attachmentOriginalName ?? 'Pièce jointe',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, color: AppColors.mobiliBlueDeep)),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 180,
+                    height: 180,
+                    child: PrivateNetworkImage(relativePath: claim.attachmentPath!),
+                  ),
+                ),
+            ],
             if (claim.details.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Text('Détails',

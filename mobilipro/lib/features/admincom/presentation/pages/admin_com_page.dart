@@ -1,9 +1,15 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
+import '../../../../shared/widgets/private_network_image.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODÈLES
@@ -54,12 +60,22 @@ class AdminComMessage {
     required this.authorName,
     required this.body,
     required this.createdAtFormatted,
+    required this.attachmentPath,
+    required this.attachmentOriginalName,
+    required this.attachmentContentType,
   });
   final int id;
   final int authorId;
   final String authorName;
   final String body;
   final String createdAtFormatted;
+  final String? attachmentPath;
+  final String? attachmentOriginalName;
+  final String? attachmentContentType;
+
+  bool get isPdfAttachment =>
+      (attachmentContentType?.contains('pdf') ?? false) ||
+      (attachmentPath?.toLowerCase().endsWith('.pdf') ?? false);
 
   factory AdminComMessage.fromJson(Map<String, dynamic> j) => AdminComMessage(
     id: (j['id'] as num).toInt(),
@@ -67,6 +83,9 @@ class AdminComMessage {
     authorName: j['authorName'] as String? ?? '—',
     body: j['body'] as String? ?? '',
     createdAtFormatted: j['createdAtFormatted'] as String? ?? '',
+    attachmentPath: j['attachmentPath'] as String?,
+    attachmentOriginalName: j['attachmentOriginalName'] as String?,
+    attachmentContentType: j['attachmentContentType'] as String?,
   );
 }
 
@@ -477,6 +496,31 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
     });
   }
 
+  /// Ouvre une pièce jointe PDF via le partage système — `/media/private` exige un header
+  /// Authorization, donc pas de lien externe direct : on télécharge les octets avec le Dio
+  /// authentifié puis on délègue l'ouverture au OS (même pattern que partner_gare_com_page.dart).
+  Future<void> _openPdfAttachment(AdminComMessage m) async {
+    if (m.attachmentPath == null) return;
+    try {
+      final res = await ApiClient.instance.dio.get<List<int>>(
+        '/media/private',
+        queryParameters: {'rel': m.attachmentPath},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final dir = await getTemporaryDirectory();
+      final name = m.attachmentOriginalName ?? 'piece-jointe.pdf';
+      final file = File('${dir.path}/$name');
+      await file.writeAsBytes(res.data!);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Impossible d\'ouvrir la pièce jointe : $e'),
+            backgroundColor: AppColors.danger));
+      }
+    }
+  }
+
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
@@ -623,6 +667,7 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
                     itemBuilder: (_, i) => _MsgBubble(
                       message: messages[i],
                       isMe: messages[i].authorId == myId,
+                      onOpenPdfAttachment: () => _openPdfAttachment(messages[i]),
                     ),
                   ),
                 );
@@ -1118,9 +1163,14 @@ class _TypeFilterChip extends StatelessWidget {
 }
 
 class _MsgBubble extends StatelessWidget {
-  const _MsgBubble({required this.message, required this.isMe});
+  const _MsgBubble({
+    required this.message,
+    required this.isMe,
+    required this.onOpenPdfAttachment,
+  });
   final AdminComMessage message;
   final bool isMe;
+  final VoidCallback onOpenPdfAttachment;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -1167,13 +1217,61 @@ class _MsgBubble extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(
-            message.body,
-            style: TextStyle(
-              color: isMe ? AppColors.white : AppColors.mobiliBlueDeep,
-              fontSize: 14,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message.body,
+                style: TextStyle(
+                  color: isMe ? AppColors.white : AppColors.mobiliBlueDeep,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              if (message.attachmentPath != null) ...[
+                const SizedBox(height: 8),
+                if (message.isPdfAttachment)
+                  GestureDetector(
+                    onTap: onOpenPdfAttachment,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isMe
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : AppColors.gray50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.picture_as_pdf_rounded,
+                              size: 16,
+                              color: isMe ? AppColors.white : AppColors.mobiliBlue),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                                message.attachmentOriginalName ?? 'Pièce jointe',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: isMe ? AppColors.white : AppColors.mobiliBlueDeep)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 160,
+                      height: 160,
+                      child: PrivateNetworkImage(relativePath: message.attachmentPath!),
+                    ),
+                  ),
+              ],
+            ],
           ),
         ),
         Padding(

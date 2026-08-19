@@ -86,7 +86,7 @@
         } @else {
             <ul class="claims-list">
                 @for (c of claims(); track c.id) {
-                    <li class="claim-card">
+                    <li class="claim-card" [id]="'claim-' + c.id" [class.claim-card--highlighted]="highlightedClaimId() === c.id">
                         <div class="claim-card-head">
                             <strong>{{ reasonLabels[c.reason] }}</strong>
                             <span class="claim-status" [ngClass]="'claim-status--' + c.status.toLowerCase()">

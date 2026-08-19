@@ -45,6 +45,10 @@ export class ClaimsComponent implements OnInit {
   isLoading = signal(false);
   loadError = signal<string | null>(null);
 
+  /** Arrivée depuis une notification de changement de statut — scrolle et met en évidence la
+   *  réclamation concernée, même principe que MyClaimsPage.highlightClaimId (mobile_app). */
+  highlightedClaimId = signal<number | null>(null);
+
   bookings = signal<BookingResponse[]>([]);
 
   showNewForm = signal(false);
@@ -60,6 +64,11 @@ export class ClaimsComponent implements OnInit {
   needsBooking = computed(() => claimReasonRequiresBooking(this.reason()));
 
   ngOnInit(): void {
+    const prefClaim = this.route.snapshot.queryParamMap.get('claimId');
+    if (prefClaim) {
+      const id = Number(prefClaim);
+      if (!Number.isNaN(id)) this.highlightedClaimId.set(id);
+    }
     this.loadClaims();
     const prefBooking = this.route.snapshot.queryParamMap.get('bookingId');
     if (prefBooking) {
@@ -97,12 +106,22 @@ export class ClaimsComponent implements OnInit {
         this.claims.set(rows || []);
         this.isLoading.set(false);
         if (rows.length === 0) this.showNewForm.set(true);
+        this.scrollToHighlighted();
       },
       error: (e) => {
         this.loadError.set(e?.error?.message || 'Impossible de charger vos réclamations.');
         this.isLoading.set(false);
       },
     });
+  }
+
+  private scrollToHighlighted(): void {
+    const id = this.highlightedClaimId();
+    if (id == null) return;
+    setTimeout(() => {
+      document.getElementById(`claim-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => this.highlightedClaimId.set(null), 3000);
+    }, 0);
   }
 
   openNewForm(): void {

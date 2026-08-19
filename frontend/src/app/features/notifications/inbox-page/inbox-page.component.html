@@ -44,6 +44,7 @@
             <a
               class="link-channel"
               [routerLink]="target"
+              [queryParams]="itemQueryParams(n)"
               (click)="$event.stopPropagation()"
             >{{ itemLinkLabel(n) }}</a>
           }

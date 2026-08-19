@@ -143,6 +143,18 @@ export class InboxPageComponent implements OnInit {
     }
   }
 
+  /**
+   * Query params pour `itemLink` — seul `CLAIM_STATUS_UPDATED` en a besoin aujourd'hui
+   * (`claimId`, lu par `ClaimsComponent` pour surligner/scroller vers la bonne réclamation,
+   * même principe que `bookingId`/`reason` déjà gérés par ce composant).
+   */
+  itemQueryParams(n: InboxItem): Record<string, string> | undefined {
+    if (n.type === 'CLAIM_STATUS_UPDATED' && n.claimId != null) {
+      return { claimId: String(n.claimId) };
+    }
+    return undefined;
+  }
+
   itemLinkLabel(n: InboxItem): string {
     switch (n.type) {
       case 'TICKET_ISSUED':

@@ -133,6 +133,13 @@ $topbar-h: 108px;
 
 .sidebar-nav {
   flex: 1;
+  // min-height: 0 indispensable pour qu'un enfant flex avec overflow-y puisse réellement se
+  // rétrécir et défiler au lieu de pousser le contenu hors de .shell-sidebar (height: 100vh,
+  // sans scroll) — sans ça, sur un écran bas (petit laptop, zoom navigateur), les derniers
+  // onglets (Réclamations, Coupons, Communication) et le pied de page (Retour site,
+  // Déconnexion) sont simplement coupés, invisibles et inaccessibles (feedback testeurs).
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 3px;

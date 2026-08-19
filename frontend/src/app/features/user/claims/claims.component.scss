@@ -167,6 +167,15 @@
   border: 1px solid variables.$gray-200;
   border-radius: variables.$radius-md;
   padding: 16px;
+  transition: border-color variables.$t-base, box-shadow variables.$t-base;
+
+  // Arrivée depuis une notification de changement de statut (claimId en query param) — même
+  // principe que le surlignage temporaire côté mobile (MyClaimsPage.highlightClaimId).
+  &--highlighted {
+    border-color: variables.$mobili-blue;
+    border-width: 2px;
+    box-shadow: 0 0 0 4px rgba(variables.$mobili-blue, 0.12);
+  }
 }
 
 .claim-card-head {
