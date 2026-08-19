@@ -13,6 +13,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_choice_page.dart';
 import '../../features/auth/presentation/pages/register_company_page.dart';
 import '../../features/auth/presentation/pages/register_carpool_chauffeur_page.dart';
+import '../../features/auth/domain/models/profile_dto.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/stations/presentation/pages/tickets_gare_page.dart';
 import '../../features/canal/presentation/pages/canal_trip_page.dart';
@@ -31,6 +32,22 @@ import '../../shared/shell/shell_partner.dart';
 import '../../features/partnergarecom/presentation/pages/partner_gare_com_page.dart';
 
 part 'go_router.g.dart';
+
+/// Accueil correct pour un profil donné — même logique que la redirection
+/// post-login ci-dessous (dupliquée volontairement en une seule fonction
+/// pour ne jamais diverger entre "où j'envoie après connexion" et "où je
+/// renvoie si le rôle ne correspond pas à la section visée").
+String _homeForProfile(ProfileDto? profile) {
+  if (profile == null) return '/login';
+  if (profile.isChauffeur) return '/chauffeur/trips';
+  if (profile.isAdmin) return '/admin/dashboard';
+  if (profile.isGare) return '/gare/dashboard';
+  if (profile.isPartnerPending || profile.isPartnerRejected) {
+    return '/partner/pending';
+  }
+  if (profile.isPartner) return '/partner/dashboard';
+  return '/gare/dashboard';
+}
 
 @riverpod
 GoRouter goRouter(GoRouterRef ref) {
@@ -63,15 +80,26 @@ GoRouter goRouter(GoRouterRef ref) {
       }
 
       if (isLoggedIn && isOnLogin) {
-        if (profile == null) return '/login';
-        if (profile.isChauffeur) return '/chauffeur/trips';
-        if (profile.isAdmin) return '/admin/dashboard';
-        if (profile.isGare) return '/gare/dashboard';
-        if (profile.isPartnerPending || profile.isPartnerRejected) {
-          return '/partner/pending';
+        return _homeForProfile(profile);
+      }
+
+      // Garde de rôle par préfixe de route (AUDIT-MOBILI.md §4.7) : jusqu'ici,
+      // seule l'authentification était vérifiée — un compte GARE/PARTENAIRE/
+      // CHAUFFEUR authentifié pouvait naviguer côté client vers les routes
+      // ADMIN (ou toute autre section hors de son rôle), rien ne le
+      // renvoyait. Défense en profondeur : le vrai rempart reste le backend,
+      // mais un utilisateur ne doit jamais voir un shell qui ne le concerne
+      // pas s'afficher, même brièvement, via un deep link ou un état de
+      // navigation.
+      if (isLoggedIn && profile != null && !isOnPendingPage && !isOnAuthPage) {
+        final loc = state.matchedLocation;
+        final roleMismatch = (loc.startsWith('/admin') && !profile.isAdmin) ||
+            (loc.startsWith('/gare') && !profile.isGare) ||
+            (loc.startsWith('/chauffeur') && !profile.isChauffeur) ||
+            (loc.startsWith('/partner') && !profile.isPartner);
+        if (roleMismatch) {
+          return _homeForProfile(profile);
         }
-        if (profile.isPartner) return '/partner/dashboard';
-        return '/gare/dashboard';
       }
       return null;
     },
