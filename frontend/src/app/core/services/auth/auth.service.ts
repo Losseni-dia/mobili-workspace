@@ -54,15 +54,19 @@ export interface UserAdmin {
 
 type RoleLike = string | { name?: string };
 
-/** Corps `company` pour `POST /auth/register-company` (aligné sur le DTO Java). */
+/**
+ * Corps `company` pour `POST /auth/register-company` (aligné sur RegisterCompanyPublicDTO côté
+ * backend — email/companyEmail optionnels, phone du responsable obligatoire).
+ */
 export interface RegisterCompanyPublicPayload {
   firstname: string;
   lastname: string;
   login: string;
-  email: string;
+  email?: string;
+  phone: string;
   password: string;
   companyName: string;
-  companyEmail: string;
+  companyEmail?: string;
   companyPhone: string;
   businessNumber?: string;
 }
@@ -209,10 +213,18 @@ export class AuthService {
 
   /**
    * Inscription compagnie (dirigeant) + fiche société, session ouverte comme après login.
+   * kycFront/kycBack obligatoires côté backend (@RequestPart sans required=false).
    */
-  registerCompany(payload: RegisterCompanyPublicPayload, logo?: File | null): Observable<AuthResponse> {
+  registerCompany(
+    payload: RegisterCompanyPublicPayload,
+    kycFront: File,
+    kycBack: File,
+    logo?: File | null,
+  ): Observable<AuthResponse> {
     const formData = new FormData();
     formData.append('company', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    formData.append('kycFront', kycFront);
+    formData.append('kycBack', kycBack);
     if (logo) {
       formData.append('logo', logo);
     }

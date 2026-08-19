@@ -25,8 +25,12 @@
                     <input type="text" formControlName="login" autocomplete="username" required />
                 </label>
                 <label>
-                    <span>Email du dirigeant</span>
-                    <input type="email" formControlName="email" autocomplete="email" required />
+                    <span>Téléphone du dirigeant</span>
+                    <input type="tel" formControlName="phone" autocomplete="tel" required />
+                </label>
+                <label>
+                    <span>Email du dirigeant (facultatif)</span>
+                    <input type="email" formControlName="email" autocomplete="email" />
                 </label>
                 <label>
                     <span>Mot de passe</span>
@@ -35,6 +39,17 @@
                 <label>
                     <span>Confirmation</span>
                     <input type="password" formControlName="confirmPassword" autocomplete="new-password" required />
+                </label>
+            </div>
+
+            <div class="biz-form__grid">
+                <label class="biz-form__full">
+                    <span>Pièce d’identité du dirigeant — recto</span>
+                    <input type="file" accept="image/*" (change)="onKycFrontSelected($event)" required />
+                </label>
+                <label class="biz-form__full">
+                    <span>Pièce d’identité du dirigeant — verso</span>
+                    <input type="file" accept="image/*" (change)="onKycBackSelected($event)" required />
                 </label>
             </div>
         </fieldset>
@@ -47,8 +62,8 @@
                     <input type="text" formControlName="companyName" required />
                 </label>
                 <label>
-                    <span>Email entreprise</span>
-                    <input type="email" formControlName="companyEmail" required />
+                    <span>Email entreprise (facultatif)</span>
+                    <input type="email" formControlName="companyEmail" />
                 </label>
                 <label>
                     <span>Téléphone entreprise</span>

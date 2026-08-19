@@ -24,17 +24,22 @@ export class RegisterPartnerComponent {
   isLoading = signal(false);
   selectedLogo: File | null = null;
   logoPreview = signal<string | null>(null);
+  selectedKycFront: File | null = null;
+  selectedKycBack: File | null = null;
 
+  // email/companyEmail optionnels + phone (responsable) obligatoire — aligné sur
+  // RegisterCompanyPublicDTO côté backend, pas sur les anciennes règles UI-only.
   signupForm = this.fb.nonNullable.group({
     firstname: ['', [Validators.required]],
     lastname: ['', [Validators.required]],
     login: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.email]],
+    phone: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(20)]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', [Validators.required]],
     companyName: ['', [Validators.required]],
-    companyEmail: ['', [Validators.required, Validators.email]],
-    companyPhone: ['', [Validators.required]],
+    companyEmail: ['', [Validators.email]],
+    companyPhone: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(20)]],
     businessNumber: [''],
   });
 
@@ -48,6 +53,16 @@ export class RegisterPartnerComponent {
     reader.readAsDataURL(file);
   }
 
+  onKycFrontSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.selectedKycFront = input.files?.[0] ?? null;
+  }
+
+  onKycBackSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.selectedKycBack = input.files?.[0] ?? null;
+  }
+
   onSubmit(): void {
     if (this.signupForm.invalid) {
       this.notification.show('Vérifie les champs obligatoires.', 'error');
@@ -58,6 +73,15 @@ export class RegisterPartnerComponent {
       this.notification.show('Les mots de passe ne correspondent pas.', 'error');
       return;
     }
+    // kycFront/kycBack obligatoires côté backend (@RequestPart sans required=false) — sans eux
+    // la requête échoue avec un 400, mieux vaut bloquer avant l'appel réseau.
+    if (!this.selectedKycFront || !this.selectedKycBack) {
+      this.notification.show(
+        'Les pièces d’identité du responsable (recto + verso) sont obligatoires.',
+        'error',
+      );
+      return;
+    }
     this.isLoading.set(true);
 
     this.authService
@@ -66,13 +90,16 @@ export class RegisterPartnerComponent {
           firstname: v.firstname.trim(),
           lastname: v.lastname.trim(),
           login: v.login.trim(),
-          email: v.email.trim(),
+          email: v.email?.trim() || undefined,
+          phone: v.phone.trim(),
           password: v.password,
           companyName: v.companyName.trim(),
-          companyEmail: v.companyEmail.trim(),
+          companyEmail: v.companyEmail?.trim() || undefined,
           companyPhone: v.companyPhone.trim(),
           businessNumber: v.businessNumber?.trim() || undefined,
         },
+        this.selectedKycFront,
+        this.selectedKycBack,
         this.selectedLogo,
       )
       .subscribe({
