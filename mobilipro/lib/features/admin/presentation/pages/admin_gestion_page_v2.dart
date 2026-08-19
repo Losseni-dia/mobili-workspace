@@ -474,7 +474,7 @@ class _DocumentThumb extends StatelessWidget {
   String get _fullUrl {
     // Le backend renvoie un chemin relatif (ex: "partners/kyc/xxx.jpg") ; ces
     // fichiers sont exposés sous /v1/uploads/**.
-    const apiBase = 'https://api.my-mobili.com/v1/uploads';
+    const apiBase = '${ApiConstants.baseUrl}/uploads';
     return path.startsWith('http') ? path : '$apiBase/$path';
   }
 

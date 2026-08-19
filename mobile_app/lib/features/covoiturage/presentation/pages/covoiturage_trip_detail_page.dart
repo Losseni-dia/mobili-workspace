@@ -587,7 +587,7 @@ class _PendingRequestCardState extends ConsumerState<_PendingRequestCard> {
                 child: ClipOval(
                   child: b.customerAvatarUrl != null
                       ? Image.network(
-                          'https://api.my-mobili.com/v1/uploads/${b.customerAvatarUrl}',
+                          '${ApiConstants.baseUrl}/uploads/${b.customerAvatarUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(
                               Icons.person_rounded,

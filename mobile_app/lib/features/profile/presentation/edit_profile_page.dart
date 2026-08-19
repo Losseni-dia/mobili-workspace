@@ -209,7 +209,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                             : profile?.avatarUrl != null
                                 ? ClipOval(
                                     child: Image.network(
-                                      'https://api.my-mobili.com/v1/uploads/${profile!.avatarUrl}',
+                                      '${ApiConstants.baseUrl}/uploads/${profile!.avatarUrl}',
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => const Icon(
                                           Icons.person_rounded,

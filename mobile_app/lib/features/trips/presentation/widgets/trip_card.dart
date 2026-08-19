@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/trip.dart';
@@ -173,7 +174,7 @@ class _VehicleImage extends StatelessWidget {
               ? Container(
                   color: AppColors.gray100,
                   child: Image.network(
-                   'https://api.my-mobili.com/v1/uploads/$url',
+                   '${ApiConstants.baseUrl}/uploads/$url',
                     fit: BoxFit.contain,
                     alignment: Alignment.center,
                     errorBuilder: (_, __, ___) => _placeholder(),

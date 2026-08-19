@@ -93,7 +93,7 @@ class _TripDetailContent extends StatelessWidget {
                       fit: StackFit.expand,
                       children: [
                         Image.network(
-                          'https://api.my-mobili.com/v1/uploads/${trip.vehicleImageUrl}',
+                          '${ApiConstants.baseUrl}/uploads/${trip.vehicleImageUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: AppColors.mobiliBlue,

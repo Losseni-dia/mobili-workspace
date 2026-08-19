@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../features/auth/providers/auth_provider.dart';
@@ -163,7 +164,7 @@ class ProfilePage extends ConsumerWidget {
                                 child: profile.avatarUrl != null
                                     ? ClipOval(
                                         child: Image.network(
-                                          'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
+                                          '${ApiConstants.baseUrl}/uploads/${profile.avatarUrl}',
                                           fit: BoxFit.cover,
                                           errorBuilder: (_, __, ___) =>
                                               _Initials(

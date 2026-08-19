@@ -5,6 +5,7 @@ import 'package:mobili/features/covoiturage/presentation/pages/covoiturage_apply
 import 'package:mobili/shared/widgets/mobili_app_bar.dart';
 import 'package:mobili/shared/widgets/private_network_image.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../auth/domain/models/profile_dto.dart';
@@ -453,7 +454,7 @@ class _DashboardPendingRequestCardState
                 child: ClipOval(
                   child: b.customerAvatarUrl != null
                       ? Image.network(
-                          'https://api.my-mobili.com/v1/uploads/${b.customerAvatarUrl}',
+                          '${ApiConstants.baseUrl}/uploads/${b.customerAvatarUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(
                               Icons.person_rounded,
@@ -834,7 +835,7 @@ class _DriverCard extends StatelessWidget {
                 child: ClipOval(
                   child: profile.avatarUrl != null
                       ? Image.network(
-                          'https://api.my-mobili.com/v1/uploads/${profile.avatarUrl}',
+                          '${ApiConstants.baseUrl}/uploads/${profile.avatarUrl}',
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const Icon(
                               Icons.person_rounded,
