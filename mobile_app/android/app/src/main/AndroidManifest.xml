@@ -51,6 +51,8 @@
         </intent>
     </queries>
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- READ_EXTERNAL_STORAGE retirée : ni file_picker ni image_picker_android (versions
+         résolues actuelles) ne la déclarent — le sélecteur système (ACTION_GET_CONTENT /
+         photo picker) ne la requiert plus, cf. audit publication Play Store. -->
     <uses-permission android:name="android.permission.CAMERA" />
 </manifest>
