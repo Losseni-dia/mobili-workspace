@@ -28,6 +28,7 @@ import com.mobili.backend.module.analytics.entity.AppAnalyticsEvent;
 import com.mobili.backend.module.analytics.repository.AppAnalyticsEventRepository;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
+import com.mobili.backend.module.booking.ticket.util.TicketSegmentUtil;
 import com.mobili.backend.module.partner.repository.PartnerRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.repository.UserRepository;
@@ -207,7 +208,7 @@ public class AdminService {
                         t.getId(),
                         t.getTicketNumber(),
                         t.getPassengerName(),
-                        t.getTrip().getDepartureCity() + " → " + t.getTrip().getArrivalCity(),
+                        TicketSegmentUtil.resolveRouteLabel(t),
                         t.getTrip().getPartner() != null ? t.getTrip().getPartner().getName() : "—",
                         t.getBookingDate(),
                         t.getAmountPaid(),

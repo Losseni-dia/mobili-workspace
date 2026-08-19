@@ -40,7 +40,7 @@
                 <h2>VALIDE</h2>
                 <p class="passenger">{{ t.passengerFullName }}</p>
                 <p class="seat">Siège : {{ t.seatNumber }}</p>
-                <p class="route">{{ t.departureCity }} → {{ t.arrivalCity }}</p>
+                <p class="route">{{ t.boardingCity ?? t.departureCity }} → {{ t.alightingCity ?? t.arrivalCity }}</p>
                 <p class="ticket-num">N° ticket : {{ t.ticketNumber }}</p>
                 @if (t.transportPrice != null) {
                     <p class="fare">Transport : {{ t.transportPrice | number: '1.0-0' }} FCFA</p>

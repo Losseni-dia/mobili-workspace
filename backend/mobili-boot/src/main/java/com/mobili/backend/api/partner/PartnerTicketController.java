@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mobili.backend.module.booking.ticket.dto.PartnerTicketResponse;
 import com.mobili.backend.module.booking.ticket.service.PartnerTicketService;
+import com.mobili.backend.module.booking.ticket.util.TicketSegmentUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,7 @@ public class PartnerTicketController {
                         t.getId(),
                         t.getTicketNumber(),
                         t.getPassengerName(),
-                        t.getTrip().getDepartureCity() + " → " + t.getTrip().getArrivalCity(),
+                        TicketSegmentUtil.resolveRouteLabel(t),
                         t.getTrip().getStation() != null ? t.getTrip().getStation().getName() : "—",
                         t.getBookingDate(),
                         t.getAmountPaid(),
