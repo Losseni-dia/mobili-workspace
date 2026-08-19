@@ -182,27 +182,7 @@ class ProfilePage extends ConsumerWidget {
                                     color: AppColors.mobiliBlueDeep,
                                     fontWeight: FontWeight.w800,
                                   )),
-                              const SizedBox(height: 10),
-                              OutlinedButton.icon(
-                                onPressed: () => context.push('/edit-profile'),
-                                icon: const Icon(Icons.edit_rounded,
-                                    size: 14, color: AppColors.mobiliBlueDeep),
-                                label: Text('Modifier le profil',
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.mobiliBlueDeep)),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                      color: AppColors.mobiliBlueDeep,
-                                      width: 1),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20)),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 6),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),
@@ -297,6 +277,11 @@ class ProfilePage extends ConsumerWidget {
                             childrenPadding: EdgeInsets.zero,
                             iconColor: AppColors.mobiliBlue,
                             collapsedIconColor: AppColors.mobiliBlue,
+                            // Chevron statique orienté comme les autres lignes cliquables
+                            // (Mes réservations, Mes billets) — cohérence visuelle demandée,
+                            // remplace la flèche expand_more/expand_less par défaut d'ExpansionTile.
+                            trailing: const Icon(Icons.chevron_right_rounded,
+                                color: AppColors.gray300, size: 20),
                             title: Row(
                               children: [
                                 const Icon(Icons.person_rounded,
@@ -332,6 +317,14 @@ class ProfilePage extends ConsumerWidget {
                                 valueColor: profile.enabled
                                     ? AppColors.success
                                     : AppColors.danger,
+                              ),
+                              const Divider(
+                                  height: 1, color: AppColors.gray100),
+                              _ActionRow(
+                                icon: Icons.edit_rounded,
+                                iconColor: AppColors.mobiliBlueDeep,
+                                label: 'Modifier le profil',
+                                onTap: () => context.push('/edit-profile'),
                               ),
                             ],
                           ),
