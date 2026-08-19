@@ -1,3 +1,9 @@
+@if (loadError()) {
+    <div class="admin-alert" role="alert">
+        {{ loadError() }}
+        <button type="button" class="admin-alert-retry" (click)="loadStats()">Réessayer</button>
+    </div>
+}
 @if (isLoading()) {
     <div class="sk-grid">
         <div class="sk-card"></div>
@@ -5,7 +11,7 @@
         <div class="sk-card"></div>
         <div class="sk-card"></div>
     </div>
-} @else {
+} @else if (!loadError()) {
     <div class="dash-intro">
         <h1>Vue d’ensemble</h1>
         <p>Indicateurs <strong>globaux</strong> (instantané). Ouvre les pages dédiées pour l’analyse d’usage (logs) ou le <strong>commerce</strong> (trajets, CA, période).</p>

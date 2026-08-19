@@ -218,6 +218,18 @@ export class TripEditComponent implements OnInit {
 
         this.syncLegPrices();
       },
+      // AUDIT-MOBILI.md §2.2/§2.6 : aucune gestion d'erreur ici auparavant — si l'ID de
+      // trajet dans l'URL était invalide/refusé (403/404), rien ne se passait côté UI :
+      // formulaire vide sans message ni redirection. Même pattern que la sauvegarde
+      // (extractApiErrorMessage + NotificationService) plus redirection, puisque rester sur
+      // un formulaire vide et non fonctionnel n'a aucun intérêt ici.
+      error: (err) => {
+        this.notification.show(
+          extractApiErrorMessage(err, 'Trajet introuvable ou inaccessible.'),
+          'error',
+        );
+        this.router.navigate(['/partenaire/trips']);
+      },
     });
   }
 
