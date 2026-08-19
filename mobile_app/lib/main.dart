@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'core/network/api_client.dart';
 import 'core/router/go_router.dart';
 import 'core/theme/app_theme.dart';
+import 'shared/widgets/offline_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,10 @@ class MobiliApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.light,
       routerConfig: router,
+      // AUDIT-MOBILI.md §3.4 : bannière "hors ligne" proactive (connectivity_plus,
+      // jusqu'ici déclaré en dépendance mais jamais utilisé) — enveloppe l'app entière
+      // pour rester visible peu importe l'écran, y compris login/register.
+      builder: (context, child) => OfflineBannerOverlay(child: child),
     );
   }
 }
