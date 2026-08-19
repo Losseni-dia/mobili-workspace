@@ -26,6 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- AUDIT-MOBILI.md §4.5 : mobile_scanner (scan QR tickets) et image_picker (photos
+	     KYC/avatar) sont utilisés dans l'app mais ces clés étaient absentes — sans elles,
+	     iOS provoque un crash immédiat à la première demande d'accès caméra/galerie, et
+	     Apple rejette la soumission App Store Review sans description d'usage. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Mobilipro utilise l'appareil photo pour scanner les QR codes des billets à l'embarquement et pour ajouter des photos (documents, pièces jointes).</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mobilipro accède à vos photos pour joindre des documents (KYC, pièces jointes support) depuis votre galerie.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
