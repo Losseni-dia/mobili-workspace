@@ -106,31 +106,36 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? _validateFirstname(String? v) => _required(v, 'Prénom');
   String? _validateLastname(String? v) => _required(v, 'Nom');
 
+  // Aligné sur RegisterDTO côté backend (@Email seul, pas de longueur imposée) — même regex
+  // que register.component.ts (web) pour cohérence, sans être plus strict que le backend.
   String? _validateEmail(String? v) {
     if (v == null || v.trim().isEmpty) return null;
-    final emailRx = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w]{2,}$');
+    final emailRx = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
     if (!emailRx.hasMatch(v.trim())) return 'Email invalide.';
     return null;
   }
 
+  // Miroir de RegisterDTO.phone (@Size min=8, max=15).
   String? _validatePhone(String? v) {
     if (v == null || v.trim().isEmpty) return 'Téléphone requis.';
-    if (v.trim().length < 8) return 'Numéro invalide.';
+    final len = v.trim().length;
+    if (len < 8 || len > 15) return 'Le numéro doit faire entre 8 et 15 caractères.';
     return null;
   }
 
+  // Backend (RegisterDTO.login) n'impose ni longueur ni charset au-delà de @NotBlank — le
+  // minimum 3 caractères reste une règle raisonnable côté UI, mais la restriction de charset
+  // n'a pas d'équivalent backend, retirée pour ne pas bloquer des logins pourtant acceptés.
   String? _validateLogin(String? v) {
     if (v == null || v.trim().isEmpty) return 'Identifiant requis.';
     if (v.trim().length < 3) return 'Minimum 3 caractères.';
-    if (!RegExp(r'^[a-zA-Z0-9_\-]+$').hasMatch(v.trim())) {
-      return 'Lettres, chiffres, _ et - uniquement.';
-    }
     return null;
   }
 
-String? _validatePassword(String? v) {
+  // Miroir de RegisterDTO.password (@Size min=6) — alignée sur le web (register.component.ts).
+  String? _validatePassword(String? v) {
     if (v == null || v.isEmpty) return 'Mot de passe requis.';
-    if (v.length < 8) return 'Minimum 8 caractères.';
+    if (v.length < 6) return 'Minimum 6 caractères.';
     return null;
   }
 

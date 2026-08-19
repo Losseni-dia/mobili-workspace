@@ -966,11 +966,12 @@ class _StationFormSheetState extends State<_StationFormSheet> {
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                 ),
-                validator: isEdit
-                    ? null
-                    : (v) => v == null || v.trim().length < 6
-                          ? 'Min 6 caractères'
-                          : null,
+                // StationRequestDTO.password : @Size(min=6) seul, pas @NotBlank — optionnel
+                // aussi bien à la création qu'à l'édition (une gare peut être créée sans accès
+                // direct, activé plus tard). On ne contraint la longueur que si renseigné.
+                validator: (v) => v != null && v.trim().isNotEmpty && v.trim().length < 6
+                    ? 'Min 6 caractères'
+                    : null,
               ),
               const SizedBox(height: 12),
               _Field(
@@ -2423,9 +2424,13 @@ class _GareUserFormSheetState extends State<_GareUserFormSheet> {
                   label: 'Téléphone',
                   icon: Icons.phone_rounded,
                   keyboardType: TextInputType.phone,
-                  validator: (v) => v == null || v.trim().length < 8
-                      ? 'Min 8 caractères'
-                      : null,
+                  // GareUserCreateRequest.phone : @Size(max = 20) seul, pas de minimum côté
+                  // backend — le "min 8" n'était pas justifié, retiré au profit du max 20.
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Obligatoire'
+                      : v.trim().length > 20
+                          ? 'Max 20 caractères'
+                          : null,
                 ),
                 const SizedBox(height: 12),
                 _Field(
@@ -2433,9 +2438,13 @@ class _GareUserFormSheetState extends State<_GareUserFormSheet> {
                   label: 'Email (optionnel)',
                   icon: Icons.email_rounded,
                   keyboardType: TextInputType.emailAddress,
+                  // Même regex que les autres formulaires (register_page.dart) — l'ancien
+                  // contrôle "contains('@')" était trop permissif.
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return null;
-                    if (!v.contains('@')) return 'Email invalide';
+                    final emailRx =
+                        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
+                    if (!emailRx.hasMatch(v.trim())) return 'Email invalide';
                     return null;
                   },
                 ),
@@ -2444,11 +2453,15 @@ class _GareUserFormSheetState extends State<_GareUserFormSheet> {
                   controller: _loginCtrl,
                   label: 'Login',
                   icon: Icons.account_circle_rounded,
+                  // GareUserCreateRequest.login : @Size(min = 2, max = 64).
                   validator: isEdit
                       ? null
-                      : (v) => v == null || v.trim().isEmpty
-                            ? 'Obligatoire'
-                            : null,
+                      : (v) {
+                          if (v == null || v.trim().isEmpty) return 'Obligatoire';
+                          final len = v.trim().length;
+                          if (len < 2 || len > 64) return 'Entre 2 et 64 caractères';
+                          return null;
+                        },
                   enabled: !isEdit,
                 ),
                 const SizedBox(height: 12),
@@ -2459,11 +2472,14 @@ class _GareUserFormSheetState extends State<_GareUserFormSheet> {
                       : 'Mot de passe',
                   icon: Icons.lock_rounded,
                   obscure: true,
+                  // GareUserCreateRequest.password : @Size(min = 6, max = 128).
                   validator: isEdit
                       ? null
-                      : (v) => v == null || v.length < 6
-                            ? 'Min 6 caractères'
-                            : null,
+                      : (v) {
+                          if (v == null || v.length < 6) return 'Min 6 caractères';
+                          if (v.length > 128) return 'Max 128 caractères';
+                          return null;
+                        },
                 ),
                 if (!isEdit && widget.stations.isNotEmpty) ...[
                   const SizedBox(height: 12),

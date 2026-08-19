@@ -37,6 +37,7 @@ class _CovoiturageRegisterPageState
   final _loginCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
   final _vehicleBrandCtrl = TextEditingController();
   final _vehiclePlateCtrl = TextEditingController();
   final _vehicleColorCtrl = TextEditingController();
@@ -59,6 +60,7 @@ class _CovoiturageRegisterPageState
     _loginCtrl.dispose();
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
     _vehicleBrandCtrl.dispose();
     _vehiclePlateCtrl.dispose();
     _vehicleColorCtrl.dispose();
@@ -92,6 +94,10 @@ class _CovoiturageRegisterPageState
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_confirmPasswordCtrl.text != _passwordCtrl.text) {
+      setState(() => _errorMessage = 'Les mots de passe ne correspondent pas.');
+      return;
+    }
     if (_idValidUntil == null) {
       setState(
           () => _errorMessage = 'La date de validité de la CNI est requise.');
@@ -188,15 +194,24 @@ class _CovoiturageRegisterPageState
               const SizedBox(height: 12),
               _Field(
                 controller: _emailCtrl,
-                label: 'Email',
+                label: 'Email (facultatif)',
                 keyboardType: TextInputType.emailAddress,
-                validator: (v) => _required(v, 'Email'),
+                // Optionnel côté backend (RegisterCarpoolChauffeurDTO.email : @Email seul,
+                // pas @NotBlank) — même regex que register_page.dart pour cohérence.
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final emailRx =
+                      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
+                  if (!emailRx.hasMatch(v.trim())) return 'Email invalide.';
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               _Field(
                 controller: _phoneCtrl,
                 label: 'Téléphone',
                 keyboardType: TextInputType.phone,
+                maxLength: 20, // RegisterCarpoolChauffeurDTO.phone : @Size(max = 20)
                 validator: (v) => _required(v, 'Téléphone'),
               ),
               const SizedBox(height: 20),
@@ -208,13 +223,27 @@ class _CovoiturageRegisterPageState
                 validator: (v) => _required(v, 'Identifiant'),
               ),
               const SizedBox(height: 12),
-            _Field(
+              _Field(
                 controller: _passwordCtrl,
-                label: 'Mot de passe (8 caractères minimum)',
+                label: 'Mot de passe (6 caractères minimum)',
                 obscureText: true,
+                // Miroir de RegisterCarpoolChauffeurDTO.password (@Size min=6), aligné sur le web.
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Mot de passe requis.';
-                  if (v.length < 8) return 'Minimum 8 caractères.';
+                  if (v.length < 6) return 'Minimum 6 caractères.';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              _Field(
+                controller: _confirmPasswordCtrl,
+                label: 'Confirmer le mot de passe',
+                obscureText: true,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Confirmation requise.';
+                  if (v != _passwordCtrl.text) {
+                    return 'Les mots de passe ne correspondent pas.';
+                  }
                   return null;
                 },
               ),
@@ -307,6 +336,7 @@ class _CovoiturageRegisterPageState
               _Field(
                 controller: _vehicleBrandCtrl,
                 label: 'Marque du véhicule',
+                maxLength: 80, // RegisterCarpoolChauffeurDTO.vehicleBrand : @Size(max = 80)
                 validator: (v) => _required(v, 'Marque'),
               ),
               const SizedBox(height: 12),
@@ -316,6 +346,7 @@ class _CovoiturageRegisterPageState
                     child: _Field(
                       controller: _vehiclePlateCtrl,
                       label: 'Plaque',
+                      maxLength: 32, // vehiclePlate : @Size(max = 32)
                       validator: (v) => _required(v, 'Plaque'),
                     ),
                   ),
@@ -324,6 +355,7 @@ class _CovoiturageRegisterPageState
                     child: _Field(
                       controller: _vehicleColorCtrl,
                       label: 'Couleur',
+                      maxLength: 40, // vehicleColor : @Size(max = 40)
                       validator: (v) => _required(v, 'Couleur'),
                     ),
                   ),
@@ -333,6 +365,7 @@ class _CovoiturageRegisterPageState
               _Field(
                 controller: _greyCardCtrl,
                 label: 'Numéro de carte grise',
+                maxLength: 64, // greyCardNumber : @Size(max = 64)
                 validator: (v) => _required(v, 'Numéro de carte grise'),
               ),
               const SizedBox(height: 28),
@@ -386,6 +419,7 @@ class _Field extends StatelessWidget {
     this.validator,
     this.obscureText = false,
     this.keyboardType,
+    this.maxLength,
   });
 
   final TextEditingController controller;
@@ -393,6 +427,7 @@ class _Field extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -400,6 +435,7 @@ class _Field extends StatelessWidget {
         validator: validator,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        maxLength: maxLength,
         decoration: InputDecoration(
           labelText: label,
           filled: true,
