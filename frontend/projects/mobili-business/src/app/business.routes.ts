@@ -2,7 +2,9 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@mobili-app/core/guard/auth.guard';
 import { covoiturageSoloGuard } from '@mobili-app/core/guard/covoiturage-solo.guard';
 import { gareOperationsGuard } from '@mobili-app/core/guard/gare-operations.guard';
+import { gareRoleGuard } from '@mobili-app/core/guard/gare-role.guard';
 import { partnerOperationsGuard } from '@mobili-app/core/guard/partner-operations.guard';
+import { partnerRoleGuard } from '@mobili-app/core/guard/partner-role.guard';
 
 /**
  * Portail partenaire + gare + covoiturage solo. Même `features` que l’appli racine, chemins stables.
@@ -54,7 +56,9 @@ export const businessRoutes: Routes = [
   },
   {
     path: 'partenaire',
-    canActivate: [authGuard],
+    // AUDIT-MOBILI.md §2.1 : authGuard seul ne vérifiait que "connecté", pas le rôle —
+    // partnerRoleGuard ajouté en défense en profondeur (le vrai rempart reste le backend).
+    canActivate: [authGuard, partnerRoleGuard],
     loadComponent: () =>
       import('@mobili-app/features/partenaire/partner-shell/partner-shell.component').then(
         (m) => m.PartnerShellComponent,
@@ -179,7 +183,9 @@ export const businessRoutes: Routes = [
 
   {
     path: 'gare',
-    canActivate: [authGuard],
+    // AUDIT-MOBILI.md §2.1 : authGuard seul ne vérifiait que "connecté", pas le rôle —
+    // gareRoleGuard ajouté en défense en profondeur (le vrai rempart reste le backend).
+    canActivate: [authGuard, gareRoleGuard],
     loadComponent: () =>
       import('@mobili-app/features/gare/gare-shell/gare-shell.component').then(
         (m) => m.GareShellComponent,
