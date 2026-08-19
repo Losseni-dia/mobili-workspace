@@ -161,6 +161,10 @@ export class PartenaireService {
    * Le backend attend un `multipart/form-data` avec une part JSON nommée "chauffeur" (+ "avatar"
    * optionnelle) — @RequestPart, pas un simple body JSON (PartnerChauffeurController.create).
    */
+  /**
+   * idFront/idBack/licenseFront/licenseBack obligatoires côté backend (@RequestPart sans
+   * required=false) — CNI + permis, aucun document n'était collecté avant.
+   */
   createChauffeur(
     body: {
       firstname: string;
@@ -171,10 +175,18 @@ export class PartenaireService {
       password: string;
       stationId: number | null;
     },
+    idFront: File,
+    idBack: File,
+    licenseFront: File,
+    licenseBack: File,
     avatar?: File | null,
   ): Observable<PartnerChauffeurItem> {
     const form = new FormData();
     form.append('chauffeur', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    form.append('idFront', idFront);
+    form.append('idBack', idBack);
+    form.append('licenseFront', licenseFront);
+    form.append('licenseBack', licenseBack);
     if (avatar) {
       form.append('avatar', avatar);
     }

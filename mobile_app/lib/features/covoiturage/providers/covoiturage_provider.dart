@@ -164,6 +164,10 @@ class CovoiturageApplyNotifier
     required File idBack,
     required File driverPhoto,
     required File vehiclePhoto,
+    required File licenseFront,
+    required File licenseBack,
+    required File greyCardFront,
+    required File greyCardBack,
   }) async {
     state =
         const CovoiturageApplyState(status: CovoiturageApplyStatus.submitting);
@@ -178,6 +182,10 @@ class CovoiturageApplyNotifier
             idBack: idBack,
             driverPhoto: driverPhoto,
             vehiclePhoto: vehiclePhoto,
+            licenseFront: licenseFront,
+            licenseBack: licenseBack,
+            greyCardFront: greyCardFront,
+            greyCardBack: greyCardBack,
           );
       ref.read(authProvider.notifier).setProfile(profile);
       state =

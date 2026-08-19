@@ -43,6 +43,10 @@ export class RegisterCarpoolChauffeurComponent {
   idBack: File | null = null;
   driverPhoto: File | null = null;
   vehiclePhoto: File | null = null;
+  licenseFront: File | null = null;
+  licenseBack: File | null = null;
+  greyCardFront: File | null = null;
+  greyCardBack: File | null = null;
 
   form = this.fb.group({
     firstname: ['', [Validators.required, Validators.maxLength(80)]],
@@ -79,6 +83,26 @@ export class RegisterCarpoolChauffeurComponent {
     this.vehiclePhoto = f ?? null;
   }
 
+  onLicenseFront(ev: Event) {
+    const f = (ev.target as HTMLInputElement).files?.[0];
+    this.licenseFront = f ?? null;
+  }
+
+  onLicenseBack(ev: Event) {
+    const f = (ev.target as HTMLInputElement).files?.[0];
+    this.licenseBack = f ?? null;
+  }
+
+  onGreyCardFront(ev: Event) {
+    const f = (ev.target as HTMLInputElement).files?.[0];
+    this.greyCardFront = f ?? null;
+  }
+
+  onGreyCardBack(ev: Event) {
+    const f = (ev.target as HTMLInputElement).files?.[0];
+    this.greyCardBack = f ?? null;
+  }
+
   submit() {
     this.errorMessage.set(null);
     if (this.form.invalid) {
@@ -102,10 +126,22 @@ export class RegisterCarpoolChauffeurComponent {
       this.errorMessage.set('La photo du véhicule est obligatoire.');
       return;
     }
+    if (!this.licenseFront || !this.licenseBack) {
+      this.errorMessage.set('Le recto et le verso du permis de conduire sont obligatoires.');
+      return;
+    }
+    if (!this.greyCardFront || !this.greyCardBack) {
+      this.errorMessage.set('Le recto et le verso de la carte grise sont obligatoires.');
+      return;
+    }
     const idF = this.idFront;
     const idB = this.idBack;
     const driverP = this.driverPhoto;
     const vehP = this.vehiclePhoto;
+    const licenseF = this.licenseFront;
+    const licenseB = this.licenseBack;
+    const greyCardF = this.greyCardFront;
+    const greyCardB = this.greyCardBack;
     this.isLoading.set(true);
     this.authService
       .registerCarpoolChauffeur(
@@ -126,6 +162,10 @@ export class RegisterCarpoolChauffeurComponent {
         idB,
         driverP,
         vehP,
+        licenseF,
+        licenseB,
+        greyCardF,
+        greyCardB,
       )
       .subscribe({
         next: () => {

@@ -26,6 +26,8 @@ export class RegisterPartnerComponent {
   logoPreview = signal<string | null>(null);
   selectedKycFront: File | null = null;
   selectedKycBack: File | null = null;
+  selectedTransportCardFront: File | null = null;
+  selectedTransportCardBack: File | null = null;
 
   // email/companyEmail optionnels + phone (responsable) obligatoire — aligné sur
   // RegisterCompanyPublicDTO côté backend, pas sur les anciennes règles UI-only.
@@ -63,6 +65,16 @@ export class RegisterPartnerComponent {
     this.selectedKycBack = input.files?.[0] ?? null;
   }
 
+  onTransportCardFrontSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.selectedTransportCardFront = input.files?.[0] ?? null;
+  }
+
+  onTransportCardBackSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.selectedTransportCardBack = input.files?.[0] ?? null;
+  }
+
   onSubmit(): void {
     if (this.signupForm.invalid) {
       this.notification.show('Vérifie les champs obligatoires.', 'error');
@@ -78,6 +90,13 @@ export class RegisterPartnerComponent {
     if (!this.selectedKycFront || !this.selectedKycBack) {
       this.notification.show(
         'Les pièces d’identité du responsable (recto + verso) sont obligatoires.',
+        'error',
+      );
+      return;
+    }
+    if (!this.selectedTransportCardFront || !this.selectedTransportCardBack) {
+      this.notification.show(
+        'Les photos recto et verso de la carte de transporteur sont obligatoires.',
         'error',
       );
       return;
@@ -100,6 +119,8 @@ export class RegisterPartnerComponent {
         },
         this.selectedKycFront,
         this.selectedKycBack,
+        this.selectedTransportCardFront,
+        this.selectedTransportCardBack,
         this.selectedLogo,
       )
       .subscribe({

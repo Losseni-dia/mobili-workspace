@@ -77,6 +77,14 @@
                     <span>Logo (facultatif)</span>
                     <input type="file" accept="image/*" (change)="onFileSelected($event)" />
                 </label>
+                <label class="biz-form__full">
+                    <span>Carte de transporteur — recto</span>
+                    <input type="file" accept="image/*" (change)="onTransportCardFrontSelected($event)" required />
+                </label>
+                <label class="biz-form__full">
+                    <span>Carte de transporteur — verso</span>
+                    <input type="file" accept="image/*" (change)="onTransportCardBackSelected($event)" required />
+                </label>
                 @if (logoPreview()) {
                     <div class="logo-preview biz-form__full">
                         <img [src]="logoPreview()!" alt="Aperçu logo" />

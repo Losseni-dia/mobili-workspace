@@ -189,6 +189,10 @@ Future<AuthResponse> registerCompany({
     required File idBack,
     required File driverPhoto,
     required File vehiclePhoto,
+    required File licenseFront,
+    required File licenseBack,
+    required File greyCardFront,
+    required File greyCardBack,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -211,6 +215,22 @@ Future<AuthResponse> registerCompany({
         'vehiclePhoto': await MultipartFile.fromFile(
           vehiclePhoto.path,
           filename: vehiclePhoto.path.split('/').last,
+        ),
+        'licenseFront': await MultipartFile.fromFile(
+          licenseFront.path,
+          filename: licenseFront.path.split('/').last,
+        ),
+        'licenseBack': await MultipartFile.fromFile(
+          licenseBack.path,
+          filename: licenseBack.path.split('/').last,
+        ),
+        'greyCardFront': await MultipartFile.fromFile(
+          greyCardFront.path,
+          filename: greyCardFront.path.split('/').last,
+        ),
+        'greyCardBack': await MultipartFile.fromFile(
+          greyCardBack.path,
+          filename: greyCardBack.path.split('/').last,
         ),
       });
 

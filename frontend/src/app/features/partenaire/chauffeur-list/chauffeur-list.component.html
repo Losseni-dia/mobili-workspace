@@ -75,6 +75,27 @@
             <span class="chauff-field-hint">Parmi les gares rattachées à votre compagnie.</span>
           </label>
         </div>
+        <div class="chauff-form-grid">
+          <label class="chauff-field">
+            <span>Carte d’identité — recto</span>
+            <input type="file" accept="image/*,.pdf" (change)="onCreateIdFront($event)" />
+          </label>
+          <label class="chauff-field">
+            <span>Carte d’identité — verso</span>
+            <input type="file" accept="image/*,.pdf" (change)="onCreateIdBack($event)" />
+          </label>
+          <label class="chauff-field">
+            <span>Permis de conduire — recto</span>
+            <input type="file" accept="image/*,.pdf" (change)="onCreateLicenseFront($event)" />
+          </label>
+          <label class="chauff-field">
+            <span>Permis de conduire — verso</span>
+            <input type="file" accept="image/*,.pdf" (change)="onCreateLicenseBack($event)" />
+          </label>
+        </div>
+        @if (createError()) {
+          <p class="chauff-form-hint-form" role="alert">{{ createError() }}</p>
+        }
         <div class="chauff-form-actions">
           @if (form.invalid && !createSubmitting()) {
             <p class="chauff-form-hint-form" role="status">

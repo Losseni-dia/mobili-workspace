@@ -232,6 +232,10 @@ Future<bool> registerCompany({
     required File idBack,
     required File driverPhoto,
     required File vehiclePhoto,
+    required File licenseFront,
+    required File licenseBack,
+    required File greyCardFront,
+    required File greyCardBack,
   }) async {
     try {
       await _service.registerCarpoolChauffeur(
@@ -240,6 +244,10 @@ Future<bool> registerCompany({
         idBack: idBack,
         driverPhoto: driverPhoto,
         vehiclePhoto: vehiclePhoto,
+        licenseFront: licenseFront,
+        licenseBack: licenseBack,
+        greyCardFront: greyCardFront,
+        greyCardBack: greyCardBack,
       );
       return null;
     } on MobiliException catch (e) {

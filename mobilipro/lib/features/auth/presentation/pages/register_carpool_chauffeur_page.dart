@@ -39,6 +39,10 @@ class _RegisterCarpoolChauffeurPageState
   File? _idBack;
   File? _driverPhoto;
   File? _vehiclePhoto;
+  File? _licenseFront;
+  File? _licenseBack;
+  File? _greyCardFront;
+  File? _greyCardBack;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -91,6 +95,15 @@ class _RegisterCarpoolChauffeurPageState
           'Les 4 photos sont obligatoires (CNI recto/verso, vous, véhicule).');
       return;
     }
+    if (_licenseFront == null || _licenseBack == null) {
+      setState(() =>
+          _errorMessage = 'Le permis de conduire (recto/verso) est obligatoire.');
+      return;
+    }
+    if (_greyCardFront == null || _greyCardBack == null) {
+      setState(() => _errorMessage = 'La carte grise (recto/verso) est obligatoire.');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -115,6 +128,10 @@ class _RegisterCarpoolChauffeurPageState
           idBack: _idBack!,
           driverPhoto: _driverPhoto!,
           vehiclePhoto: _vehiclePhoto!,
+          licenseFront: _licenseFront!,
+          licenseBack: _licenseBack!,
+          greyCardFront: _greyCardFront!,
+          greyCardBack: _greyCardBack!,
         );
 
     if (mounted) {
@@ -291,6 +308,35 @@ class _RegisterCarpoolChauffeurPageState
               ),
               const SizedBox(height: 20),
 
+              const _SectionLabel(label: 'Permis de conduire'),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PhotoPicker(
+                      label: 'Permis recto',
+                      file: _licenseFront,
+                      onPick: () async {
+                        final f = await _pickImage();
+                        if (f != null) setState(() => _licenseFront = f);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PhotoPicker(
+                      label: 'Permis verso',
+                      file: _licenseBack,
+                      onPick: () async {
+                        final f = await _pickImage();
+                        if (f != null) setState(() => _licenseBack = f);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
               const _SectionLabel(label: 'Vous & votre véhicule'),
               const SizedBox(height: 12),
               Row(
@@ -349,6 +395,32 @@ class _RegisterCarpoolChauffeurPageState
                 controller: _greyCardCtrl,
                 label: 'Numéro de carte grise',
                 validator: (v) => _required(v, 'Numéro de carte grise'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PhotoPicker(
+                      label: 'Carte grise recto',
+                      file: _greyCardFront,
+                      onPick: () async {
+                        final f = await _pickImage();
+                        if (f != null) setState(() => _greyCardFront = f);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PhotoPicker(
+                      label: 'Carte grise verso',
+                      file: _greyCardBack,
+                      onPick: () async {
+                        final f = await _pickImage();
+                        if (f != null) setState(() => _greyCardBack = f);
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 28),
 

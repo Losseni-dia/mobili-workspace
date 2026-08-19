@@ -72,6 +72,18 @@
         </label>
       </div>
 
+      <h2>Permis de conduire</h2>
+      <div class="row two files">
+        <label class="file">
+          <span>Recto</span>
+          <input type="file" accept="image/*,.pdf" (change)="onLicenseFront($event)" />
+        </label>
+        <label class="file">
+          <span>Verso</span>
+          <input type="file" accept="image/*,.pdf" (change)="onLicenseBack($event)" />
+        </label>
+      </div>
+
       <h2>Photo du conducteur</h2>
       <p class="hint">
         Portrait de face, <strong>visage net et entièrement visible</strong> (même exigence que sur une pièce
@@ -110,6 +122,16 @@
         <label class="file">
           <span>Photo du véhicule</span>
           <input type="file" accept="image/*" (change)="onVehiclePhoto($event)" />
+        </label>
+      </div>
+      <div class="row two files">
+        <label class="file">
+          <span>Carte grise — recto</span>
+          <input type="file" accept="image/*,.pdf" (change)="onGreyCardFront($event)" />
+        </label>
+        <label class="file">
+          <span>Carte grise — verso</span>
+          <input type="file" accept="image/*,.pdf" (change)="onGreyCardBack($event)" />
         </label>
       </div>
 

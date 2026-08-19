@@ -213,18 +213,23 @@ export class AuthService {
 
   /**
    * Inscription compagnie (dirigeant) + fiche société, session ouverte comme après login.
-   * kycFront/kycBack obligatoires côté backend (@RequestPart sans required=false).
+   * kycFront/kycBack/transportCardFront/transportCardBack obligatoires côté backend
+   * (@RequestPart sans required=false).
    */
   registerCompany(
     payload: RegisterCompanyPublicPayload,
     kycFront: File,
     kycBack: File,
+    transportCardFront: File,
+    transportCardBack: File,
     logo?: File | null,
   ): Observable<AuthResponse> {
     const formData = new FormData();
     formData.append('company', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
     formData.append('kycFront', kycFront);
     formData.append('kycBack', kycBack);
+    formData.append('transportCardFront', transportCardFront);
+    formData.append('transportCardBack', transportCardBack);
     if (logo) {
       formData.append('logo', logo);
     }
@@ -258,6 +263,10 @@ export class AuthService {
     idBack: File,
     driverPhoto: File,
     vehiclePhoto: File,
+    licenseFront: File,
+    licenseBack: File,
+    greyCardFront: File,
+    greyCardBack: File,
   ): Observable<unknown> {
     const formData = new FormData();
     formData.append('user', new Blob([JSON.stringify(body)], { type: 'application/json' }));
@@ -265,6 +274,10 @@ export class AuthService {
     formData.append('idBack', idBack);
     formData.append('driverPhoto', driverPhoto);
     formData.append('vehiclePhoto', vehiclePhoto);
+    formData.append('licenseFront', licenseFront);
+    formData.append('licenseBack', licenseBack);
+    formData.append('greyCardFront', greyCardFront);
+    formData.append('greyCardBack', greyCardBack);
     return this.http.post('/auth/register-carpool-chauffeur', formData);
   }
 

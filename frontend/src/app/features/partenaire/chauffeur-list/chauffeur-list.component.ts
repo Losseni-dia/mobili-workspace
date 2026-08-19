@@ -29,6 +29,10 @@ export class ChauffeurListComponent implements OnInit {
   error = signal<string | null>(null);
   createSubmitting = signal(false);
   createError = signal<string | null>(null);
+  createIdFront: File | null = null;
+  createIdBack: File | null = null;
+  createLicenseFront: File | null = null;
+  createLicenseBack: File | null = null;
   affiliationSavingId = signal<number | null>(null);
   affiliationError = signal<string | null>(null);
   /** Ligne en cours de désactivation/réactivation (état de chargement du bouton). */
@@ -108,21 +112,51 @@ export class ChauffeurListComponent implements OnInit {
     });
   }
 
+  onCreateIdFront(ev: Event) {
+    this.createIdFront = (ev.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onCreateIdBack(ev: Event) {
+    this.createIdBack = (ev.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onCreateLicenseFront(ev: Event) {
+    this.createLicenseFront = (ev.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  onCreateLicenseBack(ev: Event) {
+    this.createLicenseBack = (ev.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
   onCreateSubmit() {
     if (this.form.invalid || this.createSubmitting()) return;
+    if (!this.createIdFront || !this.createIdBack) {
+      this.createError.set('Le recto et le verso de la carte d’identité sont obligatoires.');
+      return;
+    }
+    if (!this.createLicenseFront || !this.createLicenseBack) {
+      this.createError.set('Le recto et le verso du permis de conduire sont obligatoires.');
+      return;
+    }
     this.createSubmitting.set(true);
     this.createError.set(null);
     const v = this.form.getRawValue();
     this.partenaire
-      .createChauffeur({
-        firstname: v.firstname.trim(),
-        lastname: v.lastname.trim(),
-        email: v.email.trim(),
-        phone: v.phone.trim(),
-        login: v.login.trim(),
-        password: v.password,
-        stationId: v.stationId ?? null,
-      })
+      .createChauffeur(
+        {
+          firstname: v.firstname.trim(),
+          lastname: v.lastname.trim(),
+          email: v.email.trim(),
+          phone: v.phone.trim(),
+          login: v.login.trim(),
+          password: v.password,
+          stationId: v.stationId ?? null,
+        },
+        this.createIdFront,
+        this.createIdBack,
+        this.createLicenseFront,
+        this.createLicenseBack,
+      )
       .subscribe({
         next: () => {
           this.form.reset({
@@ -134,6 +168,10 @@ export class ChauffeurListComponent implements OnInit {
             password: '',
             stationId: null,
           });
+          this.createIdFront = null;
+          this.createIdBack = null;
+          this.createLicenseFront = null;
+          this.createLicenseBack = null;
           this.createSubmitting.set(false);
           this.load();
         },
