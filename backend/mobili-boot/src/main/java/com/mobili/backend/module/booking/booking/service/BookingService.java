@@ -235,10 +235,18 @@ public class BookingService {
         return total;
     }
 
+    @Transactional
     public Booking create(BookingRequestDTO request) {
         Trip trip = tripService.findById(request.getTripId());
         User user = userService.findById(request.getUserId());
         int requestedSeats = request.getNumberOfSeats();
+
+        // Verrou pessimiste sur la ligne du trajet, tenu jusqu'au commit de cette
+        // transaction : sérialise les créations de réservation concurrentes sur ce même
+        // trajet, pour que assertSeatsAvailableOnSegment/minFreeSeatsOnSegment ci-dessous
+        // voient toujours l'état de sièges réellement à jour (fixe la race condition où deux
+        // requêtes simultanées passaient toutes deux la vérification pour le même siège).
+        tripRunService.lockTrip(trip);
 
         tripRunService.ensureStops(trip);
         int lastStop = tripRunService.lastStopIndex(trip);
@@ -766,6 +774,9 @@ public class BookingService {
         if (!trip.getPartner().getId().equals(partner.getId())) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Voyage d'un autre partenaire");
         }
+        // Même verrou que create() — sérialise ce blocage manuel de sièges avec toute
+        // réservation voyageur concurrente sur ce trajet.
+        tripRunService.lockTrip(trip);
         tripRunService.ensureStops(trip);
         int last = tripRunService.lastStopIndex(trip);
         List<String> seatList = new ArrayList<>(request.getSeatNumbers());

@@ -6,14 +6,30 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mobili.backend.module.trip.entity.Trip;
 
+import jakarta.persistence.LockModeType;
+
 @Repository
 public interface TripRepository extends JpaRepository<Trip, Long> {
+
+        /**
+         * Verrou pessimiste exclusif (SELECT ... FOR UPDATE) sur la ligne du trajet, le temps
+         * de la transaction appelante — sérialise les vérifications de disponibilité de sièges
+         * concurrentes (TripRunService.assertSeatsAvailableOnSegment/minFreeSeatsOnSegment) pour
+         * empêcher une double réservation du même siège. Aucune donnée n'est chargée en plus
+         * (pas de fetch join) : sert uniquement à obtenir le verrou, le trajet complet reste
+         * chargé séparément via findByIdWithPartnerAndStops. Même approche que
+         * PartnerMonthlyVolumeService.reserveNextPositions pour le compteur de commission.
+         */
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT t FROM Trip t WHERE t.id = :id")
+        Optional<Trip> lockForSeatUpdate(@Param("id") Long id);
 
 
         @Query("""

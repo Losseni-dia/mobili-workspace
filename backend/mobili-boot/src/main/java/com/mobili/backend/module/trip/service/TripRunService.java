@@ -40,6 +40,18 @@ public class TripRunService {
     private final TripStopSyncService tripStopSyncService;
     private final TripRepository tripRepository;
 
+    /**
+     * Verrou pessimiste exclusif sur la ligne du trajet (SELECT ... FOR UPDATE), tenu jusqu'au
+     * commit de la transaction appelante — à appeler avant toute vérification de disponibilité
+     * de sièges (assertSeatsAvailableOnSegment/minFreeSeatsOnSegment) suivie d'une écriture, pour
+     * sérialiser les créations de réservation concurrentes sur ce trajet. Doit être appelé dans
+     * une méthode {@code @Transactional} de l'appelant (le verrou n'a d'effet que le temps de
+     * cette transaction).
+     */
+    public void lockTrip(Trip trip) {
+        tripRepository.lockForSeatUpdate(trip.getId());
+    }
+
     public int lastStopIndex(Trip trip) {
         ensureStops(trip);
         return trip.getStops().stream().mapToInt(TripStop::getStopIndex).max().orElse(0);
