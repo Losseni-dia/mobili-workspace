@@ -28,6 +28,7 @@ import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.booking.ticket.service.TicketService;
 import com.mobili.backend.module.coupon.service.CouponService;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
+import com.mobili.backend.module.payment.entity.Payment;
 import com.mobili.backend.module.payment.repository.PaymentRepository;
 import com.mobili.backend.module.payment.service.PaymentRefundService;
 import com.mobili.backend.module.partner.entity.Partner;
@@ -202,16 +203,31 @@ public class BookingService {
         return refundable;
     }
 
-    /** Déclenche le remboursement Stripe (seul provider avec remboursement automatique). */
+    /**
+     * Déclenche le remboursement Stripe (seul provider avec remboursement automatique).
+     *
+     * AUDIT-MOBILI.md §1.3 : findByBookingIdAndProvider (Optional, résultat unique attendu,
+     * sans filtre de statut) pouvait lever IncorrectResultSizeDataAccessException si un
+     * paiement Stripe avait échoué puis été retenté avec succès (2 lignes Payment
+     * provider=STRIPE pour cette réservation), et risquait sinon de rembourser via
+     * l'externalReference d'un paiement FAILED/PENDING plutôt que celui réellement payé.
+     * findAllByBookingIdAndProviderAndStatusOrderByIdDesc filtre sur SUCCESS et prend le
+     * plus récent en cas de doublon — jamais d'exception, jamais le mauvais paiement.
+     */
     private void triggerRefund(Long bookingId, double amount) {
         if (amount <= 0) {
             return;
         }
-        paymentRepository.findByBookingIdAndProvider(bookingId, com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE)
-                .ifPresent(payment -> {
-                    log.info("💳 Remboursement de {} FCFA pour Booking #{}", Math.round(amount), bookingId);
-                    paymentRefundService.refund(payment.getExternalReference(), Math.round(amount));
-                });
+        List<Payment> stripeSuccessPayments = paymentRepository.findAllByBookingIdAndProviderAndStatusOrderByIdDesc(
+                bookingId,
+                com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE,
+                com.mobili.backend.module.payment.enums.PaymentStatus.SUCCESS);
+        if (stripeSuccessPayments.isEmpty()) {
+            return;
+        }
+        Payment payment = stripeSuccessPayments.get(0);
+        log.info("💳 Remboursement de {} FCFA pour Booking #{}", Math.round(amount), bookingId);
+        paymentRefundService.refund(payment.getExternalReference(), Math.round(amount));
     }
 
     /**

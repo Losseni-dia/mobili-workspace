@@ -7,6 +7,7 @@ import com.mobili.backend.module.payment.entity.Payment;
 import com.mobili.backend.module.payment.enums.PaymentProvider;
 import com.mobili.backend.module.payment.enums.PaymentStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,6 +15,18 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByExternalReference(String externalReference);
     Optional<Payment> findByBookingIdAndProvider(Long bookingId, PaymentProvider provider);
     Optional<Payment> findByBookingIdAndExternalReference(Long bookingId, String externalReference);
+
+    /**
+     * AUDIT-MOBILI.md §1.3 : findByBookingIdAndProvider (Optional, résultat unique attendu)
+     * pouvait lever IncorrectResultSizeDataAccessException si un paiement Stripe avait
+     * échoué puis été retenté avec succès (2 lignes Payment provider=STRIPE pour la même
+     * réservation), et ne filtrait de toute façon pas sur le statut — risquait de
+     * rembourser via l'externalReference d'un paiement FAILED/PENDING. Filtré sur SUCCESS et
+     * trié par id décroissant : triggerRefund (BookingService) prend le plus récent paiement
+     * Stripe réellement réussi.
+     */
+    List<Payment> findAllByBookingIdAndProviderAndStatusOrderByIdDesc(
+            Long bookingId, PaymentProvider provider, PaymentStatus status);
 
     /**
      * Utilisé pour retrouver le paiement en cours AVANT que son externalReference
