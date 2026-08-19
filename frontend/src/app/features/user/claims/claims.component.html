@@ -48,6 +48,22 @@
                 ></textarea>
             </label>
 
+            <div class="claims-field">
+                <span>Preuve (facultatif)</span>
+                @if (attachmentError()) {
+                    <div class="claims-alert" role="alert">{{ attachmentError() }}</div>
+                }
+                <div class="claims-attach-row">
+                    <label class="claims-attach-btn">
+                        📎 {{ attachment()?.name || 'Joindre une photo ou un PDF' }}
+                        <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" (change)="onFileSelected($event)" hidden />
+                    </label>
+                    @if (attachment()) {
+                        <button type="button" class="claims-btn-ghost" (click)="clearAttachment()">Retirer</button>
+                    }
+                </div>
+            </div>
+
             <div class="claims-form-actions">
                 @if (claims().length > 0) {
                     <button type="button" class="claims-btn-ghost" (click)="cancelNewForm()">Annuler</button>
@@ -78,6 +94,14 @@
                             </span>
                         </div>
                         <p class="claim-message">{{ c.message }}</p>
+                        @if (c.attachmentPath) {
+                            <mobili-secure-upload-img
+                                [relativePath]="c.attachmentPath"
+                                [alt]="c.attachmentOriginalName || 'Pièce jointe'"
+                                [pdfLinkLabel]="'📎 ' + (c.attachmentOriginalName || 'Pièce jointe (PDF)')"
+                                hostClass="claim-attachment"
+                            />
+                        }
                         @if (c.resolutionMessage) {
                             <p class="claim-resolution">
                                 <strong>Réponse Mobili :</strong> {{ c.resolutionMessage }}

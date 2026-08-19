@@ -90,12 +90,23 @@
                                 <span>{{ m.createdAtFormatted }}</span>
                             </div>
                             <p class="support-msg-body">{{ m.body }}</p>
+                            @if (m.attachmentPath) {
+                                <mobili-secure-upload-img
+                                    [relativePath]="m.attachmentPath"
+                                    [alt]="m.attachmentOriginalName || 'Pièce jointe'"
+                                    [pdfLinkLabel]="'📎 ' + (m.attachmentOriginalName || 'Pièce jointe (PDF)')"
+                                    hostClass="support-msg-attachment"
+                                />
+                            }
                         </div>
                     }
                 </div>
 
                 @if (sendError()) {
                     <div class="support-alert" role="alert">{{ sendError() }}</div>
+                }
+                @if (attachmentError()) {
+                    <div class="support-alert" role="alert">{{ attachmentError() }}</div>
                 }
                 <div class="support-reply">
                     <textarea
@@ -105,14 +116,23 @@
                         placeholder="Votre réponse…"
                         maxlength="4000"
                     ></textarea>
-                    <button
-                        type="button"
-                        class="support-btn-primary"
-                        [disabled]="!replyBody().trim() || sending()"
-                        (click)="submitReply()"
-                    >
-                        {{ sending() ? '…' : 'Envoyer' }}
-                    </button>
+                    <div class="support-reply-actions">
+                        <label class="support-attach-btn">
+                            📎 {{ replyAttachment()?.name || 'Joindre une preuve' }}
+                            <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" (change)="onReplyFileSelected($event)" hidden />
+                        </label>
+                        @if (replyAttachment()) {
+                            <button type="button" class="support-btn-ghost" (click)="clearReplyAttachment()">Retirer</button>
+                        }
+                        <button
+                            type="button"
+                            class="support-btn-primary"
+                            [disabled]="(!replyBody().trim() && !replyAttachment()) || sending()"
+                            (click)="submitReply()"
+                        >
+                            {{ sending() ? '…' : 'Envoyer' }}
+                        </button>
+                    </div>
                 </div>
             }
         } @else {

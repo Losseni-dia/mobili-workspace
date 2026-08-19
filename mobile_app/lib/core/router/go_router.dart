@@ -83,6 +83,7 @@ GoRouter goRouter(GoRouterRef ref) {
         '/bookings',
         '/payments',
         '/tickets',
+        '/support',
         '/covoiturage/profile',
         '/covoiturage/trips',
         '/covoiturage/history',

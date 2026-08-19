@@ -165,13 +165,22 @@
   line-height: 1.5;
 }
 
+.support-msg-attachment {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  margin-top: 8px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  object-fit: cover;
+}
+
 .support-reply {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: flex-end;
 
   textarea {
-    flex: 1;
     padding: 10px 12px;
     border: 1.5px solid variables.$gray-200;
     border-radius: variables.$radius-sm;
@@ -181,6 +190,29 @@
 
     &:focus { outline: none; border-color: variables.$mobili-blue; }
   }
+}
+
+.support-reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.support-attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: variables.$radius-sm;
+  border: 1.5px dashed variables.$gray-300;
+  color: variables.$gray-600;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: variables.$t-fast;
+
+  &:hover { border-color: variables.$mobili-blue; color: variables.$mobili-blue; }
 }
 
 .support-new-form {

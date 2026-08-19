@@ -16,12 +16,14 @@ import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+import com.mobili.backend.shared.sharedService.UploadService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -46,6 +48,7 @@ public class ClaimService {
     // Même mécanisme de notification que PartnerService/UserService (notifyAdmins) et
     // rejectPartner (notifyUser) — rien de nouveau inventé ici, voir InboxNotificationService.
     private final InboxNotificationService inboxNotificationService;
+    private final UploadService uploadService;
 
     @Transactional
     public PassengerClaimResponse createClaim(Long userId, CreateClaimRequest request) {
@@ -95,6 +98,29 @@ public class ClaimService {
                 MobiliNotificationType.CLAIM_SUBMITTED,
                 saved);
 
+        return toPassengerResponse(saved);
+    }
+
+    // Deuxième étape optionnelle après createClaim : ajoute/remplace la preuve jointe. Pas
+    // fusionné dans createClaim pour rester sur du JSON pur à la création (pas de rupture pour
+    // les clients existants) — voir ClaimController pour l'endpoint multipart dédié.
+    @Transactional
+    public PassengerClaimResponse addAttachment(Long claimId, Long userId, MultipartFile file) {
+        Claim claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réclamation introuvable : " + claimId));
+        // Pas d'IDOR : seul le propriétaire de la réclamation peut y joindre une preuve (les
+        // admins passent par leurs propres endpoints, pas celui-ci).
+        if (!claim.getUser().getId().equals(userId)) {
+            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
+        }
+
+        String path = uploadService.saveAttachment(file, UploadService.FOLDER_SENSITIVE_CLAIM_ATTACHMENTS);
+        claim.setAttachmentPath(path);
+        claim.setAttachmentOriginalName(file.getOriginalFilename());
+        claim.setAttachmentContentType(file.getContentType());
+
+        Claim saved = claimRepository.save(claim);
+        log.info("📎 Pièce jointe ajoutée à la réclamation #{}", saved.getId());
         return toPassengerResponse(saved);
     }
 
@@ -164,7 +190,10 @@ public class ClaimService {
                 claim.getAdminNote(),
                 claim.getResolutionMessage(),
                 claim.getCreatedAt(),
-                claim.getResolvedAt());
+                claim.getResolvedAt(),
+                claim.getAttachmentPath(),
+                claim.getAttachmentOriginalName(),
+                claim.getAttachmentContentType());
     }
 
     private PassengerClaimResponse toPassengerResponse(Claim claim) {
@@ -177,7 +206,10 @@ public class ClaimService {
                 fromJson(claim.getDetailsJson()),
                 claim.getResolutionMessage(),
                 claim.getCreatedAt(),
-                claim.getResolvedAt());
+                claim.getResolvedAt(),
+                claim.getAttachmentPath(),
+                claim.getAttachmentOriginalName(),
+                claim.getAttachmentContentType());
     }
 
     private String fullName(User u) {

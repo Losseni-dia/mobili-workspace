@@ -37,6 +37,12 @@ public class UploadService {
      */
     public static final String FOLDER_SENSITIVE_PARTNER_LEGAL = "sensitive/partners/legal";
 
+    /** Pièces jointes (preuves) sur les messages support/admin-com. */
+    public static final String FOLDER_SENSITIVE_SUPPORT_ATTACHMENTS = "sensitive/support/attachments";
+
+    /** Pièces jointes (preuves) sur les réclamations. */
+    public static final String FOLDER_SENSITIVE_CLAIM_ATTACHMENTS = "sensitive/claims/attachments";
+
     @Value("${mobili.backend.upload.root-directory}")
     private String rootDirectory;
 
@@ -64,6 +70,28 @@ public class UploadService {
     public String saveImage(MultipartFile file, String folder) {
         validateImage(file);
         return writeFile(file, folder, false);
+    }
+
+    /**
+     * Enregistre une "preuve" jointe (image ou PDF) — décide du type d'après le
+     * content-type/l'extension puis délègue à {@link #saveImage} ou {@link #saveDocument} pour
+     * la validation stricte habituelle (signature de fichier incluse). Utilisé par les pièces
+     * jointes support/réclamations, où le client peut fournir l'un ou l'autre.
+     */
+    public String saveAttachment(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty()) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Fichier vide.");
+        }
+        return looksLikePdfUpload(file) ? saveDocument(file, folder) : saveImage(file, folder);
+    }
+
+    private boolean looksLikePdfUpload(MultipartFile file) {
+        String ct = file.getContentType();
+        if (ct != null && ct.toLowerCase(Locale.ROOT).contains("pdf")) {
+            return true;
+        }
+        String name = file.getOriginalFilename();
+        return name != null && name.toLowerCase(Locale.ROOT).endsWith(".pdf");
     }
 
     /**

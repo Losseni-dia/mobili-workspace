@@ -24,6 +24,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^6.2.1
   image_picker: ^1.2.2
+  file_picker: ^8.1.2 # pièce jointe messages "Support" (image ou PDF)
   mobile_scanner: ^5.2.3
   share_plus: ^10.0.0
   csv: ^6.0.0

@@ -81,6 +81,15 @@
         <div class="modal-body">
           <p class="modal-subtitle"><strong>{{ REASON_LABELS[c.reason] }}</strong> — {{ c.message }}</p>
 
+          @if (c.attachmentPath) {
+            <mobili-secure-upload-img
+              [relativePath]="c.attachmentPath"
+              [alt]="c.attachmentOriginalName || 'Preuve jointe'"
+              [pdfLinkLabel]="'📎 ' + (c.attachmentOriginalName || 'Preuve jointe (PDF)')"
+              hostClass="claim-attachment-preview"
+            />
+          }
+
           <label class="ig">
             <span>Nouveau statut</span>
             <select [ngModel]="handleStatus()" (ngModelChange)="handleStatus.set($event)">

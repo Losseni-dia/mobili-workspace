@@ -24,8 +24,11 @@ import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+import com.mobili.backend.shared.sharedService.UploadService;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class AdminComService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final InboxNotificationService inboxNotificationService;
+    private final UploadService uploadService;
 
     @Transactional
     public AdminComThreadDTO createThread(CreateAdminComThreadRequest req, UserPrincipal principal) {
@@ -169,6 +173,41 @@ public class AdminComService {
         return toMessageDto(msg);
     }
 
+    // Variante avec pièce jointe : le corps texte devient optionnel (un message peut n'être
+    // qu'une preuve jointe) — même logique de notification que postMessage, factorisée via
+    // buildAndSaveMessage.
+    @Transactional
+    public AdminComMessageDTO postMessageWithAttachment(Long threadId, String body, MultipartFile file,
+            UserPrincipal principal) {
+        AdminComThread thread = getThreadForUser(threadId, principal);
+        User author = principal.getUser();
+
+        String path = uploadService.saveAttachment(file, UploadService.FOLDER_SENSITIVE_SUPPORT_ATTACHMENTS);
+
+        AdminComMessage msg = new AdminComMessage();
+        msg.setThread(thread);
+        msg.setAuthor(author);
+        msg.setBody(body != null && !body.isBlank() ? body.trim() : "📎 Pièce jointe");
+        msg.setAttachmentPath(path);
+        msg.setAttachmentOriginalName(file.getOriginalFilename());
+        msg.setAttachmentContentType(file.getContentType());
+        msg = messageRepository.save(msg);
+
+        thread.setLastActivityAt(msg.getCreatedAt() != null ? msg.getCreatedAt() : LocalDateTime.now());
+        threadRepository.save(thread);
+
+        User recipient = thread.getAdminUser().getId().equals(author.getId())
+                ? thread.getPartnerUser()
+                : thread.getAdminUser();
+        inboxNotificationService.notifyUser(
+                recipient,
+                fullName(author) + " : " + thread.getSubject(),
+                "📎 A envoyé une pièce jointe",
+                MobiliNotificationType.MOBILI_ADMIN_INFO_PARTNER);
+
+        return toMessageDto(msg);
+    }
+
     // ─── Résolution du type ───────────────────────────────────────────────────
 
     private AdminComType resolveType(String rawType, User user) {
@@ -229,7 +268,10 @@ public class AdminComService {
                 fullName(m.getAuthor()),
                 m.getBody(),
                 m.getCreatedAt(),
-                m.getCreatedAt() != null ? m.getCreatedAt().format(FR) : "");
+                m.getCreatedAt() != null ? m.getCreatedAt().format(FR) : "",
+                m.getAttachmentPath(),
+                m.getAttachmentOriginalName(),
+                m.getAttachmentContentType());
     }
 
     private String resolveCompanyName(User u) {

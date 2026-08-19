@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -63,6 +66,8 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
   List<Ticket>? _bookingTickets;
   bool _loadingTickets = false;
   Set<int> _selectedTicketIds = {};
+
+  File? _attachment;
 
   /// Tant qu'aucune réservation n'est choisie, la liste reste dépliée ; dès
   /// qu'on en sélectionne une, elle se replie pour ne montrer que celle-ci
@@ -193,18 +198,53 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
     return {'ticketIds': _selectedTicketIds.join(',')};
   }
 
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+      withData: false,
+    );
+    final path = result?.files.single.path;
+    if (path == null) return;
+    // 12 Mo — même limite que UploadService.maxBytesPerFile côté backend, revalidée serveur.
+    if (await File(path).length() > 12 * 1024 * 1024) {
+      if (mounted) {
+        setState(() => _error = 'Fichier trop volumineux (max 12 Mo).');
+      }
+      return;
+    }
+    setState(() {
+      _attachment = File(path);
+      _error = null;
+    });
+  }
+
   Future<void> _submit() async {
     setState(() {
       _submitting = true;
       _error = null;
     });
     try {
-      await ClaimService().createClaim(
+      final claim = await ClaimService().createClaim(
         reason: _reason,
         bookingId: _selectedBookingId,
         message: _messageCtrl.text.trim(),
         details: _claimDetails,
       );
+      // Deuxième appel optionnel : la preuve n'empêche jamais l'envoi de la réclamation si
+      // son upload échoue (juste un avertissement, pas de perte de la réclamation).
+      if (_attachment != null) {
+        try {
+          await ClaimService().addAttachment(claim.id, _attachment!);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text(
+                    "Réclamation envoyée, mais l'ajout de la pièce jointe a échoué."),
+                backgroundColor: AppColors.danger));
+          }
+        }
+      }
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -329,6 +369,39 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: AppColors.mobiliBlue, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const _SectionTitle('Preuve (facultatif)'),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: _pickAttachment,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.gray200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.attach_file_rounded, size: 18, color: AppColors.mobiliBlue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _attachment?.path.split('/').last ?? 'Joindre une photo ou un PDF',
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray600),
+                    ),
+                  ),
+                  if (_attachment != null)
+                    GestureDetector(
+                      onTap: () => setState(() => _attachment = null),
+                      child: const Icon(Icons.close_rounded, size: 18, color: AppColors.gray400),
+                    ),
+                ],
               ),
             ),
           ),

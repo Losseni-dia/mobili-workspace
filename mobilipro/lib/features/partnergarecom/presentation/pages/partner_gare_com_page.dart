@@ -1,11 +1,18 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobilipro/features/partnergarecom/data/partner_gare_com_service.dart';
 import 'package:mobilipro/features/partnergarecom/domain/models/partner_gare_com_models.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
+import '../../../../shared/widgets/private_network_image.dart';
 
 class _StationOption {
   const _StationOption({
@@ -83,12 +90,22 @@ class AdminComMessage {
     required this.authorName,
     required this.body,
     required this.createdAtFormatted,
+    required this.attachmentPath,
+    required this.attachmentOriginalName,
+    required this.attachmentContentType,
   });
   final int id;
   final int authorId;
   final String authorName;
   final String body;
   final String createdAtFormatted;
+  final String? attachmentPath;
+  final String? attachmentOriginalName;
+  final String? attachmentContentType;
+
+  bool get isPdfAttachment =>
+      (attachmentContentType?.contains('pdf') ?? false) ||
+      (attachmentPath?.toLowerCase().endsWith('.pdf') ?? false);
 
   factory AdminComMessage.fromJson(Map<String, dynamic> j) => AdminComMessage(
     id: (j['id'] as num).toInt(),
@@ -96,6 +113,9 @@ class AdminComMessage {
     authorName: j['authorName'] as String? ?? '—',
     body: j['body'] as String? ?? '',
     createdAtFormatted: j['createdAtFormatted'] as String? ?? '',
+    attachmentPath: j['attachmentPath'] as String?,
+    attachmentOriginalName: j['attachmentOriginalName'] as String?,
+    attachmentContentType: j['attachmentContentType'] as String?,
   );
 }
 
@@ -877,6 +897,7 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   bool _isSending = false;
+  File? _attachment;
 
   @override
   void dispose() {
@@ -897,16 +918,74 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
     });
   }
 
+  Future<void> _pickAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+      withData: false,
+    );
+    final path = result?.files.single.path;
+    if (path == null) return;
+    // 12 Mo — même limite que UploadService.maxBytesPerFile côté backend, revalidée serveur.
+    if (await File(path).length() > 12 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Fichier trop volumineux (max 12 Mo).'),
+            backgroundColor: AppColors.danger));
+      }
+      return;
+    }
+    setState(() => _attachment = File(path));
+  }
+
+  /// Ouvre une pièce jointe PDF via le partage système — `/media/private` exige un header
+  /// Authorization, donc pas de lien externe direct : on télécharge les octets avec le Dio
+  /// authentifié puis on délègue l'ouverture au OS (même pattern que mobile_app).
+  Future<void> _openPdfAttachment(AdminComMessage m) async {
+    if (m.attachmentPath == null) return;
+    try {
+      final res = await ApiClient.instance.dio.get<List<int>>(
+        '/media/private',
+        queryParameters: {'rel': m.attachmentPath},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final dir = await getTemporaryDirectory();
+      final name = m.attachmentOriginalName ?? 'piece-jointe.pdf';
+      final file = File('${dir.path}/$name');
+      await file.writeAsBytes(res.data!);
+      await Share.shareXFiles([XFile(file.path)]);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Impossible d\'ouvrir la pièce jointe : $e'),
+            backgroundColor: AppColors.danger));
+      }
+    }
+  }
+
   Future<void> _send() async {
     final text = _msgCtrl.text.trim();
-    if (text.isEmpty) return;
+    final attachment = _attachment;
+    if (text.isEmpty && attachment == null) return;
     setState(() => _isSending = true);
     _msgCtrl.clear();
+    setState(() => _attachment = null);
     try {
-      await ApiClient.instance.dio.post(
-        '/admin-com/threads/${widget.thread.id}/messages',
-        data: {'body': text},
-      );
+      if (attachment != null) {
+        final formData = FormData.fromMap({
+          if (text.isNotEmpty) 'body': text,
+          'file': await MultipartFile.fromFile(attachment.path),
+        });
+        await ApiClient.instance.dio.post(
+          '/admin-com/threads/${widget.thread.id}/messages/attachment',
+          data: formData,
+        );
+      } else {
+        await ApiClient.instance.dio.post(
+          '/admin-com/threads/${widget.thread.id}/messages',
+          data: {'body': text},
+        );
+      }
       ref.invalidate(_adminComMessagesProvider(widget.thread.id));
       ref.invalidate(_adminComThreadsProvider);
       _scrollToBottom();
@@ -920,6 +999,7 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
           ),
         );
         _msgCtrl.text = text;
+        setState(() => _attachment = attachment);
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -1031,6 +1111,7 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
                       return _AdminMsgBubble(
                         message: m,
                         isMe: m.authorId == myId,
+                        onOpenPdfAttachment: () => _openPdfAttachment(m),
                       );
                     },
                   ),
@@ -1038,9 +1119,12 @@ class _AdminComThreadPageState extends ConsumerState<AdminComThreadPage> {
               },
             ),
           ),
-          _MessageInputBar(
+          _AdminComMessageInputBar(
             ctrl: _msgCtrl,
             isSending: _isSending,
+            attachment: _attachment,
+            onPickAttachment: _pickAttachment,
+            onClearAttachment: () => setState(() => _attachment = null),
             onSend: _send,
           ),
         ],
@@ -1125,9 +1209,14 @@ class _MsgBubble extends StatelessWidget {
 }
 
 class _AdminMsgBubble extends StatelessWidget {
-  const _AdminMsgBubble({required this.message, required this.isMe});
+  const _AdminMsgBubble({
+    required this.message,
+    required this.isMe,
+    required this.onOpenPdfAttachment,
+  });
   final AdminComMessage message;
   final bool isMe;
+  final VoidCallback onOpenPdfAttachment;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -1174,13 +1263,66 @@ class _AdminMsgBubble extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(
-            message.body,
-            style: TextStyle(
-              color: isMe ? AppColors.white : AppColors.mobiliBlueDeep,
-              fontSize: 14,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message.body,
+                style: TextStyle(
+                  color: isMe ? AppColors.white : AppColors.mobiliBlueDeep,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              if (message.attachmentPath != null) ...[
+                const SizedBox(height: 8),
+                if (message.isPdfAttachment)
+                  GestureDetector(
+                    onTap: onOpenPdfAttachment,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isMe
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : AppColors.gray50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.picture_as_pdf_rounded,
+                              size: 16,
+                              color:
+                                  isMe ? AppColors.white : AppColors.mobiliBlue),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                                message.attachmentOriginalName ?? 'Pièce jointe',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: isMe
+                                        ? AppColors.white
+                                        : AppColors.mobiliBlueDeep)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 160,
+                      height: 160,
+                      child:
+                          PrivateNetworkImage(relativePath: message.attachmentPath!),
+                    ),
+                  ),
+              ],
+            ],
           ),
         ),
         Padding(
@@ -1271,6 +1413,137 @@ class _MessageInputBar extends StatelessWidget {
                     size: 20,
                   ),
           ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Barre saisie message avec pièce jointe — Messages Mobili uniquement (le Canal
+// société utilise _MessageInputBar, sans upload : back-end différent, PartnerGareComService).
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AdminComMessageInputBar extends StatelessWidget {
+  const _AdminComMessageInputBar({
+    required this.ctrl,
+    required this.isSending,
+    required this.attachment,
+    required this.onPickAttachment,
+    required this.onClearAttachment,
+    required this.onSend,
+  });
+  final TextEditingController ctrl;
+  final bool isSending;
+  final File? attachment;
+  final VoidCallback onPickAttachment;
+  final VoidCallback onClearAttachment;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      color: AppColors.white,
+      border: Border(top: BorderSide(color: AppColors.gray200)),
+    ),
+    padding: EdgeInsets.fromLTRB(
+      16,
+      12,
+      16,
+      12 + MediaQuery.of(context).viewInsets.bottom,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (attachment != null) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.mobiliBlueFog,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.attach_file_rounded,
+                    size: 16, color: AppColors.mobiliBlue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(attachment!.path.split('/').last,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mobiliBlueDeep)),
+                ),
+                GestureDetector(
+                  onTap: onClearAttachment,
+                  child: const Icon(Icons.close_rounded,
+                      size: 16, color: AppColors.gray400),
+                ),
+              ],
+            ),
+          ),
+        ],
+        Row(
+          children: [
+            GestureDetector(
+              onTap: isSending ? null : onPickAttachment,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gray200),
+                ),
+                child: const Icon(Icons.attach_file_rounded,
+                    color: AppColors.mobiliBlue, size: 20),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 120),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.gray200),
+                ),
+                child: TextField(
+                  controller: ctrl,
+                  maxLines: null,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'Votre message...',
+                    hintStyle: TextStyle(color: AppColors.gray400, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: isSending ? null : onSend,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isSending ? AppColors.gray300 : AppColors.mobiliBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: isSending
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(
+                            color: AppColors.white, strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_rounded,
+                        color: AppColors.white, size: 20),
+              ),
+            ),
+          ],
         ),
       ],
     ),

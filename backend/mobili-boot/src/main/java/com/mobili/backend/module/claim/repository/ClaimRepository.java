@@ -18,4 +18,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     List<Claim> findByStatusOrderByCreatedAtDesc(ClaimStatus status);
 
     List<Claim> findAllByOrderByCreatedAtDesc();
+
+    /** Contrôle d'accès pièce jointe — voir PrivateMediaService.mayAccess. */
+    boolean existsByAttachmentPathAndUser_Id(String attachmentPath, Long userId);
 }

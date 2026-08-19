@@ -37,6 +37,9 @@ class Claim {
     this.booking,
     this.resolutionMessage,
     this.resolvedAt,
+    this.attachmentPath,
+    this.attachmentOriginalName,
+    this.attachmentContentType,
   });
 
   final int id;
@@ -47,6 +50,13 @@ class Claim {
   final String? resolutionMessage;
   final DateTime createdAt;
   final DateTime? resolvedAt;
+  final String? attachmentPath;
+  final String? attachmentOriginalName;
+  final String? attachmentContentType;
+
+  bool get isPdfAttachment =>
+      (attachmentContentType?.contains('pdf') ?? false) ||
+      (attachmentPath?.toLowerCase().endsWith('.pdf') ?? false);
 
   factory Claim.fromJson(Map<String, dynamic> j) => Claim(
         id: (j['id'] as num).toInt(),
@@ -61,5 +71,8 @@ class Claim {
         resolvedAt: j['resolvedAt'] != null
             ? DateTime.tryParse(j['resolvedAt'] as String)
             : null,
+        attachmentPath: j['attachmentPath'] as String?,
+        attachmentOriginalName: j['attachmentOriginalName'] as String?,
+        attachmentContentType: j['attachmentContentType'] as String?,
       );
 }

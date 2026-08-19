@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 import '../../../core/network/api_client.dart';
@@ -26,6 +28,19 @@ class ClaimService {
         'message': message,
         if (details != null && details.isNotEmpty) 'details': details,
       },
+    );
+    return Claim.fromJson(response.data!);
+  }
+
+  /// Étape optionnelle après createClaim() : joint une preuve (image ou PDF) à une
+  /// réclamation existante — propriété vérifiée côté backend (ClaimService.addAttachment).
+  Future<Claim> addAttachment(int claimId, File file) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(file.path),
+    });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/claims/$claimId/attachment',
+      data: formData,
     );
     return Claim.fromJson(response.data!);
   }
