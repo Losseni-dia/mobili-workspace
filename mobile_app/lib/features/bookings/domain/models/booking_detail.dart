@@ -60,6 +60,11 @@ class BookingDetail {
   /// Covoiturage : délai de paiement une fois le chauffeur ayant accepté.
   final DateTime? paymentDeadline;
 
+  /// Ville d'embarquement/débarquement du tronçon réellement réservé (si dispo), sinon
+  /// repli sur le trajet complet du voyage — même principe que Ticket.effectiveBoardingCity.
+  String get effectiveBoardingCity => boardingCity ?? departureCity;
+  String get effectiveAlightingCity => alightingCity ?? arrivalCity;
+
   bool get isUpcoming => departureDateTime.isAfter(DateTime.now());
 
   bool get _isResolvedNegatively =>

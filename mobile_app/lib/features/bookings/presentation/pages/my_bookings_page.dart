@@ -362,7 +362,7 @@ class _BookingCard extends StatelessWidget {
                               Row(
                                 children: [
                                   Flexible(
-                                    child: Text(booking.departureCity,
+                                    child: Text(booking.effectiveBoardingCity,
                                         style:
                                             AppTextStyles.titleLarge.copyWith(
                                           color: AppColors.white,
@@ -378,7 +378,7 @@ class _BookingCard extends StatelessWidget {
                                         size: 16),
                                   ),
                                   Flexible(
-                                    child: Text(booking.arrivalCity,
+                                    child: Text(booking.effectiveAlightingCity,
                                         style:
                                             AppTextStyles.titleLarge.copyWith(
                                           color: AppColors.white,
@@ -825,7 +825,8 @@ class _BookingCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     )),
                 const SizedBox(height: 4),
-                Text('${booking.departureCity} → ${booking.arrivalCity}',
+                Text(
+                    '${booking.effectiveBoardingCity} → ${booking.effectiveAlightingCity}',
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.gray500)),
                 const SizedBox(height: 20),
