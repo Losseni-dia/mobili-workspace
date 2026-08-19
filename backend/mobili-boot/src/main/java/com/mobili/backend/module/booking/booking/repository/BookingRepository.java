@@ -15,7 +15,9 @@ import com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa;
 import com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-        List<Booking> findByCustomerId(Long userId);
+        // Tri par date de réservation (récente d'abord) directement en base — le front (web/app)
+        // s'appuyait jusqu'ici uniquement sur son propre tri client, jamais garanti par la requête.
+        List<Booking> findByCustomerIdOrderByBookingDateDesc(Long userId);
 
         List<Booking> findByTripId(Long tripId);
 

@@ -526,7 +526,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<Booking> findByUserId(Long userId) {
         enforceCanReadUserBookings(userId);
-        List<Booking> bookings = bookingRepository.findByCustomerId(userId);
+        List<Booking> bookings = bookingRepository.findByCustomerIdOrderByBookingDateDesc(userId);
         bookings.forEach(this::initLazyCollections);
         return bookings;
     }

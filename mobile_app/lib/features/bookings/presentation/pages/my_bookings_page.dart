@@ -162,14 +162,14 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
               ),
             ),
             data: (bookings) {
+              // Tri par date de réservation (la plus récente en premier), pas par date de
+              // voyage — même règle que web (my-bookings.component.ts) et mobile my_tickets_page.
               final upcoming = bookings
                   .where((b) => b.belongsToUpcoming)
                   .toList()
-                ..sort((a, b) =>
-                    a.departureDateTime.compareTo(b.departureDateTime));
+                ..sort((a, b) => b.bookingDate.compareTo(a.bookingDate));
               final past = bookings.where((b) => !b.belongsToUpcoming).toList()
-                ..sort((a, b) =>
-                    b.departureDateTime.compareTo(a.departureDateTime));
+                ..sort((a, b) => b.bookingDate.compareTo(a.bookingDate));
 
               // Si la réservation surlignée est dans "Passées", on bascule
               // automatiquement sur cet onglet pour qu'elle soit visible.

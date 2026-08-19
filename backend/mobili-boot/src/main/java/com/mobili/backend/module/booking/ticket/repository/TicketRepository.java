@@ -30,7 +30,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @Query("SELECT t FROM Ticket t WHERE t.booking.id = :bookingId ORDER BY t.seatNumber ASC")
     List<Ticket> findAllByBookingIdOrderBySeatNumberAsc(@Param("bookingId") Long bookingId);
 
-    @Query("SELECT t FROM Ticket t JOIN FETCH t.trip WHERE t.passenger.id = :userId")
+    // Tri par date de réservation (récente d'abord) — même principe que
+    // BookingRepository.findByCustomerIdOrderByBookingDateDesc.
+    @Query("SELECT t FROM Ticket t JOIN FETCH t.trip WHERE t.passenger.id = :userId ORDER BY t.bookingDate DESC")
     List<Ticket> findAllByUserIdCustom(@Param("userId") Long userId);
 
     @Query("SELECT DISTINCT t.passenger.id FROM Ticket t WHERE t.trip.id = :tripId AND t.status <> 'ANNULÉ'")
