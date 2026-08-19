@@ -12,6 +12,39 @@
     radial-gradient(circle at 20% 0%, rgba(variables.$mobili-yellow, 0.2), transparent 55%),
     radial-gradient(circle at 80% 110%, rgba(variables.$mobili-blue, 0.14), transparent 55%),
     linear-gradient(180deg, variables.$gray-50 0%, variables.$mobili-blue-fog 100%);
+
+  // Habillage « pro » (Mobili Business) — fond bleu plein + logo écrit jaune en tête, même
+  // identité visuelle que le login mobilipro (login_page.dart : Scaffold bleu + ecrito_jaune +
+  // badge PROFESSIONNEL + carte blanche à coins arrondis en dessous).
+  &--pro {
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 0;
+    background: variables.$mobili-blue;
+  }
+}
+
+.pro-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 56px 16px 40px;
+
+  &__logo {
+    height: 56px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  &__badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: variables.$mobili-yellow;
+    letter-spacing: 4px;
+  }
 }
 
 .login-card {
@@ -26,6 +59,23 @@
 
   @media (min-width: 768px) {
     padding: 3rem;
+  }
+
+  // Carte pro : coins arrondis uniquement en haut, colle au bas de l'écran, pas de flottement
+  // au centre — même effet « feuille remontant depuis le bas » que côté mobile.
+  .login-wrapper--pro & {
+    max-width: 560px;
+    border-radius: variables.$radius-xl variables.$radius-xl 0 0;
+    box-shadow: none;
+    border: none;
+    flex: 1;
+    margin-top: -24px;
+
+    @media (min-width: 560px) {
+      border-radius: variables.$radius-xl;
+      margin: 0 0 56px;
+      flex: none;
+    }
   }
 
   .login-header {

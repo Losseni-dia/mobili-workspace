@@ -1,8 +1,15 @@
-<div class="login-wrapper">
+<div class="login-wrapper" [class.login-wrapper--pro]="appKind === 'business'">
+    @if (appKind === 'business') {
+        <div class="pro-header">
+            <img src="assets/images/ecrito-jaune.png" alt="Mobili" class="pro-header__logo" />
+            <span class="pro-header__badge">PROFESSIONNEL</span>
+        </div>
+    }
+
     <div class="login-card">
         <div class="login-header">
             <h2>Connexion</h2>
-            <p>Accédez à vos trajets et réservations</p>
+            <p>{{ appKind === 'business' ? 'Accédez à votre espace professionnel' : 'Accédez à vos trajets et réservations' }}</p>
         </div>
 
         <form (submit)="onSubmit()" #loginForm="ngForm">

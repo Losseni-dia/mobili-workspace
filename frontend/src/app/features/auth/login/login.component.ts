@@ -21,7 +21,8 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private configuration = inject(ConfigurationService);
-  private readonly appKind = inject<MobiliAppKind>(MOBILI_APP_KIND);
+  /** Public (pas private) : le template distingue l'habillage pro (bleu + logo) du voyageur. */
+  readonly appKind = inject<MobiliAppKind>(MOBILI_APP_KIND);
 
   credentials = { login: '', password: '' };
   errorMessage = signal<string | null>(null);
