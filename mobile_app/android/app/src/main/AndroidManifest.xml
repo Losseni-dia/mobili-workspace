@@ -55,4 +55,9 @@
          résolues actuelles) ne la déclarent — le sélecteur système (ACTION_GET_CONTENT /
          photo picker) ne la requiert plus, cf. audit publication Play Store. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- AUDIT-MOBILI.md §3.5 : absente du manifest main (release), présente seulement dans
+         src/debug|profile/ — probablement agrégée via des plugins tiers (firebase_messaging
+         etc.) au merge de manifest, mais pas garanti/explicite. Déclarée ici pour ne jamais
+         dépendre d'un plugin tiers pour l'accès réseau de l'app. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

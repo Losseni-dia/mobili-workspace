@@ -37,6 +37,17 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // AUDIT-MOBILI.md §3.6 : R8 + minification activés pour le build release —
+            // logique métier (calcul de prix, endpoints) moins facilement rétro-analysable.
+            // Règles de garde dans proguard-rules.pro (embedding Flutter, Firebase Messaging,
+            // flutter_local_notifications, ML Kit/mobile_scanner — libs à réflexion, jamais
+            // obfusquées). Même config que mobilipro/android/app/build.gradle.kts.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

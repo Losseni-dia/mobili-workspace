@@ -45,7 +45,19 @@ jobs:
           MOBILEAPP_KEYSTORE_PASSWORD: ${{ secrets.MOBILEAPP_KEYSTORE_PASSWORD }}
           MOBILEAPP_KEY_ALIAS: ${{ secrets.MOBILEAPP_KEY_ALIAS }}
           MOBILEAPP_KEY_PASSWORD: ${{ secrets.MOBILEAPP_KEY_PASSWORD }}
-        run: flutter build apk --release
+        # --obfuscate + --split-debug-info (AUDIT-MOBILI.md §3.6) : le nom des classes/
+        # méthodes Dart n'apparaît plus dans l'APK release. Les symboles nécessaires pour
+        # ré-associer un crash obfusqué (flutter symbolize) sont écrits à part et uploadés
+        # en artefact CI ci-dessous — jamais dans l'APK distribué. Même config que
+        # deploy-mobilipro.yml.
+        run: flutter build apk --release --obfuscate --split-debug-info=build/debug-info
+
+      - name: Upload symboles de débogage (obfuscation)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobileapp-debug-info-${{ github.sha }}
+          path: mobile_app/build/debug-info
+          retention-days: 90
 
       # wzieba/Firebase-Distribution-Github-Action n'expose aucune option de
       # retry/timeout : un upload qui traine (reseau runner <-> Firebase) fait
