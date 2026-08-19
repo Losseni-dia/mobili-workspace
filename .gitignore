@@ -37,3 +37,11 @@ npm-debug.log**.jks
 AI_CONTEXT/
 DEPLOYMENT_REPORT.md
 AUDIT-MOBILI.md
+
+# --- STORE ASSETS (captures d'écran / visuels Play Store) ---
+# Structure de dossiers versionnée (voir store-assets/README.md), fichiers image ignorés.
+store-assets/**/*.png
+store-assets/**/*.jpg
+store-assets/**/*.jpeg
+store-assets/**/*.webp
+!store-assets/**/.gitkeep
