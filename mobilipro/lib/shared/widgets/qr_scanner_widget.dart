@@ -16,6 +16,8 @@ class QrScanResult {
     this.seatNumber,
     this.departureCity,
     this.arrivalCity,
+    this.boardingCity,
+    this.alightingCity,
     this.status,
     this.message,
     this.transportPrice,
@@ -28,14 +30,20 @@ class QrScanResult {
   final String? seatNumber;
   final String? departureCity;
   final String? arrivalCity;
+  // Tronçon réellement réservé par le passager — à préférer à departureCity/arrivalCity
+  // (trajet complet du voyage) quand disponible (TicketResponseDTO.boardingCity/alightingCity).
+  final String? boardingCity;
+  final String? alightingCity;
   final String? status;
   final String? message;
   final double? transportPrice;
   final int extraHoldBags;
   final double luggageFee;
-  String get route => (departureCity != null && arrivalCity != null)
-      ? '$departureCity → $arrivalCity'
-      : '';
+  String get route {
+    final dep = boardingCity ?? departureCity;
+    final arr = alightingCity ?? arrivalCity;
+    return (dep != null && arr != null) ? '$dep → $arr' : '';
+  }
   double get totalPaid => (transportPrice ?? 0) + luggageFee;
 }
 
@@ -119,6 +127,8 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
           seatNumber: data['seatNumber'] as String?,
           departureCity: data['departureCity'] as String?,
           arrivalCity: data['arrivalCity'] as String?,
+          boardingCity: data['boardingCity'] as String?,
+          alightingCity: data['alightingCity'] as String?,
           status: data['status'] as String?,
           transportPrice: (data['transportPrice'] as num?)?.toDouble(),
           extraHoldBags: (data['extraHoldBags'] as num?)?.toInt() ?? 0,
@@ -137,6 +147,8 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
           seatNumber: data['seatNumber'] as String?,
           departureCity: data['departureCity'] as String?,
           arrivalCity: data['arrivalCity'] as String?,
+          boardingCity: data['boardingCity'] as String?,
+          alightingCity: data['alightingCity'] as String?,
           status: status,
           transportPrice: (data['transportPrice'] as num?)?.toDouble(),
           extraHoldBags: (data['extraHoldBags'] as num?)?.toInt() ?? 0,

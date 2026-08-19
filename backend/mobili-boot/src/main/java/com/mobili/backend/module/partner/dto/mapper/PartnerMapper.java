@@ -30,7 +30,7 @@ public interface PartnerMapper {
 
     // APRÈS
     @Mapping(target = "customerName", expression = "java(booking.getCustomer().getFirstname() + \" \" + booking.getCustomer().getLastname())")
-    @Mapping(target = "tripRoute", expression = "java(booking.getTrip().getDepartureCity() + \" -> \" + booking.getTrip().getArrivalCity())")
+    @Mapping(target = "tripRoute", expression = "java(com.mobili.backend.module.booking.booking.util.BookingSegmentUtil.resolveRouteLabel(booking))")
     @Mapping(target = "date", source = "createdAt")
     // JAMAIS totalPrice directement : inclut le forfait client, jamais reversé à la
     // compagnie. Booking.getGrossAmount() est la seule implémentation de ce calcul dans

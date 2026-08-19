@@ -1,10 +1,8 @@
 package com.mobili.backend.module.booking.booking.dto.mapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.mobili.backend.module.booking.booking.dto.BookingResponseDTO;
 import com.mobili.backend.module.booking.booking.entity.Booking;
+import com.mobili.backend.module.booking.booking.util.BookingSegmentUtil;
 import com.mobili.backend.module.trip.entity.Trip;
 
 import org.mapstruct.AfterMapping;
@@ -24,7 +22,9 @@ public interface BookingMapper {
     @Mapping(source = "customer.firstname", target = "customerFirstname")
     @Mapping(source = "customer.lastname", target = "customerLastname")
     @Mapping(source = "customer.avatarUrl", target = "customerAvatarUrl")
-    @Mapping(target = "tripRoute", expression = "java(booking.getTrip().getDepartureCity() + \" -> \" + booking.getTrip().getArrivalCity())")
+    // Calculé en @AfterMapping à partir du tronçon réel (boardingCity/alightingCity), pas du
+    // trajet complet du voyage — voir fillSegmentLabelsAndUnitPrice.
+    @Mapping(target = "tripRoute", ignore = true)
     @Mapping(source = "totalPrice", target = "totalPrice")
     // JAMAIS totalPrice : inclut le forfait client, jamais reversé à la compagnie.
     // Booking.getGrossAmount() est la seule implémentation de ce calcul dans tout le
@@ -43,16 +43,10 @@ public interface BookingMapper {
     default void fillSegmentLabelsAndUnitPrice(Booking booking, @MappingTarget BookingResponseDTO dto) {
         Trip trip = booking.getTrip();
         if (trip != null) {
-            List<String> labels = buildCityLabels(trip.getDepartureCity(), trip.getArrivalCity(), trip.getMoreInfo());
-            int last = Math.max(0, labels.size() - 1);
-            int boarding = dto.getBoardingStopIndex() != null ? dto.getBoardingStopIndex() : 0;
-            int alighting = dto.getAlightingStopIndex() != null ? dto.getAlightingStopIndex() : last;
-            if (boarding >= 0 && boarding < labels.size()) {
-                dto.setBoardingCity(labels.get(boarding));
-            }
-            if (alighting >= 0 && alighting < labels.size()) {
-                dto.setAlightingCity(labels.get(alighting));
-            }
+            String[] cities = BookingSegmentUtil.resolveBoardingAlightingCities(booking);
+            dto.setBoardingCity(cities[0]);
+            dto.setAlightingCity(cities[1]);
+            dto.setTripRoute(cities[0] + " → " + cities[1]);
         }
 
         Integer seats = dto.getNumberOfSeats();
@@ -79,42 +73,5 @@ public interface BookingMapper {
         if (booking.getSeatNumbers() != null) {
             dto.setSeatNumbers(booking.getSeatNumbers());
         }
-    }
-
-    /**
-     * Construit la liste ordonnée des villes traversées par le voyage.
-     * Aligné sur la logique frontend {@code buildTripCityLabels}.
-     */
-    private static List<String> buildCityLabels(String departureCity, String arrivalCity, String moreInfoCsv) {
-        List<String> labels = new ArrayList<>();
-        String dep = trimCity(departureCity);
-        if (!dep.isEmpty()) {
-            labels.add(dep);
-        }
-        if (moreInfoCsv != null && !moreInfoCsv.trim().isEmpty()) {
-            for (String raw : moreInfoCsv.split(",")) {
-                String trimmed = trimCity(raw);
-                if (!trimmed.isEmpty()
-                        && (labels.isEmpty() || !labels.get(labels.size() - 1).equalsIgnoreCase(trimmed))) {
-                    labels.add(trimmed);
-                }
-            }
-        }
-        String arr = trimCity(arrivalCity);
-        if (!arr.isEmpty() && (labels.isEmpty() || !labels.get(labels.size() - 1).equalsIgnoreCase(arr))) {
-            labels.add(arr);
-        }
-        return labels;
-    }
-
-    private static String trimCity(String raw) {
-        if (raw == null) {
-            return "";
-        }
-        String t = raw.trim();
-        if (t.isEmpty()) {
-            return "";
-        }
-        return Character.toUpperCase(t.charAt(0)) + t.substring(1).toLowerCase();
     }
 }

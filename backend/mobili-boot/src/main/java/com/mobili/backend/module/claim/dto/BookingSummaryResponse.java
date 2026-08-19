@@ -1,6 +1,7 @@
 package com.mobili.backend.module.claim.dto;
 
 import com.mobili.backend.module.booking.booking.entity.Booking;
+import com.mobili.backend.module.booking.booking.util.BookingSegmentUtil;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +22,7 @@ public record BookingSummaryResponse(
         return new BookingSummaryResponse(
                 booking.getId(),
                 booking.getReference(),
-                booking.getTrip().getDepartureCity() + " → " + booking.getTrip().getArrivalCity(),
+                BookingSegmentUtil.resolveRouteLabel(booking),
                 booking.getTotalPrice(),
                 booking.getBookingDate(),
                 booking.getStatus() != null ? booking.getStatus().name() : "—");

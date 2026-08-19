@@ -742,7 +742,7 @@ public class BookingService {
                             b.getId(),
                             b.getReference(),
                             b.getBookingDate(),
-                            b.getTrip().getDepartureCity() + " → " + b.getTrip().getArrivalCity(),
+                            com.mobili.backend.module.booking.booking.util.BookingSegmentUtil.resolveRouteLabel(b),
                             grossAmount,
                             commissionTotal,
                             companyNet,
