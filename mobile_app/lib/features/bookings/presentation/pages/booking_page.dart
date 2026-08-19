@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobili/core/services/analytics_service.dart';
+import 'package:mobili/features/auth/presentation/pages/login_page.dart';
 import 'package:mobili/features/auth/providers/auth_provider.dart';
 import 'package:mobili/features/bookings/presentation/pages/my_tickets_page.dart';
 import 'package:mobili/features/bookings/presentation/pages/payment_webview_page.dart';
@@ -302,8 +303,42 @@ class _BookingPageState extends ConsumerState<BookingPage> {
     return true;
   }
 
+  // Cette page est atteinte via Navigator.push (trip_detail_page.dart,
+  // trips_list_page.dart), donc HORS du guard d'authentification de
+  // go_router.dart (redirect: ...), qui ne s'applique qu'aux routes déclarées
+  // dans le router. Sans ce contrôle, un utilisateur non connecté pouvait
+  // arriver jusqu'à la sélection de sièges et au choix de paiement côté
+  // client (AUDIT-MOBILI.md §3.7). Même logique d'attente que go_router.dart
+  // (on ne redirige jamais tant que l'état auth est encore initial/loading,
+  // pour ne pas éjecter un utilisateur réellement connecté pendant la
+  // vérification du token au démarrage). Réactif via ref.watch : si la
+  // session expire pendant que la page est ouverte, l'utilisateur est
+  // également renvoyé au login.
+  bool _redirectingToLogin = false;
+
+  void _guardAuthOrRedirect(BuildContext context, AuthState? authState) {
+    final isLoadingAuth =
+        authState?.isLoading == true || authState?.status == AuthStatus.initial;
+    final isAuthenticated = authState?.isAuthenticated ?? false;
+    if (isLoadingAuth || isAuthenticated || _redirectingToLogin) return;
+
+    _redirectingToLogin = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider).valueOrNull;
+    _guardAuthOrRedirect(context, authState);
+    if (!(authState?.isAuthenticated ?? false)) {
+      return const Scaffold(body: Center(child: MobiliLoader()));
+    }
+
     final bookingState = ref.watch(bookingNotifierProvider);
     final covoiturageRequestState =
         ref.watch(covoiturageRequestNotifierProvider);
