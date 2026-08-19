@@ -23,10 +23,8 @@ export class ConfigurationService {
         const base = { ...CONFIGURATION_DATA.variables[envName] } as Record<string, string>;
         if (override) {
             this.currentConfig = { ...base, apiUrl: override } as typeof this.currentConfig;
-            console.log('[Mobili Config] Mode: override (meta / window) →', override, `(env: ${String(envName)})`);
         } else {
             this.currentConfig = base as typeof this.currentConfig;
-            console.log(`[Mobili Config] Mode détecté : ${String(envName)}`);
         }
     }
 
