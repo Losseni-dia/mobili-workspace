@@ -37,6 +37,14 @@ dependencies:
   url_launcher: ^6.3.2
   shared_preferences: ^2.3.2
 
+dependency_overrides:
+  # flutter_plugin_android_lifecycle >=2.0.28 exige compileSdk 36 côté consommateurs, mais le
+  # module Android de file_picker (transitif via image_picker/mobile_scanner aussi) est encore
+  # compilé en compileSdk 34 côté pub.dev → échec CheckAarMetadata en CI. On repointe sur la
+  # dernière version compatible compileSdk 34 en attendant que ces plugins publient une mise à
+  # jour cohérente entre eux. Même fix que mobile_app.
+  flutter_plugin_android_lifecycle: 2.0.24
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

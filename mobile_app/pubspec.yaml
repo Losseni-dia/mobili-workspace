@@ -51,6 +51,14 @@ dependencies:
   firebase_messaging: ^15.0.0
   firebase_analytics: ^11.0.0
   flutter_local_notifications: ^17.0.0
+dependency_overrides:
+  # flutter_plugin_android_lifecycle >=2.0.28 exige compileSdk 36 côté consommateurs, mais le
+  # module Android de file_picker (transitif via image_picker/mobile_scanner aussi) est encore
+  # compilé en compileSdk 34 côté pub.dev → échec CheckAarMetadata en CI. On repointe sur la
+  # dernière version compatible compileSdk 34 en attendant que ces plugins publient une mise à
+  # jour cohérente entre eux.
+  flutter_plugin_android_lifecycle: 2.0.24
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
