@@ -1,9 +1,16 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/mobili_app_bar.dart';
+import '../../../shared/widgets/private_network_image.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../data/claim_service.dart';
 import '../domain/models/claim.dart';
@@ -141,6 +148,31 @@ class _MyClaimsPageState extends ConsumerState<MyClaimsPage> {
   }
 }
 
+/// Ouvre une pièce jointe PDF via le partage système — `/media/private` exige un header
+/// Authorization, donc pas de lien externe direct : on télécharge les octets avec le Dio
+/// authentifié puis on délègue l'ouverture au OS (même pattern que support_page.dart).
+Future<void> _openPdfAttachment(BuildContext context, Claim claim) async {
+  if (claim.attachmentPath == null) return;
+  try {
+    final res = await ApiClient.instance.dio.get<List<int>>(
+      '/media/private',
+      queryParameters: {'rel': claim.attachmentPath},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final dir = await getTemporaryDirectory();
+    final name = claim.attachmentOriginalName ?? 'piece-jointe.pdf';
+    final file = File('${dir.path}/$name');
+    await file.writeAsBytes(res.data!);
+    await Share.shareXFiles([XFile(file.path)]);
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Impossible d\'ouvrir la pièce jointe : $e'),
+          backgroundColor: AppColors.danger));
+    }
+  }
+}
+
 class _ClaimCard extends StatelessWidget {
   const _ClaimCard({required this.claim, this.isHighlighted = false});
   final Claim claim;
@@ -192,6 +224,43 @@ class _ClaimCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(claim.message,
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray600)),
+          if (claim.attachmentPath != null) ...[
+            const SizedBox(height: 8),
+            if (claim.isPdfAttachment)
+              GestureDetector(
+                onTap: () => _openPdfAttachment(context, claim),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.picture_as_pdf_rounded,
+                          size: 16, color: AppColors.mobiliBlue),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(claim.attachmentOriginalName ?? 'Pièce jointe',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.mobiliBlueDeep)),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: PrivateNetworkImage(relativePath: claim.attachmentPath!),
+                ),
+              ),
+          ],
           const SizedBox(height: 16),
           ClaimStatusTimeline(
             status: claim.status,

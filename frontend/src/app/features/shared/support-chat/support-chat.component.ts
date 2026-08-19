@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupportMessage, SupportService, SupportThread } from '../../../core/services/support/support.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
+
+/** Taille max côté UI — alignée sur mobili.backend.upload.max-bytes-per-file (12 Mo), le serveur revalide de toute façon. */
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 /**
  * Support Mobili — un seul composant réutilisé côté voyageur (`/my-account/support`) et
@@ -12,13 +17,16 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 @Component({
   selector: 'app-support-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MobiliSecureUploadImgComponent],
   templateUrl: './support-chat.component.html',
   styleUrl: './support-chat.component.scss',
 })
 export class SupportChatComponent implements OnInit {
   private supportService = inject(SupportService);
   private authService = inject(AuthService);
+
+  replyAttachment = signal<File | null>(null);
+  attachmentError = signal<string | null>(null);
 
   threads = signal<SupportThread[]>([]);
   isLoadingThreads = signal(false);
@@ -122,14 +130,19 @@ export class SupportChatComponent implements OnInit {
   submitReply(): void {
     const threadId = this.selectedThreadId();
     const body = this.replyBody().trim();
-    if (!threadId || !body || this.sending()) return;
+    const attachment = this.replyAttachment();
+    if (!threadId || (!body && !attachment) || this.sending()) return;
 
     this.sending.set(true);
     this.sendError.set(null);
-    this.supportService.postMessage(threadId, body).subscribe({
+    const request$ = attachment
+      ? this.supportService.postMessageWithAttachment(threadId, body || null, attachment)
+      : this.supportService.postMessage(threadId, body);
+    request$.subscribe({
       next: (msg) => {
         this.messages.update((list) => [...list, msg]);
         this.replyBody.set('');
+        this.replyAttachment.set(null);
         this.sending.set(false);
       },
       error: (e) => {
@@ -137,5 +150,33 @@ export class SupportChatComponent implements OnInit {
         this.sending.set(false);
       },
     });
+  }
+
+  onReplyFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.attachmentError.set(null);
+    if (!file) {
+      this.replyAttachment.set(null);
+      return;
+    }
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+      this.attachmentError.set('Formats acceptés : JPEG, PNG, WebP ou PDF.');
+      input.value = '';
+      this.replyAttachment.set(null);
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      this.attachmentError.set('Fichier trop volumineux (max 12 Mo).');
+      input.value = '';
+      this.replyAttachment.set(null);
+      return;
+    }
+    this.replyAttachment.set(file);
+  }
+
+  clearReplyAttachment(): void {
+    this.replyAttachment.set(null);
+    this.attachmentError.set(null);
   }
 }

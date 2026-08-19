@@ -10,11 +10,12 @@ import {
   CLAIM_STATUS_LABELS,
   ClaimStatus,
 } from '../../../core/services/claim/claim.service';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
 
 @Component({
   selector: 'app-admin-claims',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MobiliSecureUploadImgComponent],
   templateUrl: './admin-claims.html',
   styleUrl: './admin-claims.scss',
 })

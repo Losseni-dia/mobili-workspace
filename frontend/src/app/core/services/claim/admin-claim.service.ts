@@ -24,6 +24,9 @@ export interface AdminClaim {
   resolutionMessage: string | null;
   createdAt: string;
   resolvedAt: string | null;
+  attachmentPath: string | null;
+  attachmentOriginalName: string | null;
+  attachmentContentType: string | null;
 }
 
 export interface UpdateClaimStatusRequest {

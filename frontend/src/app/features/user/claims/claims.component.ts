@@ -13,12 +13,17 @@ import {
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
+import { MobiliSecureUploadImgComponent } from '../../../shared/upload/mobili-secure-upload-img.component';
+
+/** Taille max côté UI — alignée sur mobili.backend.upload.max-bytes-per-file (12 Mo), le serveur revalide de toute façon. */
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 /** Réclamations voyageur — parité mobile_app (claim_form_page.dart, my_claims_page.dart). */
 @Component({
   selector: 'app-claims',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MobiliSecureUploadImgComponent],
   templateUrl: './claims.component.html',
   styleUrl: './claims.component.scss',
 })
@@ -28,6 +33,9 @@ export class ClaimsComponent implements OnInit {
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private toast = inject(NotificationService);
+
+  attachment = signal<File | null>(null);
+  attachmentError = signal<string | null>(null);
 
   readonly reasonLabels = CLAIM_REASON_LABELS;
   readonly statusLabels = CLAIM_STATUS_LABELS;
@@ -117,6 +125,7 @@ export class ClaimsComponent implements OnInit {
 
     this.submitting.set(true);
     this.createError.set(null);
+    const attachment = this.attachment();
     this.claimService
       .create({
         reason: this.reason(),
@@ -125,20 +134,67 @@ export class ClaimsComponent implements OnInit {
       })
       .subscribe({
         next: (claim) => {
-          this.submitting.set(false);
-          this.message.set('');
-          this.bookingId.set(null);
-          this.reason.set('OTHER');
-          this.reasonLocked.set(false);
-          this.showNewForm.set(false);
-          this.claims.update((list) => [claim, ...list]);
-          this.toast.show('Votre réclamation a bien été envoyée.', 'success');
+          const finish = (finalClaim: PassengerClaim) => {
+            this.submitting.set(false);
+            this.message.set('');
+            this.bookingId.set(null);
+            this.reason.set('OTHER');
+            this.reasonLocked.set(false);
+            this.attachment.set(null);
+            this.showNewForm.set(false);
+            this.claims.update((list) => [finalClaim, ...list]);
+            this.toast.show('Votre réclamation a bien été envoyée.', 'success');
+          };
+          // Deuxième appel optionnel : la preuve n'empêche jamais l'envoi du texte de la
+          // réclamation si son upload échoue (juste un avertissement, pas de perte du message).
+          if (attachment) {
+            this.claimService.addAttachment(claim.id, attachment).subscribe({
+              next: (withAttachment) => finish(withAttachment),
+              error: () => {
+                this.toast.show(
+                  "Réclamation envoyée, mais l'ajout de la pièce jointe a échoué.",
+                  'error',
+                );
+                finish(claim);
+              },
+            });
+          } else {
+            finish(claim);
+          }
         },
         error: (e) => {
           this.createError.set(e?.error?.message || "Impossible d'envoyer cette réclamation.");
           this.submitting.set(false);
         },
       });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.attachmentError.set(null);
+    if (!file) {
+      this.attachment.set(null);
+      return;
+    }
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+      this.attachmentError.set('Formats acceptés : JPEG, PNG, WebP ou PDF.');
+      input.value = '';
+      this.attachment.set(null);
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      this.attachmentError.set('Fichier trop volumineux (max 12 Mo).');
+      input.value = '';
+      this.attachment.set(null);
+      return;
+    }
+    this.attachment.set(file);
+  }
+
+  clearAttachment(): void {
+    this.attachment.set(null);
+    this.attachmentError.set(null);
   }
 
   bookingLabel(b: BookingResponse): string {

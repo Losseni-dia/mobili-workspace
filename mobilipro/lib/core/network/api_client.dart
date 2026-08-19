@@ -17,8 +17,10 @@ class ApiConstants {
 
    static const String baseUrlDev = 'http://10.0.2.2:8080/v1'; // Pour l'émulateur Android
   //static const String baseUrlDev = 'http://localhost:8080/v1';
-  // Replace with real production domain before release
-static const String baseUrlProd = 'https://api.my-mobili.com/v1';
+  // Domaine réel : le frontend "business" (business.my-mobili.com) fait proxy_pass /v1/
+  // vers le backend (voir frontend/nginx.business.prod.conf) — pas de sous-domaine
+  // api.my-mobili.com.
+static const String baseUrlProd = 'https://business.my-mobili.com/v1';
 
   static const String baseUrl = baseUrlProd; // Toggle for build flavors
 

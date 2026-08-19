@@ -8,6 +8,16 @@
   gap: 1.5rem;
 }
 
+.claim-attachment-preview {
+  display: block;
+  max-width: 260px;
+  max-height: 260px;
+  margin-bottom: 12px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  object-fit: cover;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -24,4 +24,14 @@ public class AdminComMessage extends AbstractEntity {
 
     @Column(nullable = false, length = 4000)
     private String body;
+
+    /** Preuve jointe (image ou PDF) — chemin relatif sous {@code sensitive/support/attachments/}, servi via /media/private. */
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
+
+    @Column(name = "attachment_original_name", length = 255)
+    private String attachmentOriginalName;
+
+    @Column(name = "attachment_content_type", length = 100)
+    private String attachmentContentType;
 }

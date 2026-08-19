@@ -20,5 +20,8 @@ public record PassengerClaimResponse(
         Map<String, String> details,
         String resolutionMessage,
         LocalDateTime createdAt,
-        LocalDateTime resolvedAt) {
+        LocalDateTime resolvedAt,
+        String attachmentPath,
+        String attachmentOriginalName,
+        String attachmentContentType) {
 }

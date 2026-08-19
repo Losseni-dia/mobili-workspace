@@ -40,6 +40,7 @@ dependencies:
 
   url_launcher: ^6.3.0
   image_picker: ^1.2.2
+  file_picker: ^8.1.2 # pièces jointes support/réclamations (image ou PDF)
   qr_flutter: ^4.1.0
   mobile_scanner: ^5.2.3
   screenshot: ^3.0.0

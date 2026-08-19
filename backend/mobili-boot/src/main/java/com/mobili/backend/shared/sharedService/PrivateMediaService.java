@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.admincom.repository.AdminComMessageRepository;
+import com.mobili.backend.module.claim.repository.ClaimRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
@@ -28,6 +30,8 @@ public class PrivateMediaService {
 
     private final UserRepository userRepository;
     private final TripRepository tripRepository;
+    private final ClaimRepository claimRepository;
+    private final AdminComMessageRepository adminComMessageRepository;
 
     @Value("${mobili.backend.upload.root-directory}")
     private String rootDirectory;
@@ -40,9 +44,13 @@ public class PrivateMediaService {
     private String documentsFolder;
 
     public PrivateMediaService(UserRepository userRepository,
-            com.mobili.backend.module.trip.repository.TripRepository tripRepository) {
+            com.mobili.backend.module.trip.repository.TripRepository tripRepository,
+            ClaimRepository claimRepository,
+            AdminComMessageRepository adminComMessageRepository) {
         this.userRepository = userRepository;
         this.tripRepository = tripRepository;
+        this.claimRepository = claimRepository;
+        this.adminComMessageRepository = adminComMessageRepository;
     }
 
     /**
@@ -156,6 +164,14 @@ public class PrivateMediaService {
         User u = userRepository.findById(principal.getUser().getId()).orElse(null);
         if (u == null) {
             return false;
+        }
+        // Preuves jointes réclamations : uniquement le propriétaire de la réclamation (ou admin, déjà géré ci-dessus).
+        if (relative.startsWith(UploadService.FOLDER_SENSITIVE_CLAIM_ATTACHMENTS + "/")) {
+            return claimRepository.existsByAttachmentPathAndUser_Id(relative, u.getId());
+        }
+        // Preuves jointes support/admin-com : les deux participants du fil (admin déjà géré ci-dessus).
+        if (relative.startsWith(UploadService.FOLDER_SENSITIVE_SUPPORT_ATTACHMENTS + "/")) {
+            return adminComMessageRepository.existsAccessibleAttachment(relative, u.getId());
         }
         if (matchesNormalized(relative, u.getCovoiturageIdFrontUrl())
                 || matchesNormalized(relative, u.getCovoiturageIdBackUrl())

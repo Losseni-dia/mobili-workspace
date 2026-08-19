@@ -73,4 +73,14 @@ public class Claim extends AbstractEntity {
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
+
+    /** Preuve jointe (image ou PDF) — chemin relatif sous {@code sensitive/claims/attachments/}, servi via /media/private. */
+    @Column(name = "attachment_path", length = 500)
+    private String attachmentPath;
+
+    @Column(name = "attachment_original_name", length = 255)
+    private String attachmentOriginalName;
+
+    @Column(name = "attachment_content_type", length = 100)
+    private String attachmentContentType;
 }

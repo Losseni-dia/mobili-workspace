@@ -25,6 +25,9 @@ export interface SupportMessage {
   body: string;
   createdAt: string;
   createdAtFormatted: string;
+  attachmentPath: string | null;
+  attachmentOriginalName: string | null;
+  attachmentContentType: string | null;
 }
 
 /**
@@ -62,5 +65,19 @@ export class SupportService {
 
   postMessage(threadId: number, body: string): Observable<SupportMessage> {
     return this.http.post<SupportMessage>(`/admin-com/threads/${threadId}/messages`, { body });
+  }
+
+  /** Preuve jointe (image ou PDF) — texte optionnel, endpoint multipart dédié côté backend. */
+  postMessageWithAttachment(
+    threadId: number,
+    body: string | null,
+    file: File,
+  ): Observable<SupportMessage> {
+    const form = new FormData();
+    if (body) {
+      form.append('body', body);
+    }
+    form.append('file', file);
+    return this.http.post<SupportMessage>(`/admin-com/threads/${threadId}/messages/attachment`, form);
   }
 }

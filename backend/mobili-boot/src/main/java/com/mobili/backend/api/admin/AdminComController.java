@@ -5,9 +5,11 @@ import com.mobili.backend.module.admincom.dto.*;
 import com.mobili.backend.module.admincom.service.AdminComService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -44,5 +46,16 @@ public class AdminComController {
             @Valid @RequestBody PostAdminComMessageRequest req,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(adminComService.postMessage(threadId, req, principal));
+    }
+
+    // Message avec preuve jointe (image/PDF) — texte optionnel (multipart/form-data au lieu
+    // du JSON habituel, un fichier ne peut pas voyager dans un @RequestBody JSON classique).
+    @PostMapping(value = "/threads/{threadId}/messages/attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AdminComMessageDTO> postMessageWithAttachment(
+            @PathVariable Long threadId,
+            @RequestParam(value = "body", required = false) String body,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(adminComService.postMessageWithAttachment(threadId, body, file, principal));
     }
 }

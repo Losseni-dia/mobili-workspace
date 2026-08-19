@@ -54,6 +54,9 @@ export interface PassengerClaim {
   resolutionMessage: string | null;
   createdAt: string;
   resolvedAt: string | null;
+  attachmentPath: string | null;
+  attachmentOriginalName: string | null;
+  attachmentContentType: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -66,5 +69,12 @@ export class ClaimService {
 
   listMine(userId: number): Observable<PassengerClaim[]> {
     return this.http.get<PassengerClaim[]>(`/claims/mine/${userId}`);
+  }
+
+  /** Étape optionnelle après create() : joint une preuve (image ou PDF) à une réclamation existante. */
+  addAttachment(claimId: number, file: File): Observable<PassengerClaim> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<PassengerClaim>(`/claims/${claimId}/attachment`, form);
   }
 }

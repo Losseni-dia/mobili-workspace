@@ -20,5 +20,8 @@ public record ClaimResponse(
         String adminNote,
         String resolutionMessage,
         LocalDateTime createdAt,
-        LocalDateTime resolvedAt) {
+        LocalDateTime resolvedAt,
+        String attachmentPath,
+        String attachmentOriginalName,
+        String attachmentContentType) {
 }
