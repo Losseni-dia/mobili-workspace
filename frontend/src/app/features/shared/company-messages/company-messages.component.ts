@@ -59,9 +59,17 @@ export class CompanyMessagesComponent implements OnInit {
     return this.stations().filter((s) => s.id !== own);
   });
 
-  /** Partenaire (dirigeant) : peut adresser toutes les gares. Gare seule : seulement sa gare. */
+  /**
+   * Partenaire (dirigeant) : peut adresser toutes les gares. Gare seule : seulement sa gare.
+   * Une vraie session gare s'authentifie comme StationPrincipal et `/auth/me` renvoie
+   * `roles: ["STATION"]`, jamais `"GARE"` (voir UserReadController.buildStationProfile) — le
+   * seul `hasRole('GARE')` ne matchait donc plus aucune session gare réelle depuis la migration
+   * du login gare vers le code station, et le choix de destinataire ne s'activait jamais.
+   */
   canBroadcast = computed(() => this.auth.hasRole('PARTNER'));
-  gareOnly = computed(() => this.auth.hasRole('GARE') && !this.auth.hasRole('PARTNER'));
+  gareOnly = computed(
+    () => (this.auth.hasRole('GARE') || this.auth.hasRole('STATION')) && !this.auth.hasRole('PARTNER'),
+  );
 
   newThreadForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],

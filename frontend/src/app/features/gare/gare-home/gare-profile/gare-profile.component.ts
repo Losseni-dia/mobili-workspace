@@ -1,12 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth/auth.service';
 
 @Component({
   selector: 'app-gare-profile',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './gare-profile.component.html',
   styleUrl: './gare-profile.component.scss',
 })

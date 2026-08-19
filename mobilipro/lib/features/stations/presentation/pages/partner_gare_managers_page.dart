@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -1538,6 +1541,10 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
   int? _selectedStationId;
   bool _loading = false;
   String? _error;
+  File? _idFront;
+  File? _idBack;
+  File? _licenseFront;
+  File? _licenseBack;
 
   @override
   void initState() {
@@ -1550,6 +1557,15 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
     _loginCtrl = TextEditingController();
     _passwordCtrl = TextEditingController();
     _selectedStationId = c?.affiliationStationId;
+  }
+
+  Future<File?> _pickDoc() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    return picked != null ? File(picked.path) : null;
   }
 
   @override
@@ -1565,6 +1581,17 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    // CNI + permis obligatoires côté backend uniquement à la création
+    // (PartnerChauffeurController.create) — pas exigés à la mise à jour.
+    if (widget.existing == null &&
+        (_idFront == null ||
+            _idBack == null ||
+            _licenseFront == null ||
+            _licenseBack == null)) {
+      setState(() => _error =
+          'La carte d\'identité et le permis (recto/verso) sont obligatoires.');
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -1588,6 +1615,10 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
             jsonEncode(body),
             contentType: DioMediaType('application', 'json'),
           ),
+          'idFront': await MultipartFile.fromFile(_idFront!.path),
+          'idBack': await MultipartFile.fromFile(_idBack!.path),
+          'licenseFront': await MultipartFile.fromFile(_licenseFront!.path),
+          'licenseBack': await MultipartFile.fromFile(_licenseBack!.path),
         });
         await dio.post('/partenaire/chauffeurs', data: formData);
       } else {
@@ -1730,6 +1761,78 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
                     validator: (v) =>
                         v == null || v.length < 8 ? 'Min 8 caractères' : null,
                   ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'CARTE D\'IDENTITÉ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.mobiliBlue,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DocPicker(
+                          label: 'Recto',
+                          file: _idFront,
+                          onPick: () async {
+                            final f = await _pickDoc();
+                            if (f != null) setState(() => _idFront = f);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _DocPicker(
+                          label: 'Verso',
+                          file: _idBack,
+                          onPick: () async {
+                            final f = await _pickDoc();
+                            if (f != null) setState(() => _idBack = f);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'PERMIS DE CONDUIRE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.mobiliBlue,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DocPicker(
+                          label: 'Recto',
+                          file: _licenseFront,
+                          onPick: () async {
+                            final f = await _pickDoc();
+                            if (f != null) setState(() => _licenseFront = f);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _DocPicker(
+                          label: 'Verso',
+                          file: _licenseBack,
+                          onPick: () async {
+                            final f = await _pickDoc();
+                            if (f != null) setState(() => _licenseBack = f);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
                 if (widget.stations.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -1780,6 +1883,45 @@ class _ChauffeurFormSheetState extends State<_ChauffeurFormSheet> {
       ),
     );
   }
+}
+
+/// Sélecteur photo recto/verso pour les documents chauffeur (CNI, permis) — même pattern que
+/// `_PhotoPicker` dans register_carpool_chauffeur_page.dart (auth) et `_DocPicker` dans
+/// chauffeurs_gare_page.dart (chauffeurs), dupliqué ici car privé à ce fichier.
+class _DocPicker extends StatelessWidget {
+  const _DocPicker({required this.label, required this.file, required this.onPick});
+  final String label;
+  final File? file;
+  final VoidCallback onPick;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onPick,
+        child: Container(
+          height: 90,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: file != null ? AppColors.mobiliBlue : AppColors.gray200,
+              width: file != null ? 2 : 1,
+            ),
+          ),
+          child: file != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(file!, fit: BoxFit.cover, width: double.infinity),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_a_photo_outlined, color: AppColors.gray300, size: 22),
+                    const SizedBox(height: 4),
+                    Text(label, style: const TextStyle(color: AppColors.gray400, fontSize: 11)),
+                  ],
+                ),
+        ),
+      );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

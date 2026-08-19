@@ -41,11 +41,15 @@ export class GareShellComponent implements OnInit {
    * uniquement, voir `/chauffeur/scan`). Transactions retiré (décision produit) : Réservations
    * et Tickets suffisent déjà à couvrir le suivi financier gare, l'onglet dédié faisait doublon.
    */
+  // Routées sous /gare (pas /partenaire) : la gare reste dans son propre shell au lieu de
+  // basculer visuellement sur l'interface société en cliquant sur ces liens (feedback
+  // testeurs) — /gare/trips et /gare/chauffeurs réutilisent les mêmes composants que côté
+  // société, voir business.routes.ts.
   navItems: GareNavItem[] = [
     { label: 'Accueil', icon: '🏠', path: '/gare/accueil', exact: true },
-    { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
+    { label: 'Mes voyages', icon: '🚌', path: '/gare/trips' },
     { label: 'Tickets', icon: '🎫', path: '/gare/tickets' },
-    { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/partenaire/chauffeurs' },
+    { label: 'Chauffeurs', icon: '🧑‍✈️', path: '/gare/chauffeurs' },
     { label: 'Communications', icon: '💬', path: '/gare/communications' },
     { label: 'Notifications', icon: '🔔', path: '/gare/notifications' },
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
@@ -56,6 +60,20 @@ export class GareShellComponent implements OnInit {
 
   pageInfo = computed(() => {
     const url = this.currentUrl();
+    if (url.includes('/gare/trips')) {
+      return {
+        title: 'Mes voyages',
+        desc: 'Trajets de votre compagnie, y compris ceux affectés à votre gare.',
+        crumb: 'Voyages',
+      };
+    }
+    if (url.includes('/gare/chauffeurs')) {
+      return {
+        title: 'Chauffeurs',
+        desc: 'Enregistrez un chauffeur et affectez-le à votre gare.',
+        crumb: 'Chauffeurs',
+      };
+    }
     if (url.includes('/gare/communications')) {
       return {
         title: 'Communications',
@@ -68,13 +86,6 @@ export class GareShellComponent implements OnInit {
         title: 'Tickets',
         desc: 'Billets vendus sur vos voyages, avec leur statut d’embarquement.',
         crumb: 'Tickets',
-      };
-    }
-    if (url.includes('/gare/compte')) {
-      return {
-        title: 'Modifier le compte',
-        desc: 'Nom, e-mail, avatar et mot de passe.',
-        crumb: 'Compte',
       };
     }
     if (url.includes('/gare/profil')) {
@@ -147,7 +158,7 @@ export class GareShellComponent implements OnInit {
     return (
       item.path === '/gare/accueil' ||
       item.path === '/gare/communications' ||
-      item.path === '/partenaire/chauffeurs'
+      item.path === '/gare/chauffeurs'
     );
   }
 

@@ -184,6 +184,9 @@ export const businessRoutes: Routes = [
       import('@mobili-app/features/gare/gare-shell/gare-shell.component').then(
         (m) => m.GareShellComponent,
       ),
+    // Pas de route 'compte' (édition) : la gare consulte son profil (/gare/profil) mais ne le
+    // modifie jamais elle-même — seul le dirigeant peut éditer une fiche gare, depuis
+    // /partenaire/comptes-gare (feedback testeurs).
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'accueil' },
       {
@@ -201,6 +204,24 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        // Réutilise les mêmes composants que côté société (partenaire), routés sous /gare pour
+        // que la gare reste dans son propre shell au lieu de basculer visuellement sur
+        // l'interface société (feedback testeurs : "ça me fait basculer sur la page société").
+        path: 'trips',
+        canActivate: [gareOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/trip-management/trip-management.component').then(
+            (m) => m.TripManagementComponent,
+          ),
+      },
+      {
+        path: 'chauffeurs',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/chauffeur-list/chauffeur-list.component').then(
+            (m) => m.ChauffeurListComponent,
+          ),
+      },
+      {
         path: 'tickets',
         canActivate: [gareOperationsGuard],
         loadComponent: () =>
@@ -214,14 +235,6 @@ export const businessRoutes: Routes = [
         loadComponent: () =>
           import('@mobili-app/features/gare/gare-home/gare-profile/gare-profile.component').then(
             (m) => m.GareProfileComponent,
-          ),
-      },
-      {
-        path: 'compte',
-        canActivate: [gareOperationsGuard],
-        loadComponent: () =>
-          import('@mobili-app/features/user/profile/user-edit/user-edit.component').then(
-            (m) => m.UserEditComponent,
           ),
       },
       {

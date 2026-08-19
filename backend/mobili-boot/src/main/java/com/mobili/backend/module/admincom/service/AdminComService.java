@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mobili.backend.infrastructure.security.authentication.StationPrincipal;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.admincom.dto.AdminComMessageDTO;
 import com.mobili.backend.module.admincom.dto.AdminComThreadDTO;
@@ -19,6 +20,8 @@ import com.mobili.backend.module.admincom.repository.AdminComMessageRepository;
 import com.mobili.backend.module.admincom.repository.AdminComThreadRepository;
 import com.mobili.backend.module.notification.entity.MobiliNotificationType;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
+import com.mobili.backend.module.partner.entity.Partner;
+import com.mobili.backend.module.partner.repository.PartnerRepository;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.repository.UserRepository;
 import com.mobili.backend.module.user.service.UserService;
@@ -40,12 +43,13 @@ public class AdminComService {
     private final AdminComMessageRepository messageRepository;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final PartnerRepository partnerRepository;
     private final InboxNotificationService inboxNotificationService;
     private final UploadService uploadService;
 
     @Transactional
-    public AdminComThreadDTO createThread(CreateAdminComThreadRequest req, UserPrincipal principal) {
-        User caller = principal.getUser();
+    public AdminComThreadDTO createThread(CreateAdminComThreadRequest req, Object principal) {
+        User caller = resolveCallerUser(principal);
         boolean callerIsAdmin = caller.getRoles().stream()
                 .anyMatch(r -> r.getName() == com.mobili.backend.module.user.role.UserRole.ADMIN);
 
@@ -79,7 +83,7 @@ public class AdminComService {
         AdminComMessage first = new AdminComMessage();
         first.setThread(thread);
         first.setAuthor(caller); // auteur = celui qui crée (admin ou client)
-        first.setBody(req.getFirstMessage().trim());
+        first.setBody(prefixIfStation(principal, req.getFirstMessage().trim()));
         messageRepository.save(first);
 
         thread.setLastActivityAt(first.getCreatedAt() != null ? first.getCreatedAt() : LocalDateTime.now());
@@ -130,27 +134,27 @@ public class AdminComService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminComThreadDTO> listThreads(UserPrincipal principal) {
-        return threadRepository.findAllForUser(principal.getUser().getId())
+    public List<AdminComThreadDTO> listThreads(Object principal) {
+        return threadRepository.findAllForUser(resolveCallerUser(principal).getId())
                 .stream().map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<AdminComMessageDTO> listMessages(Long threadId, UserPrincipal principal) {
+    public List<AdminComMessageDTO> listMessages(Long threadId, Object principal) {
         AdminComThread thread = getThreadForUser(threadId, principal);
         return messageRepository.findByThread_IdOrderByCreatedAtAsc(thread.getId())
                 .stream().map(this::toMessageDto).toList();
     }
 
     @Transactional
-    public AdminComMessageDTO postMessage(Long threadId, PostAdminComMessageRequest req, UserPrincipal principal) {
+    public AdminComMessageDTO postMessage(Long threadId, PostAdminComMessageRequest req, Object principal) {
         AdminComThread thread = getThreadForUser(threadId, principal);
-        User author = principal.getUser();
+        User author = resolveCallerUser(principal);
 
         AdminComMessage msg = new AdminComMessage();
         msg.setThread(thread);
         msg.setAuthor(author);
-        msg.setBody(req.getBody().trim());
+        msg.setBody(prefixIfStation(principal, req.getBody().trim()));
         msg = messageRepository.save(msg);
 
         thread.setLastActivityAt(msg.getCreatedAt() != null ? msg.getCreatedAt() : LocalDateTime.now());
@@ -178,16 +182,17 @@ public class AdminComService {
     // buildAndSaveMessage.
     @Transactional
     public AdminComMessageDTO postMessageWithAttachment(Long threadId, String body, MultipartFile file,
-            UserPrincipal principal) {
+            Object principal) {
         AdminComThread thread = getThreadForUser(threadId, principal);
-        User author = principal.getUser();
+        User author = resolveCallerUser(principal);
 
         String path = uploadService.saveAttachment(file, UploadService.FOLDER_SENSITIVE_SUPPORT_ATTACHMENTS);
 
         AdminComMessage msg = new AdminComMessage();
         msg.setThread(thread);
         msg.setAuthor(author);
-        msg.setBody(body != null && !body.isBlank() ? body.trim() : "📎 Pièce jointe");
+        msg.setBody(prefixIfStation(principal,
+                body != null && !body.isBlank() ? body.trim() : "📎 Pièce jointe"));
         msg.setAttachmentPath(path);
         msg.setAttachmentOriginalName(file.getOriginalFilename());
         msg.setAttachmentContentType(file.getContentType());
@@ -227,14 +232,56 @@ public class AdminComService {
 
     // ─── Accès sécurisé ──────────────────────────────────────────────────────
 
-    private AdminComThread getThreadForUser(Long threadId, UserPrincipal principal) {
+    private AdminComThread getThreadForUser(Long threadId, Object principal) {
         AdminComThread thread = threadRepository.findById(threadId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Fil introuvable"));
-        Long userId = principal.getUser().getId();
+        Long userId = resolveCallerUser(principal).getId();
         if (!thread.getAdminUser().getId().equals(userId) && !thread.getPartnerUser().getId().equals(userId)) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Accès refusé");
         }
         return thread;
+    }
+
+    /**
+     * Une session « gare » s'authentifie comme {@link StationPrincipal}, pas comme
+     * {@link UserPrincipal} — {@code AdminComThread}/{@code AdminComMessage} sont strictement
+     * User-à-User (pas de ligne User pour une gare). On rattache donc le fil support de la gare
+     * au compte du DIRIGEANT de sa société (même partenaire), qui est un vrai {@code User}.
+     * Toutes les gares d'une même société partagent ainsi le même fil support que leur
+     * dirigeant — {@link #prefixIfStation} permet à l'admin de savoir laquelle a écrit.
+     */
+    private User resolveCallerUser(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getUser();
+        }
+        if (principal instanceof StationPrincipal sp) {
+            Long partnerId = sp.getPartnerId();
+            if (partnerId == null) {
+                throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                        "Cette gare n'est rattachée à aucune société.");
+            }
+            Partner partner = partnerRepository.findById(partnerId)
+                    .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                            "Société introuvable."));
+            User owner = partner.getOwner();
+            if (owner == null) {
+                throw new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND,
+                        "Cette société n'a pas de dirigeant associé.");
+            }
+            return owner;
+        }
+        throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Compte non pris en charge par le support.");
+    }
+
+    /** Préfixe le message par le nom de la gare quand l'auteur réel est une session gare (le
+     * message est enregistré au nom du dirigeant, voir {@link #resolveCallerUser}) — sinon les
+     * messages de toutes les gares d'une même société seraient indiscernables de ceux du
+     * dirigeant dans le même fil. */
+    private String prefixIfStation(Object principal, String body) {
+        if (principal instanceof StationPrincipal sp) {
+            return "[Gare " + sp.getStation().getName() + "] " + body;
+        }
+        return body;
     }
 
     // ─── Mapping DTO ─────────────────────────────────────────────────────────

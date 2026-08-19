@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mobili.backend.infrastructure.security.authentication.StationPrincipal;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.admincom.repository.AdminComMessageRepository;
 import com.mobili.backend.module.claim.repository.ClaimRepository;
@@ -62,7 +63,7 @@ public class PrivateMediaService {
      * Retourne le chemin absolu si le fichier existe et que {@code principal} peut le lire ; sinon exception HTTP métier.
      */
     @Transactional(readOnly = true)
-    public Path requireReadableFile(UserPrincipal principal, String relQueryParam) {
+    public Path requireReadableFile(Object principal, String relQueryParam) {
         String decoded = URLDecoder.decode(relQueryParam == null ? "" : relQueryParam, StandardCharsets.UTF_8);
         String relative = sanitizeRelativePath(decoded);
         if (relative.isEmpty()) {
@@ -159,14 +160,37 @@ public class PrivateMediaService {
         return normalized;
     }
 
-    private boolean mayAccess(UserPrincipal principal, String relative) {
+    /**
+     * {@code principal} générique : une session gare est un {@link StationPrincipal}, pas un
+     * {@link UserPrincipal} — branché séparément (pas de ligne {@code User} pour une gare, donc
+     * pas d'accès aux fichiers "self" comme les preuves jointes réclamations/support ou le KYC
+     * covoiturage, mais accès aux documents de sa propre société comme un employé).
+     */
+    private boolean mayAccess(Object principal, String relative) {
         if (principal == null) {
             return false;
         }
         if (isAdmin(principal)) {
             return true;
         }
-        User u = userRepository.findById(principal.getUser().getId()).orElse(null);
+        if (principal instanceof StationPrincipal sp) {
+            Long companyId = sp.getPartnerId();
+            if (companyId == null) {
+                return false;
+            }
+            if (relative.startsWith(UploadService.FOLDER_SENSITIVE_CHAUFFEUR_IDS + "/")
+                    || relative.startsWith(UploadService.FOLDER_SENSITIVE_CHAUFFEUR_LICENSE + "/")) {
+                return chauffeurDocumentBelongsToCompany(relative, companyId);
+            }
+            if (relative.startsWith(UploadService.FOLDER_SENSITIVE_PARTNER_LEGAL + "/")) {
+                return partnerLegalDocumentBelongsToCompany(relative, companyId);
+            }
+            return isDriverPhotoOfAnyCovoiturageTrip(relative);
+        }
+        if (!(principal instanceof UserPrincipal up)) {
+            return false;
+        }
+        User u = userRepository.findById(up.getUser().getId()).orElse(null);
         if (u == null) {
             return false;
         }
@@ -198,7 +222,8 @@ public class PrivateMediaService {
         // Carte de transporteur société : le dirigeant propriétaire ou un employé (gare) de la
         // même société.
         if (relative.startsWith(UploadService.FOLDER_SENSITIVE_PARTNER_LEGAL + "/")) {
-            return mayAccessPartnerLegalDocument(u, relative);
+            Long companyId = samePartnerCompanyId(u);
+            return companyId != null && partnerLegalDocumentBelongsToCompany(relative, companyId);
         }
         // Tout utilisateur authentifié peut voir la photo du CONDUCTEUR (pas la
         // CNI) d'un trajet covoiturage publié — même logique d'ouverture que la
@@ -208,28 +233,29 @@ public class PrivateMediaService {
     }
 
     private boolean mayAccessChauffeurDocument(User principalUser, String relative) {
-        User chauffeur = userRepository.findByChauffeurDocumentPath(relative).orElse(null);
-        if (chauffeur == null) {
-            return false;
-        }
-        if (chauffeur.getId().equals(principalUser.getId())) {
+        if (chauffeurDocumentBelongsToSelf(relative, principalUser.getId())) {
             return true;
         }
-        Long chauffeurPartnerId = chauffeur.getEmployerPartner() != null
-                ? chauffeur.getEmployerPartner().getId()
-                : null;
-        if (chauffeurPartnerId == null) {
-            return false;
-        }
-        return chauffeurPartnerId.equals(samePartnerCompanyId(principalUser));
+        Long companyId = samePartnerCompanyId(principalUser);
+        return companyId != null && chauffeurDocumentBelongsToCompany(relative, companyId);
     }
 
-    private boolean mayAccessPartnerLegalDocument(User principalUser, String relative) {
-        Partner partner = partnerRepository.findByTransportCardPath(relative).orElse(null);
-        if (partner == null) {
+    private boolean chauffeurDocumentBelongsToSelf(String relative, Long userId) {
+        User chauffeur = userRepository.findByChauffeurDocumentPath(relative).orElse(null);
+        return chauffeur != null && chauffeur.getId().equals(userId);
+    }
+
+    private boolean chauffeurDocumentBelongsToCompany(String relative, Long companyId) {
+        User chauffeur = userRepository.findByChauffeurDocumentPath(relative).orElse(null);
+        if (chauffeur == null || chauffeur.getEmployerPartner() == null) {
             return false;
         }
-        return partner.getId().equals(samePartnerCompanyId(principalUser));
+        return companyId.equals(chauffeur.getEmployerPartner().getId());
+    }
+
+    private boolean partnerLegalDocumentBelongsToCompany(String relative, Long companyId) {
+        Partner partner = partnerRepository.findByTransportCardPath(relative).orElse(null);
+        return partner != null && companyId.equals(partner.getId());
     }
 
     /** ID de la société (dirigeant propriétaire, ou société employeuse si gare/employé) — {@code null} sinon. */
@@ -247,8 +273,11 @@ public class PrivateMediaService {
         return tripRepository.existsByCovoiturageOrganizerCovoiturageDriverPhotoUrl(relative);
     }
 
-    private static boolean isAdmin(UserPrincipal principal) {
-        return principal.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    private static boolean isAdmin(Object principal) {
+        if (principal instanceof UserPrincipal up) {
+            return up.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        }
+        return false;
     }
 
     public static String probeContentType(Path file) {

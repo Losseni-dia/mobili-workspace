@@ -290,7 +290,15 @@ export class AuthService {
     if (!user || !user.roles) return false;
 
     const cleanRoleName = roleName.replace(/^ROLE_/, '').toUpperCase();
-    const accepted = new Set([cleanRoleName, `ROLE_${cleanRoleName}`]);
+    // GARE et STATION désignent le même type de compte « gare » : une session gare
+    // s'authentifie désormais uniquement via le code station (StationPrincipal, `/auth/me`
+    // renvoie roles: ["STATION"]) — l'ancien login gare (User + rôle GARE) est explicitement
+    // refusé côté backend (AuthController.login, « legacy gare account »). Des dizaines
+    // d'appels `hasRole('GARE')` dans l'app (guards, shells, dashboards…) ont été écrits avant
+    // cette migration et ne matchaient donc plus jamais une vraie session gare — traités comme
+    // synonymes ici plutôt que de corriger chaque appel un par un (risque d'en oublier).
+    const names = cleanRoleName === 'GARE' || cleanRoleName === 'STATION' ? ['GARE', 'STATION'] : [cleanRoleName];
+    const accepted = new Set(names.flatMap((n) => [n, `ROLE_${n}`]));
     return (user.roles as RoleLike[]).some((role) => {
       const roleValue = typeof role === 'string' ? role : role?.name;
       if (!roleValue) return false;
