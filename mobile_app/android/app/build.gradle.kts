@@ -5,7 +5,14 @@ plugins {
 }
 android {
     namespace = "ci.mobili.mobile_app"
-    compileSdk = flutter.compileSdkVersion
+    // Forcé à 36 (au lieu de flutter.compileSdkVersion, resté à 34) — utile en soi (Play Store
+    // exigera bientôt compileSdk >= 36) et combiné à l'override flutter_plugin_android_lifecycle
+    // (voir pubspec.yaml) qui a réglé l'échec CI ":file_picker:checkReleaseAarMetadata" (ce
+    // plugin dépend d'une version de flutter_plugin_android_lifecycle exigeant compileSdk 36,
+    // alors que file_picker lui-même est encore publié compilé en compileSdk 34). targetSdk/
+    // minSdk restent gérés par Flutter, indépendants du compileSdk (AGP 9.0.1 supporte 36 sans
+    // souci).
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

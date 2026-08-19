@@ -37,6 +37,7 @@ import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.module.user.service.UserService;
 import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
 import com.mobili.backend.shared.mobiliError.exception.MobiliException;
+import com.mobili.backend.shared.sharedService.UploadService;
 
 @ExtendWith(MockitoExtension.class)
 class ClaimServiceTest {
@@ -49,12 +50,15 @@ class ClaimServiceTest {
     private BookingService bookingService;
     @Mock
     private InboxNotificationService inboxNotificationService;
+    @Mock
+    private UploadService uploadService;
 
     private ClaimService claimService;
 
     @BeforeEach
     void setUp() {
-        claimService = new ClaimService(claimRepository, userService, bookingService, inboxNotificationService);
+        claimService = new ClaimService(
+                claimRepository, userService, bookingService, inboxNotificationService, uploadService);
     }
 
     @Test
