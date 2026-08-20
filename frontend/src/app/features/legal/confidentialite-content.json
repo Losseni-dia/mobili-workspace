@@ -1,0 +1,71 @@
+{
+  "version": "Version 1.0 — Entrée en vigueur : Juillet 2026",
+  "intro": "Chez Mobili, la protection de vos données personnelles est une priorité. Cette politique explique quelles données nous collectons, pourquoi, et comment nous les protégeons.",
+  "sections": [
+    {
+      "number": "1",
+      "title": "Responsable du traitement",
+      "content": "Le responsable du traitement de vos données personnelles est :\n\nMobili SAS\nSiège social : Abidjan, Côte d'Ivoire\nEmail : privacy@my-mobili.com\nSite web : www.my-mobili.com\n\nMobili SAS s'engage à traiter vos données personnelles dans le respect de la législation applicable en matière de protection des données, notamment :\n• Le Règlement Général sur la Protection des Données (RGPD) de l'Union Européenne\n• La loi ivoirienne n°2013-450 du 19 juin 2013 relative à la protection des données à caractère personnel\n• Les réglementations équivalentes des pays d'Afrique subsaharienne où Mobili opère"
+    },
+    {
+      "number": "2",
+      "title": "Données collectées",
+      "content": "2.1 Données que vous nous fournissez directement\n• Informations d'identité : prénom, nom de famille\n• Coordonnées : numéro de téléphone, adresse email (facultative)\n• Identifiants de connexion : nom d'utilisateur, mot de passe (chiffré)\n• Photo de profil (facultative)\n• Informations de paiement : numéro de mobile money (traité par FedaPay, non stocké par Mobili)\n\n2.2 Données collectées automatiquement\n• Données d'utilisation : historique des recherches, réservations effectuées, billets achetés\n• Données techniques : type d'appareil, système d'exploitation, version de l'application\n• Token de notification push (Firebase FCM) pour l'envoi de notifications\n• Données analytiques anonymisées via Firebase Analytics\n\n2.3 Données collectées pour le covoiturage (conducteurs uniquement)\n• Pièce d'identité (recto/verso) — stockée de façon sécurisée\n• Photo du conducteur\n• Photo et immatriculation du véhicule\n• Numéro de la carte grise\n• Date de validité de la pièce d'identité"
+    },
+    {
+      "number": "3",
+      "title": "Finalités du traitement",
+      "content": "Vos données personnelles sont utilisées pour les finalités suivantes :\n\n3.1 Exécution du contrat (base légale : contrat)\n• Création et gestion de votre compte utilisateur\n• Traitement de vos réservations et paiements\n• Génération et envoi de vos billets électroniques\n• Service client et gestion des demandes de remboursement\n\n3.2 Obligations légales (base légale : obligation légale)\n• Vérification d'identité des conducteurs covoiturage (KYC)\n• Archivage des transactions conformément aux obligations fiscales\n• Réponse aux réquisitions judiciaires ou administratives légalement fondées\n\n3.3 Intérêt légitime (base légale : intérêt légitime)\n• Amélioration de nos services et de l'expérience utilisateur\n• Prévention de la fraude et sécurisation de la plateforme\n• Analyse statistique anonymisée de l'utilisation de la plateforme\n• Envoi de notifications liées à vos réservations\n\n3.4 Consentement (base légale : consentement)\n• Envoi de communications marketing et promotionnelles (avec votre accord explicite)\n• Personnalisation des trajets suggérés"
+    },
+    {
+      "number": "4",
+      "title": "Conservation des données",
+      "content": "Vos données personnelles sont conservées pour les durées suivantes :\n\n• Données de compte : pendant toute la durée de votre inscription + 3 ans après suppression du compte\n• Historique des réservations et billets : 5 ans (obligations comptables et fiscales)\n• Documents KYC (conducteurs) : 5 ans après la fin de la relation contractuelle\n• Données de connexion et logs : 1 an\n• Données analytiques anonymisées : illimitée (car non personnelles)\n• Tokens de notification push : jusqu'à désinstallation de l'application ou révocation\n\nÀ l'expiration de ces délais, vos données sont supprimées ou anonymisées de façon irréversible."
+    },
+    {
+      "number": "5",
+      "title": "Partage des données",
+      "content": "5.1 Partenaires de transport\nPour permettre la réalisation de votre trajet, certaines de vos données (nom, numéro de téléphone, numéro de siège) sont transmises à la compagnie de transport concernée.\n\n5.2 Prestataires de services\nNous faisons appel à des prestataires de confiance pour assurer nos services :\n• FedaPay : traitement sécurisé des paiements mobile money\n• Firebase (Google) : notifications push et analytiques\n• Amazon Web Services (AWS) : hébergement sécurisé de la plateforme\n\nCes prestataires sont contractuellement tenus de protéger vos données et de ne pas les utiliser à d'autres fins.\n\n5.3 Autorités compétentes\nMobili peut être amené à communiquer vos données aux autorités judiciaires, policières ou administratives sur réquisition légalement fondée.\n\n5.4 Ce que nous ne faisons jamais\n• Nous ne vendons jamais vos données personnelles à des tiers.\n• Nous ne partageons pas vos données à des fins publicitaires tierces.\n• Nous ne communiquons jamais votre mot de passe (il est chiffré et inaccessible même pour nous)."
+    },
+    {
+      "number": "6",
+      "title": "Vos droits",
+      "content": "Conformément à la réglementation applicable, vous disposez des droits suivants sur vos données personnelles :\n\n• Droit d'accès : obtenir une copie de vos données personnelles que nous détenons.\n• Droit de rectification : corriger des données inexactes ou incomplètes.\n• Droit à l'effacement (« droit à l'oubli ») : voir la section 7 « Suppression de compte et de données » ci-dessous, entièrement dédiée à ce droit.\n• Droit à la limitation : demander la restriction du traitement de vos données.\n• Droit à la portabilité : recevoir vos données dans un format structuré et lisible par machine.\n• Droit d'opposition : vous opposer à certains traitements, notamment à des fins de prospection commerciale.\n• Droit de retirer votre consentement : à tout moment, sans affecter la licéité du traitement effectué avant le retrait.\n\nPour exercer l'un de ces droits (hors suppression de compte, voir section 7), contactez-nous à : privacy@my-mobili.com\n\nNous nous engageons à répondre à toute demande dans un délai de 30 jours. En cas de réponse insatisfaisante, vous pouvez saisir l'autorité de protection des données compétente dans votre pays."
+    },
+    {
+      "number": "7",
+      "title": "Suppression de compte et de données",
+      "content": "Vous pouvez à tout moment demander la suppression de votre compte Mobili et de vos données personnelles.\n\n7.1 Comment demander la suppression\n• Depuis l'application : onglet Support > « Supprimer mon compte ».\n• Par email : envoyez votre demande à privacy@my-mobili.com depuis l'adresse associée à votre compte (ou en précisant votre numéro de téléphone d'inscription).\n\n7.2 Délai de traitement\nNous traitons toute demande de suppression sous 30 jours maximum à compter de sa réception. Vous recevez une confirmation une fois la suppression effectuée.\n\n7.3 Ce qui est supprimé immédiatement\n• Votre profil (nom, email, photo de profil, mot de passe).\n• Vos préférences et votre historique de recherche.\n• Vos tokens de notification push.\n• Votre accès à l'application (le compte devient inutilisable).\n\n7.4 Ce qui est conservé temporairement, pour des raisons légales\nCertaines données ne peuvent pas être effacées immédiatement car leur conservation est une obligation légale (comptable, fiscale, ou de lutte contre la fraude) — les durées ci-dessous sont identiques à celles décrites en section 4 « Conservation des données » :\n• Historique des réservations et billets déjà émis : conservé 5 ans (obligations comptables et fiscales), puis supprimé.\n• Documents KYC (conducteurs covoiturage) : conservés 5 ans après la fin de la relation contractuelle, puis supprimés.\n• Données de connexion et logs déjà générés : conservées 1 an, puis supprimées.\n• Données restantes de compte (traces minimales liées à d'éventuels litiges) : conservées au maximum 3 ans après la suppression, puis supprimées définitivement.\n\nCes données résiduelles sont conservées uniquement à des fins légales ou probatoires ; elles ne sont plus utilisées pour vous envoyer des communications, ne sont plus accessibles depuis l'application, et ne sont jamais réutilisées à des fins commerciales après votre demande de suppression.\n\n7.5 Suppression de données spécifiques sans suppression du compte\nVous pouvez également demander la suppression d'une donnée précise (par exemple une photo de profil) sans supprimer l'intégralité de votre compte, en écrivant à privacy@my-mobili.com en précisant la donnée concernée."
+    },
+    {
+      "number": "8",
+      "title": "Sécurité des données",
+      "content": "Mobili met en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données contre tout accès non autorisé, perte, destruction ou divulgation :\n\n• Chiffrement des mots de passe (bcrypt)\n• Connexions sécurisées HTTPS/TLS sur toutes les communications\n• Hébergement sur AWS avec chiffrement des données au repos\n• Accès aux données restreint au personnel autorisé uniquement\n• Sauvegardes régulières et sécurisées\n• Journalisation des accès et des modifications\n• Documents KYC stockés dans des répertoires sécurisés et non accessibles publiquement\n• Pas de stockage des données de paiement (déléguées à FedaPay)\n\nEn cas de violation de données susceptible d'affecter vos droits, nous nous engageons à vous en informer dans les meilleurs délais conformément à la réglementation applicable."
+    },
+    {
+      "number": "9",
+      "title": "Cookies et technologies similaires",
+      "content": "L'application mobile Mobili utilise les technologies suivantes :\n\n• Firebase Analytics : analyse anonymisée de l'utilisation de l'application (écrans consultés, durée de session). Ces données sont agrégées et ne permettent pas de vous identifier personnellement.\n• Firebase Cloud Messaging (FCM) : envoi de notifications push liées à vos réservations et alertes importantes. Vous pouvez désactiver ces notifications dans les paramètres de votre téléphone.\n• Stockage local : l'application peut stocker localement certaines données (session de connexion, préférences) pour améliorer votre expérience. Ces données ne sont pas partagées.\n\nAucun cookie publicitaire ou de suivi tiers n'est utilisé dans l'application mobile Mobili."
+    },
+    {
+      "number": "10",
+      "title": "Transferts internationaux de données",
+      "content": "Dans le cadre de nos activités, certaines de vos données peuvent être transférées vers des serveurs situés hors de votre pays de résidence, notamment :\n\n• AWS Europe (Paris, France) : hébergement principal de la plateforme\n• Serveurs Google (Firebase) : notifications et analytiques\n\nCes transferts sont encadrés par des garanties appropriées (clauses contractuelles types, certification Privacy Shield ou équivalent) pour assurer un niveau de protection adéquat de vos données."
+    },
+    {
+      "number": "11",
+      "title": "Données des mineurs",
+      "content": "La plateforme Mobili n'est pas destinée aux personnes de moins de 18 ans. Nous ne collectons pas sciemment de données personnelles relatives à des mineurs.\n\nSi vous êtes parent ou tuteur légal et que vous pensez que votre enfant mineur nous a fourni des données personnelles, contactez-nous immédiatement à privacy@my-mobili.com afin que nous puissions procéder à la suppression de ces données."
+    },
+    {
+      "number": "12",
+      "title": "Modifications de la politique",
+      "content": "Mobili se réserve le droit de modifier la présente politique de confidentialité à tout moment pour refléter les évolutions légales, réglementaires ou opérationnelles.\n\nEn cas de modification substantielle, vous serez informé(e) via :\n• Une notification dans l'application\n• Un email si votre adresse email est renseignée\n\nLa date de dernière mise à jour sera toujours indiquée en haut de ce document. La poursuite de l'utilisation de la plateforme après modification vaut acceptation de la nouvelle politique."
+    },
+    {
+      "number": "13",
+      "title": "Contact & Délégué à la Protection des Données",
+      "content": "Pour toute question, réclamation ou exercice de vos droits relatifs à la protection de vos données personnelles, vous pouvez contacter :\n\nResponsable Protection des Données — Mobili SAS\nEmail : privacy@my-mobili.com\nSupport in-app : via l'onglet Support de l'application Mobili\nSite web : www.my-mobili.com/confidentialite\n\nNous nous engageons à traiter votre demande avec sérieux et dans les meilleurs délais."
+    }
+  ]
+}
