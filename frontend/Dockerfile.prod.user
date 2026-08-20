@@ -17,6 +17,10 @@ COPY . .
 # On utilise || true pour éviter que le build plante si le fichier est introuvable
 RUN sed -i "s|__MOBILI_API_BASE_URL__|${MOBILI_API_BASE_URL}|g" src/index.html
 
+# Pages légales statiques (sans JS) pour les crawlers/robots — voir scripts/generate-legal-static.mjs.
+# Doit tourner AVANT ng build : écrit dans public/, qu'Angular copie ensuite dans le bundle.
+RUN node scripts/generate-legal-static.mjs
+
 # Compilation production (le flag --configuration production masque tes logs de succès)
 RUN npx ng build --configuration production
 
