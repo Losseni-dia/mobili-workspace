@@ -52,7 +52,7 @@
     "@angular/build": "^21.1.4",
     "@angular/cli": "^21.1.4",
     "@angular/compiler-cli": "^21.1.0",
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "^1.62.1",
     "autoprefixer": "^10.4.24",
     "jsdom": "^27.1.0",
     "ng-packagr": "^21.1.0",
