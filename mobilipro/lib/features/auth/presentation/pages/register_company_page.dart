@@ -37,6 +37,8 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
   File? _logo;
   File? _kycFront;
   File? _kycBack;
+  File? _transportCardFront;
+  File? _transportCardBack;
   String? _errorMessage;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -84,6 +86,24 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
     if (picked != null) setState(() => _kycBack = File(picked.path));
   }
 
+  Future<void> _pickTransportCardFront() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    if (picked != null) setState(() => _transportCardFront = File(picked.path));
+  }
+
+  Future<void> _pickTransportCardBack() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+    if (picked != null) setState(() => _transportCardBack = File(picked.path));
+  }
+
   String? _required(String? v, String field) =>
       v == null || v.trim().isEmpty ? '$field requis(e).' : null;
 
@@ -93,6 +113,13 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
       setState(
         () => _errorMessage =
             'Ajoutez les photos recto et verso de votre carte d\'identité.',
+      );
+      return;
+    }
+    if (_transportCardFront == null || _transportCardBack == null) {
+      setState(
+        () => _errorMessage =
+            'Ajoutez les photos recto et verso de votre carte de transporteur.',
       );
       return;
     }
@@ -117,6 +144,8 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
           logoFile: _logo,
           kycFrontFile: _kycFront!,
           kycBackFile: _kycBack!,
+          transportCardFrontFile: _transportCardFront!,
+          transportCardBackFile: _transportCardBack!,
         );
 
     if (ok && mounted) {
@@ -417,6 +446,33 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
                       label: 'Verso',
                       file: _kycBack,
                       onTap: _pickKycBack,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _SectionLabel(label: 'Carte de transporteur'),
+              const SizedBox(height: 4),
+              const Text(
+                'Photos recto et verso de la carte de transporteur de la compagnie (vérifiées par notre équipe avant activation).',
+                style: TextStyle(color: AppColors.gray400, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _KycPicker(
+                      label: 'Recto',
+                      file: _transportCardFront,
+                      onTap: _pickTransportCardFront,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _KycPicker(
+                      label: 'Verso',
+                      file: _transportCardBack,
+                      onTap: _pickTransportCardBack,
                     ),
                   ),
                 ],
