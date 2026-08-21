@@ -142,6 +142,8 @@ Future<AuthResponse> registerCompany({
     File? logoFile,
     required File kycFrontFile,
     required File kycBackFile,
+    required File transportCardFrontFile,
+    required File transportCardBackFile,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -161,6 +163,16 @@ Future<AuthResponse> registerCompany({
         'kycBack': await MultipartFile.fromFile(
           kycBackFile.path,
           filename: kycBackFile.path.split('/').last,
+        ),
+        // Obligatoires côté backend (AuthController.registerCompany) — sans eux,
+        // Spring rejette la requête avant même d'atteindre le contrôleur (500 générique).
+        'transportCardFront': await MultipartFile.fromFile(
+          transportCardFrontFile.path,
+          filename: transportCardFrontFile.path.split('/').last,
+        ),
+        'transportCardBack': await MultipartFile.fromFile(
+          transportCardBackFile.path,
+          filename: transportCardBackFile.path.split('/').last,
         ),
       });
 

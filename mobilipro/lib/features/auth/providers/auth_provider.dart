@@ -193,6 +193,8 @@ Future<bool> registerCompany({
     File? logoFile,
     required File kycFrontFile,
     required File kycBackFile,
+    required File transportCardFrontFile,
+    required File transportCardBackFile,
   }) async {
     if (state.valueOrNull?.isLoading == true) return false;
     state = AsyncData(state.requireValue.asLoading());
@@ -202,6 +204,8 @@ Future<bool> registerCompany({
         logoFile: logoFile,
         kycFrontFile: kycFrontFile,
         kycBackFile: kycBackFile,
+        transportCardFrontFile: transportCardFrontFile,
+        transportCardBackFile: transportCardBackFile,
       );
       final profile = await _service.getMe();
       state = AsyncData(AuthState(
