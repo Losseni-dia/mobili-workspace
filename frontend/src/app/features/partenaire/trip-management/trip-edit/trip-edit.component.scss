@@ -131,6 +131,23 @@
   background: variables.$gray-50;
   border: 1px solid variables.$gray-200;
   border-radius: variables.$radius-md;
+  transition: border-color variables.$t-base, background variables.$t-base;
+
+  &--invalid {
+    border-color: variables.$danger;
+    background: variables.$danger-soft;
+  }
+}
+
+.leg-fares-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: variables.$white;
+  border-left: 3px solid variables.$danger;
+  border-radius: variables.$radius-sm;
+  color: variables.$danger;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .leg-title { margin: 0 0 4px; font-size: 0.95rem; font-weight: 900; color: variables.$mobili-blue-deep; }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -43,6 +43,9 @@ export class AddTripComponent implements OnInit {
   /** Sécurité "Enregistrer" / "Publier" : renseigné dès le premier Enregistrer réussi
    *  (trajet créé en DRAFT côté backend) — active le bouton Publier. */
   tripId = signal<number | null>(null);
+  /** Voir onSubmit() : tronçon(s) sans prix (ex. après ajout d'une ville étape). */
+  legFaresInvalid = signal(false);
+  @ViewChild('legFaresBlock') legFaresBlock?: ElementRef<HTMLElement>;
 
   cityLabelsPreview = signal<string[]>([]);
   /** Un prix par tronçon consécutif (0→1, 1→2, …). */
@@ -201,6 +204,7 @@ export class AddTripComponent implements OnInit {
     const next = [...this.legPrices()];
     next[legIndex] = Number.isNaN(v) || v < 0 ? 0 : v;
     this.legPrices.set(next);
+    this.legFaresInvalid.set(false);
   }
 
   private syncLegPrices() {
@@ -245,6 +249,7 @@ export class AddTripComponent implements OnInit {
 
   onSubmit() {
     if (this.tripForm.invalid || this.isLoading()) return;
+    this.legFaresInvalid.set(false);
     if (this.authService.hasRole('GARE') && this.authService.currentUser()?.gareOperationsEnabled === false) {
       this.notification.show('Votre gare doit être validée par le dirigeant avant publication de trajet.', 'error');
       return;
@@ -263,7 +268,11 @@ export class AddTripComponent implements OnInit {
     const legs = this.legPrices();
     if (last > 0) {
       if (legs.length !== last || legs.some((p) => p == null || p <= 0 || Number.isNaN(p))) {
+        // Ajouter une ville étape fait apparaître un nouveau tronçon à 0 FCFA (voir
+        // syncLegPrices) : un simple toast passait inaperçu. Bandeau persistant + scroll.
+        this.legFaresInvalid.set(true);
         this.notification.show('Indiquez un prix strictement positif pour chaque tronçon.', 'error');
+        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     } else {
