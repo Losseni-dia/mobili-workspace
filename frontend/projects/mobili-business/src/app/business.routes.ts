@@ -221,6 +221,27 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        // Miroir de /partenaire/add-trip (même composant) : sans cette route, le lien "Nouveau
+        // trajet" de TripManagementComponent pointait vers /partenaire/add-trip, bloqué par
+        // partnerRoleGuard (rôle PARTNER strict) pour un compte gare — redirection immédiate
+        // vers '/' sans appel réseau, ressemblant à une déconnexion.
+        path: 'add-trip',
+        canActivate: [gareOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/trip-management/trip-add/add-trip.component').then(
+            (m) => m.AddTripComponent,
+          ),
+      },
+      {
+        // Miroir de /partenaire/edit-trip/:id — même raison que add-trip ci-dessus.
+        path: 'edit-trip/:id',
+        canActivate: [gareOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/trip-management/trip-edit/trip-edit.component').then(
+            (m) => m.TripEditComponent,
+          ),
+      },
+      {
         path: 'chauffeurs',
         loadComponent: () =>
           import('@mobili-app/features/partenaire/chauffeur-list/chauffeur-list.component').then(

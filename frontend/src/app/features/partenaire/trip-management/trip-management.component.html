@@ -26,7 +26,7 @@
             <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filteredTrips().length === 0">
                 ⬇ Export CSV
             </button>
-            <a routerLink="/partenaire/add-trip" class="action-cta">＋ Nouveau trajet</a>
+            <a [routerLink]="[basePath(), 'add-trip']" class="action-cta">＋ Nouveau trajet</a>
         </div>
     </header>
 
@@ -130,7 +130,7 @@
                                     <button class="icon-btn" title="Passagers" (click)="openPassengers(trip)">👥</button>
                                     <button class="icon-btn" title="Vente directe (guichet)" (click)="openSale(trip)">🎟️</button>
                                     <a class="icon-btn" title="Canal du voyage" [routerLink]="tripChannelLink(trip.id)">💬</a>
-                                    <button class="icon-btn" title="Modifier" [routerLink]="['/partenaire/edit-trip', trip.id]">✎</button>
+                                    <button class="icon-btn" title="Modifier" [routerLink]="[basePath(), 'edit-trip', trip.id]">✎</button>
                                     <button
                                         class="icon-btn danger"
                                         title="Supprimer"
@@ -157,7 +157,7 @@
             <div class="empty-icon">📂</div>
             <strong>Aucun trajet publié</strong>
             <p>Créez votre premier voyage en quelques clics.</p>
-            <a routerLink="/partenaire/add-trip" class="action-cta">＋ Publier un trajet</a>
+            <a [routerLink]="[basePath(), 'add-trip']" class="action-cta">＋ Publier un trajet</a>
         </div>
     }
 </section>
