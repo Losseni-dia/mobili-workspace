@@ -443,10 +443,26 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _currentStep > 0
-              ? _prevStep
-              : () => Navigator.pop(context),
+          // Une fois le trajet enregistré (brouillon persisté côté serveur), reculer étape
+          // par étape dans le wizard n'a plus d'intérêt — l'utilisateur veut sortir direct
+          // vers sa liste de trajets, pas retraverser toute la configuration.
+          onPressed: _tripId != null
+              ? () => Navigator.pop(context, true)
+              : (_currentStep > 0
+                    ? _prevStep
+                    : () => Navigator.pop(context)),
         ),
+        actions: [
+          if (_tripId != null)
+            TextButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.list_alt_rounded, color: AppColors.white),
+              label: const Text(
+                'Mes trajets',
+                style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w700),
+              ),
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
