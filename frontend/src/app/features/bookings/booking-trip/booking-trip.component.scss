@@ -17,6 +17,18 @@ $mobili-gray: variables.$gray-400;
   background: $mobili-light-bg;
   border-radius: 30px;
 
+  .trip-in-progress-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    background: rgba(variables.$station-green, 0.12);
+    color: variables.$station-green;
+    font-weight: 700;
+    border-radius: variables.$radius-sm;
+  }
+
   // Bloc conducteur (covoiturage particulier uniquement)
   .driver-block {
     display: flex;

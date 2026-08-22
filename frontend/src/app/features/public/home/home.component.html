@@ -118,6 +118,10 @@
                         <strong>{{ trip.boardingPoint }}</strong>
                     </div>
 
+                    <div class="trip-in-progress" *ngIf="isTripInProgress(trip.status)">
+                        🚌 {{ tripInProgressLabel(trip.nextStopCity) }}
+                    </div>
+
                     <div *ngIf="trip.moreInfo" class="stops-container">
                         <span class="stop-badge" *ngFor="let stop of trip.moreInfo.split(',')">
                             {{ stop.trim() }}

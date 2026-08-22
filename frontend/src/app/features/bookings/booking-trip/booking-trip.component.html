@@ -3,6 +3,12 @@
         <h2>Choisis ton trajet et tes places</h2>
 
         @if (tripDetails(); as tripData) {
+            @if (isTripInProgress(tripData.status)) {
+                <div class="trip-in-progress-banner">
+                    🚌 {{ tripInProgressLabel(tripData.nextStopCity) }}
+                </div>
+            }
+
             @if (isCovoiturage()) {
                 <div class="driver-block">
                     <div class="driver-avatar">
