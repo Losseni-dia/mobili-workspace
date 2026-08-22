@@ -133,8 +133,17 @@
                                     @if (trip.status === 'DRAFT') {
                                         <!-- Brouillon jamais publié : rien d'exploitable pour un voyageur avant
                                              publication (pas de passagers, pas de canal, pas de vente directe) —
-                                             seul Modifier a du sens tant que Publier n'a pas été cliqué. -->
+                                             seuls Modifier et Supprimer ont du sens tant que Publier n'a pas été
+                                             cliqué (ex. le créateur veut abandonner ce brouillon). -->
                                         <button class="icon-btn" title="Modifier" [routerLink]="[basePath(), 'edit-trip', trip.id]">✎</button>
+                                        <button
+                                            class="icon-btn danger"
+                                            title="Supprimer"
+                                            [disabled]="deletingId() === trip.id"
+                                            (click)="askDelete(trip)"
+                                        >
+                                            {{ deletingId() === trip.id ? '…' : '🗑' }}
+                                        </button>
                                     } @else {
                                         <button class="icon-btn" title="Passagers" (click)="openPassengers(trip)">👥</button>
                                         <button class="icon-btn" title="Vente directe (guichet)" (click)="openSale(trip)">🎟️</button>
