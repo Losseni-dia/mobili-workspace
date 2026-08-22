@@ -293,6 +293,14 @@
       strong { font-weight: 800; }
     }
 
+    .trip-in-progress {
+      width: fit-content;
+      margin-top: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: variables.$station-green;
+    }
+
     .stops-container {
       display: flex;
       flex-wrap: wrap;

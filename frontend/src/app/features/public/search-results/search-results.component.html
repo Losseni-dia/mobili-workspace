@@ -61,6 +61,9 @@
         @if (trip.boardingPoint) {
         <span>· 📍 {{ trip.boardingPoint }}</span>
         }
+        @if (isTripInProgress(trip.status)) {
+        <span class="trip-in-progress">🚌 {{ tripInProgressLabel(trip.nextStopCity) }}</span>
+        }
       </div>
 
       <div class="trip-details">

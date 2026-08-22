@@ -58,6 +58,9 @@ export interface Trip {
   vehicleImageUrl?: string;
   moreInfo?: string;
   status?: string;
+  /** Prochaine ville d'arrêt non encore quittée — renseigné uniquement si status === 'EN_COURS'
+   *  (voir TripRunService#nextStopCityOrNull côté backend). Sert au badge "En route vers X". */
+  nextStopCity?: string | null;
   partnerName?: string;
   stationId?: number;
   stationName?: string;

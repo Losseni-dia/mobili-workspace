@@ -7,6 +7,7 @@ import { switchMap, tap } from 'rxjs/operators';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
 import { getTripPublicListPrice } from '../../../core/utils/trip-public-list-price.util';
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
+import { isTripInProgress, tripInProgressLabel } from '../../../core/utils/trip-status-label.util';
 
 @Component({
   selector: 'app-search-results',
@@ -63,4 +64,6 @@ export class SearchResultsComponent {
   }
 
   formatVehicleType = formatVehicleTypeLabel;
+  isTripInProgress = isTripInProgress;
+  tripInProgressLabel = tripInProgressLabel;
 }

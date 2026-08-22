@@ -14,6 +14,7 @@ import { Trip, TripLegFareResponse, TripService } from '../../../core/services/t
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { buildTripCityLabels } from '../../../core/utils/trip-city-labels.util';
+import { isTripInProgress, tripInProgressLabel } from '../../../core/utils/trip-status-label.util';
 import { getPricePerSeatForSegment } from '../../../core/utils/trip-segment-price.util';
 import { CouponService } from '../../../core/services/coupon/coupon.service';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
@@ -46,6 +47,8 @@ export class BookingTripComponent implements OnInit {
    * bifurque sur `trip.isCovoiturage` sans dupliquer l'écran.
    */
   isCovoiturage = computed(() => this.tripDetails()?.transportType === 'COVOITURAGE');
+  isTripInProgress = isTripInProgress;
+  tripInProgressLabel = tripInProgressLabel;
 
   driverPhotoUrl = computed(() => {
     const url = this.tripDetails()?.covoiturageOrganizerDriverPhotoUrl;

@@ -122,6 +122,15 @@
     font-weight: 600;
   }
 
+  .trip-in-progress {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+    color: variables.$station-green;
+    font-weight: 700;
+  }
+
   .trip-details {
     display: flex;
     justify-content: space-between;
