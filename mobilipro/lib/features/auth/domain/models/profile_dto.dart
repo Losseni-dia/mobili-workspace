@@ -45,7 +45,12 @@ class ProfileDto {
 
   bool get isUser => roles.contains('USER');
   bool get isPartner => roles.contains('PARTNER');
-  bool get isGare => roles.contains('GARE');
+  // Depuis la migration du login gare vers StationPrincipal (authentification par
+  // code station), une session gare renvoie roles: ["STATION"], plus jamais "GARE".
+  // Même fix que web (AuthService.hasRole) : sans le synonyme, le guard de rôle
+  // /gare/* de go_router.dart renvoyait systématiquement l'utilisateur vers
+  // /gare/dashboard dès qu'il tapait un autre onglet (rien n'était cliquable).
+  bool get isGare => roles.contains('GARE') || roles.contains('STATION');
   bool get isChauffeur => roles.contains('CHAUFFEUR');
   bool get isAdmin => roles.contains('ADMIN');
 
