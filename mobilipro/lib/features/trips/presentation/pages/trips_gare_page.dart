@@ -1015,93 +1015,116 @@ class _TripCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.gray100),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              child: Column(
-                children: [
-                  // Ligne 1 : Passagers | Canal | Vente directe
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ActionBtn(
-                          icon: Icons.people_rounded,
-                          label: 'Passagers',
-                          color: AppColors.mobiliBlue,
-                          onTap: onShowPassengers,
+              child: trip.status == 'DRAFT'
+                  // Brouillon jamais publié : rien d'exploitable pour un voyageur avant
+                  // publication (pas de passagers, pas de canal, pas de vente directe, pas
+                  // de masquage) — seul Modifier a du sens tant que Publier n'a pas été tapé.
+                  ? SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit_rounded, size: 14),
+                        label: const Text(
+                          'Modifier',
+                          style: TextStyle(fontSize: 12),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _ActionBtn(
-                          icon: Icons.chat_bubble_rounded,
-                          label: 'Canal',
-                          color: AppColors.stationGreen,
-                          onTap: onCanalTap,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _ActionBtn(
-                          icon: Icons.point_of_sale_rounded,
-                          label: 'Vente',
-                          color: AppColors.proGold,
-                          onTap: onOfflineSale,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  // Ligne 2 : Modifier | Masquer
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onEdit,
-                          icon: const Icon(Icons.edit_rounded, size: 14),
-                          label: const Text(
-                            'Modifier',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.gray600,
-                            side: const BorderSide(color: AppColors.gray300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: onArchive,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: isArchived
-                              ? AppColors.stationGreen
-                              : AppColors.gray400,
-                          side: BorderSide(
-                            color: isArchived
-                                ? AppColors.stationGreen
-                                : AppColors.gray300,
-                          ),
+                          foregroundColor: AppColors.gray600,
+                          side: const BorderSide(color: AppColors.gray300),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 10,
-                          ),
-                          minimumSize: Size.zero,
-                        ),
-                        child: Icon(
-                          isArchived
-                              ? Icons.visibility_rounded
-                              : Icons.visibility_off_rounded,
-                          size: 16,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    )
+                  : Column(
+                      children: [
+                        // Ligne 1 : Passagers | Canal | Vente directe
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ActionBtn(
+                                icon: Icons.people_rounded,
+                                label: 'Passagers',
+                                color: AppColors.mobiliBlue,
+                                onTap: onShowPassengers,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _ActionBtn(
+                                icon: Icons.chat_bubble_rounded,
+                                label: 'Canal',
+                                color: AppColors.stationGreen,
+                                onTap: onCanalTap,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _ActionBtn(
+                                icon: Icons.point_of_sale_rounded,
+                                label: 'Vente',
+                                color: AppColors.proGold,
+                                onTap: onOfflineSale,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Ligne 2 : Modifier | Masquer
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: onEdit,
+                                icon: const Icon(Icons.edit_rounded, size: 14),
+                                label: const Text(
+                                  'Modifier',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.gray600,
+                                  side: const BorderSide(color: AppColors.gray300),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: onArchive,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: isArchived
+                                    ? AppColors.stationGreen
+                                    : AppColors.gray400,
+                                side: BorderSide(
+                                  color: isArchived
+                                      ? AppColors.stationGreen
+                                      : AppColors.gray300,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 10,
+                                ),
+                                minimumSize: Size.zero,
+                              ),
+                              child: Icon(
+                                isArchived
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                                size: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),

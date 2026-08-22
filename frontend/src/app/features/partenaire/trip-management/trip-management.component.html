@@ -127,18 +127,25 @@
 
                             <td class="right">
                                 <div class="row-actions">
-                                    <button class="icon-btn" title="Passagers" (click)="openPassengers(trip)">👥</button>
-                                    <button class="icon-btn" title="Vente directe (guichet)" (click)="openSale(trip)">🎟️</button>
-                                    <a class="icon-btn" title="Canal du voyage" [routerLink]="tripChannelLink(trip.id)">💬</a>
-                                    <button class="icon-btn" title="Modifier" [routerLink]="[basePath(), 'edit-trip', trip.id]">✎</button>
-                                    <button
-                                        class="icon-btn danger"
-                                        title="Supprimer"
-                                        [disabled]="deletingId() === trip.id"
-                                        (click)="askDelete(trip)"
-                                    >
-                                        {{ deletingId() === trip.id ? '…' : '🗑' }}
-                                    </button>
+                                    @if (trip.status === 'DRAFT') {
+                                        <!-- Brouillon jamais publié : rien d'exploitable pour un voyageur avant
+                                             publication (pas de passagers, pas de canal, pas de vente directe) —
+                                             seul Modifier a du sens tant que Publier n'a pas été cliqué. -->
+                                        <button class="icon-btn" title="Modifier" [routerLink]="[basePath(), 'edit-trip', trip.id]">✎</button>
+                                    } @else {
+                                        <button class="icon-btn" title="Passagers" (click)="openPassengers(trip)">👥</button>
+                                        <button class="icon-btn" title="Vente directe (guichet)" (click)="openSale(trip)">🎟️</button>
+                                        <a class="icon-btn" title="Canal du voyage" [routerLink]="tripChannelLink(trip.id)">💬</a>
+                                        <button class="icon-btn" title="Modifier" [routerLink]="[basePath(), 'edit-trip', trip.id]">✎</button>
+                                        <button
+                                            class="icon-btn danger"
+                                            title="Supprimer"
+                                            [disabled]="deletingId() === trip.id"
+                                            (click)="askDelete(trip)"
+                                        >
+                                            {{ deletingId() === trip.id ? '…' : '🗑' }}
+                                        </button>
+                                    }
                                 </div>
                             </td>
                         </tr>
