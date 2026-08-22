@@ -153,6 +153,11 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+
+    &--draft {
+      background: variables.$gray-200;
+      color: variables.$gray-600;
+    }
   }
 }
 
