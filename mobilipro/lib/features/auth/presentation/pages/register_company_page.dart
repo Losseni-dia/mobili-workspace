@@ -234,7 +234,8 @@ class _RegisterCompanyPageState extends ConsumerState<RegisterCompanyPage> {
                   return emailRx.hasMatch(v.trim()) ? null : 'Email invalide.';
                 },
               ),
-          _Field(
+              const SizedBox(height: 12),
+              _Field(
                 controller: _phoneCtrl,
                 label: 'Téléphone du responsable',
                 keyboardType: TextInputType.phone,
