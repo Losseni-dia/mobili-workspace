@@ -190,6 +190,23 @@
 
   .btn-secondary { @include mixins.btn-ghost; padding: 12px 20px; }
   .btn-primary { @include mixins.btn-primary; padding: 12px 22px; }
+
+  // Désactivé tant que le trajet n'est plus DRAFT (masqué une fois publié) — voir
+  // TripEditComponent#tripStatus.
+  .btn-publish {
+    padding: 12px 22px;
+    border: none;
+    border-radius: variables.$radius-sm;
+    color: variables.$white;
+    background: variables.$station-green;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all variables.$t-base;
+    box-shadow: 0 4px 16px rgba(variables.$station-green, 0.25);
+
+    &:hover:not(:disabled) { background: color.scale(variables.$station-green, $lightness: -8%); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  }
 }
 
 @keyframes cardIn {
@@ -200,5 +217,5 @@
 @media (max-width: 720px) {
   .edit-trip-container { padding: 22px; }
   .form-grid { grid-template-columns: 1fr; }
-  .form-actions { flex-direction: column-reverse; .btn-secondary, .btn-primary { width: 100%; } }
+  .form-actions { flex-direction: column-reverse; .btn-secondary, .btn-primary, .btn-publish { width: 100%; } }
 }

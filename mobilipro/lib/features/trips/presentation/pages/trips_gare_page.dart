@@ -219,6 +219,9 @@ final _passengersProvider = FutureProvider.autoDispose
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _tripFilterItems = [
+  // Brouillons (Enregistrer sans Publier) : sinon un trajet sauvegardé mais pas encore
+  // publié n'apparaît sous aucun onglet et devient impossible à retrouver pour le publier.
+  FilterItem(value: 'DRAFT', label: 'Brouillon'),
   FilterItem(value: 'EN_COURS', label: 'En cours'),
   FilterItem(value: 'PROGRAMMÉ', label: 'Programmé'),
   FilterItem(value: 'TERMINÉ', label: 'Historique'),
@@ -833,7 +836,7 @@ class _TripCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          trip.status,
+                          trip.status == 'DRAFT' ? 'BROUILLON' : trip.status,
                           style: TextStyle(
                             color: statusConfig.$2,
                             fontSize: 9,
@@ -1108,6 +1111,8 @@ class _TripCard extends StatelessWidget {
 
   (Color, Color) _statusConfig(String status) {
     switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return (AppColors.gray100, AppColors.gray500);
       case 'PROGRAMMÉ':
         return (AppColors.mobiliBlueFog, AppColors.mobiliBlue);
       case 'EN_COURS':

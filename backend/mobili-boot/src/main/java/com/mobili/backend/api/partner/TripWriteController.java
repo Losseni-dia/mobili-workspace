@@ -68,6 +68,14 @@ public class TripWriteController {
         return tripMapper.toDto(tripService.save(entity, file, authentication.getPrincipal(), dto));
     }
 
+    @PostMapping("/{id}/publish")
+    @PreAuthorize("hasAnyRole('PARTNER', 'GARE', 'ADMIN', 'STATION')")
+    public TripResponseDTO publish(
+            @PathVariable Long id,
+            org.springframework.security.core.Authentication authentication) {
+        return tripMapper.toDto(tripService.publish(id, authentication.getPrincipal()));
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAnyRole('PARTNER', 'GARE', 'ADMIN', 'STATION')")

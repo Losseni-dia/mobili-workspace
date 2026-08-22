@@ -1,5 +1,6 @@
 package com.mobili.backend.module.trip.entity;
 
 public enum TripStatus {
-    PROGRAMMÉ, EN_COURS, TERMINÉ, ANNULÉ
+    /** Créé (Enregistrer) mais pas encore rendu visible/réservable aux voyageurs (Publier). */
+    DRAFT, PROGRAMMÉ, EN_COURS, TERMINÉ, ANNULÉ
 }

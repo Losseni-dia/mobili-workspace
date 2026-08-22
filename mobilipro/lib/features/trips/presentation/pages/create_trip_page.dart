@@ -106,7 +106,13 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
   int _currentStep = 0;
   static const int _totalSteps = 5;
   bool _isLoading = false;
+  bool _isPublishing = false;
   String? _errorMessage;
+
+  // Sécurité "Enregistrer" / "Publier" : le trajet est créé en brouillon (DRAFT, invisible
+  // des voyageurs) au premier "Enregistrer" — _tripId renseigné dès lors. "Publier" ne
+  // s'active qu'à partir de là, et rend le trajet réservable via POST /trips/{id}/publish.
+  int? _tripId;
 
   // Étape 1
   final _departureCityCtrl = TextEditingController();
@@ -233,8 +239,6 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-    } else {
-      _submit();
     }
   }
 
@@ -287,7 +291,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
     });
   }
 
-  Future<void> _submit() async {
+  Future<void> _saveTrip() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -319,6 +323,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
       final moreInfo = _stopCities.where((s) => s.isNotEmpty).join(', ');
 
       final tripMap = <String, dynamic>{
+        if (_tripId != null) 'id': _tripId,
         'partnerId': profile?.id ?? 1,
         'departureCity': _departureCityCtrl.text.trim(),
         'arrivalCity': _arrivalCityCtrl.text.trim(),
@@ -360,15 +365,53 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
         );
       }
 
-      await ApiClient.instance.dio.post<void>(
-        '/trips',
-        data: FormData.fromMap(formDataMap),
-      );
+      final response = _tripId == null
+          ? await ApiClient.instance.dio.post<Map<String, dynamic>>(
+              '/trips',
+              data: FormData.fromMap(formDataMap),
+            )
+          : await ApiClient.instance.dio.put<Map<String, dynamic>>(
+              '/trips/$_tripId',
+              data: FormData.fromMap(formDataMap),
+            );
+
+      if (mounted) {
+        setState(() {
+          _tripId = response.data?['id'] as int? ?? _tripId;
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trajet enregistré — vous pouvez maintenant le publier. ✅'),
+            backgroundColor: AppColors.stationGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().contains('—')
+            ? e.toString().split('—').last.trim()
+            : 'Erreur lors de l\'enregistrement du trajet';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _publishTrip() async {
+    if (_tripId == null) return;
+    setState(() {
+      _isPublishing = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await ApiClient.instance.dio.post<void>('/trips/$_tripId/publish');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Trajet créé avec succès ! ✅'),
+            content: Text('Trajet publié avec succès ! ✅'),
             backgroundColor: AppColors.stationGreen,
             behavior: SnackBarBehavior.floating,
           ),
@@ -379,8 +422,8 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
       setState(() {
         _errorMessage = e.toString().contains('—')
             ? e.toString().split('—').last.trim()
-            : 'Erreur lors de la création du trajet';
-        _isLoading = false;
+            : 'Erreur lors de la publication du trajet';
+        _isPublishing = false;
       });
     }
   }
@@ -533,40 +576,111 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
 
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _nextStep,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliYellow,
-                  foregroundColor: AppColors.mobiliBlueDeep,
-                  disabledBackgroundColor: AppColors.gray200,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          color: AppColors.mobiliBlueDeep,
-                          strokeWidth: 2,
+            child: _currentStep < _totalSteps - 1
+                ? SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _nextStep,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mobiliYellow,
+                        foregroundColor: AppColors.mobiliBlueDeep,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                      )
-                    : Text(
-                        _currentStep < _totalSteps - 1
-                            ? 'Suivant →'
-                            : 'Créer le trajet',
-                        style: const TextStyle(
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Suivant →',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-              ),
-            ),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: (_isLoading || _isPublishing)
+                                ? null
+                                : _saveTrip,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.mobiliBlueDeep,
+                              side: const BorderSide(
+                                color: AppColors.mobiliBlueDeep,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.mobiliBlueDeep,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    _tripId == null
+                                        ? 'Enregistrer'
+                                        : 'Enregistrer à nouveau',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            // Désactivé tant qu'aucun "Enregistrer" réussi n'a donné d'ID
+                            // au trajet (brouillon DRAFT côté backend) — voir _tripId.
+                            onPressed:
+                                (_tripId == null || _isLoading || _isPublishing)
+                                ? null
+                                : _publishTrip,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.stationGreen,
+                              foregroundColor: AppColors.white,
+                              disabledBackgroundColor: AppColors.gray200,
+                              disabledForegroundColor: AppColors.gray400,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isPublishing
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Publier',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),

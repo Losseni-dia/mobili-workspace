@@ -141,6 +141,11 @@ export class TripService {
     return this.http.put<Trip>(`/trips/${id}`, formData);
   }
 
+  /** Rend un trajet DRAFT (Enregistrer) visible/réservable des voyageurs. */
+  publishTrip(id: number): Observable<Trip> {
+    return this.http.post<Trip>(`/trips/${id}/publish`, null);
+  }
+
   deleteTrip(id: number): Observable<void> {
     // Utilisation directe de la chaîne pour être raccord avec tes autres méthodes
     return this.http.delete<void>(`/trips/${id}`);

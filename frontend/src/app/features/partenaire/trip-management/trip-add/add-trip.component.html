@@ -7,7 +7,7 @@
         >
         <div class="add-trip-header__text">
           <p class="add-trip-eyebrow">Trajets</p>
-          <h1 class="add-trip-title">Publier un trajet</h1>
+          <h1 class="add-trip-title">Nouveau trajet</h1>
         </div>
       </div>
     </header>
@@ -259,7 +259,15 @@
       <div class="form-actions">
         <a class="btn-cancel" routerLink="/partenaire/trips">Annuler</a>
         <button type="submit" class="btn-save" [disabled]="tripForm.invalid || isLoading()">
-          {{ isLoading() ? 'Publication…' : 'Publier le trajet' }}
+          {{ isLoading() ? 'Enregistrement…' : tripId() ? 'Enregistrer à nouveau' : 'Enregistrer' }}
+        </button>
+        <button
+          type="button"
+          class="btn-publish"
+          [disabled]="tripId() === null || isPublishing()"
+          (click)="publish()"
+        >
+          {{ isPublishing() ? 'Publication…' : 'Publier' }}
         </button>
       </div>
     </form>
