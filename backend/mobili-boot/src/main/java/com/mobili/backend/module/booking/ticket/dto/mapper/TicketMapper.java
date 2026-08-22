@@ -40,17 +40,26 @@ public interface TicketMapper {
             return;
         }
         int extraBags = booking.getExtraHoldBags() != null ? booking.getExtraHoldBags() : 0;
-        double luggageFee = (extraBags > 0 && trip.getExtraHoldBagPrice() != null)
-                ? extraBags * trip.getExtraHoldBagPrice()
-                : 0.0;
-        double totalPrice = booking.getTotalPrice() != null ? booking.getTotalPrice() : 0.0;
         int seats = booking.getNumberOfSeats() != null ? booking.getNumberOfSeats() : 1;
-        double transportTotal = totalPrice - luggageFee;
         dto.setExtraHoldBags(extraBags);
-        dto.setLuggageFee(luggageFee);
         dto.setNumberOfSeatsInBooking(seats);
-        // Part de transport pour CE ticket (répartition équitable entre les
-        // sièges de la même réservation).
+
+        if (ticket.getTransportFare() != null) {
+            // Part transport/bagage propre à CE ticket, jamais mélangée au forfait client
+            // (Booking.serviceFee) — même règle que Booking#getGrossAmount au niveau réservation.
+            dto.setTransportPrice(ticket.getTransportFare());
+            dto.setLuggageFee(ticket.getBaggageFee() != null ? ticket.getBaggageFee() : 0.0);
+            return;
+        }
+
+        // Ticket antérieur à la scission transportFare/baggageFee par ticket : on répartit la
+        // vente brute de la réservation (déjà hors forfait, voir Booking#getActiveTicketsAmount)
+        // à parts égales entre les sièges. AUDIT : l'ancien code utilisait
+        // totalPrice - luggageFee, qui incluait encore le forfait client dans le montant
+        // "Transport" affiché à la gare/au chauffeur au scan du billet.
+        double luggageFee = booking.getActiveLuggageFee();
+        double transportTotal = booking.getActiveTicketsAmount();
+        dto.setLuggageFee(luggageFee);
         dto.setTransportPrice(seats > 0 ? transportTotal / seats : transportTotal);
     }
 
