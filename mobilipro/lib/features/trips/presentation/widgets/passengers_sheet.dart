@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:mobilipro/features/chauffeurs/presentation/pages/trip_detail_chauffeur_page.dart'
     show ticketStatusConfig;
 import 'package:mobilipro/features/trips/presentation/pages/trips_gare_page.dart';
@@ -300,9 +299,10 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
                   );
                 }
 
-                // Stats
+                // Stats — pas de montant ici (revenus déjà visibles dans l'onglet
+                // Réservations) : l.amount inclut le forfait client (Booking.serviceFee),
+                // jamais reversé à la compagnie — même bug que le scan (TicketMapper).
                 final totalPassengers = filtered.length;
-                final totalRevenue = filtered.fold(0.0, (s, l) => s + l.amount);
 
                 return Column(
                   children: [
@@ -321,12 +321,6 @@ class _PassengersSheetState extends ConsumerState<PassengersSheet> {
                             label: 'Passagers',
                             value: '$totalPassengers',
                             color: AppColors.mobiliBlue,
-                          ),
-                          _MiniStat(
-                            label: 'Revenus',
-                            value:
-                                '${NumberFormat('#,###').format(totalRevenue)} F',
-                            color: AppColors.proGold,
                           ),
                           _MiniStat(
                             label: 'Libres',
