@@ -657,6 +657,7 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                             );
                             if (result == true) ref.invalidate(_myTripsProvider(_period));
                           },
+                          onDelete: () => _confirmDeleteDraft(context, trip),
                         ),
                       );
                     },
@@ -703,6 +704,61 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
       ),
     );
   }
+
+  /// Suppression d'un brouillon (DRAFT) jamais publié — aucun voyageur n'a jamais pu le voir
+  /// ni réserver dessus, donc pas de garde-fou métier supplémentaire nécessaire au-delà de
+  /// la confirmation. Le backend refuserait de toute façon un trajet déjà publié via cette
+  /// action (bouton absent hors DRAFT côté UI).
+  Future<void> _confirmDeleteDraft(BuildContext context, TripItem trip) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer ce brouillon ?'),
+        content: Text(
+          'Le trajet ${trip.departureCity} → ${trip.arrivalCity} sera définitivement supprimé.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ApiClient.instance.dio.delete<void>('/trips/${trip.id}');
+      ref.invalidate(_myTripsProvider(_period));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Brouillon supprimé'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().contains('—')
+                  ? e.toString().split('—').last.trim()
+                  : 'Erreur lors de la suppression du brouillon',
+            ),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -718,12 +774,14 @@ class _TripCard extends StatelessWidget {
     required this.onOfflineSale,
     required this.onCanalTap,
     required this.onEdit,
+    required this.onDelete,
   });
   final TripItem trip;
   final VoidCallback onArchive;
   final bool isArchived;
   final VoidCallback onShowPassengers;
   final VoidCallback onOfflineSale;
+  final VoidCallback onDelete;
   final VoidCallback onCanalTap;
   final VoidCallback onEdit;
 
@@ -1018,25 +1076,46 @@ class _TripCard extends StatelessWidget {
               child: trip.status == 'DRAFT'
                   // Brouillon jamais publié : rien d'exploitable pour un voyageur avant
                   // publication (pas de passagers, pas de canal, pas de vente directe, pas
-                  // de masquage) — seul Modifier a du sens tant que Publier n'a pas été tapé.
-                  ? SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: onEdit,
-                        icon: const Icon(Icons.edit_rounded, size: 14),
-                        label: const Text(
-                          'Modifier',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.gray600,
-                          side: const BorderSide(color: AppColors.gray300),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  // de masquage) — seuls Modifier et Supprimer ont du sens tant que Publier
+                  // n'a pas été tapé (ex. le créateur veut abandonner ce brouillon).
+                  ? Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: onEdit,
+                            icon: const Icon(Icons.edit_rounded, size: 14),
+                            label: const Text(
+                              'Modifier',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.gray600,
+                              side: const BorderSide(color: AppColors.gray300),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: onDelete,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.danger,
+                            side: const BorderSide(color: AppColors.danger),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 10,
+                            ),
+                            minimumSize: Size.zero,
+                          ),
+                          child: const Icon(Icons.delete_outline_rounded, size: 16),
+                        ),
+                      ],
                     )
                   : Column(
                       children: [
