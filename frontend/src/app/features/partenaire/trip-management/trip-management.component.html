@@ -102,6 +102,9 @@
                                     <span class="arrow">→</span>
                                     <strong>{{ trip.arrivalCity }}</strong>
                                     <span class="type-pill">{{ formatVehicleType(trip.vehicleType) }}</span>
+                                    @if (trip.status === 'DRAFT') {
+                                        <span class="type-pill type-pill--draft">Brouillon</span>
+                                    }
                                 </div>
                                 @if (trip.moreInfo) {
                                     <div class="stops-line">📍 {{ trip.moreInfo }}</div>
