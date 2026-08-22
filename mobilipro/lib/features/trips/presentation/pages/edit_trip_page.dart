@@ -72,7 +72,11 @@ class EditTripPage extends ConsumerStatefulWidget {
 class _EditTripPageState extends ConsumerState<EditTripPage> {
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  bool _publishing = false;
   String? _error;
+  // Sécurité "Enregistrer" / "Publier" : mis à jour localement après une publication
+  // réussie pour désactiver le bouton sans avoir à quitter l'écran. Voir _publish().
+  late String _status;
 
   // Itinéraire / véhicule
   late final TextEditingController _departureCityCtrl;
@@ -103,6 +107,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
   void initState() {
     super.initState();
     final t = widget.trip;
+    _status = t.status;
     _departureCityCtrl = TextEditingController(text: t.departureCity);
     _arrivalCityCtrl = TextEditingController(text: t.arrivalCity);
     _boardingPointCtrl = TextEditingController(text: t.boardingPoint);
@@ -366,6 +371,40 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             ? e.toString().split('—').last.trim()
             : 'Erreur lors de la modification';
         _loading = false;
+      });
+    }
+  }
+
+  Future<void> _publish() async {
+    setState(() {
+      _publishing = true;
+      _error = null;
+    });
+
+    try {
+      await ApiClient.instance.dio.post<void>(
+        '/trips/${widget.trip.id}/publish',
+      );
+
+      if (mounted) {
+        setState(() {
+          _status = 'PROGRAMMÉ';
+          _publishing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Trajet publié avec succès ! ✅'),
+            backgroundColor: AppColors.stationGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString().contains('—')
+            ? e.toString().split('—').last.trim()
+            : 'Erreur lors de la publication du trajet';
+        _publishing = false;
       });
     }
   }
@@ -828,37 +867,80 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
 
             const SizedBox(height: 32),
 
-            // ── Bouton ─────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliYellow,
-                  foregroundColor: AppColors.mobiliBlueDeep,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: _loading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          color: AppColors.mobiliBlueDeep,
-                          strokeWidth: 2,
+            // ── Boutons ────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: (_loading || _publishing) ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mobiliYellow,
+                        foregroundColor: AppColors.mobiliBlueDeep,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      )
-                    : const Text(
-                        'Enregistrer les modifications',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        elevation: 0,
                       ),
-              ),
+                      child: _loading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: AppColors.mobiliBlueDeep,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Enregistrer',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                if (_status == 'DRAFT') ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: (_loading || _publishing) ? null : _publish,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.stationGreen,
+                          foregroundColor: AppColors.white,
+                          disabledBackgroundColor: AppColors.gray200,
+                          disabledForegroundColor: AppColors.gray400,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _publishing
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Publier',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 32),
           ],

@@ -372,6 +372,35 @@
   }
 }
 
+// Désactivé tant qu'aucun "Enregistrer" réussi n'a donné d'ID au trajet (brouillon DRAFT
+// côté backend) — voir AddTripComponent#tripId.
+.btn-publish {
+  min-width: 160px;
+  min-height: 48px;
+  padding: 0 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: variables.$radius-sm;
+  color: variables.$white;
+  background: variables.$station-green;
+  cursor: pointer;
+  transition: all variables.$t-base;
+  box-shadow: 0 4px 16px rgba(variables.$station-green, 0.25);
+
+  &:hover:not(:disabled) {
+    background: color.scale(variables.$station-green, $lightness: -8%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: variables.$gray-300;
+  }
+}
+
 @keyframes addTripIn {
   from {
     opacity: 0;
@@ -397,6 +426,7 @@
     flex-direction: column-reverse;
     align-items: stretch;
     .btn-save,
+    .btn-publish,
     .btn-cancel {
       width: 100%;
       min-width: 0;

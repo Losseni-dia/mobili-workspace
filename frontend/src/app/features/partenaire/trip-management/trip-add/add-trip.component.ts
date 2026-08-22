@@ -34,6 +34,10 @@ export class AddTripComponent implements OnInit {
 
   selectedFile: File | null = null;
   isLoading = signal(false);
+  isPublishing = signal(false);
+  /** Sécurité "Enregistrer" / "Publier" : renseigné dès le premier Enregistrer réussi
+   *  (trajet créé en DRAFT côté backend) — active le bouton Publier. */
+  tripId = signal<number | null>(null);
 
   cityLabelsPreview = signal<string[]>([]);
   /** Un prix par tronçon consécutif (0→1, 1→2, …). */
@@ -338,15 +342,46 @@ export class AddTripComponent implements OnInit {
       formData.append('vehicleImage', this.selectedFile);
     }
 
-    this.tripService.createTrip(formData).subscribe({
-      next: () => this.router.navigate(['/partenaire/trips']),
+    if (this.tripId() != null) {
+      tripPayload['id'] = this.tripId();
+    }
+
+    const id = this.tripId();
+    const save$ = id == null ? this.tripService.createTrip(formData) : this.tripService.updateTrip(id, formData);
+
+    save$.subscribe({
+      next: (trip) => {
+        this.isLoading.set(false);
+        this.tripId.set(trip.id);
+        this.notification.show('Trajet enregistré — vous pouvez maintenant le publier.', 'success');
+      },
       error: (err) => {
         this.isLoading.set(false);
         this.notification.show(
-          extractApiErrorMessage(err, 'Publication impossible. Vérifie les champs et réessaie.'),
+          extractApiErrorMessage(err, 'Enregistrement impossible. Vérifie les champs et réessaie.'),
           'error',
         );
-        console.error('Erreur création trajet :', err);
+        console.error('Erreur enregistrement trajet :', err);
+      },
+    });
+  }
+
+  publish() {
+    const id = this.tripId();
+    if (id == null || this.isPublishing()) return;
+    this.isPublishing.set(true);
+    this.tripService.publishTrip(id).subscribe({
+      next: () => {
+        this.notification.show('Trajet publié avec succès !', 'success');
+        this.router.navigate(['/partenaire/trips']);
+      },
+      error: (err) => {
+        this.isPublishing.set(false);
+        this.notification.show(
+          extractApiErrorMessage(err, 'Publication impossible. Réessaie.'),
+          'error',
+        );
+        console.error('Erreur publication trajet :', err);
       },
     });
   }

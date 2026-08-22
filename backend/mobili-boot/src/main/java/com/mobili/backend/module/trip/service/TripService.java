@@ -467,7 +467,6 @@ public class TripService {
 
     @Transactional
     public Trip save(Trip trip, MultipartFile tripImage, Object principal, TripRequestDTO requestDto) {
-        final boolean isNew = trip.getId() == null;
         List<TripLegFareRequest> legFares = requestDto.getLegFares();
         Long stationIdFromDto = requestDto.getStationId();
         Partner partner = partenaireService.getCurrentPartnerForOperations();
@@ -485,8 +484,11 @@ public class TripService {
             }
             applyStationOnWrite(trip, principal, partner, stationIdFromDto, existingTrip);
         } else {
+            // Enregistrer (create) ne publie plus directement : le trajet reste invisible/non
+            // réservable des voyageurs (TripRepository exclut DRAFT) tant que publish() n'a pas
+            // été appelé explicitement — bouton "Publier" côté client.
             if (trip.getStatus() == null) {
-                trip.setStatus(TripStatus.PROGRAMMÉ);
+                trip.setStatus(TripStatus.DRAFT);
             }
             applyStationOnWrite(trip, principal, partner, stationIdFromDto, null);
         }
@@ -545,14 +547,6 @@ public class TripService {
 
         Trip saved = tripRepository.save(trip);
 
-        if (isNew) {
-            Long userId = userIdOf(principal);
-            analyticsEventService.record(
-                    AnalyticsEventType.TRIP_PUBLISHED,
-                    userId,
-                    String.format("{\"tripId\":%d,\"partnerId\":%d}", saved.getId(), partner.getId()));
-        }
-
         if (legFares != null) {
             if (legFares.isEmpty()) {
                 tripPricingService.clearSegmentFaresForTrip(saved.getId());
@@ -576,6 +570,38 @@ public class TripService {
         }
 
         persistCities(saved);
+        return saved;
+    }
+
+    /**
+     * Rend un trajet DRAFT (Enregistrer) visible/réservable des voyageurs (Publier).
+     * Idempotent tant que le trajet est encore DRAFT ; refusé une fois EN_COURS/TERMINÉ/ANNULÉ
+     * pour ne jamais faire régresser un trajet déjà en cours de vie.
+     */
+    @Transactional
+    public Trip publish(Long id, Object principal) {
+        Trip trip = tripRepository.findById(id)
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+        Partner partner = partenaireService.getCurrentPartnerForOperations();
+        assertTripWriteAccess(trip, principal, partner);
+
+        if (trip.getStatus() == TripStatus.PROGRAMMÉ) {
+            return trip; // déjà publié — idempotent, pas d'erreur.
+        }
+        if (trip.getStatus() != TripStatus.DRAFT) {
+            throw new MobiliException(
+                    MobiliErrorCode.VALIDATION_ERROR,
+                    "Seul un trajet en brouillon peut être publié (statut actuel : " + trip.getStatus() + ").");
+        }
+
+        trip.setStatus(TripStatus.PROGRAMMÉ);
+        Trip saved = tripRepository.save(trip);
+
+        analyticsEventService.record(
+                AnalyticsEventType.TRIP_PUBLISHED,
+                userIdOf(principal),
+                String.format("{\"tripId\":%d,\"partnerId\":%d}", saved.getId(), partner.getId()));
+
         return saved;
     }
 

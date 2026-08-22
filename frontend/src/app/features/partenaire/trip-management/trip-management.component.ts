@@ -13,7 +13,7 @@ import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange } from '../../../core/utils/period-range.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
-type TripStatusFilter = 'ALL' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
+type TripStatusFilter = 'ALL' | 'DRAFT' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
 type PeriodFilter = 'today' | 'week' | 'month' | 'custom';
 
 @Component({
@@ -43,6 +43,7 @@ export class TripManagementComponent implements OnInit {
 
   readonly STATUS_FILTERS: { value: TripStatusFilter; label: string }[] = [
     { value: 'ALL', label: 'Tous' },
+    { value: 'DRAFT', label: 'Brouillon' },
     { value: 'EN_COURS', label: 'En cours' },
     { value: 'PROGRAMMÉ', label: 'Programmé' },
     { value: 'TERMINÉ', label: 'Historique' },

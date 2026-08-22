@@ -195,8 +195,19 @@
 
             <button type="submit" class="btn-primary" [disabled]="tripForm.invalid || isLoading()">
                 <i class="icon-save"></i>
-                {{ isLoading() ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+                {{ isLoading() ? 'Enregistrement...' : 'Enregistrer' }}
             </button>
+
+            @if (tripStatus() === 'DRAFT') {
+                <button
+                    type="button"
+                    class="btn-publish"
+                    [disabled]="isPublishing()"
+                    (click)="publish()"
+                >
+                    {{ isPublishing() ? 'Publication…' : 'Publier' }}
+                </button>
+            }
         </div>
     </form>
 </div>

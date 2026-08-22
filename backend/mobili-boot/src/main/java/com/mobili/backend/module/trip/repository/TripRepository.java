@@ -51,6 +51,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                     + "LEFT JOIN FETCH t.assignedChauffeur LEFT JOIN FETCH t.stops "
                     + "WHERE t.status <> com.mobili.backend.module.trip.entity.TripStatus.ANNULÉ "
                     + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.TERMINÉ "
+                    + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.DRAFT "
                     + "AND t.hiddenByOrganizer = false "
                     + "AND (t.status = com.mobili.backend.module.trip.entity.TripStatus.EN_COURS "
                     + "     OR t.departureDateTime >= ?1) "
@@ -121,6 +122,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             + "WHERE t.assignedChauffeur.id = :uid AND t.covoiturageOrganizer IS NULL "
             + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.ANNULÉ "
             + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.TERMINÉ "
+            + "AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.DRAFT "
             + "AND (t.status = com.mobili.backend.module.trip.entity.TripStatus.EN_COURS "
             + "     OR t.departureDateTime >= :from) "
             + "ORDER BY t.departureDateTime ASC")

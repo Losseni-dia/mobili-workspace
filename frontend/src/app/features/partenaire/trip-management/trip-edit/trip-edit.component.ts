@@ -34,6 +34,10 @@ export class TripEditComponent implements OnInit {
   selectedFile: File | null = null;
   imagePreview = signal<string | null>(null);
   isLoading = signal(false);
+  isPublishing = signal(false);
+  /** Sécurité "Enregistrer" / "Publier" : le bouton Publier n'apparaît que tant que le
+   *  trajet est encore en brouillon (DRAFT, jamais rendu visible/réservable). */
+  tripStatus = signal<string | null>(null);
 
   cityLabelsPreview = signal<string[]>([]);
   legPrices = signal<number[]>([]);
@@ -167,7 +171,9 @@ export class TripEditComponent implements OnInit {
         maxExtraHoldBagsPerPassenger?: number;
         extraHoldBagPrice?: number;
         luggagePolicyEnabled?: boolean;
+        status?: string;
       }) => {
+        this.tripStatus.set(trip.status ?? null);
         const covoit = trip.covoiturageOrganizerId != null && trip.covoiturageOrganizerId > 0;
         this.showChauffeurPicker.set(!covoit);
         this.tripStationId.set(trip.stationId != null && trip.stationId > 0 ? trip.stationId : null);
@@ -371,7 +377,16 @@ export class TripEditComponent implements OnInit {
     }
 
     this.tripService.updateTrip(this.tripId, formData).subscribe({
-      next: () => this.router.navigate(['/partenaire/trips']),
+      next: () => {
+        // Brouillon : on reste sur la page pour laisser publier ensuite. Déjà publié :
+        // comportement inchangé, retour à la liste comme avant ce chantier.
+        if (this.tripStatus() === 'DRAFT') {
+          this.isLoading.set(false);
+          this.notification.show('Trajet enregistré — vous pouvez maintenant le publier.', 'success');
+          return;
+        }
+        this.router.navigate(['/partenaire/trips']);
+      },
       error: (err) => {
         this.isLoading.set(false);
         this.notification.show(
@@ -379,6 +394,22 @@ export class TripEditComponent implements OnInit {
           'error',
         );
         console.error('Erreur Update :', err);
+      },
+    });
+  }
+
+  publish() {
+    if (this.isPublishing()) return;
+    this.isPublishing.set(true);
+    this.tripService.publishTrip(this.tripId).subscribe({
+      next: () => {
+        this.notification.show('Trajet publié avec succès !', 'success');
+        this.router.navigate(['/partenaire/trips']);
+      },
+      error: (err) => {
+        this.isPublishing.set(false);
+        this.notification.show(extractApiErrorMessage(err, 'Publication impossible. Réessaie.'), 'error');
+        console.error('Erreur publication trajet :', err);
       },
     });
   }
