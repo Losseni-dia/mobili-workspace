@@ -150,7 +150,12 @@
         }
 
         @if (legRows().length > 0) {
-            <div class="form-group full-width leg-fares-block">
+            <div class="form-group full-width leg-fares-block" #legFaresBlock [class.leg-fares-block--invalid]="legFaresInvalid()">
+                @if (legFaresInvalid()) {
+                    <p class="leg-fares-error">
+                        ⚠️ Indiquez un prix strictement positif pour chaque tronçon ci-dessous avant d'enregistrer.
+                    </p>
+                }
                 <h3 class="leg-title">Prix de chaque tronçon (portions)</h3>
                 <p class="leg-hint">
                     Sert aux trajets <em>partiels</em> sur la ligne. Somme de ces tronçons (aperçu) :

@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -44,6 +44,9 @@ export class TripEditComponent implements OnInit {
   /** Sécurité "Enregistrer" / "Publier" : le bouton Publier n'apparaît que tant que le
    *  trajet est encore en brouillon (DRAFT, jamais rendu visible/réservable). */
   tripStatus = signal<string | null>(null);
+  /** Voir onSubmit() : tronçon(s) sans prix (ex. après ajout d'une ville étape). */
+  legFaresInvalid = signal(false);
+  @ViewChild('legFaresBlock') legFaresBlock?: ElementRef<HTMLElement>;
 
   cityLabelsPreview = signal<string[]>([]);
   legPrices = signal<number[]>([]);
@@ -151,6 +154,7 @@ export class TripEditComponent implements OnInit {
     const next = [...this.legPrices()];
     next[legIndex] = Number.isNaN(v) || v < 0 ? 0 : v;
     this.legPrices.set(next);
+    this.legFaresInvalid.set(false);
   }
 
   loadTripData() {
@@ -279,6 +283,7 @@ export class TripEditComponent implements OnInit {
 
   onSubmit() {
     if (this.tripForm.invalid || this.isLoading()) return;
+    this.legFaresInvalid.set(false);
 
     const labels = buildTripCityLabels(
       this.tripForm.value.departureCity ?? '',
@@ -289,7 +294,12 @@ export class TripEditComponent implements OnInit {
     const legs = this.legPrices();
     if (last > 0) {
       if (legs.length !== last || legs.some((p) => p == null || p <= 0 || Number.isNaN(p))) {
+        // Ajouter une ville étape fait apparaître un nouveau tronçon à 0 FCFA (voir
+        // syncLegPrices) : un simple toast passait inaperçu ("le bouton Enregistrer ne fait
+        // rien"). Bandeau persistant + scroll vers le tableau des tronçons en plus du toast.
+        this.legFaresInvalid.set(true);
         this.notification.show('Indiquez un prix strictement positif pour chaque tronçon.', 'error');
+        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     } else {
@@ -391,6 +401,7 @@ export class TripEditComponent implements OnInit {
           this.notification.show('Trajet enregistré — vous pouvez maintenant le publier.', 'success');
           return;
         }
+        this.notification.show('Trajet enregistré ✅', 'success');
         this.router.navigate([this.basePath(), 'trips']);
       },
       error: (err) => {

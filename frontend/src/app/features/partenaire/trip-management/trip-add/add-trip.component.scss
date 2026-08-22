@@ -222,6 +222,23 @@
   background: linear-gradient(180deg, variables.$gray-50 0%, rgba(variables.$mobili-blue-fog, 0.45) 100%);
   border: 1px solid variables.$gray-200;
   border-radius: variables.$radius-md;
+  transition: border-color variables.$t-base, background variables.$t-base;
+}
+
+.leg-fares-block--invalid {
+  border-color: variables.$danger;
+  background: variables.$danger-soft;
+}
+
+.leg-fares-error {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: variables.$white;
+  border-left: 3px solid variables.$danger;
+  border-radius: variables.$radius-sm;
+  color: variables.$danger;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .leg-title {
