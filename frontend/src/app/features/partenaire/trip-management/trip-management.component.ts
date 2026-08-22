@@ -110,11 +110,14 @@ export class TripManagementComponent implements OnInit {
   passengersList = signal<BookingResponse[]>([]);
   isLoadingPassengers = signal(false);
 
+  // Pas de montant ici (revenus déjà visibles dans l'onglet Réservations) : b.amount/totalPrice
+  // incluait le forfait client (Booking.serviceFee), jamais reversé à la compagnie — même bug
+  // que TicketMapper côté scan. Plutôt que de dupliquer le calcul correct ici, on retire
+  // simplement le prix de cette modale, redondant avec la page Réservations.
   passengerStats = computed(() => {
     const list = this.passengersList();
     const totalPassengers = list.reduce((sum, b) => sum + (b.numberOfSeats || 0), 0);
-    const totalRevenue = list.reduce((sum, b) => sum + (b.amount ?? b.totalPrice ?? 0), 0);
-    return { reservations: list.length, totalPassengers, totalRevenue };
+    return { reservations: list.length, totalPassengers };
   });
 
   // ====== Vente directe / blocage de places (choix produit : plus de nom de passager,
