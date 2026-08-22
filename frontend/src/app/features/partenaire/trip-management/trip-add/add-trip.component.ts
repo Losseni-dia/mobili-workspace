@@ -32,6 +32,11 @@ export class AddTripComponent implements OnInit {
   private router = inject(Router);
   private notification = inject(NotificationService);
 
+  /** Ce composant est chargé sous /partenaire/add-trip ET /gare/add-trip (business.routes.ts) :
+   *  toute navigation interne doit rester dans le bon shell, sinon partnerRoleGuard (rôle
+   *  PARTNER strict) éjecte un compte gare vers '/' (effet "déconnexion" sans appel réseau). */
+  basePath = computed(() => (this.authService.hasRole('GARE') ? '/gare' : '/partenaire'));
+
   selectedFile: File | null = null;
   isLoading = signal(false);
   isPublishing = signal(false);
@@ -373,7 +378,7 @@ export class AddTripComponent implements OnInit {
     this.tripService.publishTrip(id).subscribe({
       next: () => {
         this.notification.show('Trajet publié avec succès !', 'success');
-        this.router.navigate(['/partenaire/trips']);
+        this.router.navigate([this.basePath(), 'trips']);
       },
       error: (err) => {
         this.isPublishing.set(false);

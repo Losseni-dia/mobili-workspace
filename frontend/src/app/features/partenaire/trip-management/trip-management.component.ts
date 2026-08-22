@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
 import { getTripPublicListPrice } from '../../../core/utils/trip-public-list-price.util';
 import { SeatPickerComponent } from '../../booking/components/seat-picker/seat-picker.component';
@@ -29,6 +30,13 @@ export class TripManagementComponent implements OnInit {
   private notify = inject(NotificationService);
   private configuration = inject(ConfigurationService);
   private router = inject(Router);
+  private authService = inject(AuthService);
+
+  /** Ce composant est chargé à la fois sous /partenaire/trips et /gare/trips (même
+   *  composant, deux routes — voir business.routes.ts) : les liens "Nouveau trajet" /
+   *  "Modifier" doivent rester dans le bon shell, sinon partnerRoleGuard (rôle PARTNER
+   *  strict) éjecte un compte gare vers '/' (effet "déconnexion" sans appel réseau). */
+  basePath = computed(() => (this.authService.hasRole('GARE') ? '/gare' : '/partenaire'));
 
   myTrips = signal<Trip[]>([]);
   isLoading = signal(false);

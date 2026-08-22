@@ -57,8 +57,13 @@ export class GareShellComponent implements OnInit {
     { label: 'Profil gare', icon: '👤', path: '/gare/profil' },
   ];
 
-  /** Publier un trajet reste une action compagnie séparée (FAB sur mobile, entrée dédiée ici). */
-  companyNavItems: GareNavItem[] = [{ label: 'Publier un trajet', icon: '＋', path: '/partenaire/add-trip' }];
+  /**
+   * Publier un trajet reste une action compagnie séparée (FAB sur mobile, entrée dédiée ici).
+   * Route /gare/add-trip (miroir de /partenaire/add-trip, même composant — voir
+   * business.routes.ts) : /partenaire/* est protégé par partnerRoleGuard (rôle PARTNER
+   * strict), qui éjectait un compte gare vers '/' au clic (effet "déconnexion").
+   */
+  companyNavItems: GareNavItem[] = [{ label: 'Publier un trajet', icon: '＋', path: '/gare/add-trip' }];
 
   pageInfo = computed(() => {
     const url = this.currentUrl();

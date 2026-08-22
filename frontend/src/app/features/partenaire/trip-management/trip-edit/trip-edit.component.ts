@@ -30,6 +30,12 @@ export class TripEditComponent implements OnInit {
   private notification = inject(NotificationService);
   private configuration = inject(ConfigurationService);
 
+  /** Ce composant est chargé sous /partenaire/edit-trip/:id ET /gare/edit-trip/:id
+   *  (business.routes.ts) : toute navigation interne doit rester dans le bon shell, sinon
+   *  partnerRoleGuard (rôle PARTNER strict) éjecte un compte gare vers '/' (effet
+   *  "déconnexion" sans appel réseau). */
+  basePath = computed(() => (this.authService.hasRole('GARE') ? '/gare' : '/partenaire'));
+
   tripId!: number;
   selectedFile: File | null = null;
   imagePreview = signal<string | null>(null);
@@ -234,7 +240,7 @@ export class TripEditComponent implements OnInit {
           extractApiErrorMessage(err, 'Trajet introuvable ou inaccessible.'),
           'error',
         );
-        this.router.navigate(['/partenaire/trips']);
+        this.router.navigate([this.basePath(), 'trips']);
       },
     });
   }
@@ -385,7 +391,7 @@ export class TripEditComponent implements OnInit {
           this.notification.show('Trajet enregistré — vous pouvez maintenant le publier.', 'success');
           return;
         }
-        this.router.navigate(['/partenaire/trips']);
+        this.router.navigate([this.basePath(), 'trips']);
       },
       error: (err) => {
         this.isLoading.set(false);
@@ -404,7 +410,7 @@ export class TripEditComponent implements OnInit {
     this.tripService.publishTrip(this.tripId).subscribe({
       next: () => {
         this.notification.show('Trajet publié avec succès !', 'success');
-        this.router.navigate(['/partenaire/trips']);
+        this.router.navigate([this.basePath(), 'trips']);
       },
       error: (err) => {
         this.isPublishing.set(false);
