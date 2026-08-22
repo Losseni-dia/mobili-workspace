@@ -58,10 +58,8 @@ public class GlobalExceptionHandler {
             return buildResponse(MobiliErrorCode.DUPLICATE_RESOURCE, message, request);
         }
 
-        // TEMPORAIRE — diagnostic doublon création trajet (à retirer dès identification) :
-        // expose le détail de la contrainte SQL réellement en cause dans le message.
         log.error("DataIntegrityViolationException non catégorisée : {}", chain);
-        return buildResponse(MobiliErrorCode.DUPLICATE_RESOURCE, message + " [DEBUG: " + chain + "]", request);
+        return buildResponse(MobiliErrorCode.DUPLICATE_RESOURCE, message, request);
     }
 
     private static String errorChain(Throwable t) {
