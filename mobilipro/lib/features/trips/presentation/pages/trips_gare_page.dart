@@ -428,7 +428,14 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await context.push('/gare/trips/create');
-          if (result == true) ref.invalidate(_myTripsProvider(_period));
+          if (result is String) {
+            // 'PROGRAMMÉ' (Publier) ou 'DRAFT' (Enregistrer seul) — ouvre directement sur
+            // l'onglet correspondant au lieu de laisser le filtre EN_COURS par défaut.
+            setState(() => _filter = result);
+            ref.invalidate(_myTripsProvider(_period));
+          } else if (result == true) {
+            ref.invalidate(_myTripsProvider(_period));
+          }
         },
         backgroundColor: AppColors.mobiliYellow,
         icon: const Icon(Icons.add_rounded, color: AppColors.mobiliBlueDeep),
@@ -646,7 +653,12 @@ class _TripsGarePageState extends ConsumerState<TripsGarePage> {
                                 builder: (_) => EditTripPage(trip: trip),
                               ),
                             );
-                            if (result == true) ref.invalidate(_myTripsProvider(_period));
+                            if (result is String) {
+                              setState(() => _filter = result);
+                              ref.invalidate(_myTripsProvider(_period));
+                            } else if (result == true) {
+                              ref.invalidate(_myTripsProvider(_period));
+                            }
                           },
                           onDelete: () => _confirmDeleteDraft(context, trip),
                         ),

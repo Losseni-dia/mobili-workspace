@@ -194,7 +194,7 @@
         }
 
         <div class="form-actions">
-            <button type="button" class="btn-secondary" [routerLink]="[basePath(), 'trips']">
+            <button type="button" class="btn-secondary" [routerLink]="[basePath(), 'trips']" [queryParams]="tripStatus() === 'DRAFT' ? { status: 'DRAFT' } : null">
                 Annuler
             </button>
 

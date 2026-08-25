@@ -416,7 +416,9 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context, true);
+        // Trajet fraîchement publié : ouvre directement sur l'onglet "Programmé" (trajet
+        // actif), pas de raison de laisser l'utilisateur chercher son trajet manuellement.
+        Navigator.pop(context, 'PROGRAMMÉ');
       }
     } catch (e) {
       setState(() {
@@ -446,8 +448,11 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
           // Une fois le trajet enregistré (brouillon persisté côté serveur), reculer étape
           // par étape dans le wizard n'a plus d'intérêt — l'utilisateur veut sortir direct
           // vers sa liste de trajets, pas retraverser toute la configuration.
+          // Trajet enregistré mais pas publié = brouillon : ouvre directement sur l'onglet
+          // "Brouillon" au retour, sinon le trajet enregistré n'apparaît sous aucun onglet
+          // visible par défaut (EN_COURS) et semble avoir disparu.
           onPressed: _tripId != null
-              ? () => Navigator.pop(context, true)
+              ? () => Navigator.pop(context, 'DRAFT')
               : (_currentStep > 0
                     ? _prevStep
                     : () => Navigator.pop(context)),
@@ -455,7 +460,7 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
         actions: [
           if (_tripId != null)
             TextButton.icon(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(context, 'DRAFT'),
               icon: const Icon(Icons.list_alt_rounded, color: AppColors.white),
               label: const Text(
                 'Mes trajets',

@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { TripService, Trip } from '../../../core/services/trip/trip.service';
@@ -31,6 +31,7 @@ export class TripManagementComponent implements OnInit {
   private notify = inject(NotificationService);
   private configuration = inject(ConfigurationService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
 
   /** Ce composant est chargé à la fois sous /partenaire/trips et /gare/trips (même
@@ -154,6 +155,12 @@ export class TripManagementComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Arrivée depuis Publier/Enregistrer (add-trip/trip-edit) : ouvre directement sur
+    // l'onglet correspondant (?status=PROGRAMMÉ ou DRAFT) au lieu de "Tous" par défaut.
+    const status = this.route.snapshot.queryParamMap.get('status') as TripStatusFilter | null;
+    if (status && this.STATUS_FILTERS.some((f) => f.value === status)) {
+      this.statusFilter.set(status);
+    }
     this.loadTrips();
   }
 
