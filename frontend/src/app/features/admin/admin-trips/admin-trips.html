@@ -1,0 +1,81 @@
+<section class="toolbar">
+    <div class="status-filters">
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'TOUS'" (click)="setStatusFilter('TOUS')">Tous</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'PROGRAMMÉ'" (click)="setStatusFilter('PROGRAMMÉ')">Programmé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'EN_COURS'" (click)="setStatusFilter('EN_COURS')">En cours</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'TERMINÉ'" (click)="setStatusFilter('TERMINÉ')">Terminé</button>
+        <button type="button" class="status-chip" [class.active]="statusFilter() === 'ANNULÉ'" (click)="setStatusFilter('ANNULÉ')">Annulé</button>
+    </div>
+
+    <div class="period-presets">
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'today'" (click)="setPeriodPreset('today')">Aujourd'hui</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'week'" (click)="setPeriodPreset('week')">Semaine</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === 'month'" (click)="setPeriodPreset('month')">Mois</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === null" (click)="onManualDateChange()">Intervalle</button>
+        @if (activePeriod() === null) {
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onManualDateChange()">
+            <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onManualDateChange()">
+        }
+    </div>
+
+    <div class="filters">
+        <label class="filter">
+            <span class="f-ico">🔍</span>
+            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Ville, compagnie…">
+        </label>
+    </div>
+</section>
+
+<section class="data-panel">
+    <header class="panel-head">
+        <div>
+            <h2>Trajets</h2>
+            <p>Trajets publiés (catalogue), toutes compagnies confondues. Les brouillons non publiés n'apparaissent pas ici.</p>
+        </div>
+        <span class="count-chip">{{ filtered().length }} résultats</span>
+    </header>
+
+    @if (isLoading()) {
+        <div class="loader">Chargement des trajets…</div>
+    } @else if (errorMessage()) {
+        <div class="empty">
+            <div class="empty-icon">⚠️</div>
+            <strong>{{ errorMessage() }}</strong>
+        </div>
+    } @else if (filtered().length > 0) {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Route</th>
+                        <th>Compagnie</th>
+                        <th>Départ</th>
+                        <th>Places</th>
+                        <th>Prix</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (t of filtered(); track t.id) {
+                        <tr>
+                            <td>{{ t.route }}</td>
+                            <td>{{ t.partnerName }}</td>
+                            <td class="mono">{{ t.departureDateTime | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="mono">{{ t.availableSeats }} / {{ t.totalSeats }}</td>
+                            <td class="right amount">{{ t.price | number }} FCFA</td>
+                            <td>
+                                <span class="status-pill" [ngClass]="statusPillClass(t.status)">{{ statusLabel(t.status) }}</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    } @else {
+        <div class="empty">
+            <div class="empty-icon">🚌</div>
+            <strong>Aucun trajet trouvé</strong>
+            <p>Modifie tes filtres pour élargir la recherche.</p>
+        </div>
+    }
+</section>

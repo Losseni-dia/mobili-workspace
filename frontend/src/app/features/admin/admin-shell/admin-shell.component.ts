@@ -56,6 +56,7 @@ export class AdminShellComponent {
     {
       title: 'Ventes',
       items: [
+        { label: 'Trajets', icon: '🚌', path: '/admin/trips' },
         { label: 'Tickets', icon: '🎫', path: '/admin/tickets' },
         { label: 'Réservations', icon: '📋', path: '/admin/bookings' },
         { label: 'Transactions', icon: '💳', path: '/admin/transactions' },
