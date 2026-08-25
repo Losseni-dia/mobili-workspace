@@ -37,7 +37,7 @@
         </label>
         <label class="filter">
             <span class="f-ico">🔍</span>
-            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Référence ou trajet…">
+            <input type="text" [ngModel]="search()" (ngModelChange)="onSearch($event)" placeholder="Référence ou trajet…">
         </label>
     </div>
 </section>
@@ -46,7 +46,6 @@
     <header class="panel-head">
         <div>
             <h2>Transactions</h2>
-            <p>Frais Mobili, commission prélevée et net revenant à votre compagnie, par réservation.</p>
         </div>
         <span class="count-chip">{{ filtered().length }} résultats</span>
         <button type="button" class="btn-export" (click)="exportCsv()" [disabled]="filtered().length === 0">
@@ -68,7 +67,7 @@
                     <tr>
                         <th>Référence</th>
                         <th>Trajet</th>
-                        <th>Date</th>
+                        <th>Heure</th>
                         <th>Statut</th>
                         <th class="right">Vente brute</th>
                         <th class="right">Commission</th>
@@ -76,20 +75,33 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (t of filtered(); track t.bookingId) {
-                        <tr>
-                            <td class="mono">#{{ t.reference }}</td>
-                            <td>{{ t.route }}</td>
-                            <td class="mono">{{ t.date | date: 'dd/MM/yyyy HH:mm' }}</td>
-                            <td>{{ t.status }}</td>
-                            <td class="right">{{ t.grossAmount | number }} FCFA</td>
-                            <td class="right">{{ t.commissionTotal | number }} FCFA</td>
-                            <td class="right amount">{{ t.companyNet | number }} FCFA</td>
-                        </tr>
+                    @for (item of groupedRows(); track $index) {
+                        @if (item.dateHeader; as day) {
+                            <tr class="date-group-row">
+                                <td colspan="7">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
+                            </tr>
+                        } @else if (item.row; as t) {
+                            <tr>
+                                <td class="mono">#{{ t.reference }}</td>
+                                <td>{{ t.route }}</td>
+                                <td class="mono">{{ t.date | date: 'HH:mm' }}</td>
+                                <td>{{ t.status }}</td>
+                                <td class="right">{{ t.grossAmount | number }} FCFA</td>
+                                <td class="right">{{ t.commissionTotal | number }} FCFA</td>
+                                <td class="right amount">{{ t.companyNet | number }} FCFA</td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
         </div>
+        @if (pager.hasMore()) {
+            <div class="load-more-wrap">
+                <button type="button" class="load-more-btn" (click)="pager.showMore()">
+                    Voir plus ({{ pager.remaining() }} restant{{ pager.remaining() > 1 ? 's' : '' }})
+                </button>
+            </div>
+        }
     } @else {
         <div class="empty">
             <div class="empty-icon">💳</div>
