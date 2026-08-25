@@ -194,6 +194,38 @@ export class TripManagementComponent implements OnInit {
 
   formatVehicleType = formatVehicleTypeLabel;
 
+  /** Étiquette lisible du statut du trajet (alignée sur mobilipro _statusConfig). */
+  statusLabel(status: string | undefined): string {
+    switch (status) {
+      case 'PROGRAMMÉ':
+        return 'Programmé';
+      case 'EN_COURS':
+        return 'En cours';
+      case 'TERMINÉ':
+        return 'Terminé';
+      case 'ANNULÉ':
+        return 'Annulé';
+      default:
+        return status ?? '';
+    }
+  }
+
+  /** Couleur de la pastille de statut (alignée sur mobilipro _statusConfig). */
+  statusPillClass(status: string | undefined): string {
+    switch (status) {
+      case 'PROGRAMMÉ':
+        return 'type-pill--programme';
+      case 'EN_COURS':
+        return 'type-pill--en-cours';
+      case 'TERMINÉ':
+        return 'type-pill--termine';
+      case 'ANNULÉ':
+        return 'type-pill--annule';
+      default:
+        return '';
+    }
+  }
+
   /**
    * Copie l'identifiant du voyage dans le presse-papier
    * (à transmettre au chauffeur pour démarrer sa console).
