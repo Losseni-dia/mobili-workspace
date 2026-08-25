@@ -26,6 +26,9 @@ class _AdminTransactionsPageState
   String _search = '';
   int _pageSize = 20;
   final _searchCtrl = TextEditingController();
+  // Filtre société, puis gare (dépendante de la société sélectionnée).
+  int? _companyId;
+  int? _stationId;
 
   @override
   void dispose() {
@@ -56,6 +59,8 @@ class _AdminTransactionsPageState
             onChanged: (p) => setState(() {
               _period = p;
               _pageSize = 20;
+              _companyId = null;
+              _stationId = null;
             }),
           ),
           Expanded(
@@ -70,14 +75,40 @@ class _AdminTransactionsPageState
                 ),
               ),
               data: (list) {
+                // Sociétés/gares présentes dans la période chargée — filtrage 100% client,
+                // pas de nouvel appel réseau (aligné sur admin-transactions web).
+                final companies = <int, String>{};
+                for (final t in list) {
+                  if (t.companyId != null) companies[t.companyId!] = t.companyName;
+                }
+                final companyEntries = companies.entries.toList()
+                  ..sort((a, b) => a.value.compareTo(b.value));
+
+                final stations = <int, String>{};
+                if (_companyId != null) {
+                  for (final t in list) {
+                    if (t.companyId == _companyId && t.stationId != null) {
+                      stations[t.stationId!] = t.stationName;
+                    }
+                  }
+                }
+                final stationEntries = stations.entries.toList()
+                  ..sort((a, b) => a.value.compareTo(b.value));
+
+                final filteredList = list.where((t) {
+                  final matchCompany = _companyId == null || t.companyId == _companyId;
+                  final matchStation = _stationId == null || t.stationId == _stationId;
+                  return matchCompany && matchStation;
+                }).toList();
+
                 final totalServiceFee =
-                    list.fold<int>(0, (sum, t) => sum + t.serviceFee);
+                    filteredList.fold<int>(0, (sum, t) => sum + t.serviceFee);
                 final totalCommission =
-                    list.fold<int>(0, (sum, t) => sum + t.commissionTotal);
+                    filteredList.fold<int>(0, (sum, t) => sum + t.commissionTotal);
                 final totalCompanyNet =
-                    list.fold<double>(0, (sum, t) => sum + t.companyNet);
+                    filteredList.fold<double>(0, (sum, t) => sum + t.companyNet);
                 final totalRevenue =
-                    list.fold<double>(0, (sum, t) => sum + t.totalPrice);
+                    filteredList.fold<double>(0, (sum, t) => sum + t.totalPrice);
 
                 return ListView(
                   padding: const EdgeInsets.all(16),
@@ -135,6 +166,51 @@ class _AdminTransactionsPageState
                       ),
                     ),
                     const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FilterDropdown<int>(
+                            icon: Icons.business_rounded,
+                            hint: 'Toutes les sociétés',
+                            value: _companyId,
+                            items: companyEntries
+                                .map((e) => DropdownMenuItem(
+                                      value: e.key,
+                                      child: Text(e.value, overflow: TextOverflow.ellipsis),
+                                    ))
+                                .toList(),
+                            onChanged: (v) => setState(() {
+                              _companyId = v;
+                              // La gare dépend de la société — un choix précédent n'a plus
+                              // de sens si on change de société.
+                              _stationId = null;
+                              _pageSize = 20;
+                            }),
+                          ),
+                        ),
+                        if (_companyId != null) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _FilterDropdown<int>(
+                              icon: Icons.location_city_rounded,
+                              hint: 'Toutes les gares',
+                              value: _stationId,
+                              items: stationEntries
+                                  .map((e) => DropdownMenuItem(
+                                        value: e.key,
+                                        child: Text(e.value, overflow: TextOverflow.ellipsis),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) => setState(() {
+                                _stationId = v;
+                                _pageSize = 20;
+                              }),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 10),
                     TextField(
                       controller: _searchCtrl,
                       onChanged: (v) => setState(() {
@@ -158,7 +234,7 @@ class _AdminTransactionsPageState
                       ),
                     ),
                     const SizedBox(height: 10),
-                    if (list.isEmpty)
+                    if (filteredList.isEmpty)
                       const Padding(
                         padding: EdgeInsets.all(20),
                         child: Center(
@@ -170,8 +246,21 @@ class _AdminTransactionsPageState
                       )
                     else
                       Builder(builder: (context) {
-                        final visible = list.take(_pageSize).toList();
-                        final hasMore = list.length > _pageSize;
+                        final visible = filteredList.take(_pageSize).toList();
+                        final hasMore = filteredList.length > _pageSize;
+
+                        // Regroupement par jour : un en-tête de date suivi des cartes du jour.
+                        final grouped = <Widget>[];
+                        DateTime? lastDay;
+                        for (final t in visible) {
+                          final day = DateTime(t.date.year, t.date.month, t.date.day);
+                          if (lastDay == null || day != lastDay) {
+                            grouped.add(_DateGroupHeader(date: day));
+                            lastDay = day;
+                          }
+                          grouped.add(_TransactionCard(t: t));
+                        }
+
                         return Column(
                           children: [
                             Row(
@@ -179,7 +268,7 @@ class _AdminTransactionsPageState
                                   MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${visible.length} / ${list.length} transaction(s)',
+                                  '${visible.length} / ${filteredList.length} transaction(s)',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.gray500,
@@ -188,7 +277,7 @@ class _AdminTransactionsPageState
                                 ),
                                 TextButton.icon(
                                   onPressed: () =>
-                                      exportTransactionsCsv(list, context),
+                                      exportTransactionsCsv(filteredList, context),
                                   icon: const Icon(Icons.table_chart_rounded,
                                       size: 15),
                                   label: const Text('CSV',
@@ -197,10 +286,10 @@ class _AdminTransactionsPageState
                               ],
                             ),
                             const SizedBox(height: 8),
-                            ...visible.map((t) => _TransactionCard(t: t)),
+                            ...grouped,
                             if (hasMore)
                               LoadMoreButton(
-                                remaining: list.length - _pageSize,
+                                remaining: filteredList.length - _pageSize,
                                 onTap: () =>
                                     setState(() => _pageSize += 20),
                               ),
@@ -214,6 +303,78 @@ class _AdminTransactionsPageState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sélecteur filtre (société/gare) — style aligné sur le TextField de recherche au-dessus.
+class _FilterDropdown<T> extends StatelessWidget {
+  const _FilterDropdown({
+    required this.icon,
+    required this.hint,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    super.key,
+  });
+
+  final IconData icon;
+  final String hint;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+          hint: Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.gray400),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(hint,
+                    style: const TextStyle(fontSize: 12, color: AppColors.gray400),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.mobiliBlueDeep),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+/// En-tête de regroupement par jour dans la liste des transactions.
+class _DateGroupHeader extends StatelessWidget {
+  const _DateGroupHeader({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 6),
+      child: Text(
+        DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppColors.mobiliBlueDeep,
+        ),
       ),
     );
   }

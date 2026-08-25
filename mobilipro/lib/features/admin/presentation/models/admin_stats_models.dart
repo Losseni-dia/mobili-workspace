@@ -279,7 +279,10 @@ class AdminTransaction {
     required this.date,
     required this.customerName,
     required this.route,
+    required this.companyId,
     required this.companyName,
+    required this.stationId,
+    required this.stationName,
     required this.ticketsAmount,
     required this.serviceFee,
     required this.luggageFee,
@@ -290,7 +293,8 @@ class AdminTransaction {
   });
 
   final int bookingId, serviceFee, commissionTotal;
-  final String reference, customerName, route, companyName, status;
+  final int? companyId, stationId;
+  final String reference, customerName, route, companyName, stationName, status;
   final DateTime date;
   final double ticketsAmount, luggageFee, companyNet, totalPrice;
 
@@ -300,7 +304,10 @@ class AdminTransaction {
         date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
         customerName: j['customerName'] as String? ?? '',
         route: j['route'] as String? ?? '',
+        companyId: (j['companyId'] as num?)?.toInt(),
         companyName: j['companyName'] as String? ?? '',
+        stationId: (j['stationId'] as num?)?.toInt(),
+        stationName: j['stationName'] as String? ?? '',
         ticketsAmount: (j['ticketsAmount'] as num?)?.toDouble() ?? 0,
         serviceFee: (j['serviceFee'] as num?)?.toInt() ?? 0,
         luggageFee: (j['luggageFee'] as num?)?.toDouble() ?? 0,
