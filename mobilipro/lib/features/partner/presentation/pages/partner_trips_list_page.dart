@@ -289,13 +289,20 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  '${t.price.toStringAsFixed(0)} F',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                    color: AppColors.proGold,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    _StatusPill(status: t.status),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${t.price.toStringAsFixed(0)} F',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                        color: AppColors.proGold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -306,6 +313,60 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Étiquette de statut du trajet (Programmé/En cours/Terminé/Annulé/Brouillon) —
+/// couleurs alignées sur trips_gare_page._statusConfig (mobilipro) / trip-management (web).
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+  final String status;
+
+  (Color, Color) get _colors {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return (AppColors.gray100, AppColors.gray500);
+      case 'PROGRAMMÉ':
+        return (AppColors.mobiliBlueFog, AppColors.mobiliBlue);
+      case 'EN_COURS':
+        return (const Color(0xFFD1FAE5), AppColors.stationGreen);
+      case 'TERMINÉ':
+        return (AppColors.gray100, AppColors.gray500);
+      case 'ANNULÉ':
+        return (AppColors.dangerSoft, AppColors.danger);
+      default:
+        return (AppColors.warningSoft, AppColors.warning);
+    }
+  }
+
+  String get _label {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'PROGRAMMÉ':
+        return 'Programmé';
+      case 'EN_COURS':
+        return 'En cours';
+      case 'TERMINÉ':
+        return 'Terminé';
+      case 'ANNULÉ':
+        return 'Annulé';
+      default:
+        return status;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, fg) = _colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(
+        _label,
+        style: TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.w700),
       ),
     );
   }
