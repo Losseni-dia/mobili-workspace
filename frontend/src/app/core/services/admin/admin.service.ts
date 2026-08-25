@@ -128,6 +128,18 @@ export interface CovoiturageSoloDriverAdminItem {
   covoiturageDriverPhotoUrl: string | null;
 }
 
+/** Aligné sur AdminTripListItemResponse (backend) — catalogue publié uniquement (jamais les brouillons). */
+export interface AdminTripListItem {
+  id: number;
+  route: string;
+  partnerName: string;
+  departureDateTime: string;
+  totalSeats: number;
+  availableSeats: number;
+  price: number;
+  status: string;
+}
+
 /** Aligné sur AdminTicketListItemResponse (backend). */
 export interface AdminTicketListItem {
   id: number;
@@ -284,6 +296,12 @@ export class AdminService {
   }
 
   /** Sans fromDate/toDate, le backend retombe sur les 30 derniers jours. */
+  getTripList(fromDate?: string, toDate?: string, search?: string): Observable<AdminTripListItem[]> {
+    return this.http.get<AdminTripListItem[]>('/admin/stats/trips/list', {
+      params: this.dateRangeParams(fromDate, toDate, search),
+    });
+  }
+
   getTicketList(fromDate?: string, toDate?: string, search?: string): Observable<AdminTicketListItem[]> {
     return this.http.get<AdminTicketListItem[]>('/admin/stats/tickets/list', {
       params: this.dateRangeParams(fromDate, toDate, search),

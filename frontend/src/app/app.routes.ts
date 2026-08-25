@@ -215,6 +215,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'trips',
+        loadComponent: () =>
+          import('./features/admin/admin-trips/admin-trips').then((m) => m.AdminTrips),
+      },
+      {
         path: 'tickets',
         loadComponent: () =>
           import('./features/admin/admin-tickets/admin-tickets').then((m) => m.AdminTickets),
