@@ -23,6 +23,15 @@ export class StationListComponent implements OnInit {
   stations = signal<Station[]>([]);
   isLoading = signal(false);
   error = signal<string | null>(null);
+  showAddPassword = signal(false);
+  showEditPassword = signal(false);
+
+  toggleAddPassword() {
+    this.showAddPassword.update((v) => !v);
+  }
+  toggleEditPassword() {
+    this.showEditPassword.update((v) => !v);
+  }
 
   /**
    * Dirigeant (partenaire sans rôle gare) : droits de gestion du réseau. Une gare créée par le

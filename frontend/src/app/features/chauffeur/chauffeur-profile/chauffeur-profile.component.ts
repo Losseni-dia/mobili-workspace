@@ -27,8 +27,13 @@ export class ChauffeurProfileComponent implements OnInit {
 
   isLoading = signal(false);
   avatarPreview = signal<string | null>(null);
+  showPassword = signal(false);
   selectedFile: File | null = null;
   user = this.authService.currentUser();
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
 
   /** Traduction alignée sur `_roleLabel()` (mobile, `profile_page.dart`). */
   private static readonly ROLE_LABELS: Record<string, string> = {

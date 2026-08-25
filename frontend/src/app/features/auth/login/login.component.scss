@@ -101,6 +101,34 @@
   input { @include mixins.input; font-size: 16px; }
 }
 
+// Œil "afficher/masquer" le mot de passe — aligné sur register.component.
+.input-wrapper {
+  position: relative;
+
+  input { padding-right: 48px; }
+
+  .eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: variables.$gray-500;
+    border-radius: variables.$radius-sm;
+    transition: background variables.$t-base;
+
+    &:hover { background: variables.$gray-100; }
+
+    span { font-size: 1.1rem; }
+  }
+}
+
 .info-banner {
   margin: 0 0 1rem;
   padding: 12px 14px;

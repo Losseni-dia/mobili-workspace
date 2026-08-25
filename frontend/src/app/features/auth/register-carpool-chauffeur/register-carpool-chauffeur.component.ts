@@ -31,6 +31,15 @@ export class RegisterCarpoolChauffeurComponent {
 
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
+  toggleConfirmPassword() {
+    this.showConfirmPassword.update((v) => !v);
+  }
 
   /** Pour l'attribut `min` de l'input date — demain au plus tôt (miroir de `@Future`). */
   readonly minIdValidUntilDate = (() => {

@@ -46,7 +46,12 @@
         </label>
         <label class="ga-field">
           <span>Mot de passe initial</span>
-          <input type="password" formControlName="password" autocomplete="new-password" minlength="6" maxlength="128" />
+          <div class="input-wrapper">
+            <input [type]="showCreatePassword() ? 'text' : 'password'" formControlName="password" autocomplete="new-password" minlength="6" maxlength="128" />
+            <button type="button" class="eye-icon" (click)="toggleCreatePassword()" [attr.aria-label]="showCreatePassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+              <span>{{ showCreatePassword() ? '🙈' : '👁️' }}</span>
+            </button>
+          </div>
           <span class="ga-field-hint">Au moins 6 caractères (même règle que le serveur).</span>
         </label>
         <label class="ga-field ga-field--wide">
@@ -127,7 +132,12 @@
                         </label>
                         <label class="ga-field">
                           <span>Nouveau mot de passe (facultatif)</span>
-                          <input type="password" formControlName="password" minlength="6" />
+                          <div class="input-wrapper">
+                            <input [type]="showEditPassword() ? 'text' : 'password'" formControlName="password" minlength="6" />
+                            <button type="button" class="eye-icon" (click)="toggleEditPassword()" [attr.aria-label]="showEditPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                              <span>{{ showEditPassword() ? '🙈' : '👁️' }}</span>
+                            </button>
+                          </div>
                         </label>
                       </div>
                       <div class="ga-form-actions">

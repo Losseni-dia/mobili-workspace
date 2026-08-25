@@ -33,6 +33,15 @@ export class GareAccountsComponent implements OnInit {
   editingId = signal<number | null>(null);
   editSubmitting = signal(false);
   editError = signal<string | null>(null);
+  showCreatePassword = signal(false);
+  showEditPassword = signal(false);
+
+  toggleCreatePassword() {
+    this.showCreatePassword.update((v) => !v);
+  }
+  toggleEditPassword() {
+    this.showEditPassword.update((v) => !v);
+  }
 
   form = this.fb.group({
     firstname: this.fb.control('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
