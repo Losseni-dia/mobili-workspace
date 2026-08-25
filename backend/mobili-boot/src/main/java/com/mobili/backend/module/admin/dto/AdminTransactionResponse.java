@@ -15,7 +15,11 @@ public record AdminTransactionResponse(
         LocalDateTime date,
         String customerName,
         String route,
+        Long companyId,
         String companyName,
+        /** Gare de départ du trajet (null si covoiturage/aucune gare associée). */
+        Long stationId,
+        String stationName,
         /** Somme des prix de tickets seule (hors forfait, hors bagages). */
         Double ticketsAmount,
         /** Frais de service Mobili (forfait client) — jamais reversé à la compagnie. */

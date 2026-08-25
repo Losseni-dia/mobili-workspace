@@ -181,7 +181,11 @@ export interface AdminTransaction {
   date: string;
   customerName: string;
   route: string;
+  companyId: number | null;
   companyName: string;
+  /** Gare de départ du trajet (null si covoiturage/aucune gare associée). */
+  stationId: number | null;
+  stationName: string;
   ticketsAmount: number;
   serviceFee: number;
   luggageFee: number;

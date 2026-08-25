@@ -267,6 +267,8 @@ public class AdminService {
                     int serviceFee = b.getServiceFee() != null ? b.getServiceFee() : 0;
                     double luggageFee = b.getActiveLuggageFee();
                     double companyNet = ticketsAmount + luggageFee - commissionTotal;
+                    var partner = b.getTrip().getPartner();
+                    var station = b.getTrip().getStation();
 
                     return new com.mobili.backend.module.admin.dto.AdminTransactionResponse(
                             b.getId(),
@@ -274,7 +276,10 @@ public class AdminService {
                             b.getBookingDate(),
                             b.getCustomer().getFirstname() + " " + b.getCustomer().getLastname(),
                             com.mobili.backend.module.booking.booking.util.BookingSegmentUtil.resolveRouteLabel(b),
-                            b.getTrip().getPartner() != null ? b.getTrip().getPartner().getName() : "—",
+                            partner != null ? partner.getId() : null,
+                            partner != null ? partner.getName() : "—",
+                            station != null ? station.getId() : null,
+                            station != null ? station.getName() : "—",
                             ticketsAmount,
                             serviceFee,
                             luggageFee,
