@@ -269,6 +269,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.partner " +
+                        "LEFT JOIN FETCH t.station " +
                         "JOIN FETCH b.customer c " +
                         "LEFT JOIN FETCH b.tickets " +
                         "WHERE b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
