@@ -72,6 +72,30 @@
     // Autocomplétion ville (Départ/Arrivée) — aligné sur CityAutocompleteField (mobile_app).
     .city-field {
       position: relative;
+
+      input { padding-right: 34px; }
+    }
+
+    // Petite croix "vider le champ" — évite de tout effacer au clavier.
+    .clear-field-btn {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: variables.$gray-100;
+      color: variables.$gray-500;
+      font-size: 0.7rem;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background variables.$t-fast, color variables.$t-fast;
+
+      &:hover { background: variables.$gray-200; color: variables.$mobili-blue-deep; }
     }
 
     .city-suggestions {

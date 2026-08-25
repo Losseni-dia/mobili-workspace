@@ -21,6 +21,9 @@
                         (focus)="onCityFieldFocus('departure')"
                         (blur)="onCityFieldBlur()"
                     >
+                    @if (searchForm.get('departure')?.value) {
+                        <button type="button" class="clear-field-btn" (mousedown)="clearField('departure')" aria-label="Effacer le départ">✕</button>
+                    }
                     @if (activeField() === 'departure' && departureSuggestions().length > 0) {
                         <ul class="city-suggestions">
                             @for (city of departureSuggestions(); track city) {
@@ -42,6 +45,9 @@
                         (focus)="onCityFieldFocus('arrival')"
                         (blur)="onCityFieldBlur()"
                     >
+                    @if (searchForm.get('arrival')?.value) {
+                        <button type="button" class="clear-field-btn" (mousedown)="clearField('arrival')" aria-label="Effacer l'arrivée">✕</button>
+                    }
                     @if (activeField() === 'arrival' && arrivalSuggestions().length > 0) {
                         <ul class="city-suggestions">
                             @for (city of arrivalSuggestions(); track city) {

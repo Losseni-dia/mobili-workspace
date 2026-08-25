@@ -112,6 +112,11 @@ export class HomeComponent implements OnInit {
     this.activeField.set(null);
   }
 
+  /** Petite croix "vider le champ" — évite de tout effacer au clavier. */
+  clearField(field: 'departure' | 'arrival'): void {
+    this.searchForm.get(field)?.setValue('');
+  }
+
   ngOnInit(): void {
     this.loadAllTrips();
   }
