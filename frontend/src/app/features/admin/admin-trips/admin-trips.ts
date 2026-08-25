@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTripListItem } from '../../../core/services/admin/admin.service';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 type StatusFilter = 'TOUS' | 'PROGRAMMÉ' | 'EN_COURS' | 'TERMINÉ' | 'ANNULÉ';
 
@@ -44,6 +45,9 @@ export class AdminTrips implements OnInit {
     });
   });
 
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filtered);
+
   ngOnInit(): void {
     this.setPeriodPreset('month');
   }
@@ -66,6 +70,7 @@ export class AdminTrips implements OnInit {
 
   setStatusFilter(f: StatusFilter): void {
     this.statusFilter.set(f);
+    this.pager.reset();
   }
 
   setPeriodPreset(preset: PeriodPreset): void {
@@ -73,13 +78,20 @@ export class AdminTrips implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.load();
   }
 
   /** Édition manuelle des dates : désactive le préset actif (l'intervalle n'y correspond plus). */
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.load();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 
   /** Étiquette lisible du statut (alignée sur trip-management statusLabel()). */

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTransaction } from '../../../core/services/admin/admin.service';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 /**
  * Page Transactions — frais Mobili (forfait), commission prélevée et net compagnie, par
@@ -46,6 +47,9 @@ export class AdminTransactions implements OnInit {
   totalCompanyNet = computed(() => this.transactions().reduce((sum, t) => sum + (t.companyNet || 0), 0));
   totalRevenue = computed(() => this.transactions().reduce((sum, t) => sum + (t.totalPrice || 0), 0));
 
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filtered);
+
   ngOnInit(): void {
     this.setPeriodPreset('month');
   }
@@ -71,11 +75,18 @@ export class AdminTransactions implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.load();
   }
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.load();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 }

@@ -5,6 +5,7 @@ import { PartnerTicket, TicketService } from '../../../core/services/ticket/tick
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -63,6 +64,9 @@ export class PartnerTicketsComponent implements OnInit {
       .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
   );
 
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filteredTickets);
+
   ngOnInit(): void {
     this.partenaireService.listStations().subscribe({
       next: (s) => this.stations.set(s),
@@ -91,10 +95,12 @@ export class PartnerTicketsComponent implements OnInit {
 
   setStatusFilter(f: TicketStatusFilter): void {
     this.statusFilter.set(f);
+    this.pager.reset();
   }
 
   onStationFilterChange(raw: string): void {
     this.stationFilter.set(raw === '' ? null : Number(raw));
+    this.pager.reset();
     this.loadTickets();
   }
 
@@ -103,12 +109,19 @@ export class PartnerTicketsComponent implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.loadTickets();
   }
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.loadTickets();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 
   displayAmount(t: PartnerTicket): number {
