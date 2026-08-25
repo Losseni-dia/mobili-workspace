@@ -104,6 +104,8 @@
                                     <span class="type-pill">{{ formatVehicleType(trip.vehicleType) }}</span>
                                     @if (trip.status === 'DRAFT') {
                                         <span class="type-pill type-pill--draft">Brouillon</span>
+                                    } @else {
+                                        <span class="type-pill" [ngClass]="statusPillClass(trip.status)">{{ statusLabel(trip.status) }}</span>
                                     }
                                 </div>
                                 @if (trip.moreInfo) {

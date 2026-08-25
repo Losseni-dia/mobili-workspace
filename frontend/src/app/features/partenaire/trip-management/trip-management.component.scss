@@ -158,6 +158,26 @@
       background: variables.$gray-200;
       color: variables.$gray-600;
     }
+
+    &--programme {
+      background: variables.$mobili-blue-fog;
+      color: variables.$mobili-blue;
+    }
+
+    &--en-cours {
+      background: variables.$station-green-soft;
+      color: variables.$station-green;
+    }
+
+    &--termine {
+      background: variables.$gray-200;
+      color: variables.$gray-600;
+    }
+
+    &--annule {
+      background: variables.$danger-soft;
+      color: variables.$danger;
+    }
   }
 }
 
