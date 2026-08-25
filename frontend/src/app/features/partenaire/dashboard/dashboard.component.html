@@ -71,7 +71,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @for (booking of recentBookings(); track booking.id) {
+                        @for (booking of recentBookingsPager.visible(); track booking.id) {
                             <tr>
                                 <td>
                                     <div class="user-cell">
@@ -89,6 +89,13 @@
                     </tbody>
                 </table>
             </div>
+            @if (recentBookingsPager.hasMore()) {
+                <div class="load-more-wrap">
+                    <button type="button" class="load-more-btn" (click)="recentBookingsPager.showMore()">
+                        Voir plus ({{ recentBookingsPager.remaining() }} restant{{ recentBookingsPager.remaining() > 1 ? 's' : '' }})
+                    </button>
+                </div>
+            }
         } @else {
             <div class="empty">
                 <div class="empty-icon">📭</div>

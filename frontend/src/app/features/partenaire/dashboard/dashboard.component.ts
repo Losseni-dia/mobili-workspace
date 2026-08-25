@@ -9,6 +9,7 @@ import {
 } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { TicketService } from '../../../core/services/ticket/ticket.service';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -23,6 +24,8 @@ export class DashboardComponent implements OnInit {
   private ticketService = inject(TicketService);
 
   recentBookings = signal<any[]>([]);
+  /** Pagination "Voir plus" — le backend renvoie tout le mois d'un coup, potentiellement long. */
+  recentBookingsPager = new ListPager(this.recentBookings);
   stations = signal<Station[]>([]);
   /** Dirigeant : filtre des KPI (backend `stationId` optionnel) */
   stationFilter: 'all' | number = 'all';
@@ -67,6 +70,7 @@ export class DashboardComponent implements OnInit {
         this.revenueOnline.set(data.revenueOnline ?? 0);
         this.revenueOffline.set(data.revenueOffline ?? 0);
         this.recentBookings.set(data.recentBookings);
+        this.recentBookingsPager.reset();
       },
       error: (err) => console.error('Erreur stats dashboard :', err),
     });
