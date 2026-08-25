@@ -10,6 +10,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/partner_period_selector.dart';
 import '../widgets/partner_station_filter.dart';
+import '../../../admin/presentation/widgets/admin_common_widgets.dart';
 
 /// Une ligne = une réservation payée. Ne contient JAMAIS le forfait de service Mobili — ce
 /// montant n'a jamais appartenu à la compagnie (voir PartnerTransactionResponse côté backend).
@@ -72,6 +73,7 @@ class _PartnerTransactionsPageState
     extends ConsumerState<PartnerTransactionsPage> {
   PartnerPeriod _period = PartnerPeriod.week;
   int? _stationId;
+  int _pageSize = 20;
 
   Future<void> _exportCsv(List<PartnerTransaction> transactions) async {
     final rows = [
@@ -119,11 +121,17 @@ class _PartnerTransactionsPageState
         children: [
           PartnerPeriodSelector(
             selected: _period,
-            onChanged: (p) => setState(() => _period = p),
+            onChanged: (p) => setState(() {
+              _period = p;
+              _pageSize = 20;
+            }),
           ),
           PartnerStationFilter(
             selectedStationId: _stationId,
-            onChanged: (id) => setState(() => _stationId = id),
+            onChanged: (id) => setState(() {
+              _stationId = id;
+              _pageSize = 20;
+            }),
           ),
           Expanded(
             child: txnAsync.when(
@@ -209,34 +217,77 @@ class _PartnerTransactionsPageState
                           ),
                         ),
                       )
-                    else ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${transactions.length} transaction(s)',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.gray500,
-                              fontWeight: FontWeight.w600,
+                    else ...(() {
+                      final visible = transactions.take(_pageSize).toList();
+                      final hasMore = transactions.length > _pageSize;
+
+                      // Regroupement par jour : un en-tête de date suivi des cartes du jour.
+                      final grouped = <Widget>[];
+                      DateTime? lastDay;
+                      for (final t in visible) {
+                        final day = DateTime(t.date.year, t.date.month, t.date.day);
+                        if (lastDay == null || day != lastDay) {
+                          grouped.add(_DateGroupHeader(date: day));
+                          lastDay = day;
+                        }
+                        grouped.add(_TransactionCard(t: t));
+                      }
+
+                      return [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${visible.length} / ${transactions.length} transaction(s)',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.gray500,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                            TextButton.icon(
+                              onPressed: () => _exportCsv(transactions),
+                              icon: const Icon(Icons.table_chart_rounded, size: 15),
+                              label: const Text('CSV', style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...grouped,
+                        if (hasMore)
+                          LoadMoreButton(
+                            remaining: transactions.length - _pageSize,
+                            onTap: () => setState(() => _pageSize += 20),
                           ),
-                          TextButton.icon(
-                            onPressed: () => _exportCsv(transactions),
-                            icon: const Icon(Icons.table_chart_rounded, size: 15),
-                            label: const Text('CSV', style: TextStyle(fontSize: 12)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ...transactions.map((t) => _TransactionCard(t: t)),
-                    ],
+                      ];
+                    })(),
                   ],
                 );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// En-tête de regroupement par jour dans la liste des transactions.
+class _DateGroupHeader extends StatelessWidget {
+  const _DateGroupHeader({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 6),
+      child: Text(
+        DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: AppColors.mobiliBlueDeep,
+        ),
       ),
     );
   }

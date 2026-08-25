@@ -109,3 +109,14 @@
   font-size: 0.88rem;
   color: variables.$mobili-blue-deep;
 }
+
+// ---- Regroupement par jour ----
+.date-group-row td {
+  padding: 10px 20px 6px;
+  background: variables.$gray-50;
+  border-bottom: 1px solid variables.$gray-200;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: variables.$mobili-blue-deep;
+  text-transform: capitalize;
+}

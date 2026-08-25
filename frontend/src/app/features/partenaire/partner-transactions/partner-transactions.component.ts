@@ -5,6 +5,7 @@ import { BookingService, PartnerTransaction } from '../../../core/services/booki
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 /**
  * Détail financier (frais Mobili/commission, net compagnie) par réservation payée — parité
@@ -41,9 +42,27 @@ export class PartnerTransactionsComponent implements OnInit {
     );
   });
 
-  totalCommission = computed(() => this.transactions().reduce((sum, t) => sum + (t.commissionTotal || 0), 0));
-  totalCompanyNet = computed(() => this.transactions().reduce((sum, t) => sum + (t.companyNet || 0), 0));
-  totalGross = computed(() => this.transactions().reduce((sum, t) => sum + (t.grossAmount || 0), 0));
+  totalCommission = computed(() => this.filtered().reduce((sum, t) => sum + (t.commissionTotal || 0), 0));
+  totalCompanyNet = computed(() => this.filtered().reduce((sum, t) => sum + (t.companyNet || 0), 0));
+  totalGross = computed(() => this.filtered().reduce((sum, t) => sum + (t.grossAmount || 0), 0));
+
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filtered);
+
+  /** Une entrée par date (en-tête) suivie de ses transactions — pour le regroupement par jour. */
+  groupedRows = computed(() => {
+    const out: Array<{ dateHeader?: string; row?: PartnerTransaction }> = [];
+    let lastDay = '';
+    for (const t of this.pager.visible()) {
+      const day = (t.date || '').slice(0, 10);
+      if (day !== lastDay) {
+        out.push({ dateHeader: day });
+        lastDay = day;
+      }
+      out.push({ row: t });
+    }
+    return out;
+  });
 
   ngOnInit(): void {
     this.partenaireService.listStations().subscribe({
@@ -73,6 +92,7 @@ export class PartnerTransactionsComponent implements OnInit {
 
   onStationFilterChange(raw: string): void {
     this.stationFilter.set(raw === '' ? null : Number(raw));
+    this.pager.reset();
     this.load();
   }
 
@@ -81,12 +101,19 @@ export class PartnerTransactionsComponent implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.load();
   }
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.load();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 
   exportCsv(): void {
