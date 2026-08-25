@@ -259,6 +259,27 @@
   }
 }
 
+// ---- Pagination "Voir plus" (évite le scroll infini sur les grosses listes) ----
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 18px 24px 22px;
+}
+
+.load-more-btn {
+  padding: 9px 20px;
+  border-radius: variables.$radius-pill;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$mobili-blue;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all variables.$t-fast;
+
+  &:hover { background: variables.$mobili-blue-fog; border-color: variables.$mobili-blue; }
+}
+
 // ---- Bouton de ligne ----
 .row-btn {
   padding: 7px 14px;

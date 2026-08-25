@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AdminService, AdminBookingListItem } from '../../../core/services/admin/admin.service';
 import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 type StatusFilter = 'CONFIRME' | 'ANNULE';
 
@@ -63,6 +64,9 @@ export class AdminBookings implements OnInit {
       .reduce((sum, b) => sum + (b.amount ?? b.totalPrice ?? 0), 0),
   );
 
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filtered);
+
   ngOnInit(): void {
     this.setPeriodPreset('month');
   }
@@ -85,6 +89,7 @@ export class AdminBookings implements OnInit {
 
   setStatusFilter(f: StatusFilter): void {
     this.statusFilter.set(f);
+    this.pager.reset();
   }
 
   setPeriodPreset(preset: PeriodPreset): void {
@@ -92,12 +97,19 @@ export class AdminBookings implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.load();
   }
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.load();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 
   // ====== Détails (tickets + voyageurs) ======

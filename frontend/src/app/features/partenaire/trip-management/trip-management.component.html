@@ -19,7 +19,7 @@
                     type="text"
                     placeholder="Ville, ID, infos…"
                     [ngModel]="search()"
-                    (ngModelChange)="search.set($event)"
+                    (ngModelChange)="onSearch($event)"
                 />
             </label>
             <span class="count-chip">{{ filteredTrips().length }} / {{ myTrips().length }} trajets</span>
@@ -68,7 +68,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (trip of filteredTrips(); track trip.id) {
+                    @for (trip of pager.visible(); track trip.id) {
                         <tr>
                             <td>
                                 <button
@@ -167,6 +167,13 @@
                 </tbody>
             </table>
         </div>
+        @if (pager.hasMore()) {
+            <div class="load-more-wrap">
+                <button type="button" class="load-more-btn" (click)="pager.showMore()">
+                    Voir plus ({{ pager.remaining() }} restant{{ pager.remaining() > 1 ? 's' : '' }})
+                </button>
+            </div>
+        }
     } @else if (myTrips().length > 0) {
         <div class="empty">
             <div class="empty-icon">🔍</div>

@@ -32,7 +32,7 @@
     <div class="filters">
         <label class="filter">
             <span class="f-ico">🔍</span>
-            <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Référence, client, compagnie…">
+            <input type="text" [ngModel]="search()" (ngModelChange)="onSearch($event)" placeholder="Référence, client, compagnie…">
         </label>
     </div>
 </section>
@@ -70,7 +70,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (t of filtered(); track t.bookingId) {
+                    @for (t of pager.visible(); track t.bookingId) {
                         <tr>
                             <td class="mono">#{{ t.reference }}</td>
                             <td>{{ t.customerName }}</td>
@@ -86,6 +86,13 @@
                 </tbody>
             </table>
         </div>
+        @if (pager.hasMore()) {
+            <div class="load-more-wrap">
+                <button type="button" class="load-more-btn" (click)="pager.showMore()">
+                    Voir plus ({{ pager.remaining() }} restant{{ pager.remaining() > 1 ? 's' : '' }})
+                </button>
+            </div>
+        }
     } @else {
         <div class="empty">
             <div class="empty-icon">💳</div>

@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -65,6 +66,9 @@ export class GareTicketsComponent implements OnInit {
       .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
   );
 
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filteredTickets);
+
   ngOnInit(): void {
     this.setPeriodPreset('month');
   }
@@ -90,6 +94,7 @@ export class GareTicketsComponent implements OnInit {
 
   setStatusFilter(f: TicketStatusFilter): void {
     this.statusFilter.set(f);
+    this.pager.reset();
   }
 
   setPeriodPreset(preset: PeriodPreset): void {
@@ -97,12 +102,19 @@ export class GareTicketsComponent implements OnInit {
     this.activePeriod.set(preset);
     this.fromDate.set(from);
     this.toDate.set(to);
+    this.pager.reset();
     this.loadTickets();
   }
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.pager.reset();
     this.loadTickets();
+  }
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
   }
 
   displayAmount(t: PartnerTicket): number {

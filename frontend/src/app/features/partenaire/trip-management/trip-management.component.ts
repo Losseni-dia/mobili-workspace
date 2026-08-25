@@ -12,6 +12,7 @@ import { NotificationService } from '../../../core/services/notification/notific
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { computePeriodRange } from '../../../core/utils/period-range.util';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
 type TripStatusFilter = 'ALL' | 'DRAFT' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
@@ -73,6 +74,14 @@ export class TripManagementComponent implements OnInit {
         .some((v) => String(v).toLowerCase().includes(q)),
     );
   });
+
+  /** Pagination "Voir plus" — évite d'afficher toute la liste (potentiellement longue) d'un coup. */
+  pager = new ListPager(this.filteredTrips);
+
+  onSearch(v: string): void {
+    this.search.set(v);
+    this.pager.reset();
+  }
 
   /** Lien "Canal" contextuel : /partenaire/trip-channel ou /gare/trip-channel selon l'espace. */
   tripChannelLink(tripId: number): string[] {
@@ -155,17 +164,20 @@ export class TripManagementComponent implements OnInit {
       this.fromDate.set(from);
       this.toDate.set(to);
     }
+    this.pager.reset();
     this.loadTrips();
   }
 
   /** Passage manuel des dates : bascule automatiquement en mode "Intervalle". */
   onManualDateChange(): void {
     this.period.set('custom');
+    this.pager.reset();
     this.loadTrips();
   }
 
   setStatusFilter(s: TripStatusFilter) {
     this.statusFilter.set(s);
+    this.pager.reset();
   }
 
   private periodRange(): { from: string; to: string } {
