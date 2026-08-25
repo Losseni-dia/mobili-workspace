@@ -29,6 +29,7 @@ export class ChauffeurListComponent implements OnInit {
   error = signal<string | null>(null);
   createSubmitting = signal(false);
   createError = signal<string | null>(null);
+  showPassword = signal(false);
   createIdFront: File | null = null;
   createIdBack: File | null = null;
   createLicenseFront: File | null = null;
@@ -86,6 +87,10 @@ export class ChauffeurListComponent implements OnInit {
     email: this.fb.control('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(255)] }),
     phone: this.fb.control('', { nonNullable: true, validators: [Validators.maxLength(20)] }),
   });
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
 
   ngOnInit() {
     this.partenaire.listStations().subscribe({

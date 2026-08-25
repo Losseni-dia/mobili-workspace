@@ -23,8 +23,13 @@ export class UserEditComponent implements OnInit {
 
   isLoading = signal(false);
   avatarPreview = signal<string | null>(null);
+  showPassword = signal(false);
   selectedFile: File | null = null;
   user = this.authService.currentUser();
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
 
   userForm = this.fb.group({
     firstname: ['', [Validators.required]],

@@ -109,10 +109,39 @@
     color: variables.$mobili-blue-deep;
   }
   input {
+    width: 100%;
     padding: 0.5rem 0.6rem;
     border-radius: 8px;
     border: 1px solid variables.$gray-300;
     font-size: 0.95rem;
+  }
+
+  // Œil "afficher/masquer" le mot de passe — aligné sur register.component.
+  .input-wrapper {
+    position: relative;
+
+    input { padding-right: 2.4rem; }
+
+    .eye-icon {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: variables.$gray-500;
+      border-radius: variables.$radius-sm;
+      transition: background variables.$t-base;
+
+      &:hover { background: variables.$gray-100; }
+
+      span { font-size: 1rem; }
+    }
   }
 }
 

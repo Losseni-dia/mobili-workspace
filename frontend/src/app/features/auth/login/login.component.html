@@ -26,9 +26,12 @@
 
             <div class="form-group">
                 <label for="password">Mot de passe</label>
-                <div class="input-with-icon">
-                    <input type="password" id="password" name="password" [(ngModel)]="credentials.password" required
+                <div class="input-wrapper">
+                    <input [type]="showPassword() ? 'text' : 'password'" id="password" name="password" [(ngModel)]="credentials.password" required
                         placeholder="••••••••">
+                    <button type="button" class="eye-icon" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                        <span>{{ showPassword() ? '🙈' : '👁️' }}</span>
+                    </button>
                 </div>
             </div>
 

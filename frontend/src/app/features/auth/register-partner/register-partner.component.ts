@@ -22,6 +22,8 @@ export class RegisterPartnerComponent {
   private notification = inject(NotificationService);
 
   isLoading = signal(false);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
   selectedLogo: File | null = null;
   logoPreview = signal<string | null>(null);
   selectedKycFront: File | null = null;
@@ -44,6 +46,13 @@ export class RegisterPartnerComponent {
     companyPhone: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(20)]],
     businessNumber: [''],
   });
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
+  }
+  toggleConfirmPassword() {
+    this.showConfirmPassword.update((v) => !v);
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;

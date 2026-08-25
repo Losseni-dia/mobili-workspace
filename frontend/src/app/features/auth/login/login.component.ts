@@ -27,6 +27,7 @@ export class LoginComponent implements OnInit {
   credentials = { login: '', password: '' };
   errorMessage = signal<string | null>(null);
   isLoading = signal(false);
+  showPassword = signal(false);
   /** Après inscription chauffeur covoiturage (query `registered=carpool`). */
   postRegisterHint = signal<string | null>(null);
 
@@ -37,6 +38,10 @@ export class LoginComponent implements OnInit {
         'Inscription enregistrée. Votre compte est inactif tant qu’un administrateur n’a pas validé votre accès. Vous pourrez vous connecter une fois le compte activé.',
       );
     }
+  }
+
+  togglePassword() {
+    this.showPassword.update((v) => !v);
   }
 
   onSubmit() {

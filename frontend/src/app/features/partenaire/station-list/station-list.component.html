@@ -80,7 +80,12 @@
                           </label>
                           <label class="ig">
                             <span>Nouveau mot de passe (optionnel)</span>
-                            <input type="password" formControlName="password" placeholder="Laisser vide pour ne pas changer" autocomplete="new-password" />
+                            <div class="input-wrapper">
+                              <input [type]="showEditPassword() ? 'text' : 'password'" formControlName="password" placeholder="Laisser vide pour ne pas changer" autocomplete="new-password" />
+                              <button type="button" class="eye-icon" (click)="toggleEditPassword()" [attr.aria-label]="showEditPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                                <span>{{ showEditPassword() ? '🙈' : '👁️' }}</span>
+                              </button>
+                            </div>
                           </label>
                           <div class="add-form-actions">
                             <button type="button" class="btn-cancel" (click)="cancelEdit()">Annuler</button>
@@ -159,7 +164,12 @@
         </label>
         <label class="ig">
           <span>Mot de passe de connexion (optionnel)</span>
-          <input type="password" formControlName="password" placeholder="Au moins 6 caractères" autocomplete="new-password" />
+          <div class="input-wrapper">
+            <input [type]="showAddPassword() ? 'text' : 'password'" formControlName="password" placeholder="Au moins 6 caractères" autocomplete="new-password" />
+            <button type="button" class="eye-icon" (click)="toggleAddPassword()" [attr.aria-label]="showAddPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+              <span>{{ showAddPassword() ? '🙈' : '👁️' }}</span>
+            </button>
+          </div>
         </label>
         <div class="add-form-actions">
           <button type="submit" class="btn-submit" [disabled]="form.invalid">Enregistrer la gare</button>

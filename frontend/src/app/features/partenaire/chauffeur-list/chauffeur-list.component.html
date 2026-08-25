@@ -52,13 +52,18 @@
           </label>
           <label class="chauff-field">
             <span>Mot de passe initial</span>
-            <input
-              type="password"
-              formControlName="password"
-              autocomplete="new-password"
-              minlength="8"
-              maxlength="120"
-            />
+            <div class="input-wrapper">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="120"
+              />
+              <button type="button" class="eye-icon" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+                <span>{{ showPassword() ? '🙈' : '👁️' }}</span>
+              </button>
+            </div>
             <span class="chauff-field-hint">Au moins 8 caractères (même règle que le serveur).</span>
             @if (form.controls.password.dirty && form.controls.password.value.length > 0 && form.controls.password.errors?.['minlength']) {
               <span class="chauff-field-error" role="alert">Encore {{ 8 - form.controls.password.value.length }} caractère(s) minimum.</span>
