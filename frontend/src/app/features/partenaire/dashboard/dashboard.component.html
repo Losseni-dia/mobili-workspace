@@ -51,55 +51,63 @@
     <article class="data-panel">
         <header class="panel-head">
             <div>
-                <h2>Dernières réservations</h2>
-                <p>Suivi en temps réel des clients qui ont réservé.</p>
+                <h2>Derniers tickets</h2>
+                <p>Suivi en temps réel des billets vendus.</p>
             </div>
-            @if (recentBookings().length > 0) {
-                <a routerLink="/partenaire/bookings" class="count-chip link">Voir tout →</a>
+            @if (recentTickets().length > 0) {
+                <a routerLink="/partenaire/tickets" class="count-chip link">Voir tout →</a>
             }
         </header>
 
-        @if (recentBookings().length > 0) {
+        @if (recentTickets().length > 0) {
             <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Client</th>
+                            <th>Passager</th>
+                            <th>Client (résa)</th>
                             <th>Trajet</th>
                             <th>Date</th>
+                            <th>Résa</th>
+                            <th>Ticket</th>
+                            <th>Siège</th>
                             <th class="right">Montant</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @for (booking of recentBookingsPager.visible(); track booking.id) {
+                        @for (t of recentTicketsPager.visible(); track t.id) {
                             <tr>
                                 <td>
                                     <div class="user-cell">
-                                        <div class="avatar">{{ booking.customerName?.[0] }}</div>
+                                        <div class="avatar">{{ t.passengerName[0] }}</div>
                                         <div class="user-meta">
-                                            <strong>{{ booking.customerName }}</strong>
+                                            <strong>{{ t.passengerName }}</strong>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ booking.tripRoute }}</td>
-                                <td class="mono">{{ booking.date | date: 'dd/MM HH:mm' }}</td>
-                                <td class="right amount">{{ booking.amount | number }} FCFA</td>
+                                <td>{{ t.customerName }}</td>
+                                <td>{{ t.route }}</td>
+                                <td class="mono">{{ t.bookingDate | date: 'dd/MM HH:mm' }}</td>
+                                <td class="mono">{{ t.bookingId ? '#' + t.bookingId : '—' }}</td>
+                                <td class="mono">{{ t.ticketNumber }}</td>
+                                <td>{{ t.seatNumber }}</td>
+                                <td class="right amount">{{ (t.grossAmount ?? t.amountPaid) | number }} FCFA</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-            @if (recentBookingsPager.hasMore()) {
+            @if (recentTicketsPager.hasMore()) {
                 <div class="load-more-wrap">
-                    <button type="button" class="load-more-btn" (click)="recentBookingsPager.showMore()">
-                        Voir plus ({{ recentBookingsPager.remaining() }} restant{{ recentBookingsPager.remaining() > 1 ? 's' : '' }})
+                    <button type="button" class="load-more-btn" (click)="recentTicketsPager.showMore()">
+                        Voir plus ({{ recentTicketsPager.remaining() }} restant{{ recentTicketsPager.remaining() > 1 ? 's' : '' }})
                     </button>
                 </div>
             }
         } @else {
             <div class="empty">
                 <div class="empty-icon">📭</div>
-                <strong>Aucune réservation pour le moment.</strong>
+                <strong>Aucun ticket pour le moment.</strong>
                 <p>Dès qu'un client réservera un de vos trajets, vous le verrez ici.</p>
             </div>
         }

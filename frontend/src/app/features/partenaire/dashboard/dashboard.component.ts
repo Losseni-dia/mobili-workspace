@@ -8,7 +8,7 @@ import {
   Station,
 } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { TicketService } from '../../../core/services/ticket/ticket.service';
+import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 @Component({
@@ -23,9 +23,10 @@ export class DashboardComponent implements OnInit {
   private auth = inject(AuthService);
   private ticketService = inject(TicketService);
 
-  recentBookings = signal<any[]>([]);
-  /** Pagination "Voir plus" — le backend renvoie tout le mois d'un coup, potentiellement long. */
-  recentBookingsPager = new ListPager(this.recentBookings);
+  /** Infos ticket (pas réservation agrégée) — un booking peut couvrir plusieurs sièges/tickets. */
+  recentTickets = signal<PartnerTicket[]>([]);
+  /** Pagination "Voir plus" — potentiellement tout le mois de tickets d'un coup. */
+  recentTicketsPager = new ListPager(this.recentTickets);
   stations = signal<Station[]>([]);
   /** Dirigeant : filtre des KPI (backend `stationId` optionnel) */
   stationFilter: 'all' | number = 'all';
@@ -69,8 +70,6 @@ export class DashboardComponent implements OnInit {
         ];
         this.revenueOnline.set(data.revenueOnline ?? 0);
         this.revenueOffline.set(data.revenueOffline ?? 0);
-        this.recentBookings.set(data.recentBookings);
-        this.recentBookingsPager.reset();
       },
       error: (err) => console.error('Erreur stats dashboard :', err),
     });
@@ -80,8 +79,19 @@ export class DashboardComponent implements OnInit {
     const from = iso(new Date(now.getFullYear(), now.getMonth(), 1));
     const to = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
-      next: (tickets) => this.ticketsSoldCount.set(tickets.length),
-      error: () => this.ticketsSoldCount.set(null),
+      next: (tickets) => {
+        this.ticketsSoldCount.set(tickets.length);
+        // Infos ticket (pas réservation agrégée) : tri du plus récent au plus ancien.
+        const sorted = [...tickets].sort(
+          (a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime(),
+        );
+        this.recentTickets.set(sorted);
+        this.recentTicketsPager.reset();
+      },
+      error: () => {
+        this.ticketsSoldCount.set(null);
+        this.recentTickets.set([]);
+      },
     });
   }
 }

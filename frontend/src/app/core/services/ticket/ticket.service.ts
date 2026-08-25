@@ -12,6 +12,10 @@ export interface PartnerTicket {
   route: string;
   stationName: string;
   bookingDate: string;
+  /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
+  bookingId: number | null;
+  /** Client ayant effectué la réservation (compte connecté), distinct du passager du siège. */
+  customerName: string;
   /** Part du prix passager (inclut le forfait client) — jamais affiché côté gare/partenaire. */
   amountPaid: number;
   /**

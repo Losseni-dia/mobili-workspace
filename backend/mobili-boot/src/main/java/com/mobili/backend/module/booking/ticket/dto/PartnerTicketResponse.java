@@ -5,10 +5,15 @@ import java.time.LocalDateTime;
 public record PartnerTicketResponse(
         Long id,
         String ticketNumber,
+        /** Passager du siège (peut différer du client qui a réservé — voir customerName). */
         String passengerName,
         String route,
         String stationName,
         LocalDateTime bookingDate,
+        /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
+        Long bookingId,
+        /** Client ayant effectué la réservation (compte connecté), distinct du passager du siège. */
+        String customerName,
         /**
          * Part du prix global (transport + forfait client + bagages), pour affichage passager
          * uniquement — jamais côté partenaire (voir grossAmount), qui n'a jamais reçu le

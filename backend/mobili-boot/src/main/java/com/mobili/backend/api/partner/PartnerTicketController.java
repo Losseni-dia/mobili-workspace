@@ -39,6 +39,8 @@ public class PartnerTicketController {
                         TicketSegmentUtil.resolveRouteLabel(t),
                         t.getTrip().getStation() != null ? t.getTrip().getStation().getName() : "—",
                         t.getBookingDate(),
+                        t.getBooking() != null ? t.getBooking().getId() : null,
+                        resolveCustomerName(t),
                         t.getAmountPaid(),
                         // Vente brute côté compagnie — jamais amountPaid, qui dilue le forfait
                         // client sur chaque siège. Null (ticket antérieur) -> le front retombe
@@ -50,5 +52,17 @@ public class PartnerTicketController {
                         t.getSeatNumber(),
                         t.isScanned()))
                 .collect(Collectors.toList());
+    }
+
+    /** Client ayant effectué la réservation (compte connecté) — même logique que PartnerMapper#toRecentBookingDtoList. */
+    private static String resolveCustomerName(com.mobili.backend.module.booking.ticket.entity.Ticket t) {
+        if (t.getBooking() == null || t.getBooking().getCustomer() == null) {
+            return "—";
+        }
+        var customer = t.getBooking().getCustomer();
+        String fn = customer.getFirstname() != null ? customer.getFirstname() : "";
+        String ln = customer.getLastname() != null ? customer.getLastname() : "";
+        String full = (fn + " " + ln).trim();
+        return full.isEmpty() ? "—" : full;
     }
 }
