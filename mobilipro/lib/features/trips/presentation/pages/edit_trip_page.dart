@@ -363,7 +363,10 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.of(context).pop(true);
+        // Toujours brouillon après cette modification : ouvre directement sur l'onglet
+        // "Brouillon" au retour, sinon le trajet enregistré n'apparaît sous aucun onglet
+        // visible par défaut (EN_COURS) et semble avoir disparu.
+        Navigator.of(context).pop(_status == 'DRAFT' ? 'DRAFT' : true);
       }
     } catch (e) {
       setState(() {
@@ -387,10 +390,6 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
       );
 
       if (mounted) {
-        setState(() {
-          _status = 'PROGRAMMÉ';
-          _publishing = false;
-        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Trajet publié avec succès ! ✅'),
@@ -398,6 +397,9 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        // Trajet fraîchement publié : ouvre directement sur l'onglet "Programmé" (trajet
+        // actif) au lieu de rester bloqué sur le formulaire.
+        Navigator.of(context).pop('PROGRAMMÉ');
       }
     } catch (e) {
       setState(() {

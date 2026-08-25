@@ -387,7 +387,7 @@ export class AddTripComponent implements OnInit {
     this.tripService.publishTrip(id).subscribe({
       next: () => {
         this.notification.show('Trajet publié avec succès !', 'success');
-        this.router.navigate([this.basePath(), 'trips']);
+        this.router.navigate([this.basePath(), 'trips'], { queryParams: { status: 'PROGRAMMÉ' } });
       },
       error: (err) => {
         this.isPublishing.set(false);

@@ -2,7 +2,7 @@
   <div class="add-trip-card">
     <header class="add-trip-header">
       <div class="add-trip-header__row">
-        <a [routerLink]="[basePath(), 'trips']" class="add-trip-back" aria-label="Retour aux trajets"
+        <a [routerLink]="[basePath(), 'trips']" [queryParams]="tripId() ? { status: 'DRAFT' } : null" class="add-trip-back" aria-label="Retour aux trajets"
           >←</a
         >
         <div class="add-trip-header__text">
@@ -262,7 +262,7 @@
       </section>
 
       <div class="form-actions">
-        <a class="btn-cancel" [routerLink]="[basePath(), 'trips']">Annuler</a>
+        <a class="btn-cancel" [routerLink]="[basePath(), 'trips']" [queryParams]="tripId() ? { status: 'DRAFT' } : null">Annuler</a>
         <button type="submit" class="btn-save" [disabled]="tripForm.invalid || isLoading()">
           {{ isLoading() ? 'Enregistrement…' : tripId() ? 'Enregistrer à nouveau' : 'Enregistrer' }}
         </button>

@@ -394,11 +394,12 @@ export class TripEditComponent implements OnInit {
 
     this.tripService.updateTrip(this.tripId, formData).subscribe({
       next: () => {
-        // Brouillon : on reste sur la page pour laisser publier ensuite. Déjà publié :
-        // comportement inchangé, retour à la liste comme avant ce chantier.
+        // Toujours brouillon après cette modification : retour à la liste sur l'onglet
+        // Brouillon (au lieu de rester sur le formulaire) pour ne pas donner l'impression
+        // que le trajet a disparu.
         if (this.tripStatus() === 'DRAFT') {
-          this.isLoading.set(false);
-          this.notification.show('Trajet enregistré — vous pouvez maintenant le publier.', 'success');
+          this.notification.show('Trajet enregistré — toujours en brouillon.', 'success');
+          this.router.navigate([this.basePath(), 'trips'], { queryParams: { status: 'DRAFT' } });
           return;
         }
         this.notification.show('Trajet enregistré ✅', 'success');
@@ -421,7 +422,7 @@ export class TripEditComponent implements OnInit {
     this.tripService.publishTrip(this.tripId).subscribe({
       next: () => {
         this.notification.show('Trajet publié avec succès !', 'success');
-        this.router.navigate([this.basePath(), 'trips']);
+        this.router.navigate([this.basePath(), 'trips'], { queryParams: { status: 'PROGRAMMÉ' } });
       },
       error: (err) => {
         this.isPublishing.set(false);
