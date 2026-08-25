@@ -71,6 +71,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
                     "JOIN FETCH t.trip tr " +
                     "LEFT JOIN FETCH tr.station " +
                     "JOIN FETCH t.passenger " +
+                    "LEFT JOIN FETCH t.booking b " +
+                    "LEFT JOIN FETCH b.customer " +
                     "WHERE tr.partner.id = :partnerId " +
                     "AND (:stationId IS NULL OR tr.station.id = :stationId) " +
                     "AND t.bookingDate >= :from AND t.bookingDate <= :to " +
