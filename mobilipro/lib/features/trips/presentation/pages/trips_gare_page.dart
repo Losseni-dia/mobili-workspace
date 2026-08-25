@@ -894,7 +894,7 @@ class _TripCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          trip.status == 'DRAFT' ? 'BROUILLON' : trip.status,
+                          _statusLabel(trip.status),
                           style: TextStyle(
                             color: statusConfig.$2,
                             fontSize: 9,
@@ -1209,6 +1209,24 @@ class _TripCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Libellé lisible du statut (aligné sur web trip-management statusLabel()).
+  String _statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return 'BROUILLON';
+      case 'PROGRAMMÉ':
+        return 'Programmé';
+      case 'EN_COURS':
+        return 'En cours';
+      case 'TERMINÉ':
+        return 'Terminé';
+      case 'ANNULÉ':
+        return 'Annulé';
+      default:
+        return status;
+    }
   }
 
   (Color, Color) _statusConfig(String status) {
