@@ -580,7 +580,11 @@ public class TripService {
      */
     @Transactional
     public Trip publish(Long id, Object principal) {
-        Trip trip = tripRepository.findById(id)
+        // findByIdWithPartnerAndStops (pas findById) : TripMapper#toDto lit partner/station/
+        // assignedChauffeur/covoiturageOrganizer, des relations lazy — la réponse est mappée
+        // dans le contrôleur, hors transaction, donc ces relations doivent déjà être
+        // initialisées ici (même bug shape que TicketRepository#findForPartnerList).
+        Trip trip = tripRepository.findByIdWithPartnerAndStops(id)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
         Partner partner = partenaireService.getCurrentPartnerForOperations();
         assertTripWriteAccess(trip, principal, partner);
