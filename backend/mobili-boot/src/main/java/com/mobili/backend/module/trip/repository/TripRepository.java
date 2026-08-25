@@ -82,9 +82,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT COUNT(t) FROM Trip t WHERE t.covoiturageOrganizer.id = :organizerId AND t.hiddenByOrganizer = false")
     long countTripsByCovoiturageOrganizer(@Param("organizerId") Long organizerId);
     
+    /**
+     * Vue agrégée « société mère » (partenaire, toutes gares confondues, sans filtre de
+     * station) : un brouillon n'est pas un trajet actif, il reste privé à la gare qui l'a créé
+     * (voir findAllByPartnerIdAndStationId, qui elle le garde) tant qu'il n'est pas publié.
+     */
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
             + "LEFT JOIN FETCH t.assignedChauffeur "
-            + "WHERE t.partner.id = ?1 ORDER BY t.departureDateTime DESC")
+            + "WHERE t.partner.id = ?1 AND t.status <> com.mobili.backend.module.trip.entity.TripStatus.DRAFT "
+            + "ORDER BY t.departureDateTime DESC")
     List<Trip> findAllByPartnerId(Long partnerId);
 
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
@@ -142,9 +148,11 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     boolean existsByCovoiturageOrganizerCovoiturageDriverPhotoUrl(String driverPhotoUrl);
 
 
+    /** Vue admin globale : seuls les trajets publiés (catalogue), jamais les brouillons gare/partenaire. */
     @Query("SELECT DISTINCT t FROM Trip t " +
                     "JOIN FETCH t.partner p " +
-                    "WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to " +
+                    "WHERE t.status <> com.mobili.backend.module.trip.entity.TripStatus.DRAFT " +
+                    "AND t.departureDateTime >= :from AND t.departureDateTime <= :to " +
                     "AND (:search IS NULL OR :search = '' " +
                     "     OR LOWER(t.departureCity) LIKE LOWER(CONCAT('%', :search, '%')) " +
                     "     OR LOWER(t.arrivalCity) LIKE LOWER(CONCAT('%', :search, '%')) " +
@@ -155,9 +163,15 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                     @Param("to") LocalDateTime to,
                     @Param("search") String search);
 
+    /**
+     * Quand aucune gare précise n'est demandée (:stationId IS NULL — vue société mère agrégée),
+     * les brouillons sont exclus : ils ne sont visibles que via la gare qui les a créés
+     * (:stationId = t.station.id), jamais dans la vue d'ensemble partenaire.
+     */
     @Query("SELECT DISTINCT t FROM Trip t LEFT JOIN FETCH t.partner LEFT JOIN FETCH t.station "
                     + "LEFT JOIN FETCH t.assignedChauffeur "
                     + "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) "
+                    + "AND (t.status <> com.mobili.backend.module.trip.entity.TripStatus.DRAFT OR t.station.id = :stationId) "
                     + "AND t.departureDateTime >= :from AND t.departureDateTime <= :to "
                     + "ORDER BY t.departureDateTime DESC")
     List<Trip> findAllByPartnerIdAndOptionalStationIdAndDateRange(
