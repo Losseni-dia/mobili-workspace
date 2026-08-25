@@ -70,17 +70,10 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
   PartnerPeriod _period = PartnerPeriod.week;
   int? _stationId;
 
-  ({DateTime from, DateTime to}) _tripDateRange() {
-    if (_period.isCustom) {
-      return (from: _period.customFrom!, to: _period.customTo!);
-    }
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final endOfWindow = todayStart
-        .add(Duration(days: _period.days))
-        .subtract(const Duration(seconds: 1));
-    return (from: todayStart, to: endOfWindow);
-  }
+  // fromAsDate/toAsDate (bornes calendaires, pas une fenêtre glissante) — voir
+  // PartnerPeriod dans partner_period_selector.dart.
+  ({DateTime from, DateTime to}) _tripDateRange() =>
+      (from: _period.fromAsDate, to: _period.toAsDate);
 
   Future<void> _exportCsv(List<PartnerTripItem> trips) async {
     final rows = [

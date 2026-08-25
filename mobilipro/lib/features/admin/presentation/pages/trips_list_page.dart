@@ -21,17 +21,10 @@ class _TripsListDetailPageState extends ConsumerState<TripsListDetailPage> {
   int _pageSize = 20;
 final _searchCtrl = TextEditingController();
 
-  ({DateTime from, DateTime to}) _tripDateRange() {
-    if (_period.isCustom) {
-      return (from: _period.fromDate!, to: _period.toDate!);
-    }
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final endOfWindow = todayStart
-        .add(Duration(days: _period.days))
-        .subtract(const Duration(seconds: 1));
-    return (from: todayStart, to: endOfWindow);
-  }
+  // fromAsDate/toAsDate (bornes calendaires, pas une fenêtre glissante) — voir
+  // AdminStatsPeriodDates dans admin_period_selector.dart.
+  ({DateTime from, DateTime to}) _tripDateRange() =>
+      (from: _period.fromAsDate, to: _period.toAsDate);
 
   @override
   void dispose() {

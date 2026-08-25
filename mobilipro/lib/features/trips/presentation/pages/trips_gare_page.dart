@@ -181,19 +181,10 @@ final _myTripsProvider = FutureProvider.autoDispose
     .family<List<TripItem>, PartnerPeriod>((ref, period) async {
       final dio = ApiClient.instance.dio;
       final f = DateFormat('yyyy-MM-dd');
-      final now = DateTime.now();
-      final todayStart = DateTime(now.year, now.month, now.day);
-      final DateTime from;
-      final DateTime to;
-      if (period.isCustom) {
-        from = period.customFrom!;
-        to = period.customTo!;
-      } else {
-        from = todayStart;
-        to = todayStart
-            .add(Duration(days: period.days))
-            .subtract(const Duration(seconds: 1));
-      }
+      // fromAsDate/toAsDate (bornes calendaires, pas une fenêtre glissante) — voir
+      // PartnerPeriod dans partner_period_selector.dart.
+      final from = period.fromAsDate;
+      final to = period.toAsDate;
       final response = await dio.get<List<dynamic>>(
         '/trips/my-trips/range',
         queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},

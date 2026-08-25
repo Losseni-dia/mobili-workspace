@@ -240,15 +240,25 @@ class _Chip extends StatelessWidget {
 
 
 extension AdminStatsPeriodDates on AdminStatsPeriod {
+  /// Bornes calées sur le calendrier (aligné sur computePeriodRange côté web) — jamais une
+  /// fenêtre glissante : "1 mois" est le 1er au dernier jour du mois EN COURS (28/29/30/31
+  /// selon le mois), pas "les 30 derniers jours", qui faussait les sommes affichées par
+  /// rapport à un vrai mois calendaire.
   DateTime get fromAsDate {
     if (isCustom) return fromDate!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return today.subtract(Duration(days: days - 1));
+    if (days == 7) return today.subtract(Duration(days: today.weekday - 1)); // lundi
+    if (days == 30) return DateTime(today.year, today.month, 1); // 1er du mois
+    return today; // Aujourd'hui
   }
 
   DateTime get toAsDate {
     if (isCustom) return toDate!;
-    return DateTime.now();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (days == 7) return today.add(Duration(days: 7 - today.weekday)); // dimanche
+    if (days == 30) return DateTime(today.year, today.month + 1, 0); // dernier jour du mois
+    return now; // Aujourd'hui : jusqu'à l'instant présent
   }
 }

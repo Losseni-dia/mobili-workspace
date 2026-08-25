@@ -51,19 +51,38 @@ class PartnerPeriod {
     };
   }
 
+  /// Bornes calées sur le calendrier (aligné sur computePeriodRange côté web) — jamais une
+  /// fenêtre glissante : "1 mois" est le 1er au dernier jour du mois EN COURS (28/29/30/31
+  /// selon le mois), pas "les 30 derniers jours", qui faussait les sommes affichées par
+  /// rapport à un vrai mois calendaire.
   DateTime get fromAsDate {
     if (isCustom && customFrom != null) return customFrom!;
     final now = DateTime.now();
-    return DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: days - 1));
+    final today = DateTime(now.year, now.month, now.day);
+    switch (mode) {
+      case PartnerPeriodMode.week:
+        return today.subtract(Duration(days: today.weekday - 1)); // lundi
+      case PartnerPeriodMode.month:
+        return DateTime(today.year, today.month, 1); // 1er du mois
+      case PartnerPeriodMode.today:
+      case PartnerPeriodMode.custom:
+        return today;
+    }
   }
 
   DateTime get toAsDate {
     if (isCustom && customTo != null) return customTo!;
-    return DateTime.now();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    switch (mode) {
+      case PartnerPeriodMode.week:
+        return today.add(Duration(days: 7 - today.weekday)); // dimanche
+      case PartnerPeriodMode.month:
+        return DateTime(today.year, today.month + 1, 0); // dernier jour du mois
+      case PartnerPeriodMode.today:
+      case PartnerPeriodMode.custom:
+        return now; // jusqu'à l'instant présent
+    }
   }
 }
 
