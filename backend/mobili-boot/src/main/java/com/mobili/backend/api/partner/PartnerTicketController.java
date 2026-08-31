@@ -37,6 +37,10 @@ public class PartnerTicketController {
                         t.getTicketNumber(),
                         t.getPassengerName(),
                         TicketSegmentUtil.resolveRouteLabel(t),
+                        t.getTrip() != null ? t.getTrip().getId() : null,
+                        t.getBooking() != null && t.getBooking().getStatus() != null
+                                ? t.getBooking().getStatus().name()
+                                : null,
                         t.getTrip().getStation() != null ? t.getTrip().getStation().getName() : "—",
                         t.getBookingDate(),
                         t.getBooking() != null ? t.getBooking().getId() : null,

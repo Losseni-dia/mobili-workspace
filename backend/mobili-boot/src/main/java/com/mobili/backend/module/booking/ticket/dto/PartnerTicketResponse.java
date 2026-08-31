@@ -8,6 +8,12 @@ public record PartnerTicketResponse(
         /** Passager du siège (peut différer du client qui a réservé — voir customerName). */
         String passengerName,
         String route,
+        /** Trajet auquel ce ticket appartient — permet de regrouper les tickets par voyage
+         *  côté client (ex: écran "Mes gares" mobilipro, GareDetailPage). */
+        Long tripId,
+        /** Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distinct du statut
+         *  du ticket lui-même (VALIDÉ/ANNULÉ/...) : sert à distinguer vente en ligne / guichet. */
+        String bookingStatus,
         String stationName,
         LocalDateTime bookingDate,
         /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
