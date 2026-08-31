@@ -27,6 +27,11 @@ RUN npx ng build --configuration production
 # --- ÉTAPE 2 : Serveur de Production ---
 FROM nginx:alpine
 
+# Patch des paquets alpine (openssl, etc.) à la date du build — l'image nginx:alpine de base
+# peut être en retard sur les derniers correctifs CVE (ex: CVE-2026-14456 libssl3/libcrypto3),
+# ce qui fait échouer le scan Trivy du pipeline de déploiement.
+RUN apk update && apk upgrade --no-cache
+
 # Récupération du build
 COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
 
