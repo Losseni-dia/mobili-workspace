@@ -183,6 +183,20 @@ export class BookingListComponent implements OnInit {
     });
   }
 
+  /**
+   * Montant réel de la réservation dans le détail : `grossAmount(booking)` est figé à la
+   * création et ne bouge pas si un ticket est annulé individuellement ensuite — on recalcule
+   * donc à partir des tickets actifs chargés (`t.price` = montant réellement payé pour ce
+   * siège), dès qu'ils sont disponibles. Retombe sur `grossAmount` tant que le détail charge.
+   */
+  detailsActiveAmount = computed<number | null>(() => {
+    const tickets = this.detailsTickets();
+    if (!tickets.length) return null;
+    return tickets
+      .filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ')
+      .reduce((sum, t) => sum + (t.price || 0), 0);
+  });
+
   closeDetails() {
     this.detailsBooking.set(null);
   }

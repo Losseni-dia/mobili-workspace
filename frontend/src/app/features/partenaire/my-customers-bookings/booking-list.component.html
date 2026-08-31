@@ -139,7 +139,7 @@
                     </div>
                     <div class="stat-chip">
                         <span>Montant</span>
-                        <strong>{{ displayAmount(booking) | number }} FCFA</strong>
+                        <strong>{{ (detailsActiveAmount() ?? displayAmount(booking)) | number }} FCFA</strong>
                     </div>
                 </div>
 
