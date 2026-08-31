@@ -418,6 +418,22 @@
   }
 }
 
+// Nom de gare cliquable → détail (trajets/tickets de cette gare) — reste discret, pas un lien
+// classique souligné, juste un curseur pointeur + soulignement au survol du nom.
+.gare-name-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  strong {
+    color: variables.$mobili-blue-deep;
+  }
+
+  &:hover strong {
+    text-decoration: underline;
+  }
+}
+
 .data-table th.right,
 .data-table td.right {
   text-align: right;

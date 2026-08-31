@@ -1,0 +1,326 @@
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
+
+.gare-detail-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 4px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: variables.$mobili-blue;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.loading,
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: variables.$gray-500;
+}
+
+.empty {
+  .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+  strong { display: block; color: variables.$mobili-blue-deep; margin-bottom: 4px; }
+}
+
+// ---- Header ----
+.gd-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  border-radius: variables.$radius-lg;
+  background: linear-gradient(135deg, variables.$mobili-blue-deep 0%, #0A1F6E 100%);
+  color: variables.$white;
+  box-shadow: variables.$shadow-sm;
+}
+
+.gd-icon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gd-header-text {
+  flex: 1;
+  min-width: 0;
+
+  h1 {
+    margin: 0 0 2px;
+    font-family: variables.$font-display;
+    font-size: 1.3rem;
+    font-weight: 900;
+  }
+
+  .gd-city { margin: 0; font-size: 0.85rem; opacity: 0.75; }
+  .gd-responsible { margin: 4px 0 0; font-size: 0.8rem; opacity: 0.8; }
+}
+
+// ---- Stats ----
+.gd-stats {
+  margin-bottom: 22px;
+}
+
+.gd-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gd-stat-mini {
+  padding: 12px 14px;
+  border-radius: variables.$radius-md;
+  background: rgba(variables.$mobili-blue, 0.06);
+  border: 1px solid rgba(variables.$mobili-blue, 0.15);
+
+  span { display: block; font-size: 0.72rem; color: variables.$mobili-blue; margin-bottom: 4px; }
+  strong { font-size: 1.4rem; font-weight: 900; color: variables.$mobili-blue-deep; }
+
+  &--green {
+    background: variables.$station-green-soft;
+    border-color: rgba(variables.$station-green, 0.25);
+    span { color: variables.$station-green; }
+  }
+}
+
+.gd-revenue-card {
+  padding: 16px 18px;
+  border-radius: variables.$radius-lg;
+  background: linear-gradient(135deg, variables.$mobili-blue-deep 0%, #0A1F6E 100%);
+  color: variables.$white;
+}
+
+.gd-revenue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  strong { color: variables.$mobili-yellow; font-size: 1.15rem; font-weight: 900; }
+}
+
+.gd-revenue-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gd-revenue-chip {
+  padding: 8px 10px;
+  border-radius: variables.$radius-md;
+  background: rgba(255, 255, 255, 0.08);
+  span { display: block; font-size: 0.72rem; opacity: 0.85; margin-bottom: 2px; }
+  strong { font-size: 0.95rem; font-weight: 800; }
+
+  &--online strong { color: variables.$station-green; }
+  &--offline strong { color: variables.$mobili-yellow; }
+}
+
+// ---- Trajets ----
+.gd-trips h2,
+.gd-chauffeurs h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: variables.$mobili-blue-deep;
+}
+
+.gd-status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+// Filtre de statut trajet — même convention que booking-list/partner-tickets.
+.status-chip {
+  padding: 7px 14px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-600;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color variables.$t-base, background variables.$t-base, color variables.$t-base;
+
+  &.active {
+    background: variables.$mobili-blue;
+    border-color: variables.$mobili-blue;
+    color: variables.$white;
+  }
+}
+
+.gd-trip-card {
+  margin-bottom: 10px;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-md;
+  overflow: hidden;
+  background: variables.$white;
+
+  &.expanded { border-color: rgba(variables.$mobili-blue, 0.35); }
+}
+
+.gd-trip-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.gd-trip-route {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong { color: variables.$mobili-blue-deep; font-size: 0.95rem; }
+  .gd-trip-date { font-size: 0.78rem; color: variables.$gray-500; }
+}
+
+.gd-trip-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+
+  .gd-trip-revenue { font-weight: 800; color: variables.$mobili-blue-deep; }
+  .gd-trip-seats { color: variables.$gray-500; }
+  .gd-chevron { color: variables.$gray-400; font-size: 0.7rem; }
+}
+
+.gd-trip-body {
+  padding: 8px 16px 14px;
+  border-top: 1px solid variables.$gray-100;
+}
+
+.gd-no-tickets {
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: variables.$gray-500;
+}
+
+.gd-ticket-rows {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.gd-ticket-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid variables.$gray-100;
+  font-size: 0.85rem;
+
+  &:last-child { border-bottom: none; }
+
+  .gd-ticket-name { flex: 1; min-width: 0; font-weight: 600; color: variables.$mobili-blue-deep; }
+  .gd-ticket-amount { font-weight: 800; color: variables.$mobili-blue-deep; }
+}
+
+// Siège / canal — même convention que booking-list.component (siège, badge canal).
+.seat-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: variables.$gradient-gold;
+  color: variables.$mobili-blue-deep;
+  font-weight: 900;
+  font-size: 0.78rem;
+}
+
+.channel-pill {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: variables.$radius-pill;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(variables.$mobili-blue, 0.1);
+  color: variables.$mobili-blue-deep;
+
+  &.guichet {
+    background: variables.$station-green-soft;
+    color: variables.$station-green;
+  }
+}
+
+// ---- Chauffeurs ----
+.gd-chauffeurs {
+  margin-top: 24px;
+}
+
+.gd-chauffeurs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border: 1px solid variables.$gray-200;
+    border-radius: variables.$radius-md;
+    font-size: 0.88rem;
+  }
+}
+
+.gd-chauffeur-avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: variables.$mobili-blue-fog;
+  color: variables.$mobili-blue;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+// ---- Pastilles de statut trajet (alignées sur trip-management) ----
+.type-pill {
+  padding: 2px 10px;
+  border-radius: variables.$radius-pill;
+  background: rgba(variables.$station-green, 0.12);
+  color: variables.$station-green;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  &--draft { background: variables.$gray-200; color: variables.$gray-600; }
+  &--programme { background: variables.$mobili-blue-fog; color: variables.$mobili-blue; }
+  &--en-cours { background: variables.$station-green-soft; color: variables.$station-green; }
+  &--termine { background: variables.$gray-200; color: variables.$gray-600; }
+  &--annule { background: variables.$danger-soft; color: variables.$danger; }
+}

@@ -99,10 +99,10 @@
                   } @else {
                   <tr>
                     <td>
-                      <div class="gare-name-cell">
+                      <a class="gare-name-cell gare-name-link" [routerLink]="['/partenaire/gares', g.id]" title="Voir les trajets et tickets de cette gare">
                         <span class="gare-pin" aria-hidden="true">📍</span>
                         <strong>{{ g.name }}</strong>
-                      </div>
+                      </a>
                     </td>
                     <td>{{ g.city }}</td>
                     <td class="mono">{{ g.code || '—' }}</td>

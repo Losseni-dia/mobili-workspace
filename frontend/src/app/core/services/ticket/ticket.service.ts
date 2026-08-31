@@ -10,10 +10,16 @@ export interface PartnerTicket {
   ticketNumber: string;
   passengerName: string;
   route: string;
+  /** Trajet auquel ce ticket appartient — permet de regrouper les tickets par voyage (ex: page
+   *  détail d'une gare, "Mes gares"). */
+  tripId: number | null;
   stationName: string;
   bookingDate: string;
   /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
   bookingId: number | null;
+  /** Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distinct du statut du
+   *  ticket lui-même (VALIDÉ/ANNULÉ/...) : sert à distinguer vente en ligne / guichet. */
+  bookingStatus: string | null;
   /** Client ayant effectué la réservation (compte connecté), distinct du passager du siège. */
   customerName: string;
   /** Part du prix passager (inclut le forfait client) — jamais affiché côté gare/partenaire. */
