@@ -147,6 +147,17 @@ public class Booking extends AbstractEntity {
     @jakarta.persistence.Transient
     public double getActiveTicketsAmount() {
         if (hasActiveTicketFareSplit()) {
+            if (hasCorruptedTicketFareSplit()) {
+                // Sécurité : sur certaines réservations créées sous une ancienne version du
+                // calcul (avant correction de la division par numberOfSeats), transportFare a
+                // été enregistré à la valeur TOTALE sur chaque ticket au lieu de la part par
+                // siège — la somme de tous les tickets (actifs + annulés) dépasse alors très
+                // largement ticketsTotalAmount. Dans ce cas précis, on ignore les valeurs
+                // stockées (corrompues) et on reproratise ticketsTotalAmount à parts égales sur
+                // les seuls tickets encore actifs, plutôt que d'afficher un montant qui AUGMENTE
+                // après l'annulation d'un ticket (constaté en production sur RESERVATION-909928).
+                return reproratedActiveAmount(ticketsTotalAmount);
+            }
             return tickets.stream()
                     .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
                     .mapToDouble(t -> t.getTransportFare() != null ? t.getTransportFare() : 0.0)
@@ -161,6 +172,11 @@ public class Booking extends AbstractEntity {
     @jakarta.persistence.Transient
     public double getActiveLuggageFee() {
         if (hasActiveTicketFareSplit()) {
+            if (hasCorruptedTicketFareSplit()) {
+                double luggageFee = totalPrice - (ticketsTotalAmount != null ? ticketsTotalAmount : 0.0)
+                        - (serviceFee != null ? serviceFee : 0);
+                return reproratedActiveAmount(Math.max(0.0, luggageFee));
+            }
             return tickets.stream()
                     .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
                     .mapToDouble(t -> t.getBaggageFee() != null ? t.getBaggageFee() : 0.0)
@@ -178,6 +194,32 @@ public class Booking extends AbstractEntity {
     private boolean hasActiveTicketFareSplit() {
         return tickets != null && !tickets.isEmpty()
                 && tickets.stream().anyMatch(t -> t.getTransportFare() != null);
+    }
+
+    /**
+     * Détecte un historique de transportFare corrompu (voir {@link #getActiveTicketsAmount()}) :
+     * la somme de TOUS les tickets (actifs + annulés, pour ne pas être faussé par une annulation
+     * déjà en cours) doit rester proche de ticketsTotalAmount — une tolérance de 1 FCFA absorbe
+     * les arrondis de division. Rien à détecter si ticketsTotalAmount est absent (pas de
+     * référence fiable pour comparer).
+     */
+    private boolean hasCorruptedTicketFareSplit() {
+        if (ticketsTotalAmount == null || numberOfSeats == null || numberOfSeats <= 0) {
+            return false;
+        }
+        double sumAllTickets = tickets.stream()
+                .mapToDouble(t -> t.getTransportFare() != null ? t.getTransportFare() : 0.0)
+                .sum();
+        return sumAllTickets > ticketsTotalAmount + 1.0;
+    }
+
+    /** Reproratise `total` à parts égales entre les tickets encore actifs (jamais négatif). */
+    private double reproratedActiveAmount(double total) {
+        long activeCount = tickets.stream().filter(t -> t.getStatus() != TicketStatus.ANNULÉ).count();
+        if (activeCount <= 0) {
+            return 0.0;
+        }
+        return (total / numberOfSeats) * activeCount;
     }
 
     @PrePersist
