@@ -120,10 +120,18 @@ export class GareHomeComponent implements OnInit {
     });
   }
 
-  /** Vente brute réelle (hors forfait client) — jamais `totalPrice`/`amount` seuls si `ticketsTotalAmount` existe. */
+  /**
+   * Vente brute réelle (hors forfait client). `amount` (Booking.getGrossAmount(), backend) est
+   * TOUJOURS recalculé en direct à partir des tickets encore actifs — priorité absolue sur
+   * `ticketsTotalAmount`, qui est figé à la création et ne bouge plus si un ticket est annulé
+   * individuellement ensuite (montant resté faux en production après une annulation partielle).
+   * `ticketsTotalAmount + luggageFee` ne sert plus que de repli pour les réservations
+   * antérieures au forfait client, où `amount` peut être absent.
+   */
   private grossAmount(b: BookingResponse): number {
+    if (b.amount != null) return b.amount;
     if (b.ticketsTotalAmount != null) return b.ticketsTotalAmount + (b.luggageFee || 0);
-    return b.amount ?? b.totalPrice ?? 0;
+    return b.totalPrice ?? 0;
   }
 
   private loadRecentBookings() {

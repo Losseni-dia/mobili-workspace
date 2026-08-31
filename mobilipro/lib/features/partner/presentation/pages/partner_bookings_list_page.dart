@@ -21,6 +21,7 @@ class PartnerBookingItem {
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
+    this.amount,
     this.ticketsTotalAmount,
     this.luggageFee = 0,
   });
@@ -29,16 +30,24 @@ class PartnerBookingItem {
   final DateTime bookingDate;
   final double totalPrice;
 
-  /// Somme des prix de tickets seule (hors forfait client) — null sur les réservations
-  /// antérieures au forfait. Voir [grossAmount].
+  /// Vente brute de la compagnie recalculée en direct côté backend
+  /// (Booking.getGrossAmount()) — TOUJOURS à jour même si un ticket de la résa a été annulé
+  /// individuellement depuis, contrairement à [ticketsTotalAmount] (figé à la création).
+  final double? amount;
+
+  /// Somme des prix de tickets seule (hors forfait client), figée à la création — null sur les
+  /// réservations antérieures au forfait. Ne sert plus que de repli, voir [grossAmount].
   final double? ticketsTotalAmount;
   final double luggageFee;
 
   /// Vente brute de la compagnie — JAMAIS totalPrice, qui inclut le forfait client
   /// (jamais reversé à la compagnie). Même formule que PartnerTransactionResponse.grossAmount
   /// côté backend, pour que ce chiffre reste toujours aligné avec la page Transactions.
+  /// Priorité à [amount] (toujours recalculé, exclut les tickets annulés) sur
+  /// [ticketsTotalAmount] (figé — montant resté faux après une annulation partielle).
   double get grossAmount =>
-      ticketsTotalAmount != null ? ticketsTotalAmount! + luggageFee : totalPrice;
+      amount ??
+      (ticketsTotalAmount != null ? ticketsTotalAmount! + luggageFee : totalPrice);
 
   factory PartnerBookingItem.fromJson(Map<String, dynamic> j) =>
       PartnerBookingItem(
@@ -55,6 +64,7 @@ class PartnerBookingItem {
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
+        amount: (j['amount'] as num?)?.toDouble(),
         ticketsTotalAmount: (j['ticketsTotalAmount'] as num?)?.toDouble(),
         luggageFee: (j['luggageFee'] as num?)?.toDouble() ?? 0,
       );

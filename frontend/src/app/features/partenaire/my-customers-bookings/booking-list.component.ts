@@ -20,13 +20,18 @@ function isCancelledBooking(status: string | undefined): boolean {
 }
 
 /**
- * Vente brute réelle (aligné sur `PartnerBookingItem.grossAmount`, mobile) — jamais `amount`/
- * `totalPrice` seuls s'ils incluent le forfait client : priorité à `ticketsTotalAmount +
- * luggageFee`, absent uniquement sur les réservations antérieures au forfait client.
+ * Vente brute réelle (aligné sur `PartnerBookingItem.grossAmount`, mobile). `amount`
+ * (Booking.getGrossAmount(), backend) est TOUJOURS recalculé en direct à partir des tickets
+ * encore actifs — priorité absolue sur `ticketsTotalAmount`, qui est figé à la création et ne
+ * bouge plus si un ticket est annulé individuellement ensuite (montant resté faux en
+ * production après une annulation partielle). `ticketsTotalAmount + luggageFee` ne sert plus
+ * que de repli pour les réservations antérieures au forfait client, où `amount` peut être
+ * absent.
  */
 function grossAmount(b: BookingResponse): number {
+  if (b.amount != null) return b.amount;
   if (b.ticketsTotalAmount != null) return b.ticketsTotalAmount + (b.luggageFee || 0);
-  return b.amount ?? b.totalPrice ?? 0;
+  return b.totalPrice ?? 0;
 }
 
 @Component({
