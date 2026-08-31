@@ -472,6 +472,27 @@
   font-size: 0.85rem;
 }
 
+// Lien vers /partenaire/gares/:id (trajets + tickets de cette gare) — visible à tous, y
+// compris quand Modifier/Supprimer sont masqués (compte non-dirigeant).
+.btn-details {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid rgba(variables.$mobili-blue, 0.35);
+  background: rgba(variables.$mobili-blue, 0.06);
+  color: variables.$mobili-blue;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background variables.$t-fast;
+
+  &:hover {
+    background: rgba(variables.$mobili-blue, 0.12);
+  }
+}
+
 // Modal de confirmation de suppression — même pattern que my-tickets (hide-modal-*).
 .hide-modal-overlay {
   position: fixed;
