@@ -86,7 +86,7 @@
                             <td>
                                 <div class="seat-tags">
                                     @for (seat of booking.seatNumbers; track seat) {
-                                        <span class="seat-chip">{{ seat }}</span>
+                                        <span class="seat-chip" [class.cancelled]="isSeatCancelled(booking, seat)" [title]="isSeatCancelled(booking, seat) ? 'Ticket annulé' : ''">{{ seat }}</span>
                                     }
                                 </div>
                             </td>

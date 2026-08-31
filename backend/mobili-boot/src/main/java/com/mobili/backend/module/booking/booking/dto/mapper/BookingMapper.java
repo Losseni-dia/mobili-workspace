@@ -73,5 +73,15 @@ public interface BookingMapper {
         if (booking.getSeatNumbers() != null) {
             dto.setSeatNumbers(booking.getSeatNumbers());
         }
+
+        // Sièges dont le ticket a été annulé individuellement (voir Javadoc du champ DTO).
+        if (booking.getTickets() != null) {
+            dto.setCancelledSeatNumbers(
+                    booking.getTickets().stream()
+                            .filter(t -> t.getStatus() == com.mobili.backend.module.booking.ticket.entity.TicketStatus.ANNULÉ)
+                            .map(com.mobili.backend.module.booking.ticket.entity.Ticket::getSeatNumber)
+                            .filter(java.util.Objects::nonNull)
+                            .collect(java.util.stream.Collectors.toSet()));
+        }
     }
 }

@@ -142,6 +142,11 @@ export class BookingListComponent implements OnInit {
     return status ? status.toLowerCase() : 'pending';
   }
 
+  /** Un ticket annulé individuellement au sein d'une résa multi-sièges encore confirmée. */
+  isSeatCancelled(booking: BookingResponse, seat: string): boolean {
+    return (booking.cancelledSeatNumbers || []).includes(seat);
+  }
+
   /** Vente à la gare (guichet, sans passage par le paiement en ligne) vs réservation en ligne. */
   saleChannel(b: BookingResponse): string {
     return (b.status || '').toUpperCase() === 'OFFLINE_SALE' ? 'Guichet' : 'Mobili';
