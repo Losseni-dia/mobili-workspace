@@ -36,9 +36,13 @@
             <button type="button" class="period-btn" [class.active]="period() === 'week'" (click)="setPeriod('week')">Semaine</button>
             <button type="button" class="period-btn" [class.active]="period() === 'month'" (click)="setPeriod('month')">Mois</button>
             <button type="button" class="period-btn" [class.active]="period() === 'custom'" (click)="setPeriod('custom')">Intervalle</button>
+            <button type="button" class="period-btn" [class.active]="period() === 'day'" (click)="setPeriod('day')">Date précise</button>
             @if (period() === 'custom') {
                 <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onManualDateChange()">
                 <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onManualDateChange()">
+            }
+            @if (period() === 'day') {
+                <input type="date" [ngModel]="fromDate()" (ngModelChange)="onSingleDateChange($event)">
             }
         </div>
         <div class="status-filters">

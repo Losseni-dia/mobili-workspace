@@ -40,6 +40,8 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   /** Distinct de `activePeriod === null` : ici null veut aussi dire « aucun filtre » (pas de
    *  préset par défaut, contrairement aux listes admin/partenaire/gare). */
   customMode = signal(false);
+  /** Mode "Date précise" (une seule date, from=to) — distinct de "Intervalle" (from/to libres). */
+  singleDateMode = signal(false);
 
   isCustomPeriod(): boolean {
     return this.customMode();
@@ -107,6 +109,7 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
     const { from, to } = computePeriodRange(preset);
     this.activePeriod.set(preset);
     this.customMode.set(false);
+    this.singleDateMode.set(false);
     this.fromDate.set(from);
     this.toDate.set(to);
   }
@@ -115,11 +118,28 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
   onManualDateChange(): void {
     this.activePeriod.set(null);
     this.customMode.set(true);
+    this.singleDateMode.set(false);
+  }
+
+  /** Bascule vers "Date précise" : préremplit avec la date déjà choisie, sinon aujourd'hui. */
+  setSingleDateMode(): void {
+    this.activePeriod.set(null);
+    this.customMode.set(false);
+    this.singleDateMode.set(true);
+    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    this.fromDate.set(d);
+    this.toDate.set(d);
+  }
+
+  onSingleDateChange(v: string): void {
+    this.fromDate.set(v);
+    this.toDate.set(v);
   }
 
   clearPeriod(): void {
     this.activePeriod.set(null);
     this.customMode.set(false);
+    this.singleDateMode.set(false);
     this.fromDate.set('');
     this.toDate.set('');
   }

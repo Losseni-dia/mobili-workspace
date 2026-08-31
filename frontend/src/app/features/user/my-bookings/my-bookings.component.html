@@ -28,11 +28,15 @@
         <button type="button" class="period-btn" [class.active]="activePeriod() === 'week'" (click)="setPeriodPreset('week')">Semaine</button>
         <button type="button" class="period-btn" [class.active]="activePeriod() === 'month'" (click)="setPeriodPreset('month')">Mois</button>
         <button type="button" class="period-btn" [class.active]="isCustomPeriod()" (click)="onManualDateChange()">Intervalle</button>
+        <button type="button" class="period-btn" [class.active]="singleDateMode()" (click)="setSingleDateMode()">Date précise</button>
         @if (isCustomPeriod()) {
             <input type="date" [value]="fromDate()" (change)="fromDate.set($any($event.target).value); onManualDateChange()">
             <input type="date" [value]="toDate()" (change)="toDate.set($any($event.target).value); onManualDateChange()">
         }
-        @if (activePeriod() !== null || fromDate() || toDate()) {
+        @if (singleDateMode()) {
+            <input type="date" [value]="fromDate()" (change)="onSingleDateChange($any($event.target).value)">
+        }
+        @if (activePeriod() !== null || singleDateMode() || fromDate() || toDate()) {
             <button type="button" class="period-btn" (click)="clearPeriod()">Tout</button>
         }
     </div>

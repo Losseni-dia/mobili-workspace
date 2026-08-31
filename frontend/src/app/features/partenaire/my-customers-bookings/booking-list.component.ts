@@ -58,6 +58,8 @@ export class BookingListComponent implements OnInit {
   fromDate = signal('');
   toDate = signal('');
   activePeriod = signal<PeriodPreset | null>('month');
+  /** Mode "Date précise" (une seule date, from=to) — distinct de "Intervalle" (from/to libres). */
+  singleDateMode = signal(false);
 
   ngOnInit(): void {
     this.setPeriodPreset('month');
@@ -87,6 +89,23 @@ export class BookingListComponent implements OnInit {
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.singleDateMode.set(false);
+    this.loadBookings();
+  }
+
+  /** Bascule vers "Date précise" : préremplit avec la date déjà choisie, sinon aujourd'hui. */
+  setSingleDateMode(): void {
+    this.activePeriod.set(null);
+    this.singleDateMode.set(true);
+    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    this.fromDate.set(d);
+    this.toDate.set(d);
+    this.loadBookings();
+  }
+
+  onSingleDateChange(v: string): void {
+    this.fromDate.set(v);
+    this.toDate.set(v);
     this.loadBookings();
   }
 
