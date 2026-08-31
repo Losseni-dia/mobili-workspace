@@ -2,19 +2,17 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
-import { TicketService } from '../../../core/services/ticket/ticket.service';
+import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { TripService } from '../../../core/services/trip/trip.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
-import {
-  PartenaireService,
-  PartnerDashboard,
-} from '../../../core/services/partners/partenaire.service';
+import { ListPager } from '../../../core/utils/list-pager.util';
 
 /**
  * Dashboard gare — aligné sur `dashboard_gare_page.dart` (mobilipro) : revenu du mois (Via Mobili /
- * Au guichet), trajets actifs du mois, tickets vendus du mois, réservations récentes paginées
- * client (+10). Combine 4 appels distincts, exactement comme côté mobile (pas d'endpoint agrégé
- * unique) — voir chaque méthode `load*` ci-dessous.
+ * Au guichet), trajets actifs du mois, tickets vendus du mois, activité récente (tickets, pas
+ * réservations agrégées — un booking peut couvrir plusieurs sièges/tickets, même convention que
+ * le dashboard partenaire) paginée client. Combine plusieurs appels distincts, exactement comme
+ * côté mobile (pas d'endpoint agrégé unique) — voir chaque méthode `load*` ci-dessous.
  */
 @Component({
   selector: 'app-gare-home',
@@ -28,7 +26,6 @@ export class GareHomeComponent implements OnInit {
   private ticketService = inject(TicketService);
   private tripService = inject(TripService);
   private bookingService = inject(BookingService);
-  private partenaireService = inject(PartenaireService);
 
   user = computed(() => this.auth.currentUser());
   firstName = computed(() => this.user()?.firstname?.trim() || '');
@@ -47,16 +44,10 @@ export class GareHomeComponent implements OnInit {
   revenueOffline = signal(0);
   revenueTotal = computed(() => this.revenueOnline() + this.revenueOffline());
 
-  // ====== Réservations récentes (pagination client +10, comme mobile) ======
+  // ====== Activité récente (tickets, pagination "Voir plus") ======
   isLoadingRecent = signal(false);
-  recentBookings = signal<PartnerDashboard['recentBookings']>([]);
-  recentVisibleCount = signal(10);
-  visibleRecentBookings = computed(() => this.recentBookings().slice(0, this.recentVisibleCount()));
-  hasMoreRecent = computed(() => this.recentVisibleCount() < this.recentBookings().length);
-
-  showMoreRecent() {
-    this.recentVisibleCount.update((n) => n + 10);
-  }
+  recentTickets = signal<PartnerTicket[]>([]);
+  recentTicketsPager = new ListPager(this.recentTickets);
 
   ngOnInit(): void {
     this.auth.fetchUserProfile().subscribe({
@@ -71,7 +62,7 @@ export class GareHomeComponent implements OnInit {
   private loadAll() {
     if (this.gareActionsLocked()) return;
     this.loadMonthlyKpis();
-    this.loadRecentBookings();
+    this.loadRecentTickets();
   }
 
   private monthRange(): { from: string; to: string } {
@@ -134,16 +125,21 @@ export class GareHomeComponent implements OnInit {
     return b.totalPrice ?? 0;
   }
 
-  private loadRecentBookings() {
+  private loadRecentTickets() {
     this.isLoadingRecent.set(true);
-    this.recentVisibleCount.set(10);
-    this.partenaireService.getDashboardStats(this.stationId() ?? null).subscribe({
-      next: (stats) => {
-        this.recentBookings.set(stats.recentBookings || []);
+    const { from, to } = this.monthRange();
+    this.ticketService.getPartnerTicketsInRange(from, to, this.stationId() ?? undefined).subscribe({
+      next: (tickets) => {
+        // Infos ticket (pas réservation agrégée) : tri du plus récent au plus ancien.
+        const sorted = [...tickets].sort(
+          (a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime(),
+        );
+        this.recentTickets.set(sorted);
+        this.recentTicketsPager.reset();
         this.isLoadingRecent.set(false);
       },
       error: () => {
-        this.recentBookings.set([]);
+        this.recentTickets.set([]);
         this.isLoadingRecent.set(false);
       },
     });

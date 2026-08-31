@@ -59,38 +59,46 @@
 
 @if (!gareActionsLocked()) {
     <section class="gare-recent" aria-labelledby="gare-recent-heading">
-        <h2 id="gare-recent-heading" class="gare-kpis-title">Réservations récentes</h2>
+        <h2 id="gare-recent-heading" class="gare-kpis-title">Activité récente</h2>
         @if (isLoadingRecent()) {
             <p class="gare-kpis-status">Chargement…</p>
-        } @else if (recentBookings().length === 0) {
-            <p class="gare-recent-empty">Aucune réservation récente.</p>
+        } @else if (recentTickets().length === 0) {
+            <p class="gare-recent-empty">Aucun ticket récent.</p>
         } @else {
             <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Client</th>
+                            <th>Passager</th>
+                            <th>Client (résa)</th>
                             <th>Trajet</th>
                             <th>Date</th>
+                            <th>Résa</th>
+                            <th>Ticket</th>
+                            <th>Siège</th>
                             <th class="right">Montant</th>
-                            <th>Statut</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @for (b of visibleRecentBookings(); track b.id) {
+                        @for (t of recentTicketsPager.visible(); track t.id) {
                             <tr>
-                                <td>{{ b.customerName }}</td>
-                                <td>{{ b.tripRoute }}</td>
-                                <td class="mono">{{ b.date | date: 'dd/MM/yy HH:mm' }}</td>
-                                <td class="right">{{ b.amount | number }} FCFA</td>
-                                <td>{{ b.status }}</td>
+                                <td>{{ t.passengerName }}</td>
+                                <td>{{ t.customerName }}</td>
+                                <td>{{ t.route }}</td>
+                                <td class="mono">{{ t.bookingDate | date: 'dd/MM HH:mm' }}</td>
+                                <td class="mono">{{ t.bookingId ? '#' + t.bookingId : '—' }}</td>
+                                <td class="mono">{{ t.ticketNumber }}</td>
+                                <td>{{ t.seatNumber }}</td>
+                                <td class="right">{{ (t.grossAmount ?? t.amountPaid) | number }} FCFA</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-            @if (hasMoreRecent()) {
-                <button type="button" class="btn-more" (click)="showMoreRecent()">Voir plus</button>
+            @if (recentTicketsPager.hasMore()) {
+                <button type="button" class="btn-more" (click)="recentTicketsPager.showMore()">
+                    Voir plus ({{ recentTicketsPager.remaining() }} restant{{ recentTicketsPager.remaining() > 1 ? 's' : '' }})
+                </button>
             }
         }
     </section>
