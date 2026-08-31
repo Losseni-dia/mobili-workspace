@@ -109,66 +109,69 @@ class GareTrip {
   );
 }
 
-class GareBookingItem {
-  const GareBookingItem({
+/// Un ticket = un siège réellement pris (contrairement à une réservation, qui peut couvrir
+/// plusieurs sièges/tickets). [status] est le statut du TICKET (VALIDÉ/UTILISÉ/ARRIVÉ/ANNULÉ) —
+/// un ticket ANNULÉ individuellement au sein d'une résa encore confirmée est filtré en amont
+/// (voir [TripWithBookings.tickets]), jamais affiché ici. [bookingStatus] (CONFIRMED/
+/// OFFLINE_SALE) sert uniquement à distinguer vente en ligne / guichet pour le récap revenus.
+class GareTicketRow {
+  const GareTicketRow({
     required this.id,
     required this.tripId,
-    required this.passengerNames,
-    required this.seatNumbers,
-    required this.amount,
+    required this.passengerName,
+    required this.seatNumber,
+    required this.route,
     required this.status,
-    required this.boardingCity,
-    required this.alightingCity,
+    required this.bookingStatus,
+    required this.amount,
   });
   final int id;
   final int tripId;
-  final List<String> passengerNames;
-  final List<String> seatNumbers;
-  final double amount;
+  final String passengerName;
+  final String seatNumber;
+  final String route;
   final String status;
-  final String boardingCity;
-  final String alightingCity;
+  final String? bookingStatus;
+  final double amount;
 
-  String get displayName =>
-      passengerNames.isNotEmpty ? passengerNames.join(', ') : '—';
+  bool get isCancelled => status.toUpperCase() == 'ANNULÉ';
 
-  factory GareBookingItem.fromJson(Map<String, dynamic> json) =>
-      GareBookingItem(
-        id: json['id'] as int,
-        tripId: (json['tripId'] as int?) ?? 0,
-        passengerNames: (json['passengerNames'] as List<dynamic>? ?? [])
-            .map((e) => e as String)
-            .toList(),
-        seatNumbers: (json['seatNumbers'] as List<dynamic>? ?? [])
-            .map((e) => e as String)
-            .toList(),
-        amount: (json['amount'] as num?)?.toDouble() ?? 0,
-        status: json['status'] as String? ?? '',
-        boardingCity: json['boardingCity'] as String? ?? '',
-        alightingCity: json['alightingCity'] as String? ?? '',
-      );
+  factory GareTicketRow.fromJson(Map<String, dynamic> json) => GareTicketRow(
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    tripId: (json['tripId'] as num?)?.toInt() ?? 0,
+    passengerName: json['passengerName'] as String? ?? '—',
+    seatNumber: json['seatNumber'] as String? ?? '—',
+    route: json['route'] as String? ?? '',
+    status: json['status'] as String? ?? '',
+    bookingStatus: json['bookingStatus'] as String?,
+    amount:
+        (json['grossAmount'] as num?)?.toDouble() ??
+        (json['amountPaid'] as num?)?.toDouble() ??
+        0,
+  );
 }
 
 class TripWithBookings {
-  const TripWithBookings({required this.trip, required this.bookings});
+  const TripWithBookings({required this.trip, required this.tickets});
   final GareTrip trip;
-  final List<GareBookingItem> bookings;
+  /// Déjà filtrée des tickets ANNULÉ (voir _gareTripsAndBookingsProvider) — un ticket annulé
+  /// individuellement disparaît complètement de la liste des tickets pris sur ce trajet
+  /// (feedback testeur), jamais juste marqué par un badge.
+  final List<GareTicketRow> tickets;
 
-  double get revenue => bookings
-      .where((b) => b.status == 'CONFIRMED' || b.status == 'OFFLINE_SALE')
-      .fold(0.0, (s, b) => s + b.amount);
+  double get revenue => tickets
+      .where((t) => t.bookingStatus == 'CONFIRMED' || t.bookingStatus == 'OFFLINE_SALE')
+      .fold(0.0, (s, t) => s + t.amount);
 
-  double get revenueOnline => bookings
-      .where((b) => b.status == 'CONFIRMED')
-      .fold(0.0, (s, b) => s + b.amount);
+  double get revenueOnline => tickets
+      .where((t) => t.bookingStatus == 'CONFIRMED')
+      .fold(0.0, (s, t) => s + t.amount);
 
-  double get revenueOffline => bookings
-      .where((b) => b.status == 'OFFLINE_SALE')
-      .fold(0.0, (s, b) => s + b.amount);
+  double get revenueOffline => tickets
+      .where((t) => t.bookingStatus == 'OFFLINE_SALE')
+      .fold(0.0, (s, t) => s + t.amount);
 
-  int get passengersCount => bookings
-      .where((b) => b.status == 'CONFIRMED' || b.status == 'OFFLINE_SALE')
-      .fold(0, (s, b) => s + b.passengerNames.length);
+  int get passengersCount => tickets.length;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -190,10 +193,21 @@ final _gareStatsProvider = FutureProvider.autoDispose.family<GareStats, int>((
 final _gareTripsAndBookingsProvider = FutureProvider.autoDispose
     .family<List<TripWithBookings>, int>((ref, stationId) async {
       final dio = ApiClient.instance.dio;
+      final f = DateFormat('yyyy-MM-dd');
+      final now = DateTime.now();
 
       final results = await Future.wait([
         dio.get<List<dynamic>>('/trips/my-trips'),
-        dio.get<List<dynamic>>('/bookings/partner/my-bookings'),
+        // Bornes larges (2 ans passés → 1 an à venir) pour couvrir tout l'historique visible sur
+        // cet écran, comme l'ancien /bookings/partner/my-bookings (sans filtre de date).
+        dio.get<List<dynamic>>(
+          '/tickets/partner/my-tickets/range',
+          queryParameters: {
+            'fromDate': f.format(now.subtract(const Duration(days: 730))),
+            'toDate': f.format(now.add(const Duration(days: 365))),
+            'stationId': stationId,
+          },
+        ),
       ]);
 
       final allTrips = (results[0].data ?? [])
@@ -201,17 +215,20 @@ final _gareTripsAndBookingsProvider = FutureProvider.autoDispose
           .where((t) => t.stationId == stationId)
           .toList();
 
-      final allBookings = (results[1].data ?? [])
-          .map((e) => GareBookingItem.fromJson(e as Map<String, dynamic>))
+      // Un ticket ANNULÉ individuellement est retiré ici, avant tout regroupement par trajet —
+      // il ne doit plus jamais apparaître comme "ticket pris" sur son trajet (feedback testeur).
+      final allTickets = (results[1].data ?? [])
+          .map((e) => GareTicketRow.fromJson(e as Map<String, dynamic>))
+          .where((t) => !t.isCancelled)
           .toList();
 
-      final Map<int, List<GareBookingItem>> byTrip = {};
-      for (final b in allBookings) {
-        byTrip.putIfAbsent(b.tripId, () => []).add(b);
+      final Map<int, List<GareTicketRow>> byTrip = {};
+      for (final t in allTickets) {
+        byTrip.putIfAbsent(t.tripId, () => []).add(t);
       }
 
       final result = allTrips
-          .map((t) => TripWithBookings(trip: t, bookings: byTrip[t.id] ?? []))
+          .map((t) => TripWithBookings(trip: t, tickets: byTrip[t.id] ?? []))
           .toList();
 
       result.sort(
@@ -708,7 +725,7 @@ class _TripAccordion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trip = item.trip;
-    final bookings = item.bookings;
+    final tickets = item.tickets;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -894,12 +911,12 @@ class _TripAccordion extends StatelessWidget {
                 ],
               ),
             ),
-            children: bookings.isEmpty
+            children: tickets.isEmpty
                 ? [
                     const Padding(
                       padding: EdgeInsets.all(16),
                       child: Text(
-                        'Aucune réservation',
+                        'Aucun ticket',
                         style: TextStyle(
                           color: AppColors.gray400,
                           fontSize: 13,
@@ -907,7 +924,7 @@ class _TripAccordion extends StatelessWidget {
                       ),
                     ),
                   ]
-                : bookings.map((b) => _BookingRow(booking: b)).toList(),
+                : tickets.map((t) => _BookingRow(ticket: t)).toList(),
           ),
         ),
       ),
@@ -920,40 +937,20 @@ class _TripAccordion extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BookingRow extends StatelessWidget {
-  const _BookingRow({required this.booking});
-  final GareBookingItem booking;
+  const _BookingRow({required this.ticket});
+  final GareTicketRow ticket;
 
   @override
   Widget build(BuildContext context) {
-    // Si plusieurs passagers → une ligne par passager
-    if (booking.passengerNames.length > 1) {
-      return Column(
-        children: List.generate(booking.passengerNames.length, (i) {
-          final name = booking.passengerNames[i];
-          final seat = i < booking.seatNumbers.length
-              ? booking.seatNumbers[i]
-              : '—';
-          return _PassengerLine(
-            name: name,
-            seat: seat,
-            status: booking.status,
-            troncon: booking.boardingCity.isNotEmpty
-                ? '${booking.boardingCity} → ${booking.alightingCity}'
-                : null,
-          );
-        }),
-      );
-    }
-
+    // Un ticket = une seule ligne (un seul passager/siège) — plus besoin de gérer plusieurs
+    // passagers par ligne comme au temps des réservations agrégées.
     return _PassengerLine(
-      name: booking.passengerNames.isNotEmpty
-          ? booking.passengerNames.first
-          : '—',
-      seat: booking.seatNumbers.isNotEmpty ? booking.seatNumbers.first : '—',
-      status: booking.status,
-      troncon: booking.boardingCity.isNotEmpty
-          ? '${booking.boardingCity} → ${booking.alightingCity}'
-          : null,
+      name: ticket.passengerName,
+      seat: ticket.seatNumber,
+      // Vente en ligne / guichet (CONFIRMED/OFFLINE_SALE) pour le badge — les tickets ANNULÉ
+      // sont déjà filtrés en amont, jamais affichés ici.
+      status: ticket.bookingStatus ?? ticket.status,
+      troncon: ticket.route.isNotEmpty ? ticket.route : null,
     );
   }
 }
