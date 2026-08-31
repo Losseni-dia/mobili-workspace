@@ -126,7 +126,9 @@ export class TripManagementComponent implements OnInit {
   // simplement le prix de cette modale, redondant avec la page Réservations.
   passengerStats = computed(() => {
     const list = this.passengersList();
-    const totalPassengers = list.reduce((sum, b) => sum + (b.numberOfSeats || 0), 0);
+    // Comptage sur les sièges réellement actifs (hors tickets annulés individuellement), voir
+    // passengersForBooking() — jamais numberOfSeats seul, figé à la création de la résa.
+    const totalPassengers = list.reduce((sum, b) => sum + this.passengersForBooking(b).length, 0);
     return { reservations: list.length, totalPassengers };
   });
 
@@ -358,10 +360,22 @@ export class TripManagementComponent implements OnInit {
    * modale Passagers restait visuellement vide malgré des réservations bien présentes
    * (passengerStats affichait quand même les bons totaux, seule la liste ne rendait rien).
    */
-  seatsForBooking(b: BookingResponse): string[] {
-    if (b.seatNumbers && b.seatNumbers.length > 0) return b.seatNumbers;
-    const n = b.numberOfSeats || 1;
-    return Array.from({ length: n }, () => '—');
+  /**
+   * Sièges/passagers à afficher pour cette résa — un ticket annulé individuellement au sein
+   * d'une résa encore confirmée (`cancelledSeatNumbers`) est retiré complètement, jamais juste
+   * marqué (même comportement que « Mes gares » côté app pro). Le nom du passager est apparié
+   * au siège AVANT filtrage (même index dans seatNumbers/passengerNames), pour ne jamais
+   * décaler les paires siège/nom quand un siège du milieu est retiré.
+   */
+  passengersForBooking(b: BookingResponse): { seat: string; name: string }[] {
+    const cancelled = new Set(b.cancelledSeatNumbers || []);
+    const seats =
+      b.seatNumbers && b.seatNumbers.length > 0
+        ? b.seatNumbers
+        : Array.from({ length: b.numberOfSeats || 1 }, () => '—');
+    return seats
+      .map((seat, i) => ({ seat, name: b.passengerNames?.[i] || b.customerName || '—' }))
+      .filter((p) => !cancelled.has(p.seat));
   }
 
   // ====== Vente directe (bloquer des places) ======
