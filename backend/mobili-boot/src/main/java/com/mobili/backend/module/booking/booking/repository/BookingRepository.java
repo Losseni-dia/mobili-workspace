@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
@@ -57,6 +58,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
          * ont besoin de b.tickets sans lazy-load — chargée ici dans une requête séparée (jamais
          * dans la même que passengerNames/seatNumbers, voir Javadoc de findByIdWithDetailsRaw).
          */
+        @Transactional(readOnly = true)
         default Optional<Booking> findByIdWithDetails(Long id) {
                 return findByIdWithDetailsRaw(id).map(b -> {
                         b.getTickets().size();
@@ -77,6 +79,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
          * générés pour ne pas compter en double avec la boucle ticket (seule source fiable une
          * fois les tickets émis, notamment après une annulation partielle — voir son Javadoc).
          */
+        @Transactional(readOnly = true)
         default List<Booking> findByTripIdWithSeats(Long tripId) {
                 List<Booking> bookings = findByTripIdWithSeatsRaw(tripId);
                 bookings.forEach(b -> b.getTickets().size());
@@ -102,6 +105,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE)")
         List<Booking> findConfirmedByTripIdWithDetailsRaw(@Param("tripId") Long tripId);
 
+        @Transactional(readOnly = true)
         default List<Booking> findConfirmedByTripIdWithDetails(Long tripId) {
                 List<Booking> bookings = findConfirmedByTripIdWithDetailsRaw(tripId);
                 bookings.forEach(b -> b.getTickets().size());
@@ -137,6 +141,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("stationId") Long stationId);
 
         /** Booking.getGrossAmount() (PartnerMapper) lit les tickets pour exclure ceux ANNULÉ. */
+        @Transactional(readOnly = true)
         default List<Booking> findRecentBookingsByPartnerAndStation(Long partnerId, Long stationId) {
                 List<Booking> bookings = findRecentBookingsByPartnerAndStationRaw(partnerId, stationId);
                 bookings.forEach(b -> b.getTickets().size());
@@ -157,6 +162,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "AND b.status IN ('CONFIRMED', 'OFFLINE_SALE', 'COMPLETED') ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByPartnerRaw(@Param("partnerId") Long partnerId);
 
+        @Transactional(readOnly = true)
         default List<Booking> findRecentBookingsByPartner(Long partnerId) {
                 List<Booking> bookings = findRecentBookingsByPartnerRaw(partnerId);
                 bookings.forEach(b -> b.getTickets().size());
@@ -169,6 +175,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "WHERE t.covoiturageOrganizer.id = :organizerId ORDER BY b.createdAt DESC")
         List<Booking> findRecentBookingsByCovoiturageOrganizerRaw(@Param("organizerId") Long organizerId);
 
+        @Transactional(readOnly = true)
         default List<Booking> findRecentBookingsByCovoiturageOrganizer(Long organizerId) {
                 List<Booking> bookings = findRecentBookingsByCovoiturageOrganizerRaw(organizerId);
                 bookings.forEach(b -> b.getTickets().size());
@@ -358,6 +365,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("from") java.time.LocalDateTime from,
                         @Param("to") java.time.LocalDateTime to);
 
+        @Transactional(readOnly = true)
         default List<Booking> findAllByPartnerIdAndOptionalStationIdAndDateRange(
                         Long partnerId, Long stationId, java.time.LocalDateTime from, java.time.LocalDateTime to) {
                 List<Booking> bookings = findAllByPartnerIdAndOptionalStationIdAndDateRangeRaw(partnerId, stationId, from, to);
