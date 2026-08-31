@@ -120,7 +120,7 @@
                     </div>
                     <div class="stat-chip">
                         <span>Montant</span>
-                        <strong>{{ (booking.amount ?? booking.totalPrice) | number }} FCFA</strong>
+                        <strong>{{ (detailsActiveAmount() ?? booking.amount ?? booking.totalPrice) | number }} FCFA</strong>
                     </div>
                 </div>
 

@@ -136,4 +136,19 @@ export class AdminBookings implements OnInit {
   closeDetails() {
     this.detailsBooking.set(null);
   }
+
+  /**
+   * Montant réel de la réservation dans le détail : `amount`/`totalPrice` sont figés à la
+   * création et ne bougent pas si un ticket est annulé individuellement ensuite — on recalcule
+   * donc à partir des tickets actifs chargés (`t.price` = montant réellement payé pour ce
+   * siège), dès qu'ils sont disponibles. Retombe sur `amount`/`totalPrice` tant que le détail
+   * charge. Même correctif que côté partenaire (booking-list.component.ts).
+   */
+  detailsActiveAmount = computed<number | null>(() => {
+    const tickets = this.detailsTickets();
+    if (!tickets.length) return null;
+    return tickets
+      .filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ')
+      .reduce((sum, t) => sum + (t.price || 0), 0);
+  });
 }
