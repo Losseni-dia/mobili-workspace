@@ -119,6 +119,14 @@
   color: variables.$mobili-blue-deep;
   font-size: 0.75rem;
   font-weight: 900;
+
+  // Ticket annulé individuellement au sein d'une résa multi-sièges — le siège reste visible
+  // (historique des places réservées à l'origine) mais grisé/barré, jamais retiré de la liste.
+  &.cancelled {
+    background: variables.$gray-100;
+    color: variables.$gray-500;
+    text-decoration: line-through;
+  }
 }
 
 // Override pour status depuis getStatusClass()

@@ -22,6 +22,13 @@ public class BookingResponseDTO {
     private LocalDateTime date;
     private Integer numberOfSeats;
     private Set<String> seatNumbers;
+    /**
+     * Sous-ensemble de {@link #seatNumbers} correspondant à un ticket individuellement annulé
+     * (statut ANNULÉ) au sein de cette réservation — {@link #seatNumbers} lui-même reste
+     * l'historique complet des places réservées à l'origine, jamais recalculé. Permet à l'UI de
+     * distinguer visuellement un siège annulé sans changer ce que représente {@link #seatNumbers}.
+     */
+    private Set<String> cancelledSeatNumbers;
     private Set<String> passengerNames;
     /** Montant total de la réservation (tickets + forfait client + bagages). */
     private Double totalPrice;

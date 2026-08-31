@@ -34,6 +34,8 @@ export interface BookingResponse {
   date?: string;
   numberOfSeats: number;
   seatNumbers: string[];
+  /** Sous-ensemble de `seatNumbers` dont le ticket a été annulé individuellement. */
+  cancelledSeatNumbers?: string[];
   passengerNames?: string[];
   /** Montant total de la réservation (tickets + forfait client + bagages). */
   totalPrice: number;
