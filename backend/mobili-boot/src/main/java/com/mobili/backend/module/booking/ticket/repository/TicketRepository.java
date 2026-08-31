@@ -76,7 +76,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
                     "WHERE tr.partner.id = :partnerId " +
                     "AND (:stationId IS NULL OR tr.station.id = :stationId) " +
                     "AND t.bookingDate >= :from AND t.bookingDate <= :to " +
-                    "AND t.status <> 'ANNULÉ' " +
                     "AND (:search IS NULL OR :search = '' OR LOWER(t.passengerName) LIKE LOWER(CONCAT('%', :search, '%'))) "
                     +
                     "ORDER BY t.bookingDate DESC")
