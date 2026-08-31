@@ -22,10 +22,14 @@
         <button type="button" class="period-btn" [class.active]="activePeriod() === 'today'" (click)="setPeriodPreset('today')">Aujourd'hui</button>
         <button type="button" class="period-btn" [class.active]="activePeriod() === 'week'" (click)="setPeriodPreset('week')">Semaine</button>
         <button type="button" class="period-btn" [class.active]="activePeriod() === 'month'" (click)="setPeriodPreset('month')">Mois</button>
-        <button type="button" class="period-btn" [class.active]="activePeriod() === null" (click)="onManualDateChange()">Intervalle</button>
-        @if (activePeriod() === null) {
+        <button type="button" class="period-btn" [class.active]="activePeriod() === null && !singleDateMode()" (click)="onManualDateChange()">Intervalle</button>
+        <button type="button" class="period-btn" [class.active]="activePeriod() === null && singleDateMode()" (click)="setSingleDateMode()">Date précise</button>
+        @if (activePeriod() === null && !singleDateMode()) {
             <input type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event); onManualDateChange()">
             <input type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event); onManualDateChange()">
+        }
+        @if (activePeriod() === null && singleDateMode()) {
+            <input type="date" [ngModel]="fromDate()" (ngModelChange)="onSingleDateChange($event)">
         }
     </div>
 

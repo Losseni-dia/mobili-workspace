@@ -16,7 +16,7 @@ import { ListPager } from '../../../core/utils/list-pager.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
 type TripStatusFilter = 'ALL' | 'DRAFT' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
-type PeriodFilter = 'today' | 'week' | 'month' | 'custom';
+type PeriodFilter = 'today' | 'week' | 'month' | 'custom' | 'day';
 
 @Component({
   selector: 'app-trip-management',
@@ -166,7 +166,12 @@ export class TripManagementComponent implements OnInit {
 
   setPeriod(p: PeriodFilter) {
     this.period.set(p);
-    if (p !== 'custom') {
+    if (p === 'day') {
+      // Préremplit avec la date déjà choisie, sinon aujourd'hui.
+      const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+      this.fromDate.set(d);
+      this.toDate.set(d);
+    } else if (p !== 'custom') {
       const { from, to } = computePeriodRange(p);
       this.fromDate.set(from);
       this.toDate.set(to);
@@ -182,6 +187,14 @@ export class TripManagementComponent implements OnInit {
     this.loadTrips();
   }
 
+  /** Sélection d'une date précise unique (mode "day") : from = to = date choisie. */
+  onSingleDateChange(v: string): void {
+    this.fromDate.set(v);
+    this.toDate.set(v);
+    this.pager.reset();
+    this.loadTrips();
+  }
+
   setStatusFilter(s: TripStatusFilter) {
     this.statusFilter.set(s);
     this.pager.reset();
@@ -189,7 +202,7 @@ export class TripManagementComponent implements OnInit {
 
   private periodRange(): { from: string; to: string } {
     const p = this.period();
-    if (p === 'custom') {
+    if (p === 'custom' || p === 'day') {
       return { from: this.fromDate(), to: this.toDate() };
     }
     return computePeriodRange(p);

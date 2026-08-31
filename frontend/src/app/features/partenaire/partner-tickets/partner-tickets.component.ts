@@ -41,6 +41,8 @@ export class PartnerTicketsComponent implements OnInit {
   fromDate = signal('');
   toDate = signal('');
   activePeriod = signal<PeriodPreset | null>(null);
+  /** Mode "Date précise" (une seule date, from=to) — distinct de "Intervalle" (from/to libres). */
+  singleDateMode = signal(false);
 
   filteredTickets = computed(() => {
     const term = this.search().trim().toLowerCase();
@@ -115,6 +117,25 @@ export class PartnerTicketsComponent implements OnInit {
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.singleDateMode.set(false);
+    this.pager.reset();
+    this.loadTickets();
+  }
+
+  /** Bascule vers "Date précise" : préremplit avec la date déjà choisie, sinon aujourd'hui. */
+  setSingleDateMode(): void {
+    this.activePeriod.set(null);
+    this.singleDateMode.set(true);
+    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    this.fromDate.set(d);
+    this.toDate.set(d);
+    this.pager.reset();
+    this.loadTickets();
+  }
+
+  onSingleDateChange(v: string): void {
+    this.fromDate.set(v);
+    this.toDate.set(v);
     this.pager.reset();
     this.loadTickets();
   }

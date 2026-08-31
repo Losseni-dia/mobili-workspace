@@ -30,6 +30,8 @@ export class AdminTransactions implements OnInit {
   toDate = signal('');
   search = signal('');
   activePeriod = signal<PeriodPreset | null>(null);
+  /** Mode "Date précise" (une seule date, from=to) — distinct de "Intervalle" (from/to libres). */
+  singleDateMode = signal(false);
 
   /** Filtre société, puis gare (dépendante de la société sélectionnée). */
   companyFilter = signal<number | 'all'>('all');
@@ -133,8 +135,29 @@ export class AdminTransactions implements OnInit {
 
   onManualDateChange(): void {
     this.activePeriod.set(null);
+    this.singleDateMode.set(false);
     this.companyFilter.set('all');
     this.stationFilter.set('all');
+    this.pager.reset();
+    this.load();
+  }
+
+  /** Bascule vers "Date précise" : préremplit avec la date déjà choisie, sinon aujourd'hui. */
+  setSingleDateMode(): void {
+    this.activePeriod.set(null);
+    this.singleDateMode.set(true);
+    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    this.fromDate.set(d);
+    this.toDate.set(d);
+    this.companyFilter.set('all');
+    this.stationFilter.set('all');
+    this.pager.reset();
+    this.load();
+  }
+
+  onSingleDateChange(v: string): void {
+    this.fromDate.set(v);
+    this.toDate.set(v);
     this.pager.reset();
     this.load();
   }
