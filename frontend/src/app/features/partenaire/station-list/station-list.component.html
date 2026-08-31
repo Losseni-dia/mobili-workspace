@@ -56,16 +56,14 @@
                   <th>Responsable</th>
                   <th>Chauffeurs affectés</th>
                   <th class="right">Actif (trajets)</th>
-                  @if (isPartnerManager()) {
-                    <th class="right">Actions</th>
-                  }
+                  <th class="right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 @for (g of stations(); track g.id) {
                   @if (editingId() === g.id) {
                     <tr class="gares-edit-row">
-                      <td [attr.colspan]="isPartnerManager() ? 6 : 5">
+                      <td [attr.colspan]="6">
                         <form class="add-form gares-edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(g)">
                           @if (editError()) {
                             <div class="gares-alert gares-alert--err" role="alert">{{ editError() }}</div>
@@ -133,12 +131,13 @@
                         {{ g.active ? 'Oui' : 'Non' }}
                       </span>
                     </td>
-                    @if (isPartnerManager()) {
-                      <td class="right gares-actions-cell">
+                    <td class="right gares-actions-cell">
+                      <a class="btn-details" [routerLink]="['/partenaire/gares', g.id]" title="Voir les trajets et tickets de cette gare">Détails</a>
+                      @if (isPartnerManager()) {
                         <button type="button" class="btn-cancel" (click)="startEdit(g)">Modifier</button>
                         <button type="button" class="btn-danger" (click)="askDelete(g)">Supprimer</button>
-                      </td>
-                    }
+                      }
+                    </td>
                   </tr>
                   }
                 }
