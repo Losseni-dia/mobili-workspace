@@ -260,10 +260,10 @@
                 } @else {
                     <ul class="passenger-rows">
                         @for (b of passengersList(); track b.id) {
-                            @for (seat of seatsForBooking(b); track i; let i = $index) {
+                            @for (p of passengersForBooking(b); track p.seat) {
                                 <li class="passenger-row">
-                                    <span class="seat-badge">{{ seat }}</span>
-                                    <span class="pax-name">{{ b.passengerNames?.[i] || b.customerName || '—' }}</span>
+                                    <span class="seat-badge">{{ p.seat }}</span>
+                                    <span class="pax-name">{{ p.name }}</span>
                                     <span class="pax-ref">#{{ b.reference }}</span>
                                 </li>
                             }
