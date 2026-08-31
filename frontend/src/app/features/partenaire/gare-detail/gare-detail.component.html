@@ -1,0 +1,131 @@
+<div class="gare-detail-page">
+    <a routerLink="/partenaire/gares" class="back-link">← Mes gares</a>
+
+    @if (isLoadingStation()) {
+        <p class="loading">Chargement…</p>
+    } @else if (!station(); as s) {
+        <div class="empty">
+            <div class="empty-icon">🔎</div>
+            <strong>Gare introuvable</strong>
+            <p>Elle a peut-être été supprimée.</p>
+        </div>
+    } @else {
+        <header class="gd-header">
+            <div class="gd-icon" aria-hidden="true">📍</div>
+            <div class="gd-header-text">
+                <h1>{{ station()!.name }}</h1>
+                <p class="gd-city">{{ station()!.city }}</p>
+                <p class="gd-responsible">Responsable : {{ station()!.responsibleName?.trim() || '—' }}</p>
+            </div>
+            <span class="status-pill" [class.active]="station()!.active" [class.blocked]="!station()!.active">
+                <span class="dot"></span>
+                {{ station()!.active ? 'Active' : 'Inactive' }}
+            </span>
+        </header>
+
+        <section class="gd-stats">
+            @if (isLoadingStats()) {
+                <p class="loading">Chargement des statistiques…</p>
+            } @else if (stats(); as st) {
+                <div class="gd-stats-row">
+                    <div class="gd-stat-mini">
+                        <span>Trajets</span>
+                        <strong>{{ st.activeTripsCount }}</strong>
+                    </div>
+                    <div class="gd-stat-mini gd-stat-mini--green">
+                        <span>Réservations</span>
+                        <strong>{{ st.totalBookingsCount }}</strong>
+                    </div>
+                </div>
+                <div class="gd-revenue-card">
+                    <div class="gd-revenue-head">
+                        <span>💰 Revenus totaux</span>
+                        <strong>{{ st.totalRevenue | number }} FCFA</strong>
+                    </div>
+                    <div class="gd-revenue-split">
+                        <div class="gd-revenue-chip gd-revenue-chip--online">
+                            <span>📶 En ligne</span>
+                            <strong>{{ (st.revenueOnline || 0) | number }} F</strong>
+                        </div>
+                        <div class="gd-revenue-chip gd-revenue-chip--offline">
+                            <span>🏧 Physique</span>
+                            <strong>{{ (st.revenueOffline || 0) | number }} F</strong>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section class="gd-trips">
+            <h2>Trajets</h2>
+
+            <div class="gd-status-filters">
+                @for (f of STATUS_FILTERS; track f.value) {
+                    <button type="button" class="status-chip" [class.active]="statusFilter() === f.value" (click)="setStatusFilter(f.value)">
+                        {{ f.label }}
+                    </button>
+                }
+            </div>
+
+            @if (isLoadingTrips()) {
+                <p class="loading">Chargement des trajets…</p>
+            } @else if (filteredTrips().length === 0) {
+                <div class="empty">
+                    <div class="empty-icon">🚌</div>
+                    <strong>Aucun trajet</strong>
+                    <p>Aucun trajet ne correspond à ce filtre pour cette gare.</p>
+                </div>
+            } @else {
+                @for (item of filteredTrips(); track item.trip.id) {
+                    <div class="gd-trip-card" [class.expanded]="expandedTripId() === item.trip.id">
+                        <button type="button" class="gd-trip-head" (click)="toggleTrip(item.trip.id)">
+                            <div class="gd-trip-route">
+                                <strong>{{ item.trip.departureCity }} → {{ item.trip.arrivalCity }}</strong>
+                                <span class="gd-trip-date">{{ item.trip.departureDateTime | date: 'dd/MM/yyyy à HH:mm' }}</span>
+                            </div>
+                            <div class="gd-trip-meta">
+                                <span class="type-pill" [ngClass]="statusPillClass(item.trip.status)">{{ statusLabel(item.trip.status) }}</span>
+                                <span class="gd-trip-revenue">{{ tripRevenue(item) | number }} F</span>
+                                <span class="gd-trip-seats">🧍 {{ item.tickets.length }}/{{ item.trip.totalSeats }}</span>
+                                <span class="gd-chevron" aria-hidden="true">{{ expandedTripId() === item.trip.id ? '▲' : '▼' }}</span>
+                            </div>
+                        </button>
+
+                        @if (expandedTripId() === item.trip.id) {
+                            <div class="gd-trip-body">
+                                @if (item.tickets.length === 0) {
+                                    <p class="gd-no-tickets">Aucun ticket pris sur ce trajet.</p>
+                                } @else {
+                                    <ul class="gd-ticket-rows">
+                                        @for (t of item.tickets; track t.id) {
+                                            <li class="gd-ticket-row">
+                                                <span class="seat-badge">{{ t.seatNumber }}</span>
+                                                <span class="gd-ticket-name">{{ t.passengerName }}</span>
+                                                <span class="channel-pill" [class.guichet]="ticketChannel(t) === 'Guichet'">{{ ticketChannel(t) }}</span>
+                                                <span class="gd-ticket-amount">{{ ticketAmount(t) | number }} F</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </section>
+
+        @if (station()!.assignedChauffeurs?.length) {
+            <section class="gd-chauffeurs">
+                <h2>Chauffeurs affectés</h2>
+                <ul class="gd-chauffeurs-list">
+                    @for (ch of station()!.assignedChauffeurs; track ch.id) {
+                        <li>
+                            <span class="gd-chauffeur-avatar">{{ ch.firstname?.trim()?.[0] || '?' }}</span>
+                            {{ ch.firstname?.trim() || '' }} <strong>{{ ch.lastname?.trim() || '—' }}</strong>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    }
+</div>

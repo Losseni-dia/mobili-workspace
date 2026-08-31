@@ -81,6 +81,13 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        path: 'gares/:id',
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/gare-detail/gare-detail.component').then(
+            (m) => m.GareDetailComponent,
+          ),
+      },
+      {
         path: 'chauffeurs',
         loadComponent: () =>
           import('@mobili-app/features/partenaire/chauffeur-list/chauffeur-list.component').then(
