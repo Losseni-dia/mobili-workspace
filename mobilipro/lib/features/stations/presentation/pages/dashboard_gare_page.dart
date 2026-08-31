@@ -175,17 +175,19 @@ final _monthlyRevenueProvider =
         for (final b in bookings) {
           final map = b as Map<String, dynamic>;
           final status = map['status'] as String?;
-          // Vente brute — JAMAIS amount/totalPrice seuls, qui incluent le forfait client
-          // (jamais reversé à la compagnie). Même formule que PartnerBookingItem.grossAmount,
-          // pour que ce chiffre reste aligné avec la page Réservations de la gare.
+          // Vente brute — JAMAIS totalPrice seul, qui inclut le forfait client (jamais reversé
+          // à la compagnie). `amount` (Booking.getGrossAmount(), backend) est TOUJOURS
+          // recalculé en direct à partir des tickets encore actifs — priorité sur
+          // `ticketsTotalAmount`, figé à la création (montant resté faux après une annulation
+          // partielle). Même formule que PartnerBookingItem.grossAmount, pour que ce chiffre
+          // reste aligné avec la page Réservations de la gare.
           final ticketsTotalAmount =
               (map['ticketsTotalAmount'] as num?)?.toDouble();
           final luggageFee = (map['luggageFee'] as num?)?.toDouble() ?? 0;
-          final amount = ticketsTotalAmount != null
-              ? ticketsTotalAmount + luggageFee
-              : (map['amount'] as num?)?.toDouble() ??
-                  (map['totalPrice'] as num?)?.toDouble() ??
-                  0;
+          final amount = (map['amount'] as num?)?.toDouble() ??
+              (ticketsTotalAmount != null
+                  ? ticketsTotalAmount + luggageFee
+                  : (map['totalPrice'] as num?)?.toDouble() ?? 0);
           if (status == 'CONFIRMED') online += amount;
           if (status == 'OFFLINE_SALE') offline += amount;
         }
