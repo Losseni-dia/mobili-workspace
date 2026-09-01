@@ -70,11 +70,21 @@ const G_PAD_B = 12;
 export class AdminBusiness implements OnInit {
   private adminService = inject(AdminService);
 
-  period = signal<TripStatsPeriod>('WEEK');
+  period = signal<TripStatsPeriod>('CUSTOM');
   fromDate = signal('');
   toDate = signal('');
   /** Mode "Date précise" (une seule date, from=to) — pertinent seulement en période CUSTOM. */
   singleDateMode = signal(false);
+  /**
+   * Préset affiché/actif dans le bandeau — distinct de `period()` : "Semaine" et "Mois" sont
+   * calculés côté client en semaine/mois CALENDAIRE (lundi→dimanche, 1er→dernier jour) puis
+   * envoyés au backend comme CUSTOM, exactement comme `computePeriodRange()` (period-range.util)
+   * déjà utilisé partout ailleurs dans l'admin (Transactions, dashboards "Ce mois-ci"...).
+   * Avant ce correctif, "7 jours"/"30 jours" étaient des fenêtres GLISSANTES (ex: 03/08→01/09),
+   * ce qui mélangeait deux mois calendaires et ne correspondait à aucune autre page de l'admin —
+   * source de chiffres "faux" par rapport à ce que l'utilisateur voit ailleurs pour "septembre".
+   */
+  quickPreset = signal<'day' | 'week' | 'month' | 'year' | 'interval' | 'exact'>('week');
 
   stationOptions = signal<AdminStationOption[]>([]);
   partnerOptions = signal<Partner[]>([]);
@@ -139,17 +149,19 @@ export class AdminBusiness implements OnInit {
   }
 
   periodLabel(): string {
-    switch (this.period()) {
-      case 'DAY':
+    switch (this.quickPreset()) {
+      case 'day':
         return 'Aujourd’hui (minuit → maintenant)';
-      case 'WEEK':
-        return '7 jours calendaires (aujourd’hui inclus : 6 jours avant + aujourd’hui)';
-      case 'MONTH':
-        return '30 jours calendaires (aujourd’hui inclus)';
-      case 'YEAR':
+      case 'week':
+        return 'Semaine calendaire en cours (lundi → dimanche)';
+      case 'month':
+        return 'Mois calendaire en cours (1er → dernier jour du mois)';
+      case 'year':
         return '365 jours calendaires (aujourd’hui inclus)';
-      case 'CUSTOM':
-        return this.singleDateMode() ? 'Date précise choisie' : 'Intervalle personnalisé';
+      case 'interval':
+        return 'Intervalle personnalisé';
+      case 'exact':
+        return 'Date précise choisie';
       default:
         return '';
     }
@@ -164,17 +176,63 @@ export class AdminBusiness implements OnInit {
       next: (partners) => this.partnerOptions.set(partners || []),
       error: () => this.partnerOptions.set([]),
     });
+    this.setWeek();
+  }
+
+  setDay() {
+    this.period.set('DAY');
+    this.quickPreset.set('day');
+    this.singleDateMode.set(false);
     this.load();
   }
 
-  setPeriod(p: TripStatsPeriod) {
-    this.period.set(p);
+  /** Semaine CALENDAIRE (lundi → dimanche de la semaine en cours) — même calcul que
+   *  `computePeriodRange('week')`, envoyé au backend en CUSTOM (aucune notion de semaine
+   *  calendaire côté TripStatsPeriod, pas besoin d'en ajouter une pour un simple alignement UI). */
+  setWeek() {
+    const now = new Date();
+    const day = now.getDay() || 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - day + 1);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    this.period.set('CUSTOM');
+    this.quickPreset.set('week');
+    this.singleDateMode.set(false);
+    this.fromDate.set(toLocalDateString(monday));
+    this.toDate.set(toLocalDateString(sunday));
+    this.load();
+  }
+
+  /** Mois CALENDAIRE (1er → dernier jour du mois en cours) — jamais capé à "aujourd'hui" : un
+   *  trajet déjà réservé pour le 20 alors qu'on est le 1er du mois doit compter dans "ce mois-ci",
+   *  exactement comme les dashboards partenaire/gare/admin ("📅 Ce mois-ci"). C'est précisément ce
+   *  qui manquait à l'ancien "30 jours" (fenêtre glissante plafonnée à maintenant, donc aveugle
+   *  aux ventes déjà faites pour plus tard dans le mois) — signalé par écart avec le dashboard
+   *  partenaire (ex. NANA VOYAGE : 13 billets/69 900 FCFA en 30 jours glissants contre 50
+   *  billets/284 500 FCFA sur le vrai mois de septembre). */
+  setMonth() {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    this.period.set('CUSTOM');
+    this.quickPreset.set('month');
+    this.singleDateMode.set(false);
+    this.fromDate.set(toLocalDateString(first));
+    this.toDate.set(toLocalDateString(last));
+    this.load();
+  }
+
+  setYear() {
+    this.period.set('YEAR');
+    this.quickPreset.set('year');
     this.singleDateMode.set(false);
     this.load();
   }
 
   setCustomRange() {
     this.period.set('CUSTOM');
+    this.quickPreset.set('interval');
     this.singleDateMode.set(false);
     if (!this.fromDate() || !this.toDate()) {
       const now = new Date();
@@ -188,6 +246,7 @@ export class AdminBusiness implements OnInit {
 
   setSingleDateMode() {
     this.period.set('CUSTOM');
+    this.quickPreset.set('exact');
     this.singleDateMode.set(true);
     const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);

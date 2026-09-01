@@ -28,17 +28,17 @@
 
     <div class="toolbar">
         <div class="period-presets">
-            <button type="button" class="period-btn" [class.active]="period() === 'DAY'" (click)="setPeriod('DAY')">Jour</button>
-            <button type="button" class="period-btn" [class.active]="period() === 'WEEK'" (click)="setPeriod('WEEK')">7 jours</button>
-            <button type="button" class="period-btn" [class.active]="period() === 'MONTH'" (click)="setPeriod('MONTH')">30 jours</button>
-            <button type="button" class="period-btn" [class.active]="period() === 'YEAR'" (click)="setPeriod('YEAR')">Année</button>
-            <button type="button" class="period-btn" [class.active]="period() === 'CUSTOM' && !singleDateMode()" (click)="setCustomRange()">Intervalle</button>
-            <button type="button" class="period-btn" [class.active]="period() === 'CUSTOM' && singleDateMode()" (click)="setSingleDateMode()">Date précise</button>
-            @if (period() === 'CUSTOM' && !singleDateMode()) {
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'day'" (click)="setDay()">Jour</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'week'" (click)="setWeek()">Semaine</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'month'" (click)="setMonth()">Mois</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'year'" (click)="setYear()">Année</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'interval'" (click)="setCustomRange()">Intervalle</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'exact'" (click)="setSingleDateMode()">Date précise</button>
+            @if (quickPreset() === 'interval') {
                 <input type="date" [ngModel]="fromDate()" (ngModelChange)="onFromDateChange($event)">
                 <input type="date" [ngModel]="toDate()" (ngModelChange)="onToDateChange($event)">
             }
-            @if (period() === 'CUSTOM' && singleDateMode()) {
+            @if (quickPreset() === 'exact') {
                 <input type="date" [ngModel]="fromDate()" (ngModelChange)="onFromDateChange($event)">
             }
         </div>
