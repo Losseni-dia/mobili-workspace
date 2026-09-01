@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,7 @@ import com.mobili.backend.module.admin.model.TripStatsPeriod;
 import com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa;
 import com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
+import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,10 +30,28 @@ import lombok.RequiredArgsConstructor;
 public class TripStatisticsService {
 
     private final BookingRepository bookingRepository;
+    private final TicketRepository ticketRepository;
 
     /** Nombre de lignes renvoyées par classement — la page affiche un "top 10" par défaut avec
      *  "Voir plus" côté client jusqu'à cette limite, sans nouvel appel réseau. */
     private static final int TOP_N = 50;
+
+    /**
+     * Ligne trajet fusionnée : métadonnées + CA (BookingRepository.findTripStatsOrderedByRevenue,
+     * inchangé) + nombre de tickets (TicketRepository.ticketCountsPerTripForPeriod, requête
+     * séparée). Ne JAMAIS combiner COUNT(ticket) et SUM(booking.totalPrice) dans une même requête
+     * groupée : un ticket-join dupliquerait le CA de chaque réservation multi-sièges (Cartesian
+     * product, cf. BookingRepository.findByIdWithDetailsRaw pour le même risque déjà documenté).
+     */
+    private record TripRow(
+            long tripId,
+            String departureCity,
+            String arrivalCity,
+            String partnerName,
+            String stationName,
+            double revenue,
+            long ticketCount) {
+    }
 
     @Transactional(readOnly = true)
     public AdminTripStatsResponse forPeriod(
@@ -55,9 +77,14 @@ public class TripStatisticsService {
             agg = new TripStatsAggrJpa(0.0, 0L, 0L, 0.0, 0.0, 0.0);
         }
         double totalRev = agg.getTotalRevenue();
-        long totalBook = agg.getTotalBookings();
         long distinctTrips = agg.getDistinctTrips();
-        double avg = totalBook > 0 ? totalRev / (double) totalBook : 0.0;
+
+        // "Billets" = tickets actifs (unité = un siège vendu), jamais des réservations — voir
+        // TicketRepository.countActiveTicketsForPeriod pour la justification (écart constaté en
+        // prod entre "Tickets vendus" du dashboard admin et l'ancien COUNT(booking) ici).
+        Long totalTicketsRaw = ticketRepository.countActiveTicketsForPeriod(from, to, stationId, partnerId);
+        long totalTickets = totalTicketsRaw != null ? totalTicketsRaw : 0L;
+        double avg = totalTickets > 0 ? totalRev / (double) totalTickets : 0.0;
 
         // Période précédente de même durée, immédiatement avant `from` — pour une variation en
         // % ("+12 % vs période précédente"), jamais affichée si la précédente est vide (évite
@@ -66,28 +93,59 @@ public class TripStatisticsService {
         LocalDateTime prevTo = from;
         LocalDateTime prevFrom = from.minusSeconds(durationSeconds);
         TripStatsAggrJpa prevAgg = bookingRepository.aggregateForTripStats(prevFrom, prevTo, stationId, partnerId);
-        Long previousTotalBookings = null;
+        Long prevTicketsRaw = ticketRepository.countActiveTicketsForPeriod(prevFrom, prevTo, stationId, partnerId);
+        Long previousTotalTickets = null;
         Double previousTotalRevenue = null;
-        Double bookingsDeltaPercent = null;
+        Double ticketsDeltaPercent = null;
         Double revenueDeltaPercent = null;
-        if (prevAgg != null && (prevAgg.getTotalBookings() > 0 || prevAgg.getTotalRevenue() > 0.5)) {
-            previousTotalBookings = prevAgg.getTotalBookings();
+        long prevTickets = prevTicketsRaw != null ? prevTicketsRaw : 0L;
+        if (prevAgg != null && (prevTickets > 0 || prevAgg.getTotalRevenue() > 0.5)) {
+            previousTotalTickets = prevTickets;
             previousTotalRevenue = prevAgg.getTotalRevenue();
-            if (previousTotalBookings > 0) {
-                bookingsDeltaPercent = ((totalBook - previousTotalBookings) / (double) previousTotalBookings) * 100.0;
+            if (previousTotalTickets > 0) {
+                ticketsDeltaPercent = ((totalTickets - previousTotalTickets) / (double) previousTotalTickets) * 100.0;
             }
             if (previousTotalRevenue > 0.5) {
                 revenueDeltaPercent = ((totalRev - previousTotalRevenue) / previousTotalRevenue) * 100.0;
             }
         }
 
-        List<TripStatsPerTripJpa> byCount = bookingRepository.findTripStatsOrderedByBookingCount(
+        List<TripStatsPerTripJpa> byRevOrder = bookingRepository.findTripStatsOrderedByRevenue(
                 from, to, stationId, partnerId);
-        List<TripStatsPerTripJpa> byRev = bookingRepository.findTripStatsOrderedByRevenue(
+        List<Object[]> ticketCountRows = ticketRepository.ticketCountsPerTripForPeriod(
                 from, to, stationId, partnerId);
+        Map<Long, Long> ticketCountByTrip = new HashMap<>();
+        for (Object[] row : ticketCountRows) {
+            Long tripId = ((Number) row[0]).longValue();
+            long cnt = ((Number) row[1]).longValue();
+            ticketCountByTrip.put(tripId, cnt);
+        }
 
-        List<Object[]> dailyRaw = bookingRepository.dailyTripStatsBetween(from, to, stationId, partnerId);
-        List<TripStatsDayEntryResponse> timeline = buildTimeline(dailyRaw);
+        List<TripRow> rows = new ArrayList<>();
+        for (TripStatsPerTripJpa r : byRevOrder) {
+            rows.add(new TripRow(
+                    r.getTripId(),
+                    r.getDepartureCity(),
+                    r.getArrivalCity(),
+                    r.getPartnerName(),
+                    r.getStationName(),
+                    r.getRevenue(),
+                    ticketCountByTrip.getOrDefault(r.getTripId(), 0L)));
+        }
+
+        // byRevOrder est déjà trié par CA décroissant (requête SQL) — conservé tel quel.
+        List<TripRow> byRevenue = rows;
+        // Tri par nombre de billets décroissant, calculé ici en Java (jamais en SQL sur un COUNT
+        // de ticket combiné à un SUM de booking, pour la raison Cartesian product documentée
+        // plus haut) — égalité départagée par tripId croissant, comme les requêtes SQL d'origine.
+        List<TripRow> byTickets = new ArrayList<>(rows);
+        byTickets.sort(Comparator.comparingLong(TripRow::ticketCount).reversed()
+                .thenComparingLong(TripRow::tripId));
+
+        List<Object[]> dailyRevenueRaw = bookingRepository.dailyTripStatsBetween(from, to, stationId, partnerId);
+        List<Object[]> dailyTicketsRaw = ticketRepository.dailyActiveTicketsBetweenForTripStats(
+                from, to, stationId, partnerId);
+        List<TripStatsDayEntryResponse> timeline = buildTimeline(dailyRevenueRaw, dailyTicketsRaw);
 
         // Ce que la plateforme retient : forfait client (jamais reversé) + commission prélevée
         // sur les ventes — même distinction que la page Transactions admin (Frais Mobili /
@@ -101,7 +159,7 @@ public class TripStatisticsService {
                 period,
                 from,
                 to,
-                totalBook,
+                totalTickets,
                 totalRev,
                 distinctTrips,
                 avg,
@@ -110,73 +168,85 @@ public class TripStatisticsService {
                 totalServiceFee,
                 totalCommission,
                 netCompany,
-                previousTotalBookings,
+                previousTotalTickets,
                 previousTotalRevenue,
-                bookingsDeltaPercent,
+                ticketsDeltaPercent,
                 revenueDeltaPercent,
-                mapTopN(byCount),
-                mapTopN(byRev),
-                buildRevenueDonut(byRev, totalRev),
-                buildVolumeDonut(byCount, totalBook),
+                mapTopN(byTickets),
+                mapTopN(byRevenue),
+                buildRevenueDonut(byRevenue, totalRev),
+                buildVolumeDonut(byTickets, totalTickets),
                 timeline);
     }
 
     /**
-     * Convertit les lignes brutes (day, count, revenue) en points de courbe — un point par jour
-     * civil tel que renvoyé par la requête (les jours sans vente n'apparaissent pas en base,
-     * mais rien n'oblige à les combler ici : un simple point manquant sur la courbe suffit,
-     * jamais un 0 qui suggérerait à tort une activité mesurée ce jour-là).
+     * Fusionne les deux séries journalières (CA depuis les réservations, billets depuis les
+     * tickets) par date — un jour peut apparaître dans l'une sans l'autre en théorie (aucune
+     * raison métier connue, mais défensif) : dans ce cas la métrique manquante vaut 0 pour ce
+     * jour plutôt que d'exclure le point entier.
      */
-    private static List<TripStatsDayEntryResponse> buildTimeline(List<Object[]> rows) {
-        List<TripStatsDayEntryResponse> out = new ArrayList<>();
-        for (Object[] row : rows) {
-            LocalDate date;
-            Object rawDate = row[0];
-            if (rawDate instanceof java.sql.Date sqlDate) {
-                date = sqlDate.toLocalDate();
-            } else if (rawDate instanceof LocalDate ld) {
-                date = ld;
-            } else {
-                date = LocalDate.parse(rawDate.toString());
-            }
-            long count = ((Number) row[1]).longValue();
+    private static List<TripStatsDayEntryResponse> buildTimeline(
+            List<Object[]> revenueRows, List<Object[]> ticketRows) {
+        Map<LocalDate, Double> revenueByDate = new HashMap<>();
+        for (Object[] row : revenueRows) {
+            LocalDate date = parseDate(row[0]);
             double revenue = ((Number) row[2]).doubleValue();
-            out.add(new TripStatsDayEntryResponse(date, count, revenue));
+            revenueByDate.put(date, revenue);
+        }
+        Map<LocalDate, Long> ticketsByDate = new HashMap<>();
+        for (Object[] row : ticketRows) {
+            LocalDate date = parseDate(row[0]);
+            long cnt = ((Number) row[1]).longValue();
+            ticketsByDate.put(date, cnt);
+        }
+        java.util.TreeSet<LocalDate> allDates = new java.util.TreeSet<>();
+        allDates.addAll(revenueByDate.keySet());
+        allDates.addAll(ticketsByDate.keySet());
+
+        List<TripStatsDayEntryResponse> out = new ArrayList<>();
+        for (LocalDate date : allDates) {
+            long tickets = ticketsByDate.getOrDefault(date, 0L);
+            double revenue = revenueByDate.getOrDefault(date, 0.0);
+            out.add(new TripStatsDayEntryResponse(date, tickets, revenue));
         }
         return out;
     }
 
-    private static List<TripStatEntryResponse> mapTopN(List<TripStatsPerTripJpa> rows) {
+    private static LocalDate parseDate(Object rawDate) {
+        if (rawDate instanceof java.sql.Date sqlDate) {
+            return sqlDate.toLocalDate();
+        } else if (rawDate instanceof LocalDate ld) {
+            return ld;
+        }
+        return LocalDate.parse(rawDate.toString());
+    }
+
+    private static List<TripStatEntryResponse> mapTopN(List<TripRow> rows) {
         List<TripStatEntryResponse> out = new ArrayList<>();
         int rank = 1;
-        for (TripStatsPerTripJpa r : rows) {
+        for (TripRow r : rows) {
             if (rank > TOP_N) {
                 break;
             }
-            String dep = r.getDepartureCity();
-            String arr = r.getArrivalCity();
-            String partner = r.getPartnerName();
-            long cnt = r.getBookingCount();
-            double rev = r.getRevenue();
-            long tripId = r.getTripId();
-            String route = dep + " → " + arr;
-            out.add(new TripStatEntryResponse(rank, tripId, route, partner, r.getStationName(), cnt, rev));
+            String route = r.departureCity() + " → " + r.arrivalCity();
+            out.add(new TripStatEntryResponse(
+                    rank, r.tripId(), route, r.partnerName(), r.stationName(), r.ticketCount(), r.revenue()));
             rank++;
         }
         return out;
     }
 
     private static List<RevenueDonutSliceResponse> buildRevenueDonut(
-            List<TripStatsPerTripJpa> byRevOrder, double totalRevenue) {
+            List<TripRow> byRevOrder, double totalRevenue) {
         if (totalRevenue <= 0.5 || byRevOrder.isEmpty()) {
             return List.of();
         }
         List<RevenueDonutSliceResponse> out = new ArrayList<>();
         double used = 0.0;
         for (int i = 0; i < Math.min(5, byRevOrder.size()); i++) {
-            TripStatsPerTripJpa r = byRevOrder.get(i);
-            String label = r.getDepartureCity() + " → " + r.getArrivalCity();
-            double rev = r.getRevenue();
+            TripRow r = byRevOrder.get(i);
+            String label = r.departureCity() + " → " + r.arrivalCity();
+            double rev = r.revenue();
             used += rev;
             out.add(new RevenueDonutSliceResponse(label, rev, (rev / totalRevenue) * 100.0));
         }
@@ -188,23 +258,23 @@ public class TripStatisticsService {
     }
 
     private static List<VolumeDonutSliceResponse> buildVolumeDonut(
-            List<TripStatsPerTripJpa> byCountOrder, long totalBookings) {
-        if (totalBookings < 1 || byCountOrder.isEmpty()) {
+            List<TripRow> byTicketsOrder, long totalTickets) {
+        if (totalTickets < 1 || byTicketsOrder.isEmpty()) {
             return List.of();
         }
         List<VolumeDonutSliceResponse> out = new ArrayList<>();
         long used = 0L;
-        for (int i = 0; i < Math.min(5, byCountOrder.size()); i++) {
-            TripStatsPerTripJpa r = byCountOrder.get(i);
-            String label = r.getDepartureCity() + " → " + r.getArrivalCity();
-            long cnt = r.getBookingCount();
+        for (int i = 0; i < Math.min(5, byTicketsOrder.size()); i++) {
+            TripRow r = byTicketsOrder.get(i);
+            String label = r.departureCity() + " → " + r.arrivalCity();
+            long cnt = r.ticketCount();
             used += cnt;
-            out.add(new VolumeDonutSliceResponse(label, cnt, (cnt / (double) totalBookings) * 100.0));
+            out.add(new VolumeDonutSliceResponse(label, cnt, (cnt / (double) totalTickets) * 100.0));
         }
-        long rest = totalBookings - used;
+        long rest = totalTickets - used;
         if (rest > 0) {
             out.add(new VolumeDonutSliceResponse("Autres trajets (hors top 5)", rest,
-                    (rest / (double) totalBookings) * 100.0));
+                    (rest / (double) totalTickets) * 100.0));
         }
         return out;
     }

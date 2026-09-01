@@ -53,6 +53,61 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     java.util.List<Object[]> dailyTicketsBetween(@Param("from") java.time.LocalDateTime from,
                     @Param("to") java.time.LocalDateTime to);
 
+    // ===== Stats métier (admin) — comptage au niveau TICKET (unité = un siège vendu), jamais
+    // au niveau réservation : une résa de 3 places = 1 booking mais 3 tickets. Avant ce
+    // correctif, la page comptait des bookings sous le libellé "Billets", ce qui créait un écart
+    // avec "Tickets vendus (actifs)" affiché partout ailleurs dans l'admin (dashboard, page
+    // Tickets) — constaté en prod (133 tickets réels vs 124 "billets" = bookings). Filtre sur
+    // tr.departureDateTime (date du voyage), jamais bookingDate (date d'achat), comme partout
+    // ailleurs dans ce module.
+
+    @Query("SELECT COUNT(tk) FROM Ticket tk JOIN tk.booking b JOIN tk.trip tr "
+                    + "WHERE tk.status <> 'ANNULÉ' "
+                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
+                    + "AND tr.departureDateTime >= :from AND tr.departureDateTime < :to "
+                    + "AND (:stationId IS NULL OR tr.station.id = :stationId) "
+                    + "AND (:partnerId IS NULL OR tr.partner.id = :partnerId)")
+    Long countActiveTicketsForPeriod(
+                    @Param("from") LocalDateTime from,
+                    @Param("to") LocalDateTime to,
+                    @Param("stationId") Long stationId,
+                    @Param("partnerId") Long partnerId);
+
+    // Object[] (tripId, count) plutôt qu'une expression `new ...(...)` — évite toute question de
+    // type au niveau JPQL (COUNT() renvoie toujours Long, aucun risque de mismatch avec un champ
+    // de constructeur, contrairement à l'incident du 2026-09-01 sur un SUM() d'entier).
+    @Query("SELECT tk.trip.id, COUNT(tk) FROM Ticket tk JOIN tk.booking b "
+                    + "WHERE tk.status <> 'ANNULÉ' "
+                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
+                    + "AND tk.trip.departureDateTime >= :from AND tk.trip.departureDateTime < :to "
+                    + "AND (:stationId IS NULL OR tk.trip.station.id = :stationId) "
+                    + "AND (:partnerId IS NULL OR tk.trip.partner.id = :partnerId) "
+                    + "GROUP BY tk.trip.id")
+    List<Object[]> ticketCountsPerTripForPeriod(
+                    @Param("from") LocalDateTime from,
+                    @Param("to") LocalDateTime to,
+                    @Param("stationId") Long stationId,
+                    @Param("partnerId") Long partnerId);
+
+    // Courbe de croissance (Stats métier), métrique "Billets" — un point par jour civil, ticket
+    // par ticket (jamais bookings). Native SQL comme dailyTripStatsBetween (BookingRepository).
+    @Query(value = "SELECT DATE(t.departure_date_time) as day, COUNT(*) as cnt "
+                    + "FROM tickets tk "
+                    + "JOIN bookings b ON tk.booking_id = b.id "
+                    + "JOIN trips t ON tk.trip_id = t.id "
+                    + "WHERE tk.status <> 'ANNULÉ' "
+                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
+                    + "AND t.departure_date_time >= :from AND t.departure_date_time < :to "
+                    + "AND (:stationId IS NULL OR t.station_id = :stationId) "
+                    + "AND (:partnerId IS NULL OR t.partner_id = :partnerId) "
+                    + "GROUP BY DATE(t.departure_date_time) ORDER BY DATE(t.departure_date_time) ASC",
+                    nativeQuery = true)
+    List<Object[]> dailyActiveTicketsBetweenForTripStats(
+                    @Param("from") LocalDateTime from,
+                    @Param("to") LocalDateTime to,
+                    @Param("stationId") Long stationId,
+                    @Param("partnerId") Long partnerId);
+
      // Filtre de période sur tr.departureDateTime (date du VOYAGE), jamais t.bookingDate (date
      // d'achat) : voir BookingRepository.findForAdminList pour la justification — le partenaire/
      // gare n'est payé qu'après le voyage effectué, donc un ticket acheté en septembre pour un

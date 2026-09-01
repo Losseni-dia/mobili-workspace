@@ -43,7 +43,7 @@ const R_IN = 28;
 /** Déplacement radial (unités viewBox) quand on survole le secteur */
 const PULL = 2.8;
 
-export type GrowthMetric = 'revenue' | 'bookings';
+export type GrowthMetric = 'revenue' | 'tickets';
 
 /** Un point de la courbe de croissance, en coordonnées SVG (viewBox 0..GW x 0..GH). */
 interface GrowthPoint {
@@ -106,10 +106,10 @@ export class AdminBusiness implements OnInit {
   growthMetric = signal<GrowthMetric>('revenue');
   hoveredGrowth = signal<number | null>(null);
 
-  filteredByBookings = computed(() => this.filterEntries(this.stats()?.top10ByBookings ?? []));
+  filteredByTickets = computed(() => this.filterEntries(this.stats()?.top10ByTickets ?? []));
   filteredByRevenue = computed(() => this.filterEntries(this.stats()?.top10ByRevenue ?? []));
 
-  pagerBookings = new ListPager(this.filteredByBookings);
+  pagerTickets = new ListPager(this.filteredByTickets);
   pagerRevenue = new ListPager(this.filteredByRevenue);
 
   revenueDonutSegments = computed((): DonutSegment[] => {
@@ -299,7 +299,7 @@ export class AdminBusiness implements OnInit {
 
   onSearch(v: string) {
     this.search.set(v);
-    this.pagerBookings.reset();
+    this.pagerTickets.reset();
     this.pagerRevenue.reset();
   }
 
@@ -330,15 +330,15 @@ export class AdminBusiness implements OnInit {
     this.hoveredGrowth.set(closest);
   }
 
-  exportTopBookingsCsv() {
+  exportTopTicketsCsv() {
     exportToCsv(
       'top-trajets-volume',
-      this.filteredByBookings().map((r) => ({
+      this.filteredByTickets().map((r) => ({
         rang: r.rank,
         route: r.route,
         partenaire: r.partnerName,
         gare: r.stationName,
-        billets: r.bookingCount,
+        billets: r.ticketCount,
         ca_fcfa: r.revenueFcfa,
       })),
     );
@@ -353,7 +353,7 @@ export class AdminBusiness implements OnInit {
         partenaire: r.partnerName,
         gare: r.stationName,
         ca_fcfa: r.revenueFcfa,
-        billets: r.bookingCount,
+        billets: r.ticketCount,
       })),
     );
   }
@@ -384,7 +384,7 @@ export class AdminBusiness implements OnInit {
       next: (d) => {
         this.stats.set(d);
         this.isLoading.set(false);
-        this.pagerBookings.reset();
+        this.pagerTickets.reset();
         this.pagerRevenue.reset();
       },
       error: () => {
@@ -486,14 +486,14 @@ function fullAnnulusPath(rOut: number, rIn: number): string {
 /** Convertit la timeline brute en points SVG mis à l'échelle — un seul axe Y à la fois. */
 function buildGrowthPoints(timeline: TripStatsDayEntry[], metric: GrowthMetric): GrowthPoint[] {
   if (!timeline.length) return [];
-  const values = timeline.map((d) => (metric === 'revenue' ? d.revenueFcfa : d.bookingCount));
+  const values = timeline.map((d) => (metric === 'revenue' ? d.revenueFcfa : d.ticketCount));
   const maxV = Math.max(...values, 1);
   const minV = 0; // toujours ancré à 0 — une courbe de volume/CA ne doit jamais paraître négative
   const innerW = GW - G_PAD_L - G_PAD_R;
   const innerH = GH - G_PAD_T - G_PAD_B;
   const n = timeline.length;
   return timeline.map((d, i) => {
-    const v = metric === 'revenue' ? d.revenueFcfa : d.bookingCount;
+    const v = metric === 'revenue' ? d.revenueFcfa : d.ticketCount;
     const x = n > 1 ? G_PAD_L + (innerW * i) / (n - 1) : G_PAD_L + innerW / 2;
     const t = maxV > minV ? (v - minV) / (maxV - minV) : 0;
     const y = G_PAD_T + innerH * (1 - t);
