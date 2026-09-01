@@ -162,9 +162,19 @@ public class AdminController {
 
     @GetMapping("/analytics/recent-events")
     public ResponseEntity<List<AnalyticsRecentEventResponse>> getRecentAnalyticsEvents(
-            @RequestParam(defaultValue = "50") int limit) {
-        log.info("GET /v1/admin/analytics/recent-events — limit={}", limit);
-        return ResponseEntity.ok(adminService.getRecentAnalyticsEvents(limit));
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(required = false) Integer days) {
+        log.info("GET /v1/admin/analytics/recent-events — limit={}, days={}", limit, days);
+        return ResponseEntity.ok(adminService.getRecentAnalyticsEvents(limit, days));
+    }
+
+    /** Top exceptions serveur par fréquence sur la période — diagnostic rapide d'un incident. */
+    @GetMapping("/analytics/top-errors")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.TopErrorEntryResponse>> getTopErrors(
+            @RequestParam(defaultValue = "7") int days,
+            @RequestParam(defaultValue = "10") int limit) {
+        log.info("GET /v1/admin/analytics/top-errors — days={}, limit={}", days, limit);
+        return ResponseEntity.ok(adminService.getTopErrors(days, limit));
     }
 
     @GetMapping("/stats/trip-analytics")

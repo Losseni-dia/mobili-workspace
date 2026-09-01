@@ -108,11 +108,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobal(Exception ex, WebRequest request) {
         String safeEx = ex.getClass().getName().replace("\"", "");
-        log.error("💥 Exception non gérée sur {} : {}",
-                request.getDescription(false).replace("uri=", ""), ex.getMessage(), ex);
-        String payload = String.format("{\"exception\":\"%s\"}", safeEx);
+        String route = request.getDescription(false).replace("uri=", "");
+        if (request instanceof org.springframework.web.context.request.ServletWebRequest servletReq) {
+            route = servletReq.getRequest().getMethod() + " " + route;
+        }
+        log.error("💥 Exception non gérée sur {} : {}", route, ex.getMessage(), ex);
+        // Route incluse dans le payload analytics — sans ça, un pic d'erreurs identiques dans le
+        // journal admin (ex. AsyncRequestTimeoutException x40) ne permettait pas de savoir quel
+        // endpoint plante réellement (visible seulement dans les logs serveur, pas côté admin).
+        String payload = String.format(
+                "{\"exception\":\"%s\",\"route\":\"%s\"}",
+                safeEx, jsonEscape(route));
         analyticsEventService.record(AnalyticsEventType.SERVER_ERROR, null, payload);
         return buildResponse(MobiliErrorCode.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
+    }
+
+    private static String jsonEscape(String s) {
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
  // Méthode utilitaire privée utilisant le Record ErrorDetails

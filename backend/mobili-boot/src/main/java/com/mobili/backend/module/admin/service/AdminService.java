@@ -22,6 +22,7 @@ import com.mobili.backend.module.admin.dto.DailyLoginStatsResponse.DayEntry;
 import com.mobili.backend.module.admin.dto.DailyPartnerStatsResponse;
 import com.mobili.backend.module.admin.dto.DailyRegistrationStatsResponse;
 import com.mobili.backend.module.admin.dto.DailyTicketStatsResponse;
+import com.mobili.backend.module.admin.dto.TopErrorEntryResponse;
 import com.mobili.backend.module.admin.repository.LoginEventRepository;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.entity.AppAnalyticsEvent;
@@ -429,27 +430,93 @@ public class AdminService {
         if (days > 365) {
             days = 365;
         }
-        LocalDateTime from = LocalDateTime.now().minusDays(days);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime from = now.minusDays(days);
         List<Object[]> rows = appAnalyticsEventRepository.countByTypeSince(from);
         log.info("[Analytics] Agrégat sur {}j : {} type(s) distincts", days, rows.size());
         List<CountByType> byType = rows.stream()
                 .map(r -> new CountByType((AnalyticsEventType) r[0], (Long) r[1]))
                 .toList();
-        return new AnalyticsSummaryResponse(from, days, byType);
+
+        // Période précédente de même durée, immédiatement avant `from` — pour une variation en %
+        // (même principe que Stats métier), jamais fournie ni exploitée pour l'agrégat produit
+        // avant ce chantier.
+        LocalDateTime prevFrom = from.minusDays(days);
+        List<Object[]> prevRows = appAnalyticsEventRepository.countByTypeBetween(prevFrom, from);
+        List<CountByType> previousByType = prevRows.stream()
+                .map(r -> new CountByType((AnalyticsEventType) r[0], (Long) r[1]))
+                .toList();
+
+        return new AnalyticsSummaryResponse(from, days, byType, previousByType);
     }
 
     @Transactional(readOnly = true)
-    public List<AnalyticsRecentEventResponse> getRecentAnalyticsEvents(int limit) {
+    public List<AnalyticsRecentEventResponse> getRecentAnalyticsEvents(int limit, Integer days) {
         if (limit < 1) {
             limit = 1;
         }
         if (limit > 200) {
             limit = 200;
         }
-        List<AppAnalyticsEvent> list = appAnalyticsEventRepository.findAllByOrderByCreatedAtDesc(
-                PageRequest.of(0, limit));
-        log.info("[Analytics] Journal détaillé : {} entrées", list.size());
+        List<AppAnalyticsEvent> list;
+        if (days != null && days > 0) {
+            LocalDateTime from = LocalDateTime.now().minusDays(days);
+            list = appAnalyticsEventRepository.findAllByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                    from, PageRequest.of(0, limit));
+        } else {
+            list = appAnalyticsEventRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit));
+        }
+        log.info("[Analytics] Journal détaillé : {} entrées (days={})", list.size(), days);
         return list.stream().map(this::toRecentEvent).toList();
+    }
+
+    /**
+     * Classement des exceptions serveur (SERVER_ERROR) par fréquence sur la période — diagnostic
+     * rapide d'un incident (une même classe qui explose en fréquence pointe vers un bug précis,
+     * distinct du journal ligne à ligne qui noie l'info dans les répétitions).
+     */
+    @Transactional(readOnly = true)
+    public List<TopErrorEntryResponse> getTopErrors(int days, int limit) {
+        if (days < 1) {
+            days = 1;
+        }
+        if (days > 365) {
+            days = 365;
+        }
+        if (limit < 1) {
+            limit = 1;
+        }
+        if (limit > 50) {
+            limit = 50;
+        }
+        LocalDateTime from = LocalDateTime.now().minusDays(days);
+        List<AppAnalyticsEvent> events = appAnalyticsEventRepository
+                .findAllByEventTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+                        AnalyticsEventType.SERVER_ERROR, from);
+
+        java.util.Map<String, Long> counts = new java.util.LinkedHashMap<>();
+        java.util.Map<String, LocalDateTime> lastSeen = new java.util.HashMap<>();
+        for (AppAnalyticsEvent e : events) {
+            String exClass = "Exception inconnue";
+            try {
+                JsonNode n = JSON.readTree(e.getPayload());
+                String ex = text(n, "exception");
+                if (ex != null) {
+                    exClass = ex;
+                }
+            } catch (Exception ignored) {
+                // payload absent/illisible — regroupé sous "Exception inconnue"
+            }
+            counts.merge(exClass, 1L, Long::sum);
+            lastSeen.merge(exClass, e.getCreatedAt(),
+                    (a, b) -> a != null && (b == null || a.isAfter(b)) ? a : b);
+        }
+        final int max = limit;
+        return counts.entrySet().stream()
+                .sorted(java.util.Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(max)
+                .map(en -> new TopErrorEntryResponse(en.getKey(), en.getValue(), lastSeen.get(en.getKey())))
+                .toList();
     }
 
     private AnalyticsRecentEventResponse toRecentEvent(AppAnalyticsEvent e) {
@@ -526,7 +593,9 @@ public class AdminService {
         if (ex == null) {
             ex = text(n, "ex");
         }
-        return ex != null ? "Exception : " + ex : "Erreur serveur";
+        String route = text(n, "route");
+        String base = ex != null ? "Exception : " + ex : "Erreur serveur";
+        return route != null ? base + " · " + route : base;
     }
 
     private static String text(JsonNode n, String field) {
