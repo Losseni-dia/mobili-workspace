@@ -7,5 +7,6 @@ public enum TripStatsPeriod {
     DAY,
     WEEK,
     MONTH,
+    YEAR,
     CUSTOM
 }
