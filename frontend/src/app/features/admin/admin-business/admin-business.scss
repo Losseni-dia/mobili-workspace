@@ -62,7 +62,47 @@
 }
 
 .toolbar {
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+// .period-presets/.period-btn viennent de styles/_data-panel — seules .filters/.filter/.f-ico
+// manquaient ici (jamais partagées, dupliquées comme dans admin-transactions.scss).
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  transition: border-color variables.$t-base, box-shadow variables.$t-base;
+
+  &:focus-within {
+    border-color: variables.$mobili-blue;
+    box-shadow: 0 0 0 3px rgba(variables.$mobili-blue, 0.12);
+  }
+
+  .f-ico { font-size: 0.95rem; opacity: 0.7; }
+
+  input,
+  select {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.88rem;
+    color: variables.$mobili-blue-deep;
+  }
 }
 
 .filter-search {
