@@ -304,16 +304,20 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         List<Booking> findPendingCovoiturageRequestsForOrganizer(@Param("organizerId") Long organizerId);
 
 
+        // Filtre de période sur t.departureDateTime (date du VOYAGE), jamais b.bookingDate (date
+        // d'achat) : le partenaire/gare n'est payé qu'une fois le voyage effectué, donc une
+        // vente de septembre pour un trajet de novembre ne doit apparaître que dans le mois de
+        // novembre — sinon la gare voit un montant qu'elle ne peut pas encore percevoir.
         @Query("SELECT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.partner " +
                         "JOIN FETCH b.customer c " +
-                        "WHERE b.bookingDate >= :from AND b.bookingDate <= :to " +
+                        "WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to " +
                         "AND (:search IS NULL OR :search = '' " +
                         "     OR LOWER(b.reference) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(c.firstname) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(c.lastname) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-                        "ORDER BY b.bookingDate DESC")
+                        "ORDER BY t.departureDateTime DESC")
         List<Booking> findForAdminList(
                         @Param("from") LocalDateTime from,
                         @Param("to") LocalDateTime to,
@@ -333,13 +337,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "LEFT JOIN FETCH b.tickets " +
                         "WHERE b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
                         "                   com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) " +
-                        "AND b.bookingDate >= :from AND b.bookingDate <= :to " +
+                        // Voir findForAdminList : période sur la date du voyage, pas la date d'achat.
+                        "AND t.departureDateTime >= :from AND t.departureDateTime <= :to " +
                         "AND (:search IS NULL OR :search = '' " +
                         "     OR LOWER(b.reference) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(c.firstname) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(c.lastname) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(t.partner.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-                        "ORDER BY b.bookingDate DESC")
+                        "ORDER BY t.departureDateTime DESC")
         List<Booking> findConfirmedForAdminTransactions(
                         @Param("from") LocalDateTime from,
                         @Param("to") LocalDateTime to,
@@ -357,8 +362,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "LEFT JOIN FETCH b.seatNumbers " +
                         "LEFT JOIN FETCH b.passengerNames " +
                         "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) " +
-                        "AND b.createdAt >= :from AND b.createdAt <= :to " +
-                        "ORDER BY b.createdAt DESC")
+                        // Voir findForAdminList : période sur la date du voyage, pas la date de création.
+                        "AND t.departureDateTime >= :from AND t.departureDateTime <= :to " +
+                        "ORDER BY t.departureDateTime DESC")
         List<Booking> findAllByPartnerIdAndOptionalStationIdAndDateRangeRaw(
                         @Param("partnerId") Long partnerId,
                         @Param("stationId") Long stationId,
@@ -386,8 +392,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "WHERE t.partner.id = :partnerId AND (:stationId IS NULL OR t.station.id = :stationId) " +
                         "AND b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, " +
                         "                 com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) " +
-                        "AND b.bookingDate >= :from AND b.bookingDate <= :to " +
-                        "ORDER BY b.bookingDate DESC")
+                        // Voir findForAdminList : période sur la date du voyage, pas la date d'achat.
+                        "AND t.departureDateTime >= :from AND t.departureDateTime <= :to " +
+                        "ORDER BY t.departureDateTime DESC")
         List<Booking> findConfirmedForPartnerTransactions(
                         @Param("partnerId") Long partnerId,
                         @Param("stationId") Long stationId,

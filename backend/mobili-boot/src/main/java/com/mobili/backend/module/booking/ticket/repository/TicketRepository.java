@@ -53,15 +53,19 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     java.util.List<Object[]> dailyTicketsBetween(@Param("from") java.time.LocalDateTime from,
                     @Param("to") java.time.LocalDateTime to);
 
+     // Filtre de période sur tr.departureDateTime (date du VOYAGE), jamais t.bookingDate (date
+     // d'achat) : voir BookingRepository.findForAdminList pour la justification — le partenaire/
+     // gare n'est payé qu'après le voyage effectué, donc un ticket acheté en septembre pour un
+     // trajet de novembre ne doit compter que dans les stats de novembre.
      @Query("SELECT t FROM Ticket t " +
                     "JOIN FETCH t.trip tr " +
                     "LEFT JOIN FETCH tr.partner " +
                     "JOIN FETCH t.passenger " +
-                    "WHERE t.bookingDate >= :from AND t.bookingDate <= :to " +
+                    "WHERE tr.departureDateTime >= :from AND tr.departureDateTime <= :to " +
                     "AND (:search IS NULL OR :search = '' " +
                     "     OR LOWER(t.ticketNumber) LIKE LOWER(CONCAT('%', :search, '%')) " +
                     "     OR LOWER(t.passengerName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-                    "ORDER BY t.bookingDate DESC")
+                    "ORDER BY tr.departureDateTime DESC")
     List<Ticket> findForAdminList(
                     @Param("from") LocalDateTime from,
                     @Param("to") LocalDateTime to,
@@ -75,10 +79,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
                     "LEFT JOIN FETCH b.customer " +
                     "WHERE tr.partner.id = :partnerId " +
                     "AND (:stationId IS NULL OR tr.station.id = :stationId) " +
-                    "AND t.bookingDate >= :from AND t.bookingDate <= :to " +
+                    // Voir findForAdminList : période sur la date du voyage, pas la date d'achat.
+                    "AND tr.departureDateTime >= :from AND tr.departureDateTime <= :to " +
                     "AND (:search IS NULL OR :search = '' OR LOWER(t.passengerName) LIKE LOWER(CONCAT('%', :search, '%'))) "
                     +
-                    "ORDER BY t.bookingDate DESC")
+                    "ORDER BY tr.departureDateTime DESC")
     List<Ticket> findForPartnerList(
                     @Param("partnerId") Long partnerId,
                     @Param("stationId") Long stationId,
