@@ -97,6 +97,7 @@ export class TripManagementComponent implements OnInit {
       this.filteredTrips().map((t) => ({
         ID: t.id,
         Conducteur: this.chauffeurLabel(t),
+        Gare: t.stationName || '—',
         Départ: t.departureCity,
         Arrivée: t.arrivalCity,
         Date: t.departureDateTime,

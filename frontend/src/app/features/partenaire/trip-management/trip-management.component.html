@@ -64,6 +64,7 @@
                         <th>Code chauffeur</th>
                         <th>Conducteur</th>
                         <th>Véhicule</th>
+                        <th>Gare</th>
                         <th>Itinéraire</th>
                         <th>Date</th>
                         <th>Prix</th>
@@ -99,6 +100,8 @@
                                     }
                                 </div>
                             </td>
+
+                            <td class="gare-cell">{{ trip.stationName || '—' }}</td>
 
                             <td>
                                 <div class="route-cell">
