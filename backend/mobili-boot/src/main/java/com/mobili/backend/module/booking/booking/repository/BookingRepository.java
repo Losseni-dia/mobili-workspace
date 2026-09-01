@@ -366,7 +366,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "     OR LOWER(c.firstname) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(c.lastname) LIKE LOWER(CONCAT('%', :search, '%')) " +
                         "     OR LOWER(t.partner.name) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-                        "ORDER BY t.departureDateTime DESC")
+                        // Chronologique croissant (1er, 2, 3... du mois) — le regroupement par
+                        // jour de la page Transactions se lit alors dans l'ordre naturel, jamais
+                        // à l'envers (30, 29, 28...).
+                        "ORDER BY t.departureDateTime ASC")
         List<Booking> findConfirmedForAdminTransactions(
                         @Param("from") LocalDateTime from,
                         @Param("to") LocalDateTime to,
@@ -416,7 +419,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "                 com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) " +
                         // Voir findForAdminList : période sur la date du voyage, pas la date d'achat.
                         "AND t.departureDateTime >= :from AND t.departureDateTime <= :to " +
-                        "ORDER BY t.departureDateTime DESC")
+                        // Chronologique croissant (1er, 2, 3... du mois) — voir
+                        // findConfirmedForAdminTransactions.
+                        "ORDER BY t.departureDateTime ASC")
         List<Booking> findConfirmedForPartnerTransactions(
                         @Param("partnerId") Long partnerId,
                         @Param("stationId") Long stationId,
