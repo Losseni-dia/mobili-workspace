@@ -339,4 +339,13 @@ export class AdminService {
   ): Observable<AdminPartnerCommunicationResult> {
     return this.http.post<AdminPartnerCommunicationResult>('/admin/partner-communications', payload);
   }
+
+  /**
+   * Rattrapage ponctuel : génère les tickets manquants pour toute vente guichet (OFFLINE_SALE)
+   * enregistrée avant le correctif de BookingService.createOfflineSale() (aucun ticket n'était
+   * généré). Idempotent — ne retraite jamais une réservation qui a déjà un ticket.
+   */
+  backfillOfflineSaleTickets(): Observable<{ bookingsFixed: number }> {
+    return this.http.post<{ bookingsFixed: number }>('/admin/bookings/backfill-offline-sale-tickets', {});
+  }
 }

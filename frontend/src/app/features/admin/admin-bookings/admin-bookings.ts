@@ -172,4 +172,34 @@ export class AdminBookings implements OnInit {
       .filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ')
       .reduce((sum, t) => sum + (t.price || 0), 0);
   });
+
+  // ====== Rattrapage ponctuel : tickets manquants des ventes guichet historiques ======
+  // BookingService.createOfflineSale() ne générait aucun Ticket avant son correctif — une vente
+  // guichet enregistrée avant ce fix reste invisible sur toutes les pages Tickets (partenaire/
+  // admin) et sur les dashboards ("Au guichet" à 0 ticket), bien que son montant soit correct
+  // dans "Mes réservations" (qui lit directement Booking). Bouton idempotent : sans effet si
+  // relancé sur des réservations déjà corrigées (voir BookingRepository.findOfflineSaleBookingsWithoutTickets).
+  isBackfillingTickets = signal(false);
+  backfillResultMessage = signal<string | null>(null);
+
+  backfillOfflineSaleTickets(): void {
+    if (this.isBackfillingTickets()) return;
+    this.isBackfillingTickets.set(true);
+    this.backfillResultMessage.set(null);
+    this.adminService.backfillOfflineSaleTickets().subscribe({
+      next: ({ bookingsFixed }) => {
+        this.backfillResultMessage.set(
+          bookingsFixed > 0
+            ? `${bookingsFixed} réservation(s) guichet corrigée(s) — tickets générés.`
+            : 'Aucune réservation guichet sans ticket trouvée.',
+        );
+        this.isBackfillingTickets.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur rattrapage tickets guichet', err);
+        this.backfillResultMessage.set('Échec du rattrapage — voir la console pour le détail.');
+        this.isBackfillingTickets.set(false);
+      },
+    });
+  }
 }

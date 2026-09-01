@@ -24,6 +24,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
         List<Booking> findByStatusAndCreatedAtBefore(BookingStatus status, LocalDateTime cutoff);
 
+        // Rattrapage ponctuel : BookingService.createOfflineSale() n'appelait jamais
+        // generateTicketsWithCommission() avant son correctif — toute vente guichet enregistrée
+        // avant ce fix n'a donc aucun Ticket associé. `b.tickets IS EMPTY` cible précisément ces
+        // réservations pour leur générer leurs tickets manquants a posteriori (voir
+        // BookingService.backfillMissingOfflineSaleTickets). LEFT JOIN FETCH sur trip/partner
+        // seuls (to-one), aucun risque de duplication de collection.
+        @Query("SELECT b FROM Booking b " +
+                        "JOIN FETCH b.trip t " +
+                        "LEFT JOIN FETCH t.partner " +
+                        "WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE " +
+                        "AND b.tickets IS EMPTY")
+        List<Booking> findOfflineSaleBookingsWithoutTickets();
+
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "JOIN FETCH b.customer " +

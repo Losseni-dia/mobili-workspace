@@ -107,7 +107,34 @@ public class BookingService {
         return booking;
     }
 
-    
+    /**
+     * Rattrapage ponctuel (à exécuter une fois, via l'endpoint admin dédié) : génère les tickets
+     * manquants pour toute vente guichet (OFFLINE_SALE) enregistrée avant le correctif de
+     * {@link #createOfflineSale}. Idempotent — ne retraite jamais une réservation qui a déjà au
+     * moins un ticket (voir BookingRepository.findOfflineSaleBookingsWithoutTickets, filtre
+     * `b.tickets IS EMPTY`), donc sans risque de double génération si relancé plusieurs fois.
+     *
+     * @return nombre de réservations effectivement corrigées.
+     */
+    @Transactional
+    public int backfillMissingOfflineSaleTickets() {
+        List<Booking> bookings = bookingRepository.findOfflineSaleBookingsWithoutTickets();
+        int fixed = 0;
+        for (Booking booking : bookings) {
+            Trip trip = booking.getTrip();
+            if (trip == null || trip.getPartner() == null) {
+                log.warn("⚠️ Rattrapage tickets guichet : Booking #{} sans trajet/partenaire exploitable, ignoré.",
+                        booking.getId());
+                continue;
+            }
+            generateTicketsWithCommission(booking, trip.getPartner());
+            fixed++;
+        }
+        log.info("🎫 Rattrapage tickets guichet : {} réservation(s) corrigée(s) sur {} trouvée(s) sans ticket.",
+                fixed, bookings.size());
+        return fixed;
+    }
+
     /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket actif n'a été annulé. */
     @Transactional
     public double cancelBooking(Long bookingId) {

@@ -96,11 +96,26 @@
   }
 }
 
+.gare-kpis-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1280px;
+  margin-top: 1.5rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .gare-kpis {
-  max-width: 900px;
-  margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid variables.$gray-200;
+
+  .gare-kpis-grid,
+  .revenue-card {
+    max-width: none;
+  }
 }
 
 .gare-kpis-title {
@@ -213,7 +228,7 @@
 }
 
 .gare-recent {
-  max-width: 900px;
+  max-width: 1280px;
   margin-top: 1.75rem;
   padding-top: 1.5rem;
   border-top: 1px solid variables.$gray-200;

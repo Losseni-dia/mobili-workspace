@@ -1,9 +1,5 @@
 <section class="gare-welcome">
-    <h2 class="greet">Bonjour{{ firstName() ? ', ' + firstName() : '' }} 👋</h2>
-    <p class="sub">
-        Vous êtes connecté en <strong>responsable gare</strong> pour
-        <strong>{{ stationName() }}</strong>@if (stationId()) { <span class="id"> (gare n°{{ stationId() }})</span> }.
-    </p>
+    <h2 class="greet">🏤 {{ stationName() }}@if (stationId()) { <span class="id">· n°{{ stationId() }}</span> }</h2>
     @if (gareActionsLocked()) {
         <p class="gare-pending-callout" role="status">
             <strong>Validation requise.</strong> Votre gare n’est pas encore autorisée par le dirigeant de la compagnie. Vous ne
@@ -13,92 +9,94 @@
     }
 </section>
 
-<section class="gare-kpis" aria-labelledby="gare-alltime-heading" [class.gare-kpis--locked]="gareActionsLocked()">
-    <h2 id="gare-alltime-heading" class="gare-kpis-title">📊 Depuis toujours, sur votre gare</h2>
-    @if (gareActionsLocked()) {
-        <p class="gare-company-locked-hint" role="status">
-            Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
-        </p>
-    } @else if (isLoadingAllTime()) {
-        <p class="gare-kpis-status">Chargement…</p>
-    } @else {
-        <div class="gare-kpis-grid">
-            <div class="kpi-card">
-                <span class="kpi-label">Trajets actifs</span>
-                <strong class="kpi-value">{{ allTime().activeTrips }}</strong>
-            </div>
-            <div class="kpi-card">
-                <span class="kpi-label">Tickets vendus</span>
-                <strong class="kpi-value">{{ allTime().ticketsSold }}</strong>
-            </div>
-        </div>
-
-        <div class="revenue-card">
-            <div class="revenue-card__head">
-                <span class="kpi-label">Revenus</span>
-                <strong class="revenue-total">{{ allTime().revenueTotal | number }} FCFA</strong>
-            </div>
-            <div class="revenue-split">
-                <div class="revenue-split__item">
-                    <span>Via Mobili</span>
-                    <strong>{{ allTime().revenueOnline | number }} FCFA</strong>
-                    <em>{{ allTime().ticketsSoldOnline }} ticket{{ allTime().ticketsSoldOnline > 1 ? 's' : '' }}</em>
+<div class="gare-kpis-row">
+    <section class="gare-kpis" aria-labelledby="gare-alltime-heading" [class.gare-kpis--locked]="gareActionsLocked()">
+        <h2 id="gare-alltime-heading" class="gare-kpis-title">📊 Depuis toujours</h2>
+        @if (gareActionsLocked()) {
+            <p class="gare-company-locked-hint" role="status">
+                Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
+            </p>
+        } @else if (isLoadingAllTime()) {
+            <p class="gare-kpis-status">Chargement…</p>
+        } @else {
+            <div class="gare-kpis-grid">
+                <div class="kpi-card">
+                    <span class="kpi-label">Trajets actifs</span>
+                    <strong class="kpi-value">{{ allTime().activeTrips }}</strong>
                 </div>
-                <div class="revenue-split__item">
-                    <span>Au guichet</span>
-                    <strong>{{ allTime().revenueOffline | number }} FCFA</strong>
-                    <em>{{ allTime().ticketsSoldOffline }} ticket{{ allTime().ticketsSoldOffline > 1 ? 's' : '' }}</em>
+                <div class="kpi-card">
+                    <span class="kpi-label">Tickets vendus</span>
+                    <strong class="kpi-value">{{ allTime().ticketsSold }}</strong>
                 </div>
             </div>
-        </div>
-    }
-</section>
 
-<section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
-    <h2 id="gare-kpis-heading" class="gare-kpis-title">📅 Ce mois-ci <span class="gare-kpis-month">({{ currentMonthLabel }})</span></h2>
-    @if (gareActionsLocked()) {
-        <p class="gare-company-locked-hint" role="status">
-            Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
-        </p>
-    } @else if (isLoadingKpis()) {
-        <p class="gare-kpis-status">Chargement…</p>
-    } @else {
-        <div class="gare-kpis-grid">
-            <div class="kpi-card">
-                <span class="kpi-label">Trajets actifs</span>
-                <strong class="kpi-value">{{ activeTripsCount() ?? 0 }}</strong>
-            </div>
-            <div class="kpi-card">
-                <span class="kpi-label">Tickets vendus</span>
-                <strong class="kpi-value">{{ ticketsSoldCount() ?? 0 }}</strong>
-            </div>
-        </div>
-
-        <div class="revenue-card">
-            <div class="revenue-card__head">
-                <span class="kpi-label">Revenu du mois</span>
-                <strong class="revenue-total">{{ revenueTotal() | number }} FCFA</strong>
-            </div>
-            <div class="revenue-split">
-                <div class="revenue-split__item">
-                    <span>Via Mobili</span>
-                    <strong>{{ revenueOnline() | number }} FCFA</strong>
-                    <em>{{ ticketsSoldOnline() }} ticket{{ ticketsSoldOnline() > 1 ? 's' : '' }}</em>
+            <div class="revenue-card">
+                <div class="revenue-card__head">
+                    <span class="kpi-label">Revenus</span>
+                    <strong class="revenue-total">{{ allTime().revenueTotal | number }} FCFA</strong>
                 </div>
-                <div class="revenue-split__item">
-                    <span>Au guichet</span>
-                    <strong>{{ revenueOffline() | number }} FCFA</strong>
-                    <em>{{ ticketsSoldOffline() }} ticket{{ ticketsSoldOffline() > 1 ? 's' : '' }}</em>
+                <div class="revenue-split">
+                    <div class="revenue-split__item">
+                        <span>Via Mobili</span>
+                        <strong>{{ allTime().revenueOnline | number }} FCFA</strong>
+                        <em>{{ allTime().ticketsSoldOnline }} ticket{{ allTime().ticketsSoldOnline > 1 ? 's' : '' }}</em>
+                    </div>
+                    <div class="revenue-split__item">
+                        <span>Au guichet</span>
+                        <strong>{{ allTime().revenueOffline | number }} FCFA</strong>
+                        <em>{{ allTime().ticketsSoldOffline }} ticket{{ allTime().ticketsSoldOffline > 1 ? 's' : '' }}</em>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
+    </section>
 
-        <p class="gare-kpis-link">
-            <a routerLink="/gare/tickets">Voir le détail des tickets →</a>
-            <a routerLink="/partenaire/trips">Gérer les voyages de la compagnie →</a>
-        </p>
-    }
-</section>
+    <section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
+        <h2 id="gare-kpis-heading" class="gare-kpis-title">📅 Ce mois-ci <span class="gare-kpis-month">({{ currentMonthLabel }})</span></h2>
+        @if (gareActionsLocked()) {
+            <p class="gare-company-locked-hint" role="status">
+                Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
+            </p>
+        } @else if (isLoadingKpis()) {
+            <p class="gare-kpis-status">Chargement…</p>
+        } @else {
+            <div class="gare-kpis-grid">
+                <div class="kpi-card">
+                    <span class="kpi-label">Trajets actifs</span>
+                    <strong class="kpi-value">{{ activeTripsCount() ?? 0 }}</strong>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Tickets vendus</span>
+                    <strong class="kpi-value">{{ ticketsSoldCount() ?? 0 }}</strong>
+                </div>
+            </div>
+
+            <div class="revenue-card">
+                <div class="revenue-card__head">
+                    <span class="kpi-label">Revenu du mois</span>
+                    <strong class="revenue-total">{{ revenueTotal() | number }} FCFA</strong>
+                </div>
+                <div class="revenue-split">
+                    <div class="revenue-split__item">
+                        <span>Via Mobili</span>
+                        <strong>{{ revenueOnline() | number }} FCFA</strong>
+                        <em>{{ ticketsSoldOnline() }} ticket{{ ticketsSoldOnline() > 1 ? 's' : '' }}</em>
+                    </div>
+                    <div class="revenue-split__item">
+                        <span>Au guichet</span>
+                        <strong>{{ revenueOffline() | number }} FCFA</strong>
+                        <em>{{ ticketsSoldOffline() }} ticket{{ ticketsSoldOffline() > 1 ? 's' : '' }}</em>
+                    </div>
+                </div>
+            </div>
+
+            <p class="gare-kpis-link">
+                <a routerLink="/gare/tickets">Voir le détail des tickets →</a>
+                <a routerLink="/partenaire/trips">Gérer les voyages de la compagnie →</a>
+            </p>
+        }
+    </section>
+</div>
 
 @if (!gareActionsLocked()) {
     <section class="gare-recent" aria-labelledby="gare-recent-heading">

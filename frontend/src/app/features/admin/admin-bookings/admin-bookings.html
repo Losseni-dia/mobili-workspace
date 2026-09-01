@@ -32,6 +32,23 @@
     </div>
 </section>
 
+<section class="toolbar">
+    <div class="filters">
+        <button
+            type="button"
+            class="btn-export"
+            [disabled]="isBackfillingTickets()"
+            title="Génère les tickets manquants pour les ventes guichet enregistrées avant le correctif — sans effet sur les réservations déjà correctes."
+            (click)="backfillOfflineSaleTickets()"
+        >
+            🎫 {{ isBackfillingTickets() ? 'Rattrapage en cours…' : 'Rattraper les tickets guichet manquants' }}
+        </button>
+        @if (backfillResultMessage(); as msg) {
+            <span class="chip-label">{{ msg }}</span>
+        }
+    </div>
+</section>
+
 <section class="data-panel">
     <header class="panel-head">
         <div>

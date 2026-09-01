@@ -104,6 +104,19 @@ public class AdminBookingController {
                 refunded));
     }
 
+    /**
+     * Rattrapage ponctuel — à appeler une fois après déploiement du correctif de
+     * BookingService.createOfflineSale() (aucun Ticket n'était généré pour les ventes guichet
+     * avant ce fix). Idempotent : ne retraite jamais une réservation qui a déjà un ticket, donc
+     * sans risque à rappeler plusieurs fois par erreur.
+     */
+    @PostMapping("/backfill-offline-sale-tickets")
+    public ResponseEntity<java.util.Map<String, Object>> backfillOfflineSaleTickets() {
+        int fixed = bookingService.backfillMissingOfflineSaleTickets();
+        log.info("🎫 Rattrapage tickets guichet déclenché depuis l'admin : {} résa(s) corrigée(s).", fixed);
+        return ResponseEntity.ok(java.util.Map.of("bookingsFixed", fixed));
+    }
+
     private String buildRefundMessage(PaymentProvider provider, String prefix, double refunded) {
         if (provider == PaymentProvider.STRIPE) {
             return prefix + " Remboursement Stripe de " + Math.round(refunded)
