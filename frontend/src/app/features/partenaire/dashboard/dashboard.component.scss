@@ -31,6 +31,40 @@
 }
 
 // ======================================================================
+//  VUE D'ENSEMBLE — deux blocs distincts (depuis toujours / mois en cours),
+//  pour ne plus jamais confondre les deux échelles de temps sur un même chiffre.
+// ======================================================================
+.overview-section {
+  margin-bottom: 24px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+
+    h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: variables.$mobili-blue-deep;
+    }
+  }
+
+  &__month {
+    font-weight: 700;
+    color: variables.$gray-500;
+    text-transform: capitalize;
+  }
+
+  &__loading {
+    font-size: 0.8rem;
+    color: variables.$gray-500;
+    font-style: italic;
+  }
+}
+
+// ======================================================================
 //  KPI
 // ======================================================================
 .kpi-grid {

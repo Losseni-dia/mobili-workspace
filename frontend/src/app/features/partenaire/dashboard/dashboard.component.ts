@@ -32,16 +32,21 @@ export class DashboardComponent implements OnInit {
   /** Dirigeant : filtre des KPI (backend `stationId` optionnel) */
   stationFilter: 'all' | number = 'all';
 
-  /** Split en ligne/guichet — aligné sur `dashboard_partner_page.dart` (carte Revenus). */
-  revenueOnline = signal(0);
-  revenueOffline = signal(0);
-  ticketsSoldCount = signal<number | null>(null);
+  /**
+   * Vue d'ensemble scindée en deux blocs bien distincts pour ne plus jamais confondre un chiffre
+   * "depuis toujours" avec un chiffre "de ce mois" (source du décalage remonté par l'utilisateur
+   * entre le dashboard et les pages Tickets/Réservations) :
+   * - `allTime` : totaux vie entière (GET /partenaire/dashboard/stats, sans filtre de période).
+   * - `month`   : recalculé côté client à partir des tickets du mois en cours (même source que
+   *   "Tickets vendus (mois)"), donc toujours aligné avec les pages Tickets/Réservations en "Mois".
+   */
+  allTime = signal({ activeTrips: 0, bookings: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
+  month = signal({ ticketsSold: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
+  isLoadingAllTime = signal(false);
+  isLoadingMonth = signal(false);
 
-  stats = [
-    { label: 'Voyages actifs', value: '0', color: '#092990' },
-    { label: 'Réservations', value: '0', color: '#27ae60' },
-    { label: 'Revenus (CFA)', value: '0', color: '#f39c12' },
-  ];
+  /** Libellé du mois en cours, ex. "septembre 2026" — affiché en tête du bloc mensuel. */
+  currentMonthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   isGareOnly = () => this.auth.hasRole('GARE');
 
@@ -62,51 +67,61 @@ export class DashboardComponent implements OnInit {
   private loadStats() {
     const sid: number | undefined =
       this.isGareOnly() || this.stationFilter === 'all' ? undefined : this.stationFilter;
+
+    this.isLoadingAllTime.set(true);
     this.partenaireService.getDashboardStats(sid).subscribe({
       next: (data: PartnerDashboard) => {
-        this.stats = [
-          { label: 'Voyages actifs', value: data.activeTripsCount.toString(), color: '#092990' },
-          { label: 'Réservations', value: data.totalBookingsCount.toString(), color: '#27ae60' },
-          { label: 'Revenus (CFA)', value: data.totalRevenue.toLocaleString(), color: '#f39c12' },
-        ];
+        this.allTime.set({
+          activeTrips: data.activeTripsCount,
+          bookings: data.totalBookingsCount,
+          revenueTotal: data.totalRevenue,
+          revenueOnline: data.revenueOnline ?? 0,
+          revenueOffline: data.revenueOffline ?? 0,
+        });
+        this.isLoadingAllTime.set(false);
       },
-      error: (err) => console.error('Erreur stats dashboard :', err),
+      error: (err) => {
+        console.error('Erreur stats dashboard :', err);
+        this.isLoadingAllTime.set(false);
+      },
     });
 
     const now = new Date();
     const from = toLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
     const to = toLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    this.isLoadingMonth.set(true);
     this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
       next: (tickets) => {
-        this.ticketsSoldCount.set(tickets.length);
         // Revenus du mois — recalculés à partir de CES MÊMES tickets (période + rattachement
         // à la date du voyage déjà appliqués côté backend), jamais depuis getDashboardStats
         // (all-time, sans filtre de période) : sinon "Revenus du mois" affichait en réalité le
         // revenu total, en décalage avec "Tickets vendus (mois)" et les pages Tickets/Réservations
         // filtrées sur "Mois" — c'est exactement le décalage remonté par l'utilisateur.
         const active = tickets.filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ');
-        this.revenueOnline.set(
-          active
-            .filter((t) => t.bookingStatus === 'CONFIRMED')
-            .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
-        );
-        this.revenueOffline.set(
-          active
-            .filter((t) => t.bookingStatus === 'OFFLINE_SALE')
-            .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
-        );
+        const revenueOnline = active
+          .filter((t) => t.bookingStatus === 'CONFIRMED')
+          .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
+        const revenueOffline = active
+          .filter((t) => t.bookingStatus === 'OFFLINE_SALE')
+          .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
+        this.month.set({
+          ticketsSold: tickets.length,
+          revenueTotal: revenueOnline + revenueOffline,
+          revenueOnline,
+          revenueOffline,
+        });
         // Infos ticket (pas réservation agrégée) : tri du plus récent au plus ancien.
         const sorted = [...tickets].sort(
           (a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime(),
         );
         this.recentTickets.set(sorted);
         this.recentTicketsPager.reset();
+        this.isLoadingMonth.set(false);
       },
       error: () => {
-        this.ticketsSoldCount.set(null);
+        this.month.set({ ticketsSold: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
         this.recentTickets.set([]);
-        this.revenueOnline.set(0);
-        this.revenueOffline.set(0);
+        this.isLoadingMonth.set(false);
       },
     });
   }

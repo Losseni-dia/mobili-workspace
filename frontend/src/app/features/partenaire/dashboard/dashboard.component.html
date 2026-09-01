@@ -18,31 +18,75 @@
     <p class="gare-hint">Statistiques de <strong>votre gare</strong> (périmètre gare).</p>
 }
 
-<section class="kpi-grid">
-    @for (stat of stats; track stat.label; let i = $index) {
-        <article class="kpi" [class]="'kpi-' + i">
-            <div class="kpi-label">{{ stat.label }}</div>
-            <div class="kpi-value">{{ stat.value }}</div>
+<section class="overview-section">
+    <header class="overview-section__head">
+        <h2>📊 Depuis toujours</h2>
+        @if (isLoadingAllTime()) {
+            <span class="overview-section__loading">Chargement…</span>
+        }
+    </header>
+    <div class="kpi-grid">
+        <article class="kpi kpi-0">
+            <div class="kpi-label">Voyages actifs</div>
+            <div class="kpi-value">{{ allTime().activeTrips }}</div>
             <div class="kpi-bar"><span></span></div>
         </article>
-    }
-    <article class="kpi kpi-3">
-        <div class="kpi-label">Tickets vendus (mois)</div>
-        <div class="kpi-value">{{ ticketsSoldCount() ?? '—' }}</div>
-        <div class="kpi-bar"><span></span></div>
-    </article>
+        <article class="kpi kpi-1">
+            <div class="kpi-label">Réservations</div>
+            <div class="kpi-value">{{ allTime().bookings }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
+        <article class="kpi kpi-2">
+            <div class="kpi-label">Revenus (CFA)</div>
+            <div class="kpi-value">{{ allTime().revenueTotal | number }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
+    </div>
+    <div class="revenue-split-card">
+        <span class="revenue-split-card__label">Répartition des revenus</span>
+        <div class="revenue-split-card__items">
+            <div class="revenue-split-card__item">
+                <span>Via Mobili</span>
+                <strong>{{ allTime().revenueOnline | number }} FCFA</strong>
+            </div>
+            <div class="revenue-split-card__item">
+                <span>Au guichet</span>
+                <strong>{{ allTime().revenueOffline | number }} FCFA</strong>
+            </div>
+        </div>
+    </div>
 </section>
 
-<section class="revenue-split-card">
-    <span class="revenue-split-card__label">Revenus du mois</span>
-    <div class="revenue-split-card__items">
-        <div class="revenue-split-card__item">
-            <span>Via Mobili</span>
-            <strong>{{ revenueOnline() | number }} FCFA</strong>
-        </div>
-        <div class="revenue-split-card__item">
-            <span>Au guichet</span>
-            <strong>{{ revenueOffline() | number }} FCFA</strong>
+<section class="overview-section">
+    <header class="overview-section__head">
+        <h2>📅 Ce mois-ci <span class="overview-section__month">({{ currentMonthLabel }})</span></h2>
+        @if (isLoadingMonth()) {
+            <span class="overview-section__loading">Chargement…</span>
+        }
+    </header>
+    <div class="kpi-grid">
+        <article class="kpi kpi-3">
+            <div class="kpi-label">Tickets vendus</div>
+            <div class="kpi-value">{{ month().ticketsSold }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
+        <article class="kpi kpi-2">
+            <div class="kpi-label">Revenus (CFA)</div>
+            <div class="kpi-value">{{ month().revenueTotal | number }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
+    </div>
+    <div class="revenue-split-card">
+        <span class="revenue-split-card__label">Répartition des revenus</span>
+        <div class="revenue-split-card__items">
+            <div class="revenue-split-card__item">
+                <span>Via Mobili</span>
+                <strong>{{ month().revenueOnline | number }} FCFA</strong>
+            </div>
+            <div class="revenue-split-card__item">
+                <span>Au guichet</span>
+                <strong>{{ month().revenueOffline | number }} FCFA</strong>
+            </div>
         </div>
     </div>
 </section>
