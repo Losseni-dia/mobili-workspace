@@ -8,6 +8,7 @@ public record TripStatEntryResponse(
         long tripId,
         String route,
         String partnerName,
+        String stationName,
         long bookingCount,
         double revenueFcfa) {
 }

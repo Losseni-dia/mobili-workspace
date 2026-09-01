@@ -46,13 +46,14 @@ export interface AnalyticsRecentEvent {
   detail: string;
 }
 
-export type TripStatsPeriod = 'DAY' | 'WEEK' | 'MONTH';
+export type TripStatsPeriod = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
 
 export interface TripStatEntry {
   rank: number;
   tripId: number;
   route: string;
   partnerName: string;
+  stationName: string;
   bookingCount: number;
   revenueFcfa: number;
 }
@@ -69,6 +70,20 @@ export interface VolumeDonutSlice {
   percentOfTotal: number;
 }
 
+/** Un point de la courbe de croissance — un jour civil. */
+export interface TripStatsDayEntry {
+  date: string;
+  bookingCount: number;
+  revenueFcfa: number;
+}
+
+/** Option de filtre gare (Stats métier) — toutes compagnies confondues. */
+export interface AdminStationOption {
+  id: number;
+  name: string;
+  partnerName: string;
+}
+
 /** Aligné sur le record Java AdminTripStatsResponse (sérialisation JSON). */
 export interface AdminTripStats {
   period: TripStatsPeriod;
@@ -78,10 +93,24 @@ export interface AdminTripStats {
   totalRevenueFcfa: number;
   activeTripCount: number;
   avgRevenuePerBooking: number;
+  /** Répartition du CA par canal — même principe que les dashboards partenaire/gare/admin. */
+  revenueOnlineFcfa: number;
+  revenueOfflineFcfa: number;
+  /** Ce que la plateforme retient : forfait client + commission. netCompanyFcfa = ce qui
+   *  revient réellement aux compagnies = totalRevenueFcfa - totalServiceFeeFcfa - totalCommissionFcfa. */
+  totalServiceFeeFcfa: number;
+  totalCommissionFcfa: number;
+  netCompanyFcfa: number;
+  /** Période précédente de même durée — null si aucune donnée (pas de variation affichable). */
+  previousTotalBookings: number | null;
+  previousTotalRevenueFcfa: number | null;
+  bookingsDeltaPercent: number | null;
+  revenueDeltaPercent: number | null;
   top10ByBookings: TripStatEntry[];
   top10ByRevenue: TripStatEntry[];
   revenueByTripDonut: RevenueDonutSlice[];
   volumeByTripDonut: VolumeDonutSlice[];
+  timeline: TripStatsDayEntry[];
 }
 
 // Interface pour les utilisateurs (si tu ne l'as pas déjà exportée ailleurs)
@@ -240,8 +269,28 @@ export class AdminService {
     return this.http.get<AnalyticsRecentEvent[]>(`/admin/analytics/recent-events?limit=${limit}`);
   }
 
-  getTripAnalytics(period: TripStatsPeriod): Observable<AdminTripStats> {
-    return this.http.get<AdminTripStats>(`/admin/stats/trip-analytics?period=${period}`);
+  getTripAnalytics(
+    period: TripStatsPeriod,
+    opts?: { fromDate?: string; toDate?: string; stationId?: number | null; partnerId?: number | null },
+  ): Observable<AdminTripStats> {
+    let params = new HttpParams().set('period', period);
+    if (opts?.fromDate) {
+      params = params.set('fromDate', opts.fromDate);
+    }
+    if (opts?.toDate) {
+      params = params.set('toDate', opts.toDate);
+    }
+    if (opts?.stationId != null) {
+      params = params.set('stationId', String(opts.stationId));
+    }
+    if (opts?.partnerId != null) {
+      params = params.set('partnerId', String(opts.partnerId));
+    }
+    return this.http.get<AdminTripStats>('/admin/stats/trip-analytics', { params });
+  }
+
+  getStationOptions(): Observable<AdminStationOption[]> {
+    return this.http.get<AdminStationOption[]>('/admin/stats/stations');
   }
 
   /**

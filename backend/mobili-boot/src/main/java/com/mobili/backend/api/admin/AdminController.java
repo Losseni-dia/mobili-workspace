@@ -171,9 +171,18 @@ public class AdminController {
     public ResponseEntity<AdminTripStatsResponse> getTripAnalytics(
             @RequestParam(defaultValue = "WEEK") TripStatsPeriod period,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        log.info("GET /v1/admin/stats/trip-analytics — period={}, fromDate={}, toDate={}", period, fromDate, toDate);
-        return ResponseEntity.ok(tripStatisticsService.forPeriod(period, fromDate, toDate));
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Long stationId,
+            @RequestParam(required = false) Long partnerId) {
+        log.info("GET /v1/admin/stats/trip-analytics — period={}, fromDate={}, toDate={}, stationId={}, partnerId={}",
+                period, fromDate, toDate, stationId, partnerId);
+        return ResponseEntity.ok(tripStatisticsService.forPeriod(period, fromDate, toDate, stationId, partnerId));
+    }
+
+    /** Liste des gares toutes compagnies confondues — pour le filtre des Stats métier. */
+    @GetMapping("/stats/stations")
+    public ResponseEntity<List<com.mobili.backend.module.admin.dto.AdminStationOptionResponse>> getStationOptions() {
+        return ResponseEntity.ok(adminService.getStationOptions());
     }
 
     @GetMapping("/stats/tickets/list")

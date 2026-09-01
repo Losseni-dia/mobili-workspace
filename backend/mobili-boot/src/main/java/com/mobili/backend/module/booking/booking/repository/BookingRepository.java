@@ -262,36 +262,97 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE")
         Double sumRevenueOffline();
 
+        // Période sur t.departureDateTime (date du VOYAGE), jamais b.createdAt (date d'achat) —
+        // voir findForAdminList/findConfirmedForAdminTransactions pour la justification :
+        // une résa faite aujourd'hui pour un trajet le mois prochain ne doit compter que dans
+        // les stats du mois du voyage, pas celles d'aujourd'hui. stationId/partnerId optionnels
+        // pour scoper les Stats métier à une gare ou une compagnie précise.
         @Query("SELECT new com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa("
-                        + "COALESCE(SUM(b.totalPrice), 0.0), COUNT(b), COUNT(DISTINCT t.id)) "
+                        + "COALESCE(SUM(b.totalPrice), 0.0), COUNT(b), COUNT(DISTINCT t.id), "
+                        + "COALESCE(SUM(CASE WHEN b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE THEN 0.0 ELSE b.totalPrice END), 0.0), "
+                        + "COALESCE(SUM(CASE WHEN b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE THEN b.totalPrice ELSE 0.0 END), 0.0), "
+                        + "COALESCE(SUM(b.serviceFee), 0.0)) "
                         + "FROM Booking b JOIN b.trip t "
                         + "WHERE b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
-                        + "AND b.createdAt >= :from AND b.createdAt < :to")
+                        + "AND t.departureDateTime >= :from AND t.departureDateTime < :to "
+                        + "AND (:stationId IS NULL OR t.station.id = :stationId) "
+                        + "AND (:partnerId IS NULL OR t.partner.id = :partnerId)")
         TripStatsAggrJpa aggregateForTripStats(
                         @Param("from") LocalDateTime from,
-                        @Param("to") LocalDateTime to);
+                        @Param("to") LocalDateTime to,
+                        @Param("stationId") Long stationId,
+                        @Param("partnerId") Long partnerId);
+
+        // Commission Mobili prélevée sur la période — au niveau TICKET (jamais réservation, la
+        // commission se calcule par siège/ticket, voir CompanyCommissionService), tickets actifs
+        // uniquement (hors ANNULÉ). Requête séparée de aggregateForTripStats ci-dessus : joindre
+        // b.tickets dans une requête d'agrégat SUM(b.totalPrice) sans GROUP BY par booking
+        // dupliquerait ces sommes (Cartesian product), voir Javadoc findByIdWithDetailsRaw.
+        @Query("SELECT COALESCE(SUM(t.commissionAmount), 0) FROM Ticket t "
+                        + "JOIN t.booking b JOIN t.trip tr "
+                        + "WHERE t.status <> com.mobili.backend.module.booking.ticket.entity.TicketStatus.ANNULÉ "
+                        + "AND b.status IN (com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED, "
+                        + "                 com.mobili.backend.module.booking.booking.entity.BookingStatus.COMPLETED, "
+                        + "                 com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE) "
+                        + "AND tr.departureDateTime >= :from AND tr.departureDateTime < :to "
+                        + "AND (:stationId IS NULL OR tr.station.id = :stationId) "
+                        + "AND (:partnerId IS NULL OR tr.partner.id = :partnerId)")
+        Integer sumCommissionForPeriod(
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
+                        @Param("stationId") Long stationId,
+                        @Param("partnerId") Long partnerId);
 
         @Query("SELECT new com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa("
-                        + "t.id, t.departureCity, t.arrivalCity, p.name, COUNT(b), COALESCE(SUM(b.totalPrice), 0.0)) "
+                        + "t.id, t.departureCity, t.arrivalCity, p.name, "
+                        + "CASE WHEN t.station IS NOT NULL THEN t.station.name ELSE '—' END, "
+                        + "COUNT(b), COALESCE(SUM(b.totalPrice), 0.0)) "
                         + "FROM Booking b JOIN b.trip t JOIN t.partner p "
                         + "WHERE b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
-                        + "AND b.createdAt >= :from AND b.createdAt < :to "
-                        + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name "
+                        + "AND t.departureDateTime >= :from AND t.departureDateTime < :to "
+                        + "AND (:stationId IS NULL OR t.station.id = :stationId) "
+                        + "AND (:partnerId IS NULL OR t.partner.id = :partnerId) "
+                        + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name, t.station.name "
                         + "ORDER BY COUNT(b) DESC, t.id ASC")
         List<TripStatsPerTripJpa> findTripStatsOrderedByBookingCount(
                         @Param("from") LocalDateTime from,
-                        @Param("to") LocalDateTime to);
+                        @Param("to") LocalDateTime to,
+                        @Param("stationId") Long stationId,
+                        @Param("partnerId") Long partnerId);
 
         @Query("SELECT new com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa("
-                        + "t.id, t.departureCity, t.arrivalCity, p.name, COUNT(b), COALESCE(SUM(b.totalPrice), 0.0)) "
+                        + "t.id, t.departureCity, t.arrivalCity, p.name, "
+                        + "CASE WHEN t.station IS NOT NULL THEN t.station.name ELSE '—' END, "
+                        + "COUNT(b), COALESCE(SUM(b.totalPrice), 0.0)) "
                         + "FROM Booking b JOIN b.trip t JOIN t.partner p "
                         + "WHERE b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
-                        + "AND b.createdAt >= :from AND b.createdAt < :to "
-                        + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name "
+                        + "AND t.departureDateTime >= :from AND t.departureDateTime < :to "
+                        + "AND (:stationId IS NULL OR t.station.id = :stationId) "
+                        + "AND (:partnerId IS NULL OR t.partner.id = :partnerId) "
+                        + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name, t.station.name "
                         + "ORDER BY COALESCE(SUM(b.totalPrice), 0.0) DESC, t.id ASC")
         List<TripStatsPerTripJpa> findTripStatsOrderedByRevenue(
                         @Param("from") LocalDateTime from,
-                        @Param("to") LocalDateTime to);
+                        @Param("to") LocalDateTime to,
+                        @Param("stationId") Long stationId,
+                        @Param("partnerId") Long partnerId);
+
+        // Courbe de croissance (Stats métier) : un point par jour civil, sur la date de départ
+        // du trajet — même principe que les requêtes ci-dessus. Native SQL (comme
+        // TicketRepository.dailyTicketsBetween déjà existant) : DATE() sur une jointure native
+        // est plus simple à exprimer qu'en JPQL portable.
+        @Query(value = "SELECT DATE(t.departure_date_time) as day, COUNT(*) as cnt, COALESCE(SUM(b.total_price), 0) as rev "
+                        + "FROM bookings b JOIN trips t ON b.trip_id = t.id "
+                        + "WHERE b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
+                        + "AND t.departure_date_time >= :from AND t.departure_date_time < :to "
+                        + "AND (:stationId IS NULL OR t.station_id = :stationId) "
+                        + "AND (:partnerId IS NULL OR t.partner_id = :partnerId) "
+                        + "GROUP BY DATE(t.departure_date_time) ORDER BY DATE(t.departure_date_time) ASC", nativeQuery = true)
+        List<Object[]> dailyTripStatsBetween(
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to,
+                        @Param("stationId") Long stationId,
+                        @Param("partnerId") Long partnerId);
 
         @Query("SELECT COALESCE(SUM(b.numberOfSeats), 0) FROM Booking b "
                         + "WHERE b.trip.id = :tripId AND b.status IN ('CONFIRMED', 'COMPLETED')")
