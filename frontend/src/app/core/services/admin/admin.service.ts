@@ -57,13 +57,14 @@ export interface TopErrorEntry {
 
 export type TripStatsPeriod = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
 
+/** ticketCount compte des TICKETS (unité = un siège), jamais des réservations. */
 export interface TripStatEntry {
   rank: number;
   tripId: number;
   route: string;
   partnerName: string;
   stationName: string;
-  bookingCount: number;
+  ticketCount: number;
   revenueFcfa: number;
 }
 
@@ -75,14 +76,14 @@ export interface RevenueDonutSlice {
 
 export interface VolumeDonutSlice {
   label: string;
-  bookingCount: number;
+  ticketCount: number;
   percentOfTotal: number;
 }
 
 /** Un point de la courbe de croissance — un jour civil. */
 export interface TripStatsDayEntry {
   date: string;
-  bookingCount: number;
+  ticketCount: number;
   revenueFcfa: number;
 }
 
@@ -98,10 +99,11 @@ export interface AdminTripStats {
   period: TripStatsPeriod;
   fromInclusive: string;
   toExclusive: string;
-  totalBookings: number;
+  /** Billets vendus (tickets actifs, unité = un siège) — jamais des réservations. */
+  totalTickets: number;
   totalRevenueFcfa: number;
   activeTripCount: number;
-  avgRevenuePerBooking: number;
+  avgRevenuePerTicket: number;
   /** Répartition du CA par canal — même principe que les dashboards partenaire/gare/admin. */
   revenueOnlineFcfa: number;
   revenueOfflineFcfa: number;
@@ -111,11 +113,11 @@ export interface AdminTripStats {
   totalCommissionFcfa: number;
   netCompanyFcfa: number;
   /** Période précédente de même durée — null si aucune donnée (pas de variation affichable). */
-  previousTotalBookings: number | null;
+  previousTotalTickets: number | null;
   previousTotalRevenueFcfa: number | null;
-  bookingsDeltaPercent: number | null;
+  ticketsDeltaPercent: number | null;
   revenueDeltaPercent: number | null;
-  top10ByBookings: TripStatEntry[];
+  top10ByTickets: TripStatEntry[];
   top10ByRevenue: TripStatEntry[];
   revenueByTripDonut: RevenueDonutSlice[];
   volumeByTripDonut: VolumeDonutSlice[];

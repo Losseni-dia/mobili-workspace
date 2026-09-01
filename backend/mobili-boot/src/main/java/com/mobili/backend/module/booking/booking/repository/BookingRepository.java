@@ -321,23 +321,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         + "AND (:stationId IS NULL OR t.station.id = :stationId) "
                         + "AND (:partnerId IS NULL OR t.partner.id = :partnerId) "
                         + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name, t.station.name "
-                        + "ORDER BY COUNT(b) DESC, t.id ASC")
-        List<TripStatsPerTripJpa> findTripStatsOrderedByBookingCount(
-                        @Param("from") LocalDateTime from,
-                        @Param("to") LocalDateTime to,
-                        @Param("stationId") Long stationId,
-                        @Param("partnerId") Long partnerId);
-
-        @Query("SELECT new com.mobili.backend.module.booking.booking.projection.TripStatsPerTripJpa("
-                        + "t.id, t.departureCity, t.arrivalCity, p.name, "
-                        + "CASE WHEN t.station IS NOT NULL THEN t.station.name ELSE '—' END, "
-                        + "COUNT(b), COALESCE(SUM(b.totalPrice), 0.0)) "
-                        + "FROM Booking b JOIN b.trip t JOIN t.partner p "
-                        + "WHERE b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
-                        + "AND t.departureDateTime >= :from AND t.departureDateTime < :to "
-                        + "AND (:stationId IS NULL OR t.station.id = :stationId) "
-                        + "AND (:partnerId IS NULL OR t.partner.id = :partnerId) "
-                        + "GROUP BY t.id, t.departureCity, t.arrivalCity, p.id, p.name, t.station.name "
                         + "ORDER BY COALESCE(SUM(b.totalPrice), 0.0) DESC, t.id ASC")
         List<TripStatsPerTripJpa> findTripStatsOrderedByRevenue(
                         @Param("from") LocalDateTime from,

@@ -87,11 +87,11 @@
         <section class="kpi-grid kpi-5">
             <article class="kpi">
                 <span class="kpi-chip gold">🎫</span>
-                <div class="kpi-value">{{ s.totalBookings | number }}</div>
-                <div class="kpi-label">Billets / réservations (période)</div>
-                @if (s.bookingsDeltaPercent != null) {
-                    <span class="kpi-delta" [class.up]="s.bookingsDeltaPercent >= 0" [class.down]="s.bookingsDeltaPercent < 0">
-                        {{ s.bookingsDeltaPercent >= 0 ? '▲' : '▼' }} {{ s.bookingsDeltaPercent | number: "1.0-1" }} % vs période précédente
+                <div class="kpi-value">{{ s.totalTickets | number }}</div>
+                <div class="kpi-label">Billets vendus (période)</div>
+                @if (s.ticketsDeltaPercent != null) {
+                    <span class="kpi-delta" [class.up]="s.ticketsDeltaPercent >= 0" [class.down]="s.ticketsDeltaPercent < 0">
+                        {{ s.ticketsDeltaPercent >= 0 ? '▲' : '▼' }} {{ s.ticketsDeltaPercent | number: "1.0-1" }} % vs période précédente
                     </span>
                 }
             </article>
@@ -112,7 +112,7 @@
             </article>
             <article class="kpi">
                 <span class="kpi-chip blue">↗</span>
-                <div class="kpi-value">{{ s.avgRevenuePerBooking | number: "1.0-0" }} <span class="kpi-suf">FCFA</span></div>
+                <div class="kpi-value">{{ s.avgRevenuePerTicket | number: "1.0-0" }} <span class="kpi-suf">FCFA</span></div>
                 <div class="kpi-label">Panier moyen (CA ÷ billets)</div>
             </article>
         </section>
@@ -158,7 +158,7 @@
                 <h3>Courbe de croissance</h3>
                 <div class="chip-row">
                     <button type="button" class="chip" [class.active]="growthMetric() === 'revenue'" (click)="setGrowthMetric('revenue')">CA (FCFA)</button>
-                    <button type="button" class="chip" [class.active]="growthMetric() === 'bookings'" (click)="setGrowthMetric('bookings')">Billets</button>
+                    <button type="button" class="chip" [class.active]="growthMetric() === 'tickets'" (click)="setGrowthMetric('tickets')">Billets</button>
                 </div>
             </header>
             @if (growthPoints().length) {
@@ -275,7 +275,7 @@
                         >
                             <span class="leg-pct">{{ sl.percentOfTotal | number: "1.1-1" }} %</span>
                             <span class="leg-txt" [title]="sl.label">{{ sl.label }}</span>
-                            <span class="leg-val">{{ sl.bookingCount | number }} bil.</span>
+                            <span class="leg-val">{{ sl.ticketCount | number }} bil.</span>
                         </li>
                     }
                 </ul>
@@ -286,7 +286,7 @@
             <section class="panel">
                 <header class="panel-head">
                     <h2>Top — volume (billets)</h2>
-                    <button type="button" class="btn-export" (click)="exportTopBookingsCsv()">⬇ CSV</button>
+                    <button type="button" class="btn-export" (click)="exportTopTicketsCsv()">⬇ CSV</button>
                 </header>
                 <div class="table-wrap">
                     <table class="data-table">
@@ -301,13 +301,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @for (r of pagerBookings.visible(); track r.tripId) {
+                            @for (r of pagerTickets.visible(); track r.tripId) {
                                 <tr>
                                     <td class="t-rank">{{ r.rank }}</td>
                                     <td>{{ r.route }}</td>
                                     <td>{{ r.partnerName }}</td>
                                     <td>{{ r.stationName }}</td>
-                                    <td class="t-num">{{ r.bookingCount | number }}</td>
+                                    <td class="t-num">{{ r.ticketCount | number }}</td>
                                     <td class="t-num">{{ r.revenueFcfa | number }}</td>
                                 </tr>
                             }
@@ -317,8 +317,8 @@
                         </tbody>
                     </table>
                 </div>
-                @if (pagerBookings.hasMore()) {
-                    <button type="button" class="btn-more" (click)="pagerBookings.showMore()">Voir plus ({{ pagerBookings.remaining() }})</button>
+                @if (pagerTickets.hasMore()) {
+                    <button type="button" class="btn-more" (click)="pagerTickets.showMore()">Voir plus ({{ pagerTickets.remaining() }})</button>
                 }
             </section>
             <section class="panel">
@@ -346,7 +346,7 @@
                                     <td>{{ r.partnerName }}</td>
                                     <td>{{ r.stationName }}</td>
                                     <td class="t-num">{{ r.revenueFcfa | number }}</td>
-                                    <td class="t-num">{{ r.bookingCount | number }}</td>
+                                    <td class="t-num">{{ r.ticketCount | number }}</td>
                                 </tr>
                             }
                             @empty {

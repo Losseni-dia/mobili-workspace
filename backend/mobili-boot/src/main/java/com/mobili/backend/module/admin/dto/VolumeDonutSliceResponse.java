@@ -1,10 +1,10 @@
 package com.mobili.backend.module.admin.dto;
 
 /**
- * Part des réservations (volume) par trajet pour un graphique circulaire.
+ * Part des billets (tickets, pas réservations) par trajet pour un graphique circulaire.
  */
 public record VolumeDonutSliceResponse(
         String label,
-        long bookingCount,
+        long ticketCount,
         double percentOfTotal) {
 }
