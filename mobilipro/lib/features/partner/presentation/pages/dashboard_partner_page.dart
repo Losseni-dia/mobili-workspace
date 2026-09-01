@@ -28,6 +28,8 @@ class PartnerDashboardStats {
     required this.totalRevenue,
     required this.revenueOnline,
     required this.revenueOffline,
+    required this.ticketsSoldOnline,
+    required this.ticketsSoldOffline,
     required this.recentBookings,
   });
 
@@ -36,7 +38,13 @@ class PartnerDashboardStats {
   final double totalRevenue;
   final double revenueOnline;
   final double revenueOffline;
+  /// Tickets vendus (actifs, hors ANNULÉ) depuis toujours, par canal — voir
+  /// PartnerDashboardResponse.ticketsSoldOnline/Offline (backend).
+  final int ticketsSoldOnline;
+  final int ticketsSoldOffline;
   final List<PartnerRecentBooking> recentBookings;
+
+  int get totalTicketsSold => ticketsSoldOnline + ticketsSoldOffline;
 
   factory PartnerDashboardStats.fromJson(Map<String, dynamic> json) =>
       PartnerDashboardStats(
@@ -45,6 +53,8 @@ class PartnerDashboardStats {
         totalRevenue: (json['totalRevenue'] as num?)?.toDouble() ?? 0.0,
         revenueOnline: (json['revenueOnline'] as num?)?.toDouble() ?? 0.0,
         revenueOffline: (json['revenueOffline'] as num?)?.toDouble() ?? 0.0,
+        ticketsSoldOnline: (json['ticketsSoldOnline'] as num?)?.toInt() ?? 0,
+        ticketsSoldOffline: (json['ticketsSoldOffline'] as num?)?.toInt() ?? 0,
         recentBookings: (json['recentBookings'] as List<dynamic>? ?? [])
             .map(
               (e) => PartnerRecentBooking.fromJson(e as Map<String, dynamic>),
@@ -368,7 +378,36 @@ class DashboardPartnerPage extends ConsumerWidget {
                             ref.invalidate(_partnerDashboardProvider),
                       ),
                       data: (stats) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const _SectionLabel('📊 Depuis toujours'),
+                          const SizedBox(height: 10),
+                          _AllTimeRevenueCard(stats: stats),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.directions_bus_rounded,
+                                  label: 'Voyages actifs',
+                                  value: '${stats.activeTripsCount}',
+                                  color: AppColors.mobiliBlue,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _StatCard(
+                                  icon: Icons.confirmation_number_rounded,
+                                  label: 'Tickets vendus',
+                                  value: '${stats.totalTicketsSold}',
+                                  color: AppColors.proGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          _SectionLabel('📅 Ce mois-ci — ${_currentMonthLabel()}'),
+                          const SizedBox(height: 10),
                           Consumer(
                             builder: (context, ref, _) {
                               final revenueAsync = ref.watch(
@@ -377,6 +416,20 @@ class DashboardPartnerPage extends ConsumerWidget {
                               final revenue =
                                   revenueAsync.valueOrNull ??
                                   (total: 0.0, online: 0.0, offline: 0.0);
+                              final monthTicketsAsync = ref.watch(
+                                partnerTicketsRangeProvider((
+                                  period: PartnerPeriod.month,
+                                  stationId: null,
+                                  search: '',
+                                )),
+                              );
+                              final monthTickets = monthTicketsAsync.valueOrNull ?? const [];
+                              final ticketsOnline = monthTickets
+                                  .where((t) => t.bookingStatus == 'CONFIRMED')
+                                  .length;
+                              final ticketsOffline = monthTickets
+                                  .where((t) => t.bookingStatus == 'OFFLINE_SALE')
+                                  .length;
                               return Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(16),
@@ -449,6 +502,7 @@ class DashboardPartnerPage extends ConsumerWidget {
                                             icon: Icons.wifi_rounded,
                                             label: 'En ligne',
                                             amount: revenue.online,
+                                            ticketCount: ticketsOnline,
                                             color: AppColors.stationGreen,
                                           ),
                                         ),
@@ -458,6 +512,7 @@ class DashboardPartnerPage extends ConsumerWidget {
                                             icon: Icons.point_of_sale_rounded,
                                             label: 'Physique',
                                             amount: revenue.offline,
+                                            ticketCount: ticketsOffline,
                                             color: AppColors.mobiliYellow,
                                           ),
                                         ),
@@ -741,6 +796,111 @@ class DashboardPartnerPage extends ConsumerWidget {
 // Widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      color: AppColors.mobiliBlueDeep,
+    ),
+  );
+}
+
+/// Carte revenus "Depuis toujours" — même structure visuelle que la carte mensuelle
+/// (Consumer + _monthlyRevenueProvider un peu plus bas), mais lit directement `stats`
+/// (déjà chargé par _partnerDashboardProvider), sans provider ni filtre de période.
+class _AllTimeRevenueCard extends StatelessWidget {
+  const _AllTimeRevenueCard({required this.stats});
+  final PartnerDashboardStats stats;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
+      ),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.payments_rounded,
+                color: AppColors.mobiliYellow,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Revenus — depuis toujours',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '${NumberFormat('#,###').format(stats.totalRevenue)} FCFA',
+                  style: const TextStyle(
+                    color: AppColors.mobiliYellow,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        const Divider(color: Colors.white12, height: 1),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.wifi_rounded,
+                label: 'En ligne',
+                amount: stats.revenueOnline,
+                ticketCount: stats.ticketsSoldOnline,
+                color: AppColors.stationGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.point_of_sale_rounded,
+                label: 'Physique',
+                amount: stats.revenueOffline,
+                ticketCount: stats.ticketsSoldOffline,
+                color: AppColors.mobiliYellow,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.icon,
@@ -802,11 +962,14 @@ class _RevenueChip extends StatelessWidget {
     required this.label,
     required this.amount,
     required this.color,
+    this.ticketCount,
   });
   final IconData icon;
   final String label;
   final double amount;
   final Color color;
+  /// Nombre de tickets vendus sur ce canal — affiché en plus du montant si fourni.
+  final int? ticketCount;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -833,6 +996,11 @@ class _RevenueChip extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
+              if (ticketCount != null)
+                Text(
+                  '$ticketCount ticket${ticketCount! > 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 9, color: color.withValues(alpha: 0.85)),
+                ),
             ],
           ),
         ),

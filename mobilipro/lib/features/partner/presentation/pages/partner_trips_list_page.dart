@@ -21,11 +21,15 @@ class PartnerTripItem {
     required this.availableSeats,
     required this.price,
     required this.status,
+    required this.stationName,
   });
   final int id, totalSeats, availableSeats;
   final String route, status;
   final DateTime departureDateTime;
   final double price;
+  /// Gare de départ assignée à ce trajet — voir Trip.stationName (backend), déjà consommé côté
+  /// web (trip-management.component).
+  final String? stationName;
 
   factory PartnerTripItem.fromJson(Map<String, dynamic> j) => PartnerTripItem(
     id: (j['id'] as num?)?.toInt() ?? 0,
@@ -37,6 +41,7 @@ class PartnerTripItem {
     availableSeats: (j['availableSeats'] as num?)?.toInt() ?? 0,
     price: (j['price'] as num?)?.toDouble() ?? 0,
     status: j['status'] as String? ?? '',
+    stationName: j['stationName'] as String?,
   );
 }
 
@@ -79,6 +84,7 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
     final rows = [
       [
         'Trajet',
+        'Gare',
         'Départ',
         'Places totales',
         'Places restantes',
@@ -88,6 +94,7 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
       ...trips.map(
         (t) => [
           t.route,
+          t.stationName ?? '—',
           DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime),
           '${t.totalSeats}',
           '${t.availableSeats}',
@@ -123,11 +130,12 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
           ),
           pw.SizedBox(height: 14),
           pw.TableHelper.fromTextArray(
-            headers: ['Trajet', 'Départ', 'Places', 'Prix', 'Statut'],
+            headers: ['Trajet', 'Gare', 'Départ', 'Places', 'Prix', 'Statut'],
             data: trips
                 .map(
                   (t) => [
                     t.route,
+                    t.stationName ?? '—',
                     DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime),
                     '${t.availableSeats}/${t.totalSeats}',
                     '${t.price.toStringAsFixed(0)} F',
@@ -272,6 +280,15 @@ class _PartnerTripsListPageState extends ConsumerState<PartnerTripsListPage> {
                                           color: AppColors.mobiliBlueDeep,
                                         ),
                                       ),
+                                      if (t.stationName != null && t.stationName!.isNotEmpty)
+                                        Text(
+                                          '🏤 ${t.stationName}',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.stationGreen,
+                                          ),
+                                        ),
                                       Text(
                                         '${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime)} — ${t.availableSeats}/${t.totalSeats} places',
                                         style: const TextStyle(

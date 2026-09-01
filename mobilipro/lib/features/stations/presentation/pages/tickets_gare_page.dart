@@ -24,10 +24,14 @@ class GareTicketItem {
     required this.status,
     required this.seatNumber,
     required this.scanned,
+    required this.bookingStatus,
   });
   final int id;
   final String ticketNumber, passengerName, route, status, seatNumber;
   final DateTime bookingDate;
+  /// Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distingue vente en
+  /// ligne / guichet, distinct du statut du ticket lui-même.
+  final String? bookingStatus;
   /// Date de départ du voyage — distincte de bookingDate (date d'achat) : c'est elle qui
   /// détermine le mois de rattachement financier du ticket (voir backend TicketRepository).
   final DateTime? departureDateTime;
@@ -54,6 +58,7 @@ class GareTicketItem {
     status: j['status'] as String? ?? '',
     seatNumber: j['seatNumber'] as String? ?? '',
     scanned: j['scanned'] as bool? ?? false,
+    bookingStatus: j['bookingStatus'] as String?,
   );
 }
 

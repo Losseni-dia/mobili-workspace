@@ -25,6 +25,7 @@ class PartnerTicketItem {
     required this.status,
     required this.seatNumber,
     required this.scanned,
+    required this.bookingStatus,
     this.grossAmount,
   });
   final int id;
@@ -35,6 +36,9 @@ class PartnerTicketItem {
       status,
       seatNumber;
   final DateTime bookingDate;
+  /// Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distingue vente en
+  /// ligne / guichet, distinct du statut du ticket lui-même.
+  final String? bookingStatus;
   /// Date de départ du voyage — distincte de bookingDate (date d'achat), voir
   /// GareTicketItem.departureDateTime (tickets_gare_page.dart).
   final DateTime? departureDateTime;
@@ -67,6 +71,7 @@ class PartnerTicketItem {
         amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
         grossAmount: (j['grossAmount'] as num?)?.toDouble(),
         status: j['status'] as String? ?? '',
+        bookingStatus: j['bookingStatus'] as String?,
         seatNumber: j['seatNumber'] as String? ?? '',
         scanned: j['scanned'] as bool? ?? false,
       );

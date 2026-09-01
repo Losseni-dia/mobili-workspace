@@ -56,30 +56,35 @@ final _monthlyTripsCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return (res.data ?? []).length;
 });
 
-final _monthlyRevenueProvider = FutureProvider.autoDispose<double>((ref) async {
+/// Bornes calendaires du mois en cours (1er → dernier jour), à passer en tant que
+/// AdminStatsPeriod "custom" (fromDate/toDate explicites) aux providers déjà partagés avec les
+/// pages Tickets/Trajets/Transactions admin — jamais un simple `kPeriodMonth` (fenêtre glissante
+/// de 30 jours), pour que "Ce mois-ci" corresponde exactement au mois calendaire affiché.
+AdminStatsPeriod _currentCalendarMonthPeriod() {
   final now = DateTime.now();
-  final from = DateTime(now.year, now.month, 1);
-  final to = DateTime(
-    now.year,
-    now.month + 1,
-    1,
-  ).subtract(const Duration(seconds: 1));
-  final f = DateFormat('yyyy-MM-dd');
-  final res = await ApiClient.instance.dio.get<List<dynamic>>(
-    '/admin/stats/bookings/list',
-    queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},
+  return (
+    days: 0,
+    fromDate: DateTime(now.year, now.month, 1),
+    toDate: DateTime(now.year, now.month + 1, 0),
   );
-  final bookings = res.data ?? [];
-  double total = 0;
-  for (final b in bookings) {
-    final map = b as Map<String, dynamic>;
-    total +=
-        (map['totalPrice'] as num?)?.toDouble() ??
-        (map['amount'] as num?)?.toDouble() ??
-        0;
-  }
-  return total;
-});
+}
+
+/// Vente brute (totalPrice) du mois par canal — même source que la page Transactions admin
+/// (déjà filtrée CONFIRMED/OFFLINE_SALE et sur la date du voyage côté backend), jamais un
+/// recalcul depuis /admin/stats/bookings/list qui inclut aussi PENDING/CANCELLED/etc.
+final _monthlyRevenueProvider =
+    FutureProvider.autoDispose<({double total, double online, double offline})>((ref) async {
+      final transactions = await ref.watch(
+        transactionListProvider((period: _currentCalendarMonthPeriod(), search: '')).future,
+      );
+      final online = transactions
+          .where((t) => t.status.toUpperCase() == 'CONFIRMED')
+          .fold<double>(0, (sum, t) => sum + t.totalPrice);
+      final offline = transactions
+          .where((t) => t.status.toUpperCase() == 'OFFLINE_SALE')
+          .fold<double>(0, (sum, t) => sum + t.totalPrice);
+      return (total: online + offline, online: online, offline: offline);
+    });
 
 
 final _monthlyBookingsCountProvider = FutureProvider.autoDispose<int>((
@@ -100,22 +105,17 @@ final _monthlyBookingsCountProvider = FutureProvider.autoDispose<int>((
   return (res.data ?? []).length;
 });
 
-final _monthlyTicketsCountProvider = FutureProvider.autoDispose<int>((
-  ref,
-) async {
-  final now = DateTime.now();
-  final from = DateTime(now.year, now.month, 1);
-  final to = DateTime(
-    now.year,
-    now.month + 1,
-    1,
-  ).subtract(const Duration(seconds: 1));
-  final f = DateFormat('yyyy-MM-dd');
-  final res = await ApiClient.instance.dio.get<List<dynamic>>(
-    '/admin/stats/tickets/list',
-    queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},
+/// Tickets vendus du mois, répartis par canal (Via Mobili / Au guichet) — via bookingStatus
+/// (statut de la réservation d'origine), distinct du statut du ticket lui-même.
+final _monthlyTicketsProvider = FutureProvider.autoDispose<
+    ({int total, int online, int offline})>((ref) async {
+  final tickets = await ref.watch(
+    ticketListProvider((period: _currentCalendarMonthPeriod(), search: '')).future,
   );
-  return (res.data ?? []).length;
+  final active = tickets.where((t) => t.status.toUpperCase() != 'ANNULÉ');
+  final online = active.where((t) => t.bookingStatus == 'CONFIRMED').length;
+  final offline = active.where((t) => t.bookingStatus == 'OFFLINE_SALE').length;
+  return (total: online + offline, online: online, offline: offline);
 });
 
 /// Total de réclamations jamais créées (pas seulement "en attente") — même
@@ -216,16 +216,11 @@ class AdminDashboardPage extends ConsumerWidget {
               loading: () => const AdminLoadingCard(),
               error: (e, _) => AdminErrorCard(message: '$e'),
               data: (stats) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                Consumer(
-                    builder: (context, ref, _) {
-                      final revenueAsync = ref.watch(_monthlyRevenueProvider);
-                      return RevenueCard(
-                        revenue: revenueAsync.valueOrNull ?? 0,
-                        subtitle: _currentMonthLabel(),
-                      );
-                    },
-                  ),
+                  const AdminSectionTitle(title: '📊 Depuis toujours'),
+                  const SizedBox(height: 10),
+                  _AllTimeRevenueCard(stats: stats),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -257,6 +252,41 @@ class AdminDashboardPage extends ConsumerWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: KpiCard(
+                          icon: Icons.directions_bus_rounded,
+                          label: 'Trajets (plateforme)',
+                          value: '${stats.totalTrips}',
+                          color: AppColors.stationGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: KpiCard(
+                          icon: Icons.confirmation_number_rounded,
+                          label: 'Tickets vendus (actifs)',
+                          value: '${stats.totalTickets}',
+                          color: AppColors.mobiliBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  AdminSectionTitle(title: '📅 Ce mois-ci — ${_currentMonthLabel()}'),
+                  const SizedBox(height: 10),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final revenueAsync = ref.watch(_monthlyRevenueProvider);
+                      final revenue = revenueAsync.valueOrNull ??
+                          (total: 0.0, online: 0.0, offline: 0.0);
+                      final ticketsAsync = ref.watch(_monthlyTicketsProvider);
+                      final tickets = ticketsAsync.valueOrNull ?? (total: 0, online: 0, offline: 0);
+                      return _MonthRevenueCard(revenue: revenue, tickets: tickets);
+                    },
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -315,11 +345,8 @@ class AdminDashboardPage extends ConsumerWidget {
                       Expanded(
                         child: Consumer(
                           builder: (context, ref, _) {
-                            final ticketsCountAsync = ref.watch(
-                              _monthlyTicketsCountProvider,
-                            );
-                            final ticketsCount =
-                                ticketsCountAsync.valueOrNull ?? 0;
+                            final ticketsAsync = ref.watch(_monthlyTicketsProvider);
+                            final ticketsCount = ticketsAsync.valueOrNull?.total ?? 0;
                             return _cardWithBadge(
                               context,
                               ref,
@@ -477,4 +504,231 @@ class AdminDashboardPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Carte revenus "Depuis toujours" (plateforme) — répartition Via Mobili / Au guichet. Pas de
+/// nombre de tickets par canal all-time ici : AdminStatsResponse (backend) ne l'expose que pour
+/// le mois en cours (voir _monthlyTicketsProvider), jamais en cumul depuis toujours à ce jour.
+class _AllTimeRevenueCard extends StatelessWidget {
+  const _AllTimeRevenueCard({required this.stats});
+  final AdminStats stats;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
+      ),
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.account_balance_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Revenus plateforme — depuis toujours',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  Text(
+                    '${NumberFormat('#,###').format(stats.totalRevenue)} FCFA',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Divider(color: Colors.white12, height: 1),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.wifi_rounded,
+                label: 'Via Mobili',
+                amount: stats.revenueOnline,
+                color: AppColors.stationGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.point_of_sale_rounded,
+                label: 'Au guichet',
+                amount: stats.revenueOffline,
+                color: AppColors.mobiliYellow,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+/// Carte revenus "Ce mois-ci" — répartition Via Mobili / Au guichet, avec nombre de tickets
+/// vendus par canal (disponible côté mois, contrairement au bloc all-time ci-dessus).
+class _MonthRevenueCard extends StatelessWidget {
+  const _MonthRevenueCard({required this.revenue, required this.tickets});
+  final ({double total, double online, double offline}) revenue;
+  final ({int total, int online, int offline}) tickets;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
+      ),
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.account_balance_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Revenus plateforme — ${_currentMonthLabel()}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  Text(
+                    '${NumberFormat('#,###').format(revenue.total)} FCFA',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Divider(color: Colors.white12, height: 1),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.wifi_rounded,
+                label: 'Via Mobili',
+                amount: revenue.online,
+                ticketCount: tickets.online,
+                color: AppColors.stationGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.point_of_sale_rounded,
+                label: 'Au guichet',
+                amount: revenue.offline,
+                ticketCount: tickets.offline,
+                color: AppColors.mobiliYellow,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _RevenueChip extends StatelessWidget {
+  const _RevenueChip({
+    required this.icon,
+    required this.label,
+    required this.amount,
+    required this.color,
+    this.ticketCount,
+  });
+  final IconData icon;
+  final String label;
+  final double amount;
+  final Color color;
+  /// Nombre de tickets vendus sur ce canal — affiché en plus du montant si fourni.
+  final int? ticketCount;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 10, color: color)),
+              Text(
+                '${NumberFormat('#,###').format(amount)} F',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  fontSize: 13,
+                ),
+              ),
+              if (ticketCount != null)
+                Text(
+                  '$ticketCount ticket${ticketCount! > 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 9, color: color.withValues(alpha: 0.85)),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

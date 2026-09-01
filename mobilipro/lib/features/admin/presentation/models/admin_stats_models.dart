@@ -16,9 +16,14 @@ class AdminStats {
     required this.activeBookings,
     required this.totalTickets,
     required this.totalRevenue,
+    required this.revenueOnline,
+    required this.revenueOffline,
   });
   final int totalUsers, totalPartners, totalTrips, activeBookings, totalTickets;
   final double totalRevenue;
+  /// Répartition all-time du CA par canal (CONFIRMED = en ligne, OFFLINE_SALE = guichet) —
+  /// voir AdminStatsResponse.revenueOnline/Offline (backend). totalRevenue = leur somme.
+  final double revenueOnline, revenueOffline;
   factory AdminStats.fromJson(Map<String, dynamic> j) => AdminStats(
     totalUsers: (j['totalUsers'] as num?)?.toInt() ?? 0,
     totalPartners: (j['totalPartners'] as num?)?.toInt() ?? 0,
@@ -26,6 +31,8 @@ class AdminStats {
     activeBookings: (j['activeBookings'] as num?)?.toInt() ?? 0,
     totalTickets: (j['totalTickets'] as num?)?.toInt() ?? 0,
     totalRevenue: (j['totalRevenue'] as num?)?.toDouble() ?? 0,
+    revenueOnline: (j['revenueOnline'] as num?)?.toDouble() ?? 0,
+    revenueOffline: (j['revenueOffline'] as num?)?.toDouble() ?? 0,
   );
 }
 
@@ -209,6 +216,7 @@ class AdminTicketListItem {
     required this.status,
     required this.seatNumber,
     required this.scanned,
+    required this.bookingStatus,
   });
   final int id;
   final String ticketNumber,
@@ -223,6 +231,9 @@ class AdminTicketListItem {
   final DateTime? departureDateTime;
   final double amountPaid;
   final bool scanned;
+  /// Statut de la réservation d'origine — distingue vente en ligne (CONFIRMED) / guichet
+  /// (OFFLINE_SALE), distinct du statut du ticket lui-même.
+  final String? bookingStatus;
 
   factory AdminTicketListItem.fromJson(Map<String, dynamic> j) =>
       AdminTicketListItem(
@@ -241,6 +252,7 @@ class AdminTicketListItem {
         status: j['status'] as String? ?? '',
         seatNumber: j['seatNumber'] as String? ?? '',
         scanned: j['scanned'] as bool? ?? false,
+        bookingStatus: j['bookingStatus'] as String?,
       );
 }
 
