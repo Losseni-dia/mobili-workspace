@@ -8,6 +8,7 @@ public final class TripStatsPerTripJpa {
     private final String departureCity;
     private final String arrivalCity;
     private final String partnerName;
+    private final String stationName;
     private final long bookingCount;
     private final double revenue;
 
@@ -16,14 +17,20 @@ public final class TripStatsPerTripJpa {
             String departureCity,
             String arrivalCity,
             String partnerName,
+            String stationName,
             Long bookingCount,
             Double revenue) {
         this.tripId = tripId != null ? tripId : 0L;
         this.departureCity = departureCity;
         this.arrivalCity = arrivalCity;
         this.partnerName = partnerName;
+        this.stationName = stationName;
         this.bookingCount = bookingCount != null ? bookingCount : 0L;
         this.revenue = revenue != null ? revenue : 0.0;
+    }
+
+    public String getStationName() {
+        return stationName;
     }
 
     public long getTripId() {
