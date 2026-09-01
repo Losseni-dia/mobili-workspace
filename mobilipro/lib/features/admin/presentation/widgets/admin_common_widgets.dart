@@ -561,7 +561,7 @@ class _AdminHorizontalBarChartState extends State<AdminHorizontalBarChart> {
       1,
       (m, e) => widget.showRevenue
           ? (e.revenueFcfa > m ? e.revenueFcfa : m)
-          : (e.bookingCount > m ? e.bookingCount.toDouble() : m),
+          : (e.ticketCount > m ? e.ticketCount.toDouble() : m),
     );
 
     return BarChart(
@@ -582,7 +582,7 @@ class _AdminHorizontalBarChartState extends State<AdminHorizontalBarChart> {
               final e = widget.entries[groupIndex];
               final val = widget.showRevenue
                   ? '${NumberFormat('#,###').format(e.revenueFcfa)} F'
-                  : '${e.bookingCount} rés.';
+                  : '${e.ticketCount} bil.';
               return BarTooltipItem(
                 '${e.route}\n$val',
                 const TextStyle(
@@ -642,7 +642,7 @@ class _AdminHorizontalBarChartState extends State<AdminHorizontalBarChart> {
           final e = entry.value;
           final val = widget.showRevenue
               ? e.revenueFcfa
-              : e.bookingCount.toDouble();
+              : e.ticketCount.toDouble();
           final isTouched = _touchedIndex == i;
           return BarChartGroupData(
             x: i,
