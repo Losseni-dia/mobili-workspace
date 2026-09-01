@@ -68,8 +68,6 @@ export class DashboardComponent implements OnInit {
           { label: 'Réservations', value: data.totalBookingsCount.toString(), color: '#27ae60' },
           { label: 'Revenus (CFA)', value: data.totalRevenue.toLocaleString(), color: '#f39c12' },
         ];
-        this.revenueOnline.set(data.revenueOnline ?? 0);
-        this.revenueOffline.set(data.revenueOffline ?? 0);
       },
       error: (err) => console.error('Erreur stats dashboard :', err),
     });
@@ -81,6 +79,22 @@ export class DashboardComponent implements OnInit {
     this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
       next: (tickets) => {
         this.ticketsSoldCount.set(tickets.length);
+        // Revenus du mois — recalculés à partir de CES MÊMES tickets (période + rattachement
+        // à la date du voyage déjà appliqués côté backend), jamais depuis getDashboardStats
+        // (all-time, sans filtre de période) : sinon "Revenus du mois" affichait en réalité le
+        // revenu total, en décalage avec "Tickets vendus (mois)" et les pages Tickets/Réservations
+        // filtrées sur "Mois" — c'est exactement le décalage remonté par l'utilisateur.
+        const active = tickets.filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ');
+        this.revenueOnline.set(
+          active
+            .filter((t) => t.bookingStatus === 'CONFIRMED')
+            .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
+        );
+        this.revenueOffline.set(
+          active
+            .filter((t) => t.bookingStatus === 'OFFLINE_SALE')
+            .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0),
+        );
         // Infos ticket (pas réservation agrégée) : tri du plus récent au plus ancien.
         const sorted = [...tickets].sort(
           (a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime(),
@@ -91,6 +105,8 @@ export class DashboardComponent implements OnInit {
       error: () => {
         this.ticketsSoldCount.set(null);
         this.recentTickets.set([]);
+        this.revenueOnline.set(0);
+        this.revenueOffline.set(0);
       },
     });
   }
