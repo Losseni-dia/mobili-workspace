@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTransaction } from '../../../core/services/admin/admin.service';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 /**
@@ -108,7 +108,6 @@ export class AdminTransactions implements OnInit {
     // un trajet le mois prochain n'apparaissait plus du tout dans "Mois" — ici on couvre large
     // (30 j en arrière, 180 j en avant) pour que les réservations récentes restent visibles
     // avec leur commission dès qu'elles existent, quelle que soit la date de leur voyage.
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
     const now = new Date();
     const from = new Date(now);
     from.setDate(now.getDate() - 30);
@@ -116,8 +115,8 @@ export class AdminTransactions implements OnInit {
     to.setDate(now.getDate() + 180);
     this.activePeriod.set(null);
     this.singleDateMode.set(false);
-    this.fromDate.set(iso(from));
-    this.toDate.set(iso(to));
+    this.fromDate.set(toLocalDateString(from));
+    this.toDate.set(toLocalDateString(to));
     this.load();
   }
 
@@ -161,7 +160,7 @@ export class AdminTransactions implements OnInit {
   setSingleDateMode(): void {
     this.activePeriod.set(null);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
     this.companyFilter.set('all');

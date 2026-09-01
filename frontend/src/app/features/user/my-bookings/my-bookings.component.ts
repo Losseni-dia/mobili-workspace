@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 import { bookingStatusLabel } from '../../../core/utils/booking-status-label.util';
 
 type StatusFilter = 'ALL' | 'CONFIRMED' | 'PENDING' | 'CANCELLED';
@@ -126,7 +126,7 @@ export class MyBookingsComponent implements OnInit, OnDestroy {
     this.activePeriod.set(null);
     this.customMode.set(false);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
   }

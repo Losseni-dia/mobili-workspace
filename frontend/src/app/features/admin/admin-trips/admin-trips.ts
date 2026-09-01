@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminTripListItem } from '../../../core/services/admin/admin.service';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 type StatusFilter = 'TOUS' | 'PROGRAMMÉ' | 'EN_COURS' | 'TERMINÉ' | 'ANNULÉ';
@@ -96,7 +96,7 @@ export class AdminTrips implements OnInit {
   setSingleDateMode(): void {
     this.activePeriod.set(null);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
     this.pager.reset();

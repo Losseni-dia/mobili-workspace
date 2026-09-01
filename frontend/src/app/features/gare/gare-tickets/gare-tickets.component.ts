@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 type TicketStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
@@ -119,7 +119,7 @@ export class GareTicketsComponent implements OnInit {
   setSingleDateMode(): void {
     this.activePeriod.set(null);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
     this.pager.reset();

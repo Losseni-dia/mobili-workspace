@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 
 type BookingStatusFilter = 'CONFIRME' | 'ANNULE' | 'TOUS';
 
@@ -97,7 +97,7 @@ export class BookingListComponent implements OnInit {
   setSingleDateMode(): void {
     this.activePeriod.set(null);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
     this.loadBookings();

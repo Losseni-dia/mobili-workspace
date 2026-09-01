@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService, AdminBookingListItem } from '../../../core/services/admin/admin.service';
 import { TicketResponse, TicketService } from '../../../core/services/ticket/ticket.service';
-import { computePeriodRange, PeriodPreset } from '../../../core/utils/period-range.util';
+import { computePeriodRange, PeriodPreset, toLocalDateString } from '../../../core/utils/period-range.util';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 type StatusFilter = 'CONFIRME' | 'ANNULE';
@@ -114,7 +114,7 @@ export class AdminBookings implements OnInit {
   setSingleDateMode(): void {
     this.activePeriod.set(null);
     this.singleDateMode.set(true);
-    const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+    const d = this.fromDate() || toLocalDateString(new Date());
     this.fromDate.set(d);
     this.toDate.set(d);
     this.pager.reset();

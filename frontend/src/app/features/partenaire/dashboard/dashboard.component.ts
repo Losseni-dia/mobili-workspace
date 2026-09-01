@@ -10,6 +10,7 @@ import {
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { ListPager } from '../../../core/utils/list-pager.util';
+import { toLocalDateString } from '../../../core/utils/period-range.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -73,9 +74,8 @@ export class DashboardComponent implements OnInit {
     });
 
     const now = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    const from = iso(new Date(now.getFullYear(), now.getMonth(), 1));
-    const to = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const from = toLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
+    const to = toLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
       next: (tickets) => {
         this.ticketsSoldCount.set(tickets.length);

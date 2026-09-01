@@ -11,7 +11,7 @@ import { BookingResponse, BookingService } from '../../../core/services/booking/
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { formatVehicleTypeLabel } from '../../../core/constants/vehicle-types';
 import { exportToCsv } from '../../../core/utils/csv-export.util';
-import { computePeriodRange } from '../../../core/utils/period-range.util';
+import { computePeriodRange, toLocalDateString } from '../../../core/utils/period-range.util';
 import { ListPager } from '../../../core/utils/list-pager.util';
 
 /** Aligné sur `_tripFilterItems` (mobile) — valeurs exactes de l'enum backend TripStatus. */
@@ -170,7 +170,7 @@ export class TripManagementComponent implements OnInit {
     this.period.set(p);
     if (p === 'day') {
       // Préremplit avec la date déjà choisie, sinon aujourd'hui.
-      const d = this.fromDate() || new Date().toISOString().slice(0, 10);
+      const d = this.fromDate() || toLocalDateString(new Date());
       this.fromDate.set(d);
       this.toDate.set(d);
     } else if (p !== 'custom') {

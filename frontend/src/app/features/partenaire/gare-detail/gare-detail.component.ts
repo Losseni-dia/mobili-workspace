@@ -8,6 +8,7 @@ import {
 } from '../../../core/services/partners/partenaire.service';
 import { Trip, TripService } from '../../../core/services/trip/trip.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
+import { toLocalDateString } from '../../../core/utils/period-range.util';
 
 type TripStatusFilter = 'ALL' | 'DRAFT' | 'EN_COURS' | 'PROGRAMMÉ' | 'TERMINÉ' | 'ANNULÉ';
 
@@ -131,9 +132,8 @@ export class GareDetailComponent implements OnInit {
     // cette gare, comme côté app pro (GareDetailPage) — /trips/my-trips n'a lui-même pas de
     // filtre de date.
     const now = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    const from = iso(new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()));
-    const to = iso(new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()));
+    const from = toLocalDateString(new Date(now.getFullYear() - 2, now.getMonth(), now.getDate()));
+    const to = toLocalDateString(new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()));
 
     this.ticketService.getPartnerTicketsInRange(from, to, id).subscribe({
       next: (tickets) => {

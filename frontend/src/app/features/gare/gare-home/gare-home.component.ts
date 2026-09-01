@@ -6,6 +6,7 @@ import { PartnerTicket, TicketService } from '../../../core/services/ticket/tick
 import { TripService } from '../../../core/services/trip/trip.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
 import { ListPager } from '../../../core/utils/list-pager.util';
+import { toLocalDateString } from '../../../core/utils/period-range.util';
 
 /**
  * Dashboard gare — aligné sur `dashboard_gare_page.dart` (mobilipro) : revenu du mois (Via Mobili /
@@ -67,10 +68,9 @@ export class GareHomeComponent implements OnInit {
 
   private monthRange(): { from: string; to: string } {
     const now = new Date();
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
     const first = new Date(now.getFullYear(), now.getMonth(), 1);
     const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { from: iso(first), to: iso(last) };
+    return { from: toLocalDateString(first), to: toLocalDateString(last) };
   }
 
   private loadMonthlyKpis() {
