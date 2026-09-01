@@ -71,7 +71,13 @@ class GareTransactionsPage extends ConsumerStatefulWidget {
 }
 
 class _GareTransactionsPageState extends ConsumerState<GareTransactionsPage> {
-  PartnerPeriod _period = PartnerPeriod.week;
+  // Vue par défaut plus large que "Semaine" — voir partner_transactions_page.dart pour la
+  // justification (filtre désormais sur la date du voyage, pas la date de réservation).
+  PartnerPeriod _period = PartnerPeriod(
+    mode: PartnerPeriodMode.custom,
+    customFrom: DateTime.now().subtract(const Duration(days: 30)),
+    customTo: DateTime.now().add(const Duration(days: 180)),
+  );
 
   Future<void> _exportCsv(List<GareTransaction> transactions) async {
     final rows = [

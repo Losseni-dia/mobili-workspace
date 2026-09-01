@@ -22,7 +22,15 @@ class AdminTransactionsPage extends ConsumerStatefulWidget {
 
 class _AdminTransactionsPageState
     extends ConsumerState<AdminTransactionsPage> {
-  AdminStatsPeriod _period = kPeriodMonth;
+  // Vue par défaut plus large que "Mois" — voir partner_transactions_page.dart (mobilipro)
+  // pour la justification (filtre désormais sur la date du voyage, pas la date de réservation).
+  // `days` seul ne couvre que le passé (voir toQueryParams) : il faut fromDate/toDate explicites
+  // pour englober aussi les voyages à venir.
+  AdminStatsPeriod _period = (
+    days: 0,
+    fromDate: DateTime.now().subtract(const Duration(days: 30)),
+    toDate: DateTime.now().add(const Duration(days: 180)),
+  );
   String _search = '';
   int _pageSize = 20;
   final _searchCtrl = TextEditingController();

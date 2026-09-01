@@ -78,7 +78,15 @@ class PartnerTransactionsPage extends ConsumerStatefulWidget {
 
 class _PartnerTransactionsPageState
     extends ConsumerState<PartnerTransactionsPage> {
-  PartnerPeriod _period = PartnerPeriod.week;
+  // Vue par défaut plus large que "Semaine" : la période filtre désormais sur la date du
+  // VOYAGE (pas la date de réservation), donc une résa faite aujourd'hui pour un trajet la
+  // semaine/le mois prochain n'apparaissait plus du tout — on couvre large (30 j en arrière,
+  // 180 j en avant) pour que les réservations récentes restent visibles avec leur commission.
+  PartnerPeriod _period = PartnerPeriod(
+    mode: PartnerPeriodMode.custom,
+    customFrom: DateTime.now().subtract(const Duration(days: 30)),
+    customTo: DateTime.now().add(const Duration(days: 180)),
+  );
   int? _stationId;
   int _pageSize = 20;
 
