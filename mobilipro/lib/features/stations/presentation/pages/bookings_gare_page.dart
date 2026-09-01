@@ -216,6 +216,7 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
       [
         'Trajet',
         'Date départ',
+        'Date résa',
         'Passager',
         'Référence',
         'Siège',
@@ -227,6 +228,7 @@ class _BookingsGarePageState extends ConsumerState<BookingsGarePage> {
           [
             '${g.departureCity} → ${g.arrivalCity}',
             DateFormat('dd/MM/yyyy HH:mm').format(g.departureDateTime),
+            DateFormat('dd/MM/yyyy HH:mm').format(b.bookingDate),
             b.displayName,
             b.reference,
             b.seatNumbers.isNotEmpty ? b.seatNumbers.join(', ') : '—',

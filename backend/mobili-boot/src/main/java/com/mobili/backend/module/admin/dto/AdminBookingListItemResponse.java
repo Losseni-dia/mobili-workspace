@@ -9,6 +9,9 @@ public record AdminBookingListItemResponse(
         String route,
         String partnerName,
         LocalDateTime bookingDate,
+        /** Date de départ du voyage — distincte de bookingDate (date de réservation), voir
+         *  PartnerTicketResponse.departureDateTime pour la justification. */
+        LocalDateTime departureDateTime,
         Integer numberOfSeats,
         /** Montant de vente initial, figé — n'exclut PAS les tickets annulés depuis. Ne jamais
          *  l'utiliser seul pour un affichage : préférer {@link #amount()}. */

@@ -19,6 +19,7 @@ class PartnerTransaction {
     required this.bookingId,
     required this.reference,
     required this.date,
+    required this.departureDateTime,
     required this.route,
     required this.grossAmount,
     required this.commissionTotal,
@@ -29,12 +30,18 @@ class PartnerTransaction {
   final int bookingId, commissionTotal;
   final String reference, route, status;
   final DateTime date;
+  /// Date de départ du voyage — distincte de date (date de réservation), voir
+  /// GareTicketItem.departureDateTime (tickets_gare_page.dart).
+  final DateTime? departureDateTime;
   final double grossAmount, companyNet;
 
   factory PartnerTransaction.fromJson(Map<String, dynamic> j) => PartnerTransaction(
         bookingId: (j['bookingId'] as num?)?.toInt() ?? 0,
         reference: j['reference'] as String? ?? '',
         date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         route: j['route'] as String? ?? '',
         grossAmount: (j['grossAmount'] as num?)?.toDouble() ?? 0,
         commissionTotal: (j['commissionTotal'] as num?)?.toInt() ?? 0,
@@ -77,12 +84,15 @@ class _PartnerTransactionsPageState
 
   Future<void> _exportCsv(List<PartnerTransaction> transactions) async {
     final rows = [
-      ['Référence', 'Trajet', 'Date', 'Vente brute FCFA', 'Commission FCFA', 'Net FCFA', 'Statut'],
+      ['Référence', 'Trajet', 'Date résa', 'Date départ', 'Vente brute FCFA', 'Commission FCFA', 'Net FCFA', 'Statut'],
       ...transactions.map(
         (t) => [
           t.reference,
           t.route,
           DateFormat('dd/MM/yyyy HH:mm').format(t.date),
+          t.departureDateTime != null
+              ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+              : '—',
           t.grossAmount.toStringAsFixed(0),
           '${t.commissionTotal}',
           t.companyNet.toStringAsFixed(0),
@@ -325,7 +335,8 @@ class _TransactionCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${t.route} — ${DateFormat('dd/MM/yy HH:mm').format(t.date)}',
+                      '${t.route} — Résa ${DateFormat('dd/MM/yy HH:mm').format(t.date)}'
+                      '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                       style: const TextStyle(fontSize: 11, color: AppColors.gray500),
                     ),
                   ],

@@ -85,7 +85,8 @@
                         <th>Client</th>
                         <th>Compagnie</th>
                         <th>Trajet</th>
-                        <th>Heure</th>
+                        <th>Heure résa</th>
+                        <th>Date départ</th>
                         <th class="right">Frais Mobili</th>
                         <th class="right">Commission</th>
                         <th class="right">Net compagnie</th>
@@ -96,7 +97,7 @@
                     @for (item of groupedRows(); track $index) {
                         @if (item.dateHeader; as day) {
                             <tr class="date-group-row">
-                                <td colspan="9">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
+                                <td colspan="10">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
                             </tr>
                         } @else if (item.row; as t) {
                             <tr>
@@ -105,6 +106,7 @@
                                 <td>{{ t.companyName }}</td>
                                 <td>{{ t.route }}</td>
                                 <td class="mono">{{ t.date | date: 'HH:mm' }}</td>
+                                <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
                                 <td class="right">{{ t.serviceFee | number }} FCFA</td>
                                 <td class="right">{{ t.commissionTotal | number }} FCFA</td>
                                 <td class="right amount">{{ t.companyNet | number }} FCFA</td>

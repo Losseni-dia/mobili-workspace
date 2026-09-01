@@ -20,6 +20,7 @@ class PartnerTicketItem {
     required this.route,
     required this.stationName,
     required this.bookingDate,
+    required this.departureDateTime,
     required this.amountPaid,
     required this.status,
     required this.seatNumber,
@@ -34,6 +35,9 @@ class PartnerTicketItem {
       status,
       seatNumber;
   final DateTime bookingDate;
+  /// Date de départ du voyage — distincte de bookingDate (date d'achat), voir
+  /// GareTicketItem.departureDateTime (tickets_gare_page.dart).
+  final DateTime? departureDateTime;
 
   /// Part du prix global (transport + forfait client + bagages) — jamais affiché côté
   /// partenaire (voir [displayAmount]), la compagnie n'a jamais reçu le forfait dilué ici.
@@ -57,6 +61,9 @@ class PartnerTicketItem {
         bookingDate:
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
         grossAmount: (j['grossAmount'] as num?)?.toDouble(),
         status: j['status'] as String? ?? '',
@@ -131,7 +138,8 @@ class _PartnerTicketsListPageState
         'Passager',
         'Trajet',
         'Gare',
-        'Date',
+        'Date résa',
+        'Date départ',
         'Montant FCFA',
         'Statut',
         'Siège',
@@ -144,6 +152,9 @@ class _PartnerTicketsListPageState
           t.route,
           t.stationName,
           DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
+          t.departureDateTime != null
+              ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+              : '—',
           t.displayAmount.toStringAsFixed(0),
           t.status,
           t.seatNumber,
@@ -183,7 +194,8 @@ class _PartnerTicketsListPageState
               'Passager',
               'Trajet',
               'Gare',
-              'Date',
+              'Date résa',
+              'Date départ',
               'Montant',
               'Statut',
             ],
@@ -195,6 +207,9 @@ class _PartnerTicketsListPageState
                     t.route,
                     t.stationName,
                     DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
+                    t.departureDateTime != null
+                        ? DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)
+                        : '—',
                     '${t.displayAmount.toStringAsFixed(0)} F',
                     t.status,
                   ],
@@ -429,7 +444,8 @@ class _PartnerTicketsListPageState
                                         ),
                                       ),
                                       Text(
-                                        '${t.stationName} — ${DateFormat('dd/MM/yy HH:mm').format(t.bookingDate)}',
+                                        '${t.stationName} — Résa ${DateFormat('dd/MM/yy HH:mm').format(t.bookingDate)}'
+                                        '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                                         style: const TextStyle(
                                           fontSize: 10,
                                           color: AppColors.gray400,

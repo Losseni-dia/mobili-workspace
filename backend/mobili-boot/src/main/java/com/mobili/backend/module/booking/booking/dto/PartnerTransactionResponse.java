@@ -12,6 +12,9 @@ public record PartnerTransactionResponse(
         Long bookingId,
         String reference,
         LocalDateTime date,
+        /** Date de départ du voyage — distincte de date (date de réservation), voir
+         *  PartnerTicketResponse.departureDateTime pour la justification. */
+        LocalDateTime departureDateTime,
         String route,
         /** Somme des prix de tickets + bagages — la vente brute de la compagnie, jamais le forfait. */
         Double grossAmount,

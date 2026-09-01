@@ -143,7 +143,8 @@ export class PartnerTransactionsComponent implements OnInit {
       this.filtered().map((t) => ({
         Référence: t.reference,
         Trajet: t.route,
-        Date: t.date,
+        'Date résa': t.date,
+        'Date départ': t.departureDateTime ?? '—',
         Statut: t.status,
         'Vente brute (FCFA)': t.grossAmount,
         'Commission (FCFA)': t.commissionTotal,

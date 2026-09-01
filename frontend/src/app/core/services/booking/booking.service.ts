@@ -91,6 +91,8 @@ export interface PartnerTransaction {
   bookingId: number;
   reference: string;
   date: string;
+  /** Date de départ du voyage — distincte de date (date de réservation). */
+  departureDateTime: string | null;
   route: string;
   /** Vente brute compagnie, jamais le forfait client. */
   grossAmount: number;

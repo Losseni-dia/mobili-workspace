@@ -316,9 +316,8 @@ class _TicketStatsDetailPageState extends ConsumerState<TicketStatsDetailPage> {
                                           ),
                                         ),
                                         Text(
-                                          DateFormat(
-                                            'dd/MM/yy HH:mm',
-                                          ).format(t.bookingDate),
+                                          'Résa ${DateFormat('dd/MM/yy HH:mm').format(t.bookingDate)}'
+                                          '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             color: AppColors.gray400,

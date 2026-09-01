@@ -57,7 +57,8 @@
                         <th>Client</th>
                         <th>Compagnie</th>
                         <th>Trajet</th>
-                        <th>Date</th>
+                        <th>Date résa</th>
+                        <th>Date voyage</th>
                         <th>Sièges</th>
                         <th>Statut</th>
                         <th class="right">Montant</th>
@@ -72,6 +73,7 @@
                             <td>{{ b.partnerName }}</td>
                             <td>{{ b.route }}</td>
                             <td class="mono">{{ b.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="mono">{{ b.departureDateTime ? (b.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
                             <td>{{ b.numberOfSeats }}</td>
                             <td>
                                 <span class="status-pill" [class.active]="b.status !== 'CANCELLED'" [class.warn]="b.status === 'CANCELLED'">

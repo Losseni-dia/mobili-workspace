@@ -43,6 +43,7 @@ public class PartnerTicketController {
                                 : null,
                         t.getTrip().getStation() != null ? t.getTrip().getStation().getName() : "—",
                         t.getBookingDate(),
+                        t.getTrip() != null ? t.getTrip().getDepartureDateTime() : null,
                         t.getBooking() != null ? t.getBooking().getId() : null,
                         resolveCustomerName(t),
                         t.getAmountPaid(),

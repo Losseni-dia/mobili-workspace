@@ -65,7 +65,8 @@
                         <th>Référence</th>
                         <th>Client</th>
                         <th>Trajet</th>
-                        <th>Date</th>
+                        <th>Date résa</th>
+                        <th>Date voyage</th>
                         <th>Sièges</th>
                         <th>Canal</th>
                         <th>Statut</th>
@@ -87,6 +88,7 @@
                             </td>
                             <td>{{ booking.tripRoute }}</td>
                             <td class="mono">{{ booking.date | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="mono">{{ booking.departureDateTime | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td>
                                 <div class="seat-tags">
                                     @for (seat of booking.seatNumbers; track seat) {

@@ -204,6 +204,7 @@ class AdminTicketListItem {
     required this.route,
     required this.partnerName,
     required this.bookingDate,
+    required this.departureDateTime,
     required this.amountPaid,
     required this.status,
     required this.seatNumber,
@@ -217,6 +218,9 @@ class AdminTicketListItem {
       status,
       seatNumber;
   final DateTime bookingDate;
+  /// Date de départ du voyage — distincte de bookingDate (date d'achat), voir
+  /// GareTicketItem.departureDateTime (tickets_gare_page.dart).
+  final DateTime? departureDateTime;
   final double amountPaid;
   final bool scanned;
 
@@ -230,6 +234,9 @@ class AdminTicketListItem {
         bookingDate:
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
         seatNumber: j['seatNumber'] as String? ?? '',
@@ -245,6 +252,7 @@ class AdminBookingListItem {
     required this.route,
     required this.partnerName,
     required this.bookingDate,
+    required this.departureDateTime,
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
@@ -252,6 +260,8 @@ class AdminBookingListItem {
   final int id, numberOfSeats;
   final String reference, customerName, route, partnerName, status;
   final DateTime bookingDate;
+  /// Date de départ du voyage — distincte de bookingDate (date de réservation).
+  final DateTime? departureDateTime;
   final double totalPrice;
 
   factory AdminBookingListItem.fromJson(Map<String, dynamic> j) =>
@@ -264,6 +274,9 @@ class AdminBookingListItem {
         bookingDate:
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
@@ -277,6 +290,7 @@ class AdminTransaction {
     required this.bookingId,
     required this.reference,
     required this.date,
+    required this.departureDateTime,
     required this.customerName,
     required this.route,
     required this.companyId,
@@ -296,12 +310,17 @@ class AdminTransaction {
   final int? companyId, stationId;
   final String reference, customerName, route, companyName, stationName, status;
   final DateTime date;
+  /// Date de départ du voyage — distincte de date (date de réservation).
+  final DateTime? departureDateTime;
   final double ticketsAmount, luggageFee, companyNet, totalPrice;
 
   factory AdminTransaction.fromJson(Map<String, dynamic> j) => AdminTransaction(
         bookingId: (j['bookingId'] as num?)?.toInt() ?? 0,
         reference: j['reference'] as String? ?? '',
         date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         customerName: j['customerName'] as String? ?? '',
         route: j['route'] as String? ?? '',
         companyId: (j['companyId'] as num?)?.toInt(),

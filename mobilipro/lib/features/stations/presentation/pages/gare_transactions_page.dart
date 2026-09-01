@@ -19,6 +19,7 @@ class GareTransaction {
     required this.bookingId,
     required this.reference,
     required this.date,
+    required this.departureDateTime,
     required this.route,
     required this.grossAmount,
     required this.status,
@@ -27,12 +28,17 @@ class GareTransaction {
   final int bookingId;
   final String reference, route, status;
   final DateTime date;
+  /// Date de départ du voyage — distincte de date (date de réservation).
+  final DateTime? departureDateTime;
   final double grossAmount;
 
   factory GareTransaction.fromJson(Map<String, dynamic> j) => GareTransaction(
     bookingId: (j['bookingId'] as num?)?.toInt() ?? 0,
     reference: j['reference'] as String? ?? '',
     date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime.now(),
+    departureDateTime: DateTime.tryParse(
+      j['departureDateTime'] as String? ?? '',
+    ),
     route: j['route'] as String? ?? '',
     grossAmount: (j['grossAmount'] as num?)?.toDouble() ?? 0,
     status: j['status'] as String? ?? '',
@@ -69,12 +75,15 @@ class _GareTransactionsPageState extends ConsumerState<GareTransactionsPage> {
 
   Future<void> _exportCsv(List<GareTransaction> transactions) async {
     final rows = [
-      ['Référence', 'Trajet', 'Date', 'Montant total FCFA', 'Statut'],
+      ['Référence', 'Trajet', 'Date résa', 'Date départ', 'Montant total FCFA', 'Statut'],
       ...transactions.map(
         (t) => [
           t.reference,
           t.route,
           DateFormat('dd/MM/yyyy HH:mm').format(t.date),
+          t.departureDateTime != null
+              ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+              : '—',
           t.grossAmount.toStringAsFixed(0),
           t.status,
         ],
@@ -99,6 +108,9 @@ class _GareTransactionsPageState extends ConsumerState<GareTransactionsPage> {
           t.reference,
           t.route,
           DateFormat('dd/MM/yy HH:mm').format(t.date),
+          t.departureDateTime != null
+              ? DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)
+              : '—',
           '${t.grossAmount.toStringAsFixed(0)} F',
           t.status,
         ],
@@ -117,7 +129,7 @@ class _GareTransactionsPageState extends ConsumerState<GareTransactionsPage> {
           ),
           pw.SizedBox(height: 14),
           pw.TableHelper.fromTextArray(
-            headers: ['Référence', 'Trajet', 'Date', 'Montant', 'Statut'],
+            headers: ['Référence', 'Trajet', 'Date résa', 'Date départ', 'Montant', 'Statut'],
             data: rows,
             cellStyle: const pw.TextStyle(fontSize: 8),
             headerStyle: pw.TextStyle(
@@ -326,7 +338,8 @@ class _GareTransactionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${t.route} — ${DateFormat('dd/MM/yy HH:mm').format(t.date)}',
+                  '${t.route} — Résa ${DateFormat('dd/MM/yy HH:mm').format(t.date)}'
+                  '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                   style: const TextStyle(fontSize: 11, color: AppColors.gray500),
                 ),
               ],

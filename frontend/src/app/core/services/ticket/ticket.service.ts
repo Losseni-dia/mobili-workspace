@@ -15,6 +15,10 @@ export interface PartnerTicket {
   tripId: number | null;
   stationName: string;
   bookingDate: string;
+  /** Date de départ du voyage — distincte de bookingDate (date d'achat) : sert notamment à
+   *  comprendre pourquoi un ticket acheté un mois donné apparaît dans les stats d'un autre mois
+   *  (rattachement financier basé sur la date du voyage, pas la date d'achat). */
+  departureDateTime: string | null;
   /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
   bookingId: number | null;
   /** Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distinct du statut du

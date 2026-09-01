@@ -148,6 +148,8 @@ export interface AdminTicketListItem {
   route: string;
   partnerName: string;
   bookingDate: string;
+  /** Date de départ du voyage — distincte de bookingDate (date d'achat), voir TicketService.PartnerTicket. */
+  departureDateTime: string | null;
   amountPaid: number;
   status: string;
   seatNumber: string;
@@ -162,6 +164,8 @@ export interface AdminBookingListItem {
   route: string;
   partnerName: string;
   bookingDate: string;
+  /** Date de départ du voyage — distincte de bookingDate (date de réservation). */
+  departureDateTime: string | null;
   numberOfSeats: number;
   /** Vente initiale, figée — n'exclut PAS les tickets annulés depuis. Préférer `amount`. */
   totalPrice: number;
@@ -179,6 +183,8 @@ export interface AdminTransaction {
   bookingId: number;
   reference: string;
   date: string;
+  /** Date de départ du voyage — distincte de date (date de réservation). */
+  departureDateTime: string | null;
   customerName: string;
   route: string;
   companyId: number | null;

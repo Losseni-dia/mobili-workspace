@@ -71,7 +71,8 @@
                     <tr>
                         <th>Référence</th>
                         <th>Trajet</th>
-                        <th>Heure</th>
+                        <th>Heure résa</th>
+                        <th>Date départ</th>
                         <th>Statut</th>
                         <th class="right">Vente brute</th>
                         <th class="right">Commission</th>
@@ -82,13 +83,14 @@
                     @for (item of groupedRows(); track $index) {
                         @if (item.dateHeader; as day) {
                             <tr class="date-group-row">
-                                <td colspan="7">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
+                                <td colspan="8">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
                             </tr>
                         } @else if (item.row; as t) {
                             <tr>
                                 <td class="mono">#{{ t.reference }}</td>
                                 <td>{{ t.route }}</td>
                                 <td class="mono">{{ t.date | date: 'HH:mm' }}</td>
+                                <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
                                 <td>{{ t.status }}</td>
                                 <td class="right">{{ t.grossAmount | number }} FCFA</td>
                                 <td class="right">{{ t.commissionTotal | number }} FCFA</td>

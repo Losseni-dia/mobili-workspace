@@ -18,6 +18,7 @@ class PartnerBookingItem {
     required this.reference,
     required this.tripRoute,
     required this.bookingDate,
+    required this.departureDateTime,
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
@@ -28,6 +29,9 @@ class PartnerBookingItem {
   final int id, numberOfSeats;
   final String reference, tripRoute, status;
   final DateTime bookingDate;
+  /// Date de départ du voyage — distincte de bookingDate (date de réservation) : c'est elle
+  /// qui détermine le mois de rattachement financier (voir backend BookingRepository).
+  final DateTime? departureDateTime;
   final double totalPrice;
 
   /// Vente brute de la compagnie recalculée en direct côté backend
@@ -61,6 +65,9 @@ class PartnerBookingItem {
               j['bookingDate'] as String? ?? j['date'] as String? ?? '',
             ) ??
             DateTime.now(),
+        departureDateTime: DateTime.tryParse(
+          j['departureDateTime'] as String? ?? '',
+        ),
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
@@ -170,12 +177,15 @@ class _PartnerBookingsListPageState
 
   Future<void> _exportCsv(List<PartnerBookingItem> bookings) async {
     final rows = [
-      ['Référence', 'Trajet', 'Date', 'Places', 'Montant FCFA', 'Statut'],
+      ['Référence', 'Trajet', 'Date résa', 'Date voyage', 'Places', 'Montant FCFA', 'Statut'],
       ...bookings.map(
         (b) => [
           b.reference,
           b.tripRoute,
           DateFormat('dd/MM/yyyy HH:mm').format(b.bookingDate),
+          b.departureDateTime != null
+              ? DateFormat('dd/MM/yyyy HH:mm').format(b.departureDateTime!)
+              : '—',
           '${b.numberOfSeats}',
           b.grossAmount.toStringAsFixed(0),
           b.status,
@@ -212,7 +222,8 @@ class _PartnerBookingsListPageState
             headers: [
               'Référence',
               'Trajet',
-              'Date',
+              'Date résa',
+              'Date voyage',
               'Places',
               'Montant',
               'Statut',
@@ -223,6 +234,9 @@ class _PartnerBookingsListPageState
                     b.reference,
                     b.tripRoute,
                     DateFormat('dd/MM/yy HH:mm').format(b.bookingDate),
+                    b.departureDateTime != null
+                        ? DateFormat('dd/MM/yy HH:mm').format(b.departureDateTime!)
+                        : '—',
                     '${b.numberOfSeats}',
                     '${b.grossAmount.toStringAsFixed(0)} F',
                     b.status,
@@ -436,7 +450,8 @@ class _PartnerBookingsListPageState
                                         ),
                                       ),
                                       Text(
-                                        '${b.tripRoute} — ${DateFormat('dd/MM/yy HH:mm').format(b.bookingDate)}',
+                                        '${b.tripRoute} — Résa ${DateFormat('dd/MM/yy HH:mm').format(b.bookingDate)}'
+                                        '${b.departureDateTime != null ? ' · Voyage ${DateFormat('dd/MM/yy HH:mm').format(b.departureDateTime!)}' : ''}',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: AppColors.gray500,

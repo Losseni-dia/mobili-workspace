@@ -348,7 +348,9 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                                           ),
                                         ),
                                         Text(
-                                          '${DateFormat('dd/MM/yy HH:mm').format(b.bookingDate)} — ${b.numberOfSeats} place(s)',
+                                          'Résa ${DateFormat('dd/MM/yy HH:mm').format(b.bookingDate)}'
+                                          '${b.departureDateTime != null ? ' · Voyage ${DateFormat('dd/MM/yy HH:mm').format(b.departureDateTime!)}' : ''}'
+                                          ' — ${b.numberOfSeats} place(s)',
                                           style: const TextStyle(
                                             fontSize: 10,
                                             color: AppColors.gray400,

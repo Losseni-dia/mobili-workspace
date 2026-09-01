@@ -41,7 +41,8 @@ Future<void> exportTicketsCsv(
       'Passager',
       'Trajet',
       'Compagnie',
-      'Date',
+      'Date résa',
+      'Date départ',
       'Montant FCFA',
       'Statut',
       'Siège',
@@ -54,6 +55,9 @@ Future<void> exportTicketsCsv(
         t.route,
         t.partnerName,
         DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
+        t.departureDateTime != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+            : '—',
         t.amountPaid.toStringAsFixed(0),
         t.status,
         t.seatNumber,
@@ -94,7 +98,8 @@ Future<void> exportTicketsPdf(
             'Passager',
             'Trajet',
             'Compagnie',
-            'Date',
+            'Date résa',
+            'Date départ',
             'Montant',
             'Statut',
           ],
@@ -106,6 +111,9 @@ Future<void> exportTicketsPdf(
                   t.route,
                   t.partnerName,
                   DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
+                  t.departureDateTime != null
+                      ? DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)
+                      : '—',
                   '${t.amountPaid.toStringAsFixed(0)} F',
                   t.status,
                 ],
@@ -138,7 +146,8 @@ Future<void> exportBookingsCsv(
       'Client',
       'Trajet',
       'Compagnie',
-      'Date',
+      'Date résa',
+      'Date voyage',
       'Places',
       'Montant FCFA',
       'Statut',
@@ -150,6 +159,9 @@ Future<void> exportBookingsCsv(
         b.route,
         b.partnerName,
         DateFormat('dd/MM/yyyy HH:mm').format(b.bookingDate),
+        b.departureDateTime != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(b.departureDateTime!)
+            : '—',
         '${b.numberOfSeats}',
         b.totalPrice.toStringAsFixed(0),
         b.status,
@@ -175,7 +187,8 @@ Future<void> exportTransactionsCsv(
       'Client',
       'Trajet',
       'Compagnie',
-      'Date',
+      'Date résa',
+      'Date départ',
       'Montant tickets FCFA',
       'Frais Mobili FCFA',
       'Commission FCFA',
@@ -190,6 +203,9 @@ Future<void> exportTransactionsCsv(
         t.route,
         t.companyName,
         DateFormat('dd/MM/yyyy HH:mm').format(t.date),
+        t.departureDateTime != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+            : '—',
         t.ticketsAmount.toStringAsFixed(0),
         '${t.serviceFee}',
         '${t.commissionTotal}',
@@ -232,7 +248,8 @@ Future<void> exportBookingsPdf(
             'Client',
             'Trajet',
             'Compagnie',
-            'Date',
+            'Date résa',
+            'Date voyage',
             'Places',
             'Montant',
             'Statut',
@@ -245,6 +262,9 @@ Future<void> exportBookingsPdf(
                   b.route,
                   b.partnerName,
                   DateFormat('dd/MM/yy HH:mm').format(b.bookingDate),
+                  b.departureDateTime != null
+                      ? DateFormat('dd/MM/yy HH:mm').format(b.departureDateTime!)
+                      : '—',
                   '${b.numberOfSeats}',
                   '${b.totalPrice.toStringAsFixed(0)} F',
                   b.status,

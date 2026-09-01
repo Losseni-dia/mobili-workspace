@@ -60,7 +60,8 @@
                         <th>N° ticket</th>
                         <th>Passager</th>
                         <th>Trajet</th>
-                        <th>Date</th>
+                        <th>Date résa</th>
+                        <th>Date départ</th>
                         <th>Siège</th>
                         <th>Statut</th>
                         <th class="right">Montant</th>
@@ -73,6 +74,7 @@
                             <td>{{ t.passengerName }}</td>
                             <td>{{ t.route }}</td>
                             <td class="mono">{{ t.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
                             <td>{{ t.seatNumber }}</td>
                             <td>
                                 <span class="status-pill" [class.active]="t.status !== 'ANNULÉ'" [class.warn]="t.status === 'ANNULÉ'">

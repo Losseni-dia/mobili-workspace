@@ -13,6 +13,8 @@ public record AdminTransactionResponse(
         Long bookingId,
         String reference,
         LocalDateTime date,
+        /** Date de départ du voyage — distincte de date (date de réservation). */
+        LocalDateTime departureDateTime,
         String customerName,
         String route,
         Long companyId,

@@ -417,7 +417,8 @@ class _TransactionCard extends StatelessWidget {
                           fontSize: 11, color: AppColors.gray500),
                     ),
                     Text(
-                      '${t.companyName} · ${DateFormat('dd/MM/yy HH:mm').format(t.date)}',
+                      '${t.companyName} · Résa ${DateFormat('dd/MM/yy HH:mm').format(t.date)}'
+                      '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                       style: const TextStyle(
                           fontSize: 10, color: AppColors.gray400),
                     ),

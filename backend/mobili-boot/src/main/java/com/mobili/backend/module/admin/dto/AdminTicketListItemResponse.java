@@ -9,6 +9,9 @@ public record AdminTicketListItemResponse(
         String route,
         String partnerName,
         LocalDateTime bookingDate,
+        /** Date de départ du voyage — distincte de bookingDate (date d'achat), voir
+         *  PartnerTicketResponse.departureDateTime pour la justification. */
+        LocalDateTime departureDateTime,
         Double amountPaid,
         String status,
         String seatNumber,

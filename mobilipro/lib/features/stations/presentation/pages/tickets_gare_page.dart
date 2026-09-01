@@ -18,6 +18,7 @@ class GareTicketItem {
     required this.passengerName,
     required this.route,
     required this.bookingDate,
+    required this.departureDateTime,
     required this.amountPaid,
     required this.grossAmount,
     required this.status,
@@ -27,6 +28,9 @@ class GareTicketItem {
   final int id;
   final String ticketNumber, passengerName, route, status, seatNumber;
   final DateTime bookingDate;
+  /// Date de départ du voyage — distincte de bookingDate (date d'achat) : c'est elle qui
+  /// détermine le mois de rattachement financier du ticket (voir backend TicketRepository).
+  final DateTime? departureDateTime;
   /// Montant payé par le client (forfait inclus) — JAMAIS affiché côté gare. Voir [displayAmount].
   final double amountPaid;
   final double? grossAmount;
@@ -42,6 +46,9 @@ class GareTicketItem {
     route: j['route'] as String? ?? '',
     bookingDate:
         DateTime.tryParse(j['bookingDate'] as String? ?? '') ?? DateTime.now(),
+    departureDateTime: DateTime.tryParse(
+      j['departureDateTime'] as String? ?? '',
+    ),
     amountPaid: (j['amountPaid'] as num?)?.toDouble() ?? 0,
     grossAmount: (j['grossAmount'] as num?)?.toDouble(),
     status: j['status'] as String? ?? '',
@@ -111,7 +118,8 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
         'N° Ticket',
         'Passager',
         'Trajet',
-        'Date',
+        'Date résa',
+        'Date départ',
         'Montant FCFA',
         'Statut',
         'Siège',
@@ -123,6 +131,9 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
           t.passengerName,
           t.route,
           DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
+          t.departureDateTime != null
+              ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
+              : '—',
           t.displayAmount.toStringAsFixed(0),
           t.status,
           t.seatNumber,
@@ -159,7 +170,8 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
               'N° Ticket',
               'Passager',
               'Trajet',
-              'Date',
+              'Date résa',
+              'Date départ',
               'Montant',
               'Statut',
             ],
@@ -170,6 +182,9 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                     t.passengerName,
                     t.route,
                     DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
+                    t.departureDateTime != null
+                        ? DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)
+                        : '—',
                     '${t.displayAmount.toStringAsFixed(0)} F',
                     t.status,
                   ],
@@ -397,9 +412,8 @@ class _TicketsGarePageState extends ConsumerState<TicketsGarePage> {
                                         ),
                                       ),
                                       Text(
-                                        DateFormat(
-                                          'dd/MM/yy HH:mm',
-                                        ).format(t.bookingDate),
+                                        'Résa ${DateFormat('dd/MM/yy HH:mm').format(t.bookingDate)}'
+                                        '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                                         style: const TextStyle(
                                           fontSize: 10,
                                           color: AppColors.gray400,

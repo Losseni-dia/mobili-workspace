@@ -16,6 +16,10 @@ public record PartnerTicketResponse(
         String bookingStatus,
         String stationName,
         LocalDateTime bookingDate,
+        /** Date de départ du voyage (trip.departureDateTime) — distincte de bookingDate (date
+         *  d'achat) : c'est elle qui détermine le mois de rattachement financier du ticket (voir
+         *  TicketRepository.findForPartnerList), affichée en plus pour lever toute ambiguïté. */
+        LocalDateTime departureDateTime,
         /** N° de la réservation d'origine (un même booking peut couvrir plusieurs tickets/sièges). */
         Long bookingId,
         /** Client ayant effectué la réservation (compte connecté), distinct du passager du siège. */
