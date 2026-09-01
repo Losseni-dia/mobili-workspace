@@ -179,12 +179,18 @@ public class AdminService {
         long activeBookings = bookingRepository.count();
         long totalTickets = ticketRepository.countActiveTickets();
 
-        Double revenue = bookingRepository.sumTotalRevenue();
-        double totalRevenue = revenue != null ? revenue : 0.0;
+        // totalRevenue = revenueOnline + revenueOffline, TOUJOURS — jamais recalculé séparément
+        // via une définition de statut différente (l'ancien sumTotalRevenue() sommait TOUTE
+        // réservation non-CANCELLED, y compris PENDING/EXPIRED/AWAITING_PAYMENT jamais payées,
+        // un périmètre plus large et incohérent avec la répartition Via Mobili/Au guichet
+        // affichée juste en dessous). Avec cette définition unique, une vente guichet est
+        // TOUJOURS comptée dans le total affiché, par construction — plus de risque qu'elle
+        // paraisse "juste visible" dans la répartition sans être reflétée dans le total.
         Double revenueOnlineRaw = bookingRepository.sumRevenueOnline();
         Double revenueOfflineRaw = bookingRepository.sumRevenueOffline();
         double revenueOnline = revenueOnlineRaw != null ? revenueOnlineRaw : 0.0;
         double revenueOffline = revenueOfflineRaw != null ? revenueOfflineRaw : 0.0;
+        double totalRevenue = revenueOnline + revenueOffline;
 
         log.info("[AdminStats] users={}, partners={}, trips={}, bookings={}, tickets={}, revenue={}",
                 totalUsers, totalPartners, totalTrips, activeBookings, totalTickets, totalRevenue);

@@ -250,13 +250,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("from") java.time.LocalDateTime from,
                         @Param("to") java.time.LocalDateTime to);
 
-        @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status <> com.mobili.backend.module.booking.booking.entity.BookingStatus.CANCELLED")
-        Double sumTotalRevenue();
-
-        // Répartition all-time par canal du CA plateforme (vue d'ensemble admin) — même filtre
-        // de statut que sumTotalRevenue ci-dessus, jamais un recalcul par ticket actif (coûteux à
-        // l'échelle de toute la plateforme) : cohérent avec le chiffre déjà affiché, pas une
-        // nouvelle source de vérité.
+        // CA plateforme all-time par canal (vue d'ensemble admin) — AdminService.getGlobalStats()
+        // additionne les deux pour le total affiché : plus de sumTotalRevenue() séparé (ancienne
+        // requête sommant TOUTE réservation non-CANCELLED, y compris PENDING/EXPIRED jamais
+        // payées — un périmètre plus large et incohérent avec cette répartition CONFIRMED/
+        // OFFLINE_SALE, qui faisait paraître une vente guichet "juste visible" dans le détail
+        // sans être reflétée dans le total).
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED")
         Double sumRevenueOnline();
 
