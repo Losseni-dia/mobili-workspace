@@ -151,13 +151,13 @@ export class AdminBusiness implements OnInit {
   periodLabel(): string {
     switch (this.quickPreset()) {
       case 'day':
-        return 'Aujourd’hui (minuit → maintenant)';
+        return 'Aujourd’hui (journée calendaire complète, 00:00 → 23:59)';
       case 'week':
         return 'Semaine calendaire en cours (lundi → dimanche)';
       case 'month':
         return 'Mois calendaire en cours (1er → dernier jour du mois)';
       case 'year':
-        return '365 jours calendaires (aujourd’hui inclus)';
+        return 'Année calendaire en cours (1er janvier → 31 décembre)';
       case 'interval':
         return 'Intervalle personnalisé';
       case 'exact':
@@ -179,10 +179,18 @@ export class AdminBusiness implements OnInit {
     this.setWeek();
   }
 
+  /** Jour CALENDAIRE (00:00 → 23:59:59 aujourd'hui) — jamais plafonné à "maintenant" : un
+   *  trajet réservé ce matin pour un départ ce soir doit compter dans "Jour", même s'il n'a pas
+   *  encore eu lieu à l'heure de la consultation. Même raisonnement que setWeek/setMonth/setYear
+   *  ci-dessous — le backend DAY (`LocalDate.now().atStartOfDay()` → `LocalDateTime.now()`)
+   *  a exactement ce défaut, envoyé ici en CUSTOM pour le contourner sans toucher au backend. */
   setDay() {
-    this.period.set('DAY');
+    const today = toLocalDateString(new Date());
+    this.period.set('CUSTOM');
     this.quickPreset.set('day');
     this.singleDateMode.set(false);
+    this.fromDate.set(today);
+    this.toDate.set(today);
     this.load();
   }
 
@@ -223,10 +231,22 @@ export class AdminBusiness implements OnInit {
     this.load();
   }
 
+  /** Année CALENDAIRE (1er janvier → 31 décembre de l'année en cours) — jamais plafonnée à
+   *  "maintenant". Le backend YEAR (`LocalDate.now().minusDays(364)` → `LocalDateTime.now()`)
+   *  a le même défaut que l'ancien MONTH/WEEK : toute réservation déjà faite pour un départ
+   *  futur dans l'année (ex. un trajet d'octobre réservé en septembre) est exclue — constaté en
+   *  prod : "Ce mois-ci" (dashboard admin) affichait déjà 56 tickets/379 100 FCFA pour septembre
+   *  seul, quand "Année" (ex-365 jours glissants) ne remontait que 58 billets/678 380 FCFA sur
+   *  TOUTE l'année — la quasi-totalité des mois hors septembre déjà bookés pour le futur manquait. */
   setYear() {
-    this.period.set('YEAR');
+    const now = new Date();
+    const first = new Date(now.getFullYear(), 0, 1);
+    const last = new Date(now.getFullYear(), 11, 31);
+    this.period.set('CUSTOM');
     this.quickPreset.set('year');
     this.singleDateMode.set(false);
+    this.fromDate.set(toLocalDateString(first));
+    this.toDate.set(toLocalDateString(last));
     this.load();
   }
 
