@@ -164,13 +164,12 @@
             @if (growthPoints().length) {
                 <div class="growth-wrap">
                     <svg
-                        #growthSvg
                         class="growth-svg"
                         viewBox="0 0 600 220"
                         preserveAspectRatio="none"
                         role="img"
                         aria-label="Courbe de croissance"
-                        (mousemove)="onGrowthHover($event, growthSvg)"
+                        (mousemove)="onGrowthHover($event)"
                         (mouseleave)="hoveredGrowth.set(null)"
                     >
                         @for (ty of growthTicksY(); track ty) {
