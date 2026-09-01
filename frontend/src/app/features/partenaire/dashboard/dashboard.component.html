@@ -189,10 +189,19 @@
                     <span>Modifier, bloquer ou supprimer un trajet.</span>
                 </div>
             </a>
-            <a routerLink="/partenaire/bookings" class="shortcut">
+            <!-- "Mes réservations" masquée de la navigation (redondante avec Tickets côté
+                 partenaire) — route/lien conservés en commentaire au cas où utile plus tard. -->
+            <!-- <a routerLink="/partenaire/bookings" class="shortcut">
                 <span class="sc-ico">🎫</span>
                 <div>
                     <strong>Mes réservations</strong>
+                    <span>Liste complète avec filtres et revenus.</span>
+                </div>
+            </a> -->
+            <a routerLink="/partenaire/tickets" class="shortcut">
+                <span class="sc-ico">🎟️</span>
+                <div>
+                    <strong>Mes tickets</strong>
                     <span>Liste complète avec filtres et revenus.</span>
                 </div>
             </a>

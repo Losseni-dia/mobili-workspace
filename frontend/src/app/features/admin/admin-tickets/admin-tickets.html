@@ -56,6 +56,7 @@
                         <th>N° ticket</th>
                         <th>Passager</th>
                         <th>Compagnie</th>
+                        <th>Gare</th>
                         <th>Trajet</th>
                         <th>Date résa</th>
                         <th>Date départ</th>
@@ -70,6 +71,7 @@
                             <td class="mono">{{ t.ticketNumber }}</td>
                             <td>{{ t.passengerName }}</td>
                             <td>{{ t.partnerName }}</td>
+                            <td>{{ t.stationName || '—' }}</td>
                             <td>{{ t.route }}</td>
                             <td class="mono">{{ t.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>

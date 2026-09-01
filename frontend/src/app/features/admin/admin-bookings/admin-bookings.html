@@ -73,6 +73,7 @@
                         <th>Référence</th>
                         <th>Client</th>
                         <th>Compagnie</th>
+                        <th>Gare</th>
                         <th>Trajet</th>
                         <th>Date résa</th>
                         <th>Date voyage</th>
@@ -88,6 +89,7 @@
                             <td class="mono">#{{ b.reference }}</td>
                             <td>{{ b.customerName }}</td>
                             <td>{{ b.partnerName }}</td>
+                            <td>{{ b.stationName || '—' }}</td>
                             <td>{{ b.route }}</td>
                             <td class="mono">{{ b.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td class="mono">{{ b.departureDateTime ? (b.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>

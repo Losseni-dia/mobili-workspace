@@ -70,6 +70,7 @@
                 <thead>
                     <tr>
                         <th>Référence</th>
+                        <th>Gare</th>
                         <th>Trajet</th>
                         <th>Heure résa</th>
                         <th>Date départ</th>
@@ -83,11 +84,12 @@
                     @for (item of groupedRows(); track $index) {
                         @if (item.dateHeader; as day) {
                             <tr class="date-group-row">
-                                <td colspan="8">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
+                                <td colspan="9">{{ day | date: 'EEEE d MMMM yyyy' }}</td>
                             </tr>
                         } @else if (item.row; as t) {
                             <tr>
                                 <td class="mono">#{{ t.reference }}</td>
+                                <td>{{ t.stationName || '—' }}</td>
                                 <td>{{ t.route }}</td>
                                 <td class="mono">{{ t.date | date: 'HH:mm' }}</td>
                                 <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>

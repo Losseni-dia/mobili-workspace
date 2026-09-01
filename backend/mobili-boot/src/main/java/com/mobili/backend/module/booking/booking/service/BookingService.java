@@ -808,6 +808,9 @@ public class BookingService {
                             b.getBookingDate(),
                             b.getTrip() != null ? b.getTrip().getDepartureDateTime() : null,
                             com.mobili.backend.module.booking.booking.util.BookingSegmentUtil.resolveRouteLabel(b),
+                            b.getTrip() != null && b.getTrip().getStation() != null
+                                    ? b.getTrip().getStation().getName()
+                                    : "—",
                             grossAmount,
                             commissionTotal,
                             companyNet,

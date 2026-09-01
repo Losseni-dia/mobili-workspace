@@ -16,6 +16,7 @@ public record PartnerTransactionResponse(
          *  PartnerTicketResponse.departureDateTime pour la justification. */
         LocalDateTime departureDateTime,
         String route,
+        String stationName,
         /** Somme des prix de tickets + bagages — la vente brute de la compagnie, jamais le forfait. */
         Double grossAmount,
         /** Commission totale prélevée par Mobili sur cette réservation. */

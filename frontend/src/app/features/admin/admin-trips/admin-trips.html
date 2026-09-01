@@ -53,6 +53,7 @@
                     <tr>
                         <th>Route</th>
                         <th>Compagnie</th>
+                        <th>Gare</th>
                         <th>Départ</th>
                         <th>Places</th>
                         <th>Prix</th>
@@ -64,6 +65,7 @@
                         <tr>
                             <td>{{ t.route }}</td>
                             <td>{{ t.partnerName }}</td>
+                            <td>{{ t.stationName || '—' }}</td>
                             <td class="mono">{{ t.departureDateTime | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td class="mono">{{ t.availableSeats }} / {{ t.totalSeats }}</td>
                             <td class="right amount">{{ t.price | number }} FCFA</td>

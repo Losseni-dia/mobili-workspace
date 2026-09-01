@@ -89,7 +89,10 @@ export class PartnerShellComponent implements OnInit {
     const activite: NavItem[] = [
       { label: 'Vue d\'ensemble', icon: '📊', path: '/partenaire/dashboard' },
       { label: 'Mes voyages', icon: '🚌', path: '/partenaire/trips' },
-      { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
+      // "Réservations" masquée de la navigation à la demande explicite du dirigeant (redondante
+      // avec "Tickets" côté partenaire) — route/composant volontairement conservés tels quels
+      // (booking-list.component), au cas où ce serait utile de la remontrer plus tard.
+      // { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
       { label: 'Tickets', icon: '🎟️', path: '/partenaire/tickets' },
       { label: 'Transactions', icon: '💳', path: '/partenaire/transactions' },
     ];

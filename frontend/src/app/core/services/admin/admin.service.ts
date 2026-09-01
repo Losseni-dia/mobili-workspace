@@ -137,6 +137,7 @@ export interface AdminTripListItem {
   id: number;
   route: string;
   partnerName: string;
+  stationName: string;
   departureDateTime: string;
   totalSeats: number;
   availableSeats: number;
@@ -151,6 +152,7 @@ export interface AdminTicketListItem {
   passengerName: string;
   route: string;
   partnerName: string;
+  stationName: string;
   bookingDate: string;
   /** Date de départ du voyage — distincte de bookingDate (date d'achat), voir TicketService.PartnerTicket. */
   departureDateTime: string | null;
@@ -169,6 +171,7 @@ export interface AdminBookingListItem {
   customerName: string;
   route: string;
   partnerName: string;
+  stationName: string;
   bookingDate: string;
   /** Date de départ du voyage — distincte de bookingDate (date de réservation). */
   departureDateTime: string | null;

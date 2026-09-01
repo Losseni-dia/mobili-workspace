@@ -8,6 +8,7 @@ public record AdminBookingListItemResponse(
         String customerName,
         String route,
         String partnerName,
+        String stationName,
         LocalDateTime bookingDate,
         /** Date de départ du voyage — distincte de bookingDate (date de réservation), voir
          *  PartnerTicketResponse.departureDateTime pour la justification. */

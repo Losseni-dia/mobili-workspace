@@ -94,6 +94,7 @@ export interface PartnerTransaction {
   /** Date de départ du voyage — distincte de date (date de réservation). */
   departureDateTime: string | null;
   route: string;
+  stationName: string;
   /** Vente brute compagnie, jamais le forfait client. */
   grossAmount: number;
   /** Commission Mobili prélevée sur cette réservation. */
