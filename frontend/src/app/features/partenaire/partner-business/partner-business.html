@@ -1,0 +1,353 @@
+<div class="page">
+    <header class="page-hero">
+        <h1>Statistiques métier</h1>
+        <p class="page-lead">
+            Indicateurs commerciaux et opérationnels de votre compagnie, issus des <strong>réservations confirmées ou complétées</strong> (hors seules annulations),
+            filtrés sur la <strong>date de départ du voyage</strong> (jamais la date d'achat).
+            Le top classe vos trajets : par <strong>volume de billets</strong> et par <strong>chiffre d'affaires</strong> (FCFA).
+        </p>
+    </header>
+
+    <section class="doc-block">
+        <button type="button" class="doc-toggle" (click)="toggleMethodology()">
+            <h2>Périmètre &amp; méthodologie</h2>
+            <span class="doc-chevron" [class.open]="showMethodology()">▾</span>
+        </button>
+        @if (showMethodology()) {
+            <p>
+                <strong>Période</strong> : {{ periodLabel() }}.<br />
+                <strong>Horodatage</strong> : la fenêtre s'applique à la <code>date de départ</code> du trajet (vous n'êtes payé qu'après un voyage effectué).<br />
+                <strong>Statuts retenus</strong> : confirmé, complété, vente guichet (hors brouillons en attente).<br />
+                <strong>Classements</strong> : deux tris indépendants (volume ≠ CA si panier moyen diffère), 50 lignes max avec « Voir plus ».<br />
+                <strong>Graphiques circulaires</strong> : part du top 5 par rapport au total période ; le reste regroupé sous « Autres ».<br />
+                <strong>Courbe de croissance</strong> : un point par jour civil ayant eu au moins une vente sur la période choisie.<br />
+                <strong>Forfait / commission</strong> : ce que Mobili retient (jamais reversé) ; net = CA − forfait − commission = ce qui vous revient.
+            </p>
+        }
+    </section>
+
+    <div class="toolbar">
+        <div class="period-presets">
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'day'" (click)="setDay()">Jour</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'week'" (click)="setWeek()">Semaine</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'month'" (click)="setMonth()">Mois</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'year'" (click)="setYear()">Année</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'interval'" (click)="setCustomRange()">Intervalle</button>
+            <button type="button" class="period-btn" [class.active]="quickPreset() === 'exact'" (click)="setSingleDateMode()">Date précise</button>
+            @if (quickPreset() === 'interval') {
+                <input type="date" [ngModel]="fromDate()" (ngModelChange)="onFromDateChange($event)">
+                <input type="date" [ngModel]="toDate()" (ngModelChange)="onToDateChange($event)">
+            }
+            @if (quickPreset() === 'exact') {
+                <input type="date" [ngModel]="fromDate()" (ngModelChange)="onFromDateChange($event)">
+            }
+        </div>
+
+        <div class="filters">
+            <label class="filter">
+                <span class="f-ico">🚉</span>
+                <select [ngModel]="stationFilter()" (ngModelChange)="onStationFilterChange($event)">
+                    <option value="all">Toutes vos gares</option>
+                    @for (s of stationOptions(); track s.id) {
+                        <option [value]="s.id">{{ s.name }}</option>
+                    }
+                </select>
+            </label>
+            <label class="filter filter-search">
+                <span class="f-ico">🔎</span>
+                <input type="text" placeholder="Rechercher un trajet, une gare…" [ngModel]="search()" (ngModelChange)="onSearch($event)">
+            </label>
+        </div>
+    </div>
+
+    @if (isLoading()) {
+        <div class="sk-grid">
+            <div class="sk-card"></div>
+            <div class="sk-card"></div>
+            <div class="sk-card"></div>
+            <div class="sk-card"></div>
+        </div>
+    } @else if (loadError()) {
+        <p class="err">Impossible de charger les statistiques métier.</p>
+    } @else if (stats(); as s) {
+        <p class="range-hint">
+            Du <strong>{{ s.fromInclusive | date: "dd/MM/yyyy HH:mm" }}</strong> au
+            <strong>{{ s.toExclusive | date: "dd/MM/yyyy HH:mm" }}</strong> (heure serveur)
+        </p>
+
+        <section class="kpi-grid kpi-5">
+            <article class="kpi">
+                <span class="kpi-chip gold">🎫</span>
+                <div class="kpi-value">{{ s.totalTickets | number }}</div>
+                <div class="kpi-label">Billets vendus (période)</div>
+                @if (s.ticketsDeltaPercent != null) {
+                    <span class="kpi-delta" [class.up]="s.ticketsDeltaPercent >= 0" [class.down]="s.ticketsDeltaPercent < 0">
+                        {{ s.ticketsDeltaPercent >= 0 ? '▲' : '▼' }} {{ s.ticketsDeltaPercent | number: "1.0-1" }} % vs période précédente
+                    </span>
+                }
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip green">🚌</span>
+                <div class="kpi-value">{{ s.activeTripCount | number }}</div>
+                <div class="kpi-label">Trajets distincts actifs (ayant des ventes)</div>
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip gold">💰</span>
+                <div class="kpi-value">{{ s.totalRevenueFcfa | number }} <span class="kpi-suf">FCFA</span></div>
+                <div class="kpi-label">Chiffre d'affaires (période)</div>
+                @if (s.revenueDeltaPercent != null) {
+                    <span class="kpi-delta" [class.up]="s.revenueDeltaPercent >= 0" [class.down]="s.revenueDeltaPercent < 0">
+                        {{ s.revenueDeltaPercent >= 0 ? '▲' : '▼' }} {{ s.revenueDeltaPercent | number: "1.0-1" }} % vs période précédente
+                    </span>
+                }
+            </article>
+            <article class="kpi">
+                <span class="kpi-chip blue">↗</span>
+                <div class="kpi-value">{{ s.avgRevenuePerTicket | number: "1.0-0" }} <span class="kpi-suf">FCFA</span></div>
+                <div class="kpi-label">Panier moyen (CA ÷ billets)</div>
+            </article>
+        </section>
+
+        <section class="channel-split">
+            <h3>Répartition du CA par canal de vente</h3>
+            <div class="channel-row">
+                <div class="channel-chip">
+                    <span class="chip-label">📱 Via Mobili</span>
+                    <strong>{{ s.revenueOnlineFcfa | number }} FCFA</strong>
+                </div>
+                <div class="channel-chip">
+                    <span class="chip-label">🎟️ Au guichet</span>
+                    <strong>{{ s.revenueOfflineFcfa | number }} FCFA</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="platform-earnings">
+            <h3>Ce que Mobili retient sur la période</h3>
+            <div class="kpi-row">
+                <div class="kpi-chip">
+                    <span class="chip-label">Forfait client</span>
+                    <strong>{{ s.totalServiceFeeFcfa | number }} FCFA</strong>
+                </div>
+                <div class="kpi-chip">
+                    <span class="chip-label">Commission</span>
+                    <strong>{{ s.totalCommissionFcfa | number }} FCFA</strong>
+                </div>
+                <div class="kpi-chip kpi-chip--accent">
+                    <span class="chip-label">Net à percevoir</span>
+                    <strong>{{ s.netCompanyFcfa | number }} FCFA</strong>
+                </div>
+                <div class="kpi-chip">
+                    <span class="chip-label">CA total</span>
+                    <strong>{{ s.totalRevenueFcfa | number }} FCFA</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="growth-card">
+            <header class="growth-head">
+                <h3>Courbe de croissance</h3>
+                <div class="chip-row">
+                    <button type="button" class="chip" [class.active]="growthMetric() === 'revenue'" (click)="setGrowthMetric('revenue')">CA (FCFA)</button>
+                    <button type="button" class="chip" [class.active]="growthMetric() === 'tickets'" (click)="setGrowthMetric('tickets')">Billets</button>
+                </div>
+            </header>
+            @if (growthPoints().length) {
+                <div class="growth-wrap">
+                    <svg
+                        class="growth-svg"
+                        viewBox="0 0 600 220"
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-label="Courbe de croissance"
+                        (mousemove)="onGrowthHover($event)"
+                        (mouseleave)="hoveredGrowth.set(null)"
+                    >
+                        @for (ty of growthTicksY(); track ty) {
+                            <line class="growth-grid" x1="8" [attr.y1]="ty" x2="592" [attr.y2]="ty" />
+                        }
+                        <path class="growth-area" [attr.d]="growthAreaPath()" />
+                        <path class="growth-line" [attr.d]="growthLinePath()" />
+                        @if (hoveredGrowth(); as hi) {
+                            <line class="growth-crosshair" [attr.x1]="growthPoints()[hi].x" y1="0" [attr.x2]="growthPoints()[hi].x" y2="220" />
+                        }
+                        @for (p of growthPoints(); track p.date; let i = $index) {
+                            <circle
+                                class="growth-dot"
+                                [class.hovered]="hoveredGrowth() === i"
+                                [attr.cx]="p.x"
+                                [attr.cy]="p.y"
+                                [attr.r]="hoveredGrowth() === i ? 4 : 2.5"
+                            />
+                        }
+                    </svg>
+                    @if (hoveredGrowth(); as hi) {
+                        <div
+                            class="growth-tooltip"
+                            [style.left.%]="(growthPoints()[hi].x / 600) * 100"
+                        >
+                            <strong>{{ growthPoints()[hi].date | date: "dd/MM/yyyy" }}</strong>
+                            <span>
+                                @if (growthMetric() === 'revenue') {
+                                    {{ growthPoints()[hi].value | number }} FCFA
+                                } @else {
+                                    {{ growthPoints()[hi].value | number }} billet(s)
+                                }
+                            </span>
+                        </div>
+                    }
+                </div>
+            } @else {
+                <p class="growth-empty">Pas assez de données sur cette période pour tracer une courbe.</p>
+            }
+        </section>
+
+        <div class="donut-grid">
+            <div class="donut-card">
+                <h3>Part du CA (top 5 + autres)</h3>
+                <div class="donut-wrap">
+                    <svg
+                        class="donut-svg"
+                        viewBox="0 0 100 100"
+                        role="img"
+                        aria-label="Graphique de répartition du chiffre d'affaires"
+                    >
+                        @for (seg of revenueDonutSegments(); track $index) {
+                            <g
+                                class="donut-slice"
+                                [attr.transform]="revenueSliceTransform($index, seg)"
+                                (pointerenter)="hoveredRevenue.set($index)"
+                                (pointerleave)="hoveredRevenue.set(null)"
+                            >
+                                <path [attr.d]="seg.path" [attr.fill]="seg.color" />
+                            </g>
+                        }
+                    </svg>
+                </div>
+                <ul class="donut-legend">
+                    @for (sl of s.revenueByTripDonut; track sl.label) {
+                        <li
+                            (pointerenter)="hoveredRevenue.set($index)"
+                            (pointerleave)="hoveredRevenue.set(null)"
+                        >
+                            <span class="leg-pct">{{ sl.percentOfTotal | number: "1.1-1" }} %</span>
+                            <span class="leg-txt" [title]="sl.label">{{ sl.label }}</span>
+                            <span class="leg-val">{{ sl.revenueFcfa | number }} F</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="donut-card">
+                <h3>Part des réservations (top 5 + autres)</h3>
+                <div class="donut-wrap">
+                    <svg
+                        class="donut-svg"
+                        viewBox="0 0 100 100"
+                        role="img"
+                        aria-label="Graphique de répartition des réservations"
+                    >
+                        @for (seg of volumeDonutSegments(); track $index) {
+                            <g
+                                class="donut-slice"
+                                [attr.transform]="volumeSliceTransform($index, seg)"
+                                (pointerenter)="hoveredVolume.set($index)"
+                                (pointerleave)="hoveredVolume.set(null)"
+                            >
+                                <path [attr.d]="seg.path" [attr.fill]="seg.color" />
+                            </g>
+                        }
+                    </svg>
+                </div>
+                <ul class="donut-legend">
+                    @for (sl of s.volumeByTripDonut; track sl.label) {
+                        <li
+                            (pointerenter)="hoveredVolume.set($index)"
+                            (pointerleave)="hoveredVolume.set(null)"
+                        >
+                            <span class="leg-pct">{{ sl.percentOfTotal | number: "1.1-1" }} %</span>
+                            <span class="leg-txt" [title]="sl.label">{{ sl.label }}</span>
+                            <span class="leg-val">{{ sl.ticketCount | number }} bil.</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="tables-2">
+            <section class="panel">
+                <header class="panel-head">
+                    <h2>Top — volume (billets)</h2>
+                    <button type="button" class="btn-export" (click)="exportTopTicketsCsv()">⬇ CSV</button>
+                </header>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Route</th>
+                                <th>Gare</th>
+                                <th>Billets</th>
+                                <th>CA (FCFA)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (r of pagerTickets.visible(); track r.tripId) {
+                                <tr>
+                                    <td class="t-rank">{{ r.rank }}</td>
+                                    <td>{{ r.route }}</td>
+                                    <td>{{ r.stationName }}</td>
+                                    <td class="t-num">{{ r.ticketCount | number }}</td>
+                                    <td class="t-num">{{ r.revenueFcfa | number }}</td>
+                                </tr>
+                            }
+                            @empty {
+                                <tr><td colspan="5" class="t-empty">Aucun résultat.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (pagerTickets.hasMore()) {
+                    <button type="button" class="btn-more" (click)="pagerTickets.showMore()">Voir plus ({{ pagerTickets.remaining() }})</button>
+                }
+            </section>
+            <section class="panel">
+                <header class="panel-head">
+                    <h2>Top — rentabilité (CA)</h2>
+                    <button type="button" class="btn-export" (click)="exportTopRevenueCsv()">⬇ CSV</button>
+                </header>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Route</th>
+                                <th>Gare</th>
+                                <th>CA (FCFA)</th>
+                                <th>Billets</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (r of pagerRevenue.visible(); track r.tripId) {
+                                <tr>
+                                    <td class="t-rank">{{ r.rank }}</td>
+                                    <td>{{ r.route }}</td>
+                                    <td>{{ r.stationName }}</td>
+                                    <td class="t-num">{{ r.revenueFcfa | number }}</td>
+                                    <td class="t-num">{{ r.ticketCount | number }}</td>
+                                </tr>
+                            }
+                            @empty {
+                                <tr><td colspan="5" class="t-empty">Aucun résultat.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (pagerRevenue.hasMore()) {
+                    <button type="button" class="btn-more" (click)="pagerRevenue.showMore()">Voir plus ({{ pagerRevenue.remaining() }})</button>
+                }
+            </section>
+        </div>
+    }
+
+    <a routerLink="/partenaire/dashboard" class="back-link">← Retour à la vue d'ensemble</a>
+</div>
