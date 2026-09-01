@@ -233,9 +233,10 @@ export class AdminBusiness implements OnInit {
     this.hoveredGrowth.set(null);
   }
 
-  onGrowthHover(evt: MouseEvent, svgEl: SVGSVGElement) {
+  onGrowthHover(evt: MouseEvent) {
     const pts = this.growthPoints();
     if (!pts.length) return;
+    const svgEl = evt.currentTarget as SVGSVGElement;
     const rect = svgEl.getBoundingClientRect();
     const relX = ((evt.clientX - rect.left) / rect.width) * GW;
     let closest = 0;
@@ -292,11 +293,13 @@ export class AdminBusiness implements OnInit {
   private load() {
     this.isLoading.set(true);
     this.loadError.set(false);
+    const station = this.stationFilter();
+    const partner = this.partnerFilter();
     const opts = {
       fromDate: this.period() === 'CUSTOM' ? this.fromDate() || undefined : undefined,
       toDate: this.period() === 'CUSTOM' ? this.toDate() || undefined : undefined,
-      stationId: this.stationFilter() === 'all' ? null : this.stationFilter(),
-      partnerId: this.partnerFilter() === 'all' ? null : this.partnerFilter(),
+      stationId: station === 'all' ? null : station,
+      partnerId: partner === 'all' ? null : partner,
     };
     this.adminService.getTripAnalytics(this.period(), opts).subscribe({
       next: (d) => {
