@@ -41,6 +41,7 @@ Future<void> exportTicketsCsv(
       'Passager',
       'Trajet',
       'Compagnie',
+      'Gare',
       'Date résa',
       'Date départ',
       'Montant FCFA',
@@ -54,6 +55,7 @@ Future<void> exportTicketsCsv(
         t.passengerName,
         t.route,
         t.partnerName,
+        t.stationName,
         DateFormat('dd/MM/yyyy HH:mm').format(t.bookingDate),
         t.departureDateTime != null
             ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
@@ -98,6 +100,7 @@ Future<void> exportTicketsPdf(
             'Passager',
             'Trajet',
             'Compagnie',
+            'Gare',
             'Date résa',
             'Date départ',
             'Montant',
@@ -110,6 +113,7 @@ Future<void> exportTicketsPdf(
                   t.passengerName,
                   t.route,
                   t.partnerName,
+                  t.stationName,
                   DateFormat('dd/MM/yy HH:mm').format(t.bookingDate),
                   t.departureDateTime != null
                       ? DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)
@@ -146,6 +150,7 @@ Future<void> exportBookingsCsv(
       'Client',
       'Trajet',
       'Compagnie',
+      'Gare',
       'Date résa',
       'Date voyage',
       'Places',
@@ -158,6 +163,7 @@ Future<void> exportBookingsCsv(
         b.customerName,
         b.route,
         b.partnerName,
+        b.stationName,
         DateFormat('dd/MM/yyyy HH:mm').format(b.bookingDate),
         b.departureDateTime != null
             ? DateFormat('dd/MM/yyyy HH:mm').format(b.departureDateTime!)
@@ -187,6 +193,7 @@ Future<void> exportTransactionsCsv(
       'Client',
       'Trajet',
       'Compagnie',
+      'Gare',
       'Date résa',
       'Date départ',
       'Montant tickets FCFA',
@@ -202,6 +209,7 @@ Future<void> exportTransactionsCsv(
         t.customerName,
         t.route,
         t.companyName,
+        t.stationName,
         DateFormat('dd/MM/yyyy HH:mm').format(t.date),
         t.departureDateTime != null
             ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
@@ -248,6 +256,7 @@ Future<void> exportBookingsPdf(
             'Client',
             'Trajet',
             'Compagnie',
+            'Gare',
             'Date résa',
             'Date voyage',
             'Places',
@@ -261,6 +270,7 @@ Future<void> exportBookingsPdf(
                   b.customerName,
                   b.route,
                   b.partnerName,
+                  b.stationName,
                   DateFormat('dd/MM/yy HH:mm').format(b.bookingDate),
                   b.departureDateTime != null
                       ? DateFormat('dd/MM/yy HH:mm').format(b.departureDateTime!)
@@ -296,6 +306,7 @@ Future<void> exportTripsCsv(
     [
       'Trajet',
       'Compagnie',
+      'Gare',
       'Départ',
       'Places totales',
       'Places restantes',
@@ -306,6 +317,7 @@ Future<void> exportTripsCsv(
       (t) => [
         t.route,
         t.partnerName,
+        t.stationName,
         DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime),
         '${t.totalSeats}',
         '${t.availableSeats}',
@@ -345,6 +357,7 @@ Future<void> exportTripsPdf(
           headers: [
             'Trajet',
             'Compagnie',
+            'Gare',
             'Départ',
             'Places',
             'Prix',
@@ -355,6 +368,7 @@ Future<void> exportTripsPdf(
                 (t) => [
                   t.route,
                   t.partnerName,
+                  t.stationName,
                   DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime),
                   '${t.availableSeats}/${t.totalSeats}',
                   '${t.price.toStringAsFixed(0)} F',

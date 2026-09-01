@@ -86,7 +86,7 @@
                         <th>Compagnie</th>
                         <th>Gare</th>
                         <th>Trajet</th>
-                        <th>Heure résa</th>
+                        <th>Date résa</th>
                         <th>Date départ</th>
                         <th class="right">Frais Mobili</th>
                         <th class="right">Commission</th>
@@ -107,7 +107,7 @@
                                 <td>{{ t.companyName }}</td>
                                 <td>{{ t.stationName || '—' }}</td>
                                 <td>{{ t.route }}</td>
-                                <td class="mono">{{ t.date | date: 'HH:mm' }}</td>
+                                <td class="mono">{{ t.date | date: 'dd/MM/yyyy HH:mm' }}</td>
                                 <td class="mono">{{ t.departureDateTime ? (t.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
                                 <td class="right">{{ t.serviceFee | number }} FCFA</td>
                                 <td class="right">{{ t.commissionTotal | number }} FCFA</td>

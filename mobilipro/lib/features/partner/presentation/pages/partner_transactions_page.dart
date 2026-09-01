@@ -21,6 +21,7 @@ class PartnerTransaction {
     required this.date,
     required this.departureDateTime,
     required this.route,
+    required this.stationName,
     required this.grossAmount,
     required this.commissionTotal,
     required this.companyNet,
@@ -28,7 +29,7 @@ class PartnerTransaction {
   });
 
   final int bookingId, commissionTotal;
-  final String reference, route, status;
+  final String reference, route, stationName, status;
   final DateTime date;
   /// Date de départ du voyage — distincte de date (date de réservation), voir
   /// GareTicketItem.departureDateTime (tickets_gare_page.dart).
@@ -43,6 +44,7 @@ class PartnerTransaction {
           j['departureDateTime'] as String? ?? '',
         ),
         route: j['route'] as String? ?? '',
+        stationName: j['stationName'] as String? ?? '—',
         grossAmount: (j['grossAmount'] as num?)?.toDouble() ?? 0,
         commissionTotal: (j['commissionTotal'] as num?)?.toInt() ?? 0,
         companyNet: (j['companyNet'] as num?)?.toDouble() ?? 0,
@@ -92,11 +94,12 @@ class _PartnerTransactionsPageState
 
   Future<void> _exportCsv(List<PartnerTransaction> transactions) async {
     final rows = [
-      ['Référence', 'Trajet', 'Date résa', 'Date départ', 'Vente brute FCFA', 'Commission FCFA', 'Net FCFA', 'Statut'],
+      ['Référence', 'Trajet', 'Gare', 'Date résa', 'Date départ', 'Vente brute FCFA', 'Commission FCFA', 'Net FCFA', 'Statut'],
       ...transactions.map(
         (t) => [
           t.reference,
           t.route,
+          t.stationName,
           DateFormat('dd/MM/yyyy HH:mm').format(t.date),
           t.departureDateTime != null
               ? DateFormat('dd/MM/yyyy HH:mm').format(t.departureDateTime!)
@@ -343,7 +346,7 @@ class _TransactionCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${t.route} — Résa ${DateFormat('dd/MM/yy HH:mm').format(t.date)}'
+                      '${t.route} (${t.stationName}) — Résa ${DateFormat('dd/MM/yy HH:mm').format(t.date)}'
                       '${t.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(t.departureDateTime!)}' : ''}',
                       style: const TextStyle(fontSize: 11, color: AppColors.gray500),
                     ),

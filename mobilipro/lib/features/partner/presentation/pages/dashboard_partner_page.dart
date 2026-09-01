@@ -524,55 +524,35 @@ class DashboardPartnerPage extends ConsumerWidget {
                             },
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Consumer(
-                                  builder: (context, ref, _) {
-                                    final tripsCountAsync = ref.watch(
-                                      _monthlyActiveTripsCountProvider,
-                                    );
-                                    final tripsCount =
-                                        tripsCountAsync.valueOrNull ?? 0;
-                                    return _PartnerBadgeCard(
-                                      ref: ref,
-                                      icon: Icons.directions_bus_rounded,
-                                      label: 'Trajets actifs',
-                                      value: '$tripsCount',
-                                      color: AppColors.mobiliBlue,
-                                      seenKey: 'partner_trips_total',
-                                      currentTotal: tripsCount,
-                                      subtitle: _currentMonthLabel(),
-                                      destination: const PartnerTripsListPage(),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Consumer(
-                                  builder: (context, ref, _) {
-                                    final bookingsCountAsync = ref.watch(
-                                      _monthlyBookingsCountProvider,
-                                    );
-                                    final bookingsCount =
-                                        bookingsCountAsync.valueOrNull ?? 0;
-                                    return _PartnerBadgeCard(
-                                      ref: ref,
-                                      icon: Icons.bookmark_rounded,
-                                      label: 'Réservations',
-                                      value: '$bookingsCount',
-                                      color: AppColors.stationGreen,
-                                      seenKey: 'partner_bookings_total',
-                                      currentTotal: bookingsCount,
-                                      subtitle: _currentMonthLabel(),
-                                      destination:
-                                          const PartnerBookingsListPage(),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
+                          // "Réservations" masquée ici (redondante avec Tickets côté partenaire,
+                          // même choix que web) — _monthlyBookingsCountProvider et
+                          // PartnerBookingsListPage intentionnellement conservés intacts, voir
+                          // usage commenté ci-dessous au cas où utile plus tard :
+                          // Expanded(child: Consumer(builder: (context, ref, _) {
+                          //   final bookingsCount = ref.watch(_monthlyBookingsCountProvider).valueOrNull ?? 0;
+                          //   return _PartnerBadgeCard(ref: ref, icon: Icons.bookmark_rounded,
+                          //     label: 'Réservations', value: '$bookingsCount', color: AppColors.stationGreen,
+                          //     seenKey: 'partner_bookings_total', currentTotal: bookingsCount,
+                          //     subtitle: _currentMonthLabel(), destination: const PartnerBookingsListPage());
+                          // })),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final tripsCountAsync = ref.watch(
+                                _monthlyActiveTripsCountProvider,
+                              );
+                              final tripsCount = tripsCountAsync.valueOrNull ?? 0;
+                              return _PartnerBadgeCard(
+                                ref: ref,
+                                icon: Icons.directions_bus_rounded,
+                                label: 'Trajets actifs',
+                                value: '$tripsCount',
+                                color: AppColors.mobiliBlue,
+                                seenKey: 'partner_trips_total',
+                                currentTotal: tripsCount,
+                                subtitle: _currentMonthLabel(),
+                                destination: const PartnerTripsListPage(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 12),
                           Consumer(

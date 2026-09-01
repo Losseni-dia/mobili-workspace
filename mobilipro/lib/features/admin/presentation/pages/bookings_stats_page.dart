@@ -341,7 +341,7 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                                           ),
                                         ),
                                         Text(
-                                          '${b.customerName} — ${b.route}',
+                                          '${b.customerName} — ${b.route} (${b.stationName})',
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: AppColors.gray500,

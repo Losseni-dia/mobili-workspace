@@ -420,7 +420,7 @@ class _TransactionCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${t.customerName} — ${t.route}',
+                      '${t.customerName} — ${t.route} (${t.stationName})',
                       style: const TextStyle(
                           fontSize: 11, color: AppColors.gray500),
                     ),

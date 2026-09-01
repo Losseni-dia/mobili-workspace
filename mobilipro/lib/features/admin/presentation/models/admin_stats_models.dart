@@ -210,6 +210,7 @@ class AdminTicketListItem {
     required this.passengerName,
     required this.route,
     required this.partnerName,
+    required this.stationName,
     required this.bookingDate,
     required this.departureDateTime,
     required this.amountPaid,
@@ -223,6 +224,7 @@ class AdminTicketListItem {
       passengerName,
       route,
       partnerName,
+      stationName,
       status,
       seatNumber;
   final DateTime bookingDate;
@@ -242,6 +244,7 @@ class AdminTicketListItem {
         passengerName: j['passengerName'] as String? ?? '',
         route: j['route'] as String? ?? '',
         partnerName: j['partnerName'] as String? ?? '',
+        stationName: j['stationName'] as String? ?? '—',
         bookingDate:
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
@@ -263,6 +266,7 @@ class AdminBookingListItem {
     required this.customerName,
     required this.route,
     required this.partnerName,
+    required this.stationName,
     required this.bookingDate,
     required this.departureDateTime,
     required this.numberOfSeats,
@@ -270,7 +274,7 @@ class AdminBookingListItem {
     required this.status,
   });
   final int id, numberOfSeats;
-  final String reference, customerName, route, partnerName, status;
+  final String reference, customerName, route, partnerName, stationName, status;
   final DateTime bookingDate;
   /// Date de départ du voyage — distincte de bookingDate (date de réservation).
   final DateTime? departureDateTime;
@@ -283,6 +287,7 @@ class AdminBookingListItem {
         customerName: j['customerName'] as String? ?? '',
         route: j['route'] as String? ?? '',
         partnerName: j['partnerName'] as String? ?? '',
+        stationName: j['stationName'] as String? ?? '—',
         bookingDate:
             DateTime.tryParse(j['bookingDate'] as String? ?? '') ??
             DateTime.now(),
@@ -354,6 +359,7 @@ class AdminTripListItem {
     required this.id,
     required this.route,
     required this.partnerName,
+    required this.stationName,
     required this.departureDateTime,
     required this.totalSeats,
     required this.availableSeats,
@@ -361,7 +367,7 @@ class AdminTripListItem {
     required this.status,
   });
   final int id, totalSeats, availableSeats;
-  final String route, partnerName, status;
+  final String route, partnerName, stationName, status;
   final DateTime departureDateTime;
   final double price;
 
@@ -370,6 +376,7 @@ class AdminTripListItem {
         id: (j['id'] as num?)?.toInt() ?? 0,
         route: j['route'] as String? ?? '',
         partnerName: j['partnerName'] as String? ?? '',
+        stationName: j['stationName'] as String? ?? '—',
         departureDateTime:
             DateTime.tryParse(j['departureDateTime'] as String? ?? '') ??
             DateTime.now(),

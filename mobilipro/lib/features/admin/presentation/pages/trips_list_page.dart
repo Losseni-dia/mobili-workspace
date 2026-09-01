@@ -185,7 +185,7 @@ final _searchCtrl = TextEditingController();
                                         ),
                                       ),
                                       Text(
-                                        t.partnerName,
+                                        '${t.partnerName} — ${t.stationName}',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: AppColors.gray500,
