@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { ConfigurationService } from '../../../configurations/services/configuration.service';
+import { AdminTripStats, TripStatsPeriod } from '../admin/admin.service';
 
 export interface Partner {
   // 💡 N'oublie pas le "export" ici !
@@ -284,5 +285,28 @@ export class PartenaireService {
   /** Archivage logique (204, pas de suppression réelle). */
   archiveGareUser(id: number): Observable<void> {
     return this.http.delete<void>(`/partenaire/gare-users/${id}`);
+  }
+
+  /**
+   * "Stats métier" côté partenaire — même moteur/réponse que l'admin (AdminTripStats), toujours
+   * scopé à la compagnie courante côté backend (jamais de partnerId envoyé ici : un compte
+   * partenaire ne peut interroger que ses propres données). stationId est ignoré côté serveur
+   * pour un compte gare (forcé à sa propre gare) — voir PartnerTripAnalyticsController.
+   */
+  getTripAnalytics(
+    period: TripStatsPeriod,
+    opts?: { fromDate?: string; toDate?: string; stationId?: number | null },
+  ): Observable<AdminTripStats> {
+    let params = new HttpParams().set('period', period);
+    if (opts?.fromDate) {
+      params = params.set('fromDate', opts.fromDate);
+    }
+    if (opts?.toDate) {
+      params = params.set('toDate', opts.toDate);
+    }
+    if (opts?.stationId != null) {
+      params = params.set('stationId', String(opts.stationId));
+    }
+    return this.http.get<AdminTripStats>('/partenaire/stats/trip-analytics', { params });
   }
 }

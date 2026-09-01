@@ -116,6 +116,14 @@ export const businessRoutes: Routes = [
           ),
       },
       {
+        path: 'statistiques',
+        canActivate: [partnerOperationsGuard],
+        loadComponent: () =>
+          import('@mobili-app/features/partenaire/partner-business/partner-business').then(
+            (m) => m.PartnerBusiness,
+          ),
+      },
+      {
         path: 'support',
         loadComponent: () =>
           import('@mobili-app/features/shared/support-chat/support-chat.component').then(

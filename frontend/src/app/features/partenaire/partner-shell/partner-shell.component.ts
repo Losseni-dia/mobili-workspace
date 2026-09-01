@@ -95,6 +95,7 @@ export class PartnerShellComponent implements OnInit {
       // { label: 'Réservations', icon: '🎫', path: '/partenaire/bookings' },
       { label: 'Tickets', icon: '🎟️', path: '/partenaire/tickets' },
       { label: 'Transactions', icon: '💳', path: '/partenaire/transactions' },
+      { label: 'Statistiques', icon: '📈', path: '/partenaire/statistiques' },
     ];
     sections.push({ title: 'Activité', items: activite });
 
