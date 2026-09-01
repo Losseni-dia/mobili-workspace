@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
+import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.trip.repository.TripRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -50,12 +51,32 @@ public class PartnerDashboardService {
                         || b.getStatus() == BookingStatus.OFFLINE_SALE)
                 .count() : 0L;
 
+        // Tickets vendus (actifs, hors ANNULÉ) répartis par canal — même logique que
+        // revenueOnline/revenueOffline ci-dessus, pour afficher le nombre de billets en plus
+        // du montant sur la vue d'ensemble partenaire (web).
+        long ticketsSoldOnline = 0;
+        long ticketsSoldOffline = 0;
+        if (bookings != null) {
+            ticketsSoldOnline = bookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                    .flatMap(b -> b.getTickets().stream())
+                    .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
+                    .count();
+            ticketsSoldOffline = bookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.OFFLINE_SALE)
+                    .flatMap(b -> b.getTickets().stream())
+                    .filter(t -> t.getStatus() != TicketStatus.ANNULÉ)
+                    .count();
+        }
+
         Map<String, Object> data = new HashMap<>();
         data.put("activeTrips", tripsCount);
         data.put("totalBookings", confirmedCount);
         data.put("totalRevenue", revenueOnline + revenueOffline);
         data.put("revenueOnline", revenueOnline);
         data.put("revenueOffline", revenueOffline);
+        data.put("ticketsSoldOnline", ticketsSoldOnline);
+        data.put("ticketsSoldOffline", ticketsSoldOffline);
         data.put("bookingsList", bookings != null ? bookings : new ArrayList<>());
         return data;
     }

@@ -32,8 +32,8 @@
             <div class="kpi-bar"><span></span></div>
         </article>
         <article class="kpi kpi-1">
-            <div class="kpi-label">Réservations</div>
-            <div class="kpi-value">{{ allTime().bookings }}</div>
+            <div class="kpi-label">Tickets vendus</div>
+            <div class="kpi-value">{{ allTime().ticketsSold }}</div>
             <div class="kpi-bar"><span></span></div>
         </article>
         <article class="kpi kpi-2">
@@ -43,15 +43,17 @@
         </article>
     </div>
     <div class="revenue-split-card">
-        <span class="revenue-split-card__label">Répartition des revenus</span>
+        <span class="revenue-split-card__label">Répartition par canal</span>
         <div class="revenue-split-card__items">
             <div class="revenue-split-card__item">
                 <span>Via Mobili</span>
                 <strong>{{ allTime().revenueOnline | number }} FCFA</strong>
+                <em>{{ allTime().ticketsSoldOnline }} ticket{{ allTime().ticketsSoldOnline > 1 ? 's' : '' }}</em>
             </div>
             <div class="revenue-split-card__item">
                 <span>Au guichet</span>
                 <strong>{{ allTime().revenueOffline | number }} FCFA</strong>
+                <em>{{ allTime().ticketsSoldOffline }} ticket{{ allTime().ticketsSoldOffline > 1 ? 's' : '' }}</em>
             </div>
         </div>
     </div>
@@ -65,6 +67,11 @@
         }
     </header>
     <div class="kpi-grid">
+        <article class="kpi kpi-0">
+            <div class="kpi-label">Voyages actifs</div>
+            <div class="kpi-value">{{ month().activeTrips }}</div>
+            <div class="kpi-bar"><span></span></div>
+        </article>
         <article class="kpi kpi-3">
             <div class="kpi-label">Tickets vendus</div>
             <div class="kpi-value">{{ month().ticketsSold }}</div>
@@ -77,15 +84,17 @@
         </article>
     </div>
     <div class="revenue-split-card">
-        <span class="revenue-split-card__label">Répartition des revenus</span>
+        <span class="revenue-split-card__label">Répartition par canal</span>
         <div class="revenue-split-card__items">
             <div class="revenue-split-card__item">
                 <span>Via Mobili</span>
                 <strong>{{ month().revenueOnline | number }} FCFA</strong>
+                <em>{{ month().ticketsSoldOnline }} ticket{{ month().ticketsSoldOnline > 1 ? 's' : '' }}</em>
             </div>
             <div class="revenue-split-card__item">
                 <span>Au guichet</span>
                 <strong>{{ month().revenueOffline | number }} FCFA</strong>
+                <em>{{ month().ticketsSoldOffline }} ticket{{ month().ticketsSoldOffline > 1 ? 's' : '' }}</em>
             </div>
         </div>
     </div>

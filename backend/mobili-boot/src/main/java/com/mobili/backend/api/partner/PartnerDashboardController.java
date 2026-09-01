@@ -55,6 +55,8 @@ public class PartnerDashboardController {
                 .totalRevenue((double) rawData.get("totalRevenue"))
                 .revenueOnline((double) rawData.get("revenueOnline"))
                 .revenueOffline((double) rawData.get("revenueOffline"))
+                .ticketsSoldOnline((long) rawData.get("ticketsSoldOnline"))
+                .ticketsSoldOffline((long) rawData.get("ticketsSoldOffline"))
                 .recentBookings(recentBookings)
                 .build());
     }

@@ -179,8 +179,9 @@
   &__item {
     flex: 1;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     padding: 0.6rem 0.75rem;
     background: variables.$gray-50;
     border-radius: variables.$radius-sm;
@@ -194,7 +195,21 @@
       color: variables.$mobili-blue-deep;
       font-weight: 800;
     }
+
+    em {
+      flex-basis: 100%;
+      margin-top: 2px;
+      font-style: normal;
+      font-size: 0.75rem;
+      color: variables.$gray-500;
+    }
   }
+}
+
+.gare-kpis-month {
+  font-weight: 700;
+  color: variables.$gray-500;
+  text-transform: capitalize;
 }
 
 .gare-recent {

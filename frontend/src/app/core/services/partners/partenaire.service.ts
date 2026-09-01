@@ -34,6 +34,9 @@ export interface PartnerDashboard {
   revenueOnline?: number;
   /** Revenu réalisé au guichet (OFFLINE_SALE) — idem. */
   revenueOffline?: number;
+  /** Tickets vendus (actifs, hors ANNULÉ) depuis toujours, par canal. */
+  ticketsSoldOnline?: number;
+  ticketsSoldOffline?: number;
   recentBookings: {
     id: number;
     customerName: string;

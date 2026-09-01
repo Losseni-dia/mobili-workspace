@@ -155,8 +155,9 @@
     flex: 1;
     min-width: 160px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     padding: 10px 14px;
     background: variables.$gray-50;
     border-radius: variables.$radius-sm;
@@ -164,6 +165,13 @@
 
     span { color: variables.$gray-600; }
     strong { color: variables.$mobili-blue-deep; font-weight: 800; }
+    em {
+      flex-basis: 100%;
+      margin-top: 2px;
+      font-style: normal;
+      font-size: 0.75rem;
+      color: variables.$gray-500;
+    }
   }
 }
 

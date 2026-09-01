@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
 import { TripService } from '../../../core/services/trip/trip.service';
 import { BookingResponse, BookingService } from '../../../core/services/booking/booking.service';
+import { PartenaireService, PartnerDashboard } from '../../../core/services/partners/partenaire.service';
 import { ListPager } from '../../../core/utils/list-pager.util';
 import { toLocalDateString } from '../../../core/utils/period-range.util';
 
@@ -27,6 +28,7 @@ export class GareHomeComponent implements OnInit {
   private ticketService = inject(TicketService);
   private tripService = inject(TripService);
   private bookingService = inject(BookingService);
+  private partenaireService = inject(PartenaireService);
 
   user = computed(() => this.auth.currentUser());
   firstName = computed(() => this.user()?.firstname?.trim() || '');
@@ -37,13 +39,32 @@ export class GareHomeComponent implements OnInit {
     () => this.auth.hasRole('GARE') && this.auth.currentUser()?.gareOperationsEnabled === false,
   );
 
-  // ====== KPI du mois ======
+  // ====== Vue d'ensemble scindée en deux blocs (même structure que le dashboard partenaire) :
+  // "Depuis toujours" (GET /partenaire/dashboard/stats, auto-scopé sur la gare connectée côté
+  // backend via StationPrincipal) et "Ce mois-ci" (recalculé côté client à partir des mêmes
+  // tickets/trajets que les pages Tickets/Trajets filtrées sur "Mois", pour rester aligné).
+  isLoadingAllTime = signal(false);
+  allTime = signal({
+    activeTrips: 0,
+    ticketsSold: 0,
+    ticketsSoldOnline: 0,
+    ticketsSoldOffline: 0,
+    revenueTotal: 0,
+    revenueOnline: 0,
+    revenueOffline: 0,
+  });
+
   isLoadingKpis = signal(false);
   activeTripsCount = signal<number | null>(null);
   ticketsSoldCount = signal<number | null>(null);
+  ticketsSoldOnline = signal(0);
+  ticketsSoldOffline = signal(0);
   revenueOnline = signal(0);
   revenueOffline = signal(0);
   revenueTotal = computed(() => this.revenueOnline() + this.revenueOffline());
+
+  /** Libellé du mois en cours, ex. "septembre 2026". */
+  currentMonthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   // ====== Activité récente (tickets, pagination "Voir plus") ======
   isLoadingRecent = signal(false);
@@ -62,8 +83,33 @@ export class GareHomeComponent implements OnInit {
 
   private loadAll() {
     if (this.gareActionsLocked()) return;
+    this.loadAllTimeStats();
     this.loadMonthlyKpis();
     this.loadRecentTickets();
+  }
+
+  /** "Depuis toujours" — même endpoint que le dashboard partenaire, auto-scopé sur la gare
+   *  connectée côté backend (StationPrincipal) : aucun stationId à passer explicitement. */
+  private loadAllTimeStats() {
+    this.isLoadingAllTime.set(true);
+    this.partenaireService.getDashboardStats().subscribe({
+      next: (data: PartnerDashboard) => {
+        this.allTime.set({
+          activeTrips: data.activeTripsCount,
+          ticketsSold: (data.ticketsSoldOnline ?? 0) + (data.ticketsSoldOffline ?? 0),
+          ticketsSoldOnline: data.ticketsSoldOnline ?? 0,
+          ticketsSoldOffline: data.ticketsSoldOffline ?? 0,
+          revenueTotal: data.totalRevenue,
+          revenueOnline: data.revenueOnline ?? 0,
+          revenueOffline: data.revenueOffline ?? 0,
+        });
+        this.isLoadingAllTime.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur stats gare (depuis toujours)', err);
+        this.isLoadingAllTime.set(false);
+      },
+    });
   }
 
   private monthRange(): { from: string; to: string } {
@@ -86,8 +132,17 @@ export class GareHomeComponent implements OnInit {
     });
 
     this.ticketService.getPartnerTicketsInRange(from, to, stationId).subscribe({
-      next: (tickets) => this.ticketsSoldCount.set(tickets.length),
-      error: () => this.ticketsSoldCount.set(null),
+      next: (tickets) => {
+        this.ticketsSoldCount.set(tickets.length);
+        const active = tickets.filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ');
+        this.ticketsSoldOnline.set(active.filter((t) => t.bookingStatus === 'CONFIRMED').length);
+        this.ticketsSoldOffline.set(active.filter((t) => t.bookingStatus === 'OFFLINE_SALE').length);
+      },
+      error: () => {
+        this.ticketsSoldCount.set(null);
+        this.ticketsSoldOnline.set(0);
+        this.ticketsSoldOffline.set(0);
+      },
     });
 
     this.bookingService.getPartnerBookingsInRange(from, to).subscribe({

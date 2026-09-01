@@ -91,7 +91,20 @@ public class BookingService {
     public Booking createOfflineSale(BookingRequestDTO dto) {
         Booking booking = create(dto);
         booking.setStatus(BookingStatus.OFFLINE_SALE);
-        return bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
+
+        // BUG CONSTATÉ EN PRODUCTION : aucun Ticket n'était jamais généré pour une vente
+        // guichet — seul le Booking était persisté. Une vente OFFLINE_SALE n'apparaissait
+        // donc jamais dans les pages "Tickets" (partenaire/admin), qui lisent la table
+        // tickets, tout en comptant normalement dans "Mes réservations" (qui lit
+        // directement Booking.seatNumbers/passengerNames). Même génération que
+        // confirmPayment()/confirmBookingAfterPayment() : un Ticket par siège/passager,
+        // avec sa part de tarif et sa commission.
+        Trip fresh = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
+                .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Trajet introuvable"));
+        generateTicketsWithCommission(booking, fresh.getPartner());
+
+        return booking;
     }
 
     

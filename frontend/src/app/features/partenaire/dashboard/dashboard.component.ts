@@ -9,6 +9,7 @@ import {
 } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { PartnerTicket, TicketService } from '../../../core/services/ticket/ticket.service';
+import { TripService } from '../../../core/services/trip/trip.service';
 import { ListPager } from '../../../core/utils/list-pager.util';
 import { toLocalDateString } from '../../../core/utils/period-range.util';
 
@@ -23,6 +24,7 @@ export class DashboardComponent implements OnInit {
   private partenaireService = inject(PartenaireService);
   private auth = inject(AuthService);
   private ticketService = inject(TicketService);
+  private tripService = inject(TripService);
 
   /** Infos ticket (pas réservation agrégée) — un booking peut couvrir plusieurs sièges/tickets. */
   recentTickets = signal<PartnerTicket[]>([]);
@@ -40,8 +42,24 @@ export class DashboardComponent implements OnInit {
    * - `month`   : recalculé côté client à partir des tickets du mois en cours (même source que
    *   "Tickets vendus (mois)"), donc toujours aligné avec les pages Tickets/Réservations en "Mois".
    */
-  allTime = signal({ activeTrips: 0, bookings: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
-  month = signal({ ticketsSold: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
+  allTime = signal({
+    activeTrips: 0,
+    ticketsSold: 0,
+    ticketsSoldOnline: 0,
+    ticketsSoldOffline: 0,
+    revenueTotal: 0,
+    revenueOnline: 0,
+    revenueOffline: 0,
+  });
+  month = signal({
+    activeTrips: 0,
+    ticketsSold: 0,
+    ticketsSoldOnline: 0,
+    ticketsSoldOffline: 0,
+    revenueTotal: 0,
+    revenueOnline: 0,
+    revenueOffline: 0,
+  });
   isLoadingAllTime = signal(false);
   isLoadingMonth = signal(false);
 
@@ -73,7 +91,9 @@ export class DashboardComponent implements OnInit {
       next: (data: PartnerDashboard) => {
         this.allTime.set({
           activeTrips: data.activeTripsCount,
-          bookings: data.totalBookingsCount,
+          ticketsSold: (data.ticketsSoldOnline ?? 0) + (data.ticketsSoldOffline ?? 0),
+          ticketsSoldOnline: data.ticketsSoldOnline ?? 0,
+          ticketsSoldOffline: data.ticketsSoldOffline ?? 0,
           revenueTotal: data.totalRevenue,
           revenueOnline: data.revenueOnline ?? 0,
           revenueOffline: data.revenueOffline ?? 0,
@@ -89,7 +109,16 @@ export class DashboardComponent implements OnInit {
     const now = new Date();
     const from = toLocalDateString(new Date(now.getFullYear(), now.getMonth(), 1));
     const to = toLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+
     this.isLoadingMonth.set(true);
+    this.tripService.getPartnerTripsInRange(from, to).subscribe({
+      next: (trips) => {
+        const activeTrips = trips.filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ').length;
+        this.month.update((m) => ({ ...m, activeTrips }));
+      },
+      error: () => this.month.update((m) => ({ ...m, activeTrips: 0 })),
+    });
+
     this.ticketService.getPartnerTicketsInRange(from, to, sid).subscribe({
       next: (tickets) => {
         // Revenus du mois — recalculés à partir de CES MÊMES tickets (période + rattachement
@@ -98,18 +127,19 @@ export class DashboardComponent implements OnInit {
         // revenu total, en décalage avec "Tickets vendus (mois)" et les pages Tickets/Réservations
         // filtrées sur "Mois" — c'est exactement le décalage remonté par l'utilisateur.
         const active = tickets.filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ');
-        const revenueOnline = active
-          .filter((t) => t.bookingStatus === 'CONFIRMED')
-          .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
-        const revenueOffline = active
-          .filter((t) => t.bookingStatus === 'OFFLINE_SALE')
-          .reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
-        this.month.set({
+        const onlineTickets = active.filter((t) => t.bookingStatus === 'CONFIRMED');
+        const offlineTickets = active.filter((t) => t.bookingStatus === 'OFFLINE_SALE');
+        const revenueOnline = onlineTickets.reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
+        const revenueOffline = offlineTickets.reduce((sum, t) => sum + (t.grossAmount ?? t.amountPaid ?? 0), 0);
+        this.month.update((m) => ({
+          ...m,
           ticketsSold: tickets.length,
+          ticketsSoldOnline: onlineTickets.length,
+          ticketsSoldOffline: offlineTickets.length,
           revenueTotal: revenueOnline + revenueOffline,
           revenueOnline,
           revenueOffline,
-        });
+        }));
         // Infos ticket (pas réservation agrégée) : tri du plus récent au plus ancien.
         const sorted = [...tickets].sort(
           (a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime(),
@@ -119,7 +149,15 @@ export class DashboardComponent implements OnInit {
         this.isLoadingMonth.set(false);
       },
       error: () => {
-        this.month.set({ ticketsSold: 0, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 });
+        this.month.update((m) => ({
+          ...m,
+          ticketsSold: 0,
+          ticketsSoldOnline: 0,
+          ticketsSoldOffline: 0,
+          revenueTotal: 0,
+          revenueOnline: 0,
+          revenueOffline: 0,
+        }));
         this.recentTickets.set([]);
         this.isLoadingMonth.set(false);
       },
