@@ -44,7 +44,7 @@
             🎫 {{ isBackfillingTickets() ? 'Rattrapage en cours…' : 'Rattraper les tickets guichet manquants' }}
         </button>
         @if (backfillResultMessage(); as msg) {
-            <span class="chip-label">{{ msg }}</span>
+            <span class="backfill-result">{{ msg }}</span>
         }
     </div>
 </section>
