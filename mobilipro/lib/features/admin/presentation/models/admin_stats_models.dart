@@ -68,32 +68,69 @@ class DayEntry {
   );
 }
 
+/// Aligné sur AdminTripStatsResponse (backend) — ticketCount/totalTickets comptent des TICKETS
+/// (unité = un siège vendu), jamais des réservations : une résa de 3 places = 1 booking mais
+/// 3 tickets. Champs renommés le 2026-09-01 côté backend (totalBookings -> totalTickets,
+/// bookingCount -> ticketCount, etc.) — ce modèle Dart consommait encore les anciens noms de
+/// champs, silencieusement retombés à 0 après le déploiement (`?? 0`) : corrigé ici en même
+/// temps que l'ajout des nouveaux champs (canal de vente, forfait/commission, deltas, courbe).
 class TripStats {
   const TripStats({
-    required this.totalBookings,
+    required this.totalTickets,
     required this.totalRevenueFcfa,
     required this.activeTripCount,
-    required this.avgRevenuePerBooking,
-    required this.top10ByBookings,
+    required this.avgRevenuePerTicket,
+    required this.revenueOnlineFcfa,
+    required this.revenueOfflineFcfa,
+    required this.totalServiceFeeFcfa,
+    required this.totalCommissionFcfa,
+    required this.netCompanyFcfa,
+    required this.previousTotalTickets,
+    required this.previousTotalRevenueFcfa,
+    required this.ticketsDeltaPercent,
+    required this.revenueDeltaPercent,
+    required this.top10ByTickets,
     required this.top10ByRevenue,
+    required this.timeline,
     required this.period,
   });
-  final int totalBookings, activeTripCount;
-  final double totalRevenueFcfa, avgRevenuePerBooking;
-  final List<TripStatEntry> top10ByBookings, top10ByRevenue;
+  final int totalTickets, activeTripCount;
+  final double totalRevenueFcfa, avgRevenuePerTicket;
+  final double revenueOnlineFcfa, revenueOfflineFcfa;
+  final double totalServiceFeeFcfa, totalCommissionFcfa, netCompanyFcfa;
+  final int? previousTotalTickets;
+  final double? previousTotalRevenueFcfa;
+  final double? ticketsDeltaPercent, revenueDeltaPercent;
+  final List<TripStatEntry> top10ByTickets, top10ByRevenue;
+  final List<TripStatsDayEntry> timeline;
   final String period;
   factory TripStats.fromJson(Map<String, dynamic> j, String period) =>
       TripStats(
-        totalBookings: (j['totalBookings'] as num?)?.toInt() ?? 0,
+        totalTickets: (j['totalTickets'] as num?)?.toInt() ?? 0,
         totalRevenueFcfa: (j['totalRevenueFcfa'] as num?)?.toDouble() ?? 0,
         activeTripCount: (j['activeTripCount'] as num?)?.toInt() ?? 0,
-        avgRevenuePerBooking:
-            (j['avgRevenuePerBooking'] as num?)?.toDouble() ?? 0,
-        top10ByBookings: (j['top10ByBookings'] as List<dynamic>? ?? [])
+        avgRevenuePerTicket:
+            (j['avgRevenuePerTicket'] as num?)?.toDouble() ?? 0,
+        revenueOnlineFcfa: (j['revenueOnlineFcfa'] as num?)?.toDouble() ?? 0,
+        revenueOfflineFcfa: (j['revenueOfflineFcfa'] as num?)?.toDouble() ?? 0,
+        totalServiceFeeFcfa:
+            (j['totalServiceFeeFcfa'] as num?)?.toDouble() ?? 0,
+        totalCommissionFcfa:
+            (j['totalCommissionFcfa'] as num?)?.toDouble() ?? 0,
+        netCompanyFcfa: (j['netCompanyFcfa'] as num?)?.toDouble() ?? 0,
+        previousTotalTickets: (j['previousTotalTickets'] as num?)?.toInt(),
+        previousTotalRevenueFcfa: (j['previousTotalRevenueFcfa'] as num?)
+            ?.toDouble(),
+        ticketsDeltaPercent: (j['ticketsDeltaPercent'] as num?)?.toDouble(),
+        revenueDeltaPercent: (j['revenueDeltaPercent'] as num?)?.toDouble(),
+        top10ByTickets: (j['top10ByTickets'] as List<dynamic>? ?? [])
             .map((e) => TripStatEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
         top10ByRevenue: (j['top10ByRevenue'] as List<dynamic>? ?? [])
             .map((e) => TripStatEntry.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        timeline: (j['timeline'] as List<dynamic>? ?? [])
+            .map((e) => TripStatsDayEntry.fromJson(e as Map<String, dynamic>))
             .toList(),
         period: period,
       );
@@ -105,20 +142,53 @@ class TripStatEntry {
     required this.tripId,
     required this.route,
     required this.partnerName,
-    required this.bookingCount,
+    required this.stationName,
+    required this.ticketCount,
     required this.revenueFcfa,
   });
-  final int rank, tripId, bookingCount;
-  final String route, partnerName;
+  final int rank, tripId, ticketCount;
+  final String route, partnerName, stationName;
   final double revenueFcfa;
   factory TripStatEntry.fromJson(Map<String, dynamic> j) => TripStatEntry(
     rank: (j['rank'] as num?)?.toInt() ?? 0,
     tripId: (j['tripId'] as num?)?.toInt() ?? 0,
     route: j['route'] as String? ?? '',
     partnerName: j['partnerName'] as String? ?? '',
-    bookingCount: (j['bookingCount'] as num?)?.toInt() ?? 0,
+    stationName: j['stationName'] as String? ?? '—',
+    ticketCount: (j['ticketCount'] as num?)?.toInt() ?? 0,
     revenueFcfa: (j['revenueFcfa'] as num?)?.toDouble() ?? 0,
   );
+}
+
+/// Un point de la courbe de croissance — un jour civil.
+class TripStatsDayEntry {
+  const TripStatsDayEntry({required this.date, required this.ticketCount, required this.revenueFcfa});
+  final String date;
+  final int ticketCount;
+  final double revenueFcfa;
+  factory TripStatsDayEntry.fromJson(Map<String, dynamic> j) =>
+      TripStatsDayEntry(
+        date: j['date'] as String? ?? '',
+        ticketCount: (j['ticketCount'] as num?)?.toInt() ?? 0,
+        revenueFcfa: (j['revenueFcfa'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+/// Option de filtre gare (Stats métier) — toutes compagnies confondues.
+class AdminStationOption {
+  const AdminStationOption({
+    required this.id,
+    required this.name,
+    required this.partnerName,
+  });
+  final int id;
+  final String name, partnerName;
+  factory AdminStationOption.fromJson(Map<String, dynamic> j) =>
+      AdminStationOption(
+        id: (j['id'] as num?)?.toInt() ?? 0,
+        name: j['name'] as String? ?? '',
+        partnerName: j['partnerName'] as String? ?? '',
+      );
 }
 
 class RegistrationStats {
@@ -407,27 +477,46 @@ final dailyLoginStatsProvider = FutureProvider.autoDispose
       return DailyLoginStats.fromJson(res.data!);
     });
 
+/// Args de tripStatsProvider — station/compagnie optionnels (filtres Stats métier). Record :
+/// égalité structurelle automatique, compatible avec .family (comme AdminStatsPeriod).
+typedef TripStatsArgs = ({
+  AdminStatsPeriod period,
+  int? stationId,
+  int? partnerId,
+});
+
+/// Toujours envoyé en period=CUSTOM avec fromAsDate/toAsDate (bornes calendaires : lundi→
+/// dimanche pour "7 jours", 1er→dernier jour du mois pour "1 mois"...), jamais period=WEEK/MONTH
+/// laissé au backend — celui-ci calcule alors une fenêtre GLISSANTE plafonnée à maintenant,
+/// aveugle à toute vente déjà faite pour une date future dans la période (même bug que corrigé
+/// côté web le 2026-09-01, voir admin-business.ts). fromAsDate/toAsDate est déjà la convention
+/// de toutes les autres pages admin/partenaire/gare (trips_list_page, partner_trips_list_page,
+/// bookings_gare_page...) — seule cette page ne l'utilisait pas encore.
 final tripStatsProvider = FutureProvider.autoDispose
-    .family<TripStats, AdminStatsPeriod>((ref, period) async {
-      final qp = <String, dynamic>{};
-      String periodLabel;
-      if (period.isCustom) {
-        periodLabel = 'CUSTOM';
-        qp['period'] = 'CUSTOM';
-        qp.addAll(period.toQueryParams());
-      } else {
-        periodLabel = switch (period.days) {
-          1 => 'DAY',
-          7 => 'WEEK',
-          _ => 'MONTH',
-        };
-        qp['period'] = periodLabel;
-      }
+    .family<TripStats, TripStatsArgs>((ref, args) async {
+      final f = DateFormat('yyyy-MM-dd');
+      final qp = <String, dynamic>{
+        'period': 'CUSTOM',
+        'fromDate': f.format(args.period.fromAsDate),
+        'toDate': f.format(args.period.toAsDate),
+        if (args.stationId != null) 'stationId': args.stationId,
+        if (args.partnerId != null) 'partnerId': args.partnerId,
+      };
       final res = await ApiClient.instance.dio.get<Map<String, dynamic>>(
         '/admin/stats/trip-analytics',
         queryParameters: qp,
       );
-      return TripStats.fromJson(res.data!, periodLabel);
+      return TripStats.fromJson(res.data!, 'CUSTOM');
+    });
+
+final adminStationOptionsProvider =
+    FutureProvider.autoDispose<List<AdminStationOption>>((ref) async {
+      final res = await ApiClient.instance.dio.get<List<dynamic>>(
+        '/admin/stats/stations',
+      );
+      return (res.data ?? [])
+          .map((e) => AdminStationOption.fromJson(e as Map<String, dynamic>))
+          .toList();
     });
 
 final registrationStatsProvider = FutureProvider.autoDispose

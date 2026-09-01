@@ -325,8 +325,8 @@ class AdminDashboardPage extends ConsumerWidget {
                             return _cardWithBadge(
                               context,
                               ref,
-                              icon: Icons.bookmark_rounded,
-                              label: 'Réservations',
+                              icon: Icons.query_stats_rounded,
+                              label: 'Stats métier',
                               value: '$bookingsCount',
                               color: AppColors.warning,
                               seenKey: 'bookings_total_v3',
