@@ -6,5 +6,10 @@ public record AdminStatsResponse(
         long totalTrips,
         long totalTickets,
         long activeBookings,
-        double totalRevenue) {
+        double totalRevenue,
+        /** Répartition du CA all-time par canal — mêmes statuts que côté partenaire (CONFIRMED
+         *  = en ligne, OFFLINE_SALE = guichet), somme de b.totalPrice (cohérent avec totalRevenue
+         *  ci-dessus, pas un recalcul par ticket actif comme Booking.getGrossAmount()). */
+        double revenueOnline,
+        double revenueOffline) {
 }

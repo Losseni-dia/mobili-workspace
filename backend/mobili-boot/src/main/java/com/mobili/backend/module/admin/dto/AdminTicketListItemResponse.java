@@ -15,5 +15,8 @@ public record AdminTicketListItemResponse(
         Double amountPaid,
         String status,
         String seatNumber,
-        boolean scanned) {
+        boolean scanned,
+        /** Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distingue vente en
+         *  ligne / guichet, voir PartnerTicketResponse.bookingStatus. */
+        String bookingStatus) {
 }

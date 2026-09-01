@@ -8,8 +8,12 @@ export interface AdminStats {
   totalUsers: number;
   totalPartners: number;
   totalTrips: number;
+  totalTickets: number;
   activeBookings: number;
   totalRevenue: number;
+  /** Répartition all-time du CA par canal (CONFIRMED = en ligne, OFFLINE_SALE = guichet). */
+  revenueOnline: number;
+  revenueOffline: number;
 }
 
 export interface DayLoginEntry {
@@ -154,6 +158,8 @@ export interface AdminTicketListItem {
   status: string;
   seatNumber: string;
   scanned: boolean;
+  /** Statut de la réservation d'origine — distingue vente en ligne (CONFIRMED) / guichet (OFFLINE_SALE). */
+  bookingStatus: string | null;
 }
 
 /** Aligné sur AdminBookingListItemResponse (backend). */

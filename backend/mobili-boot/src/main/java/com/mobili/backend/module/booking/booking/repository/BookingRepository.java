@@ -253,6 +253,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status <> com.mobili.backend.module.booking.booking.entity.BookingStatus.CANCELLED")
         Double sumTotalRevenue();
 
+        // Répartition all-time par canal du CA plateforme (vue d'ensemble admin) — même filtre
+        // de statut que sumTotalRevenue ci-dessus, jamais un recalcul par ticket actif (coûteux à
+        // l'échelle de toute la plateforme) : cohérent avec le chiffre déjà affiché, pas une
+        // nouvelle source de vérité.
+        @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.CONFIRMED")
+        Double sumRevenueOnline();
+
+        @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE")
+        Double sumRevenueOffline();
+
         @Query("SELECT new com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa("
                         + "COALESCE(SUM(b.totalPrice), 0.0), COUNT(b), COUNT(DISTINCT t.id)) "
                         + "FROM Booking b JOIN b.trip t "

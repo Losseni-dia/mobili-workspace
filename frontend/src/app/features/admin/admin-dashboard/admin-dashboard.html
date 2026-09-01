@@ -14,46 +14,93 @@
 } @else if (!loadError()) {
     <div class="dash-intro">
         <h1>Vue d’ensemble</h1>
-        <p>Indicateurs <strong>globaux</strong> (instantané). Ouvre les pages dédiées pour l’analyse d’usage (logs) ou le <strong>commerce</strong> (trajets, CA, période).</p>
+        <p>Indicateurs <strong>globaux</strong> de la plateforme. Ouvre les pages dédiées pour l’analyse d’usage (logs) ou le <strong>commerce</strong> (trajets, CA, période).</p>
     </div>
 
-    <section class="kpi-grid kpi-5row">
-        <article class="kpi">
-            <header class="kpi-head">
-                <span class="kpi-chip blue">👥</span>
-            </header>
-            <div class="kpi-value">{{ stats()?.totalUsers | number }}</div>
-            <div class="kpi-label">Utilisateurs inscrits</div>
-        </article>
-        <article class="kpi">
-            <header class="kpi-head">
-                <span class="kpi-chip purple">🏢</span>
-            </header>
-            <div class="kpi-value">{{ stats()?.totalPartners | number }}</div>
-            <div class="kpi-label">Partenaires</div>
-        </article>
-        <article class="kpi">
-            <header class="kpi-head">
-                <span class="kpi-chip gold">💰</span>
-            </header>
-            <div class="kpi-value">{{ stats()?.totalRevenue | number }} <span class="kpi-suffix">FCFA</span></div>
-            <div class="kpi-label">Chiffre d’affaires (tous temps, réservations actives)</div>
-        </article>
-        <article class="kpi">
-            <header class="kpi-head">
-                <span class="kpi-chip green">🚌</span>
-            </header>
-            <div class="kpi-value">{{ stats()?.totalTrips | number }}</div>
-            <div class="kpi-label">Trajets sur la plateforme</div>
-        </article>
-        <article class="kpi">
-            <header class="kpi-head">
-                <span class="kpi-chip teal">🎫</span>
-            </header>
-            <div class="kpi-value">{{ stats()?.activeBookings | number }}</div>
-            <div class="kpi-label">Réservations (base)</div>
-        </article>
-    </section>
+    <div class="overview-row">
+        <section class="overview-section" aria-labelledby="admin-alltime-heading">
+            <h2 id="admin-alltime-heading" class="overview-section__title">📊 Depuis toujours</h2>
+            <div class="kpi-grid kpi-5row">
+                <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip blue">👥</span></header>
+                    <div class="kpi-value">{{ stats()?.totalUsers | number }}</div>
+                    <div class="kpi-label">Utilisateurs inscrits</div>
+                </article>
+                <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip purple">🏢</span></header>
+                    <div class="kpi-value">{{ stats()?.totalPartners | number }}</div>
+                    <div class="kpi-label">Partenaires</div>
+                </article>
+                <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip green">🚌</span></header>
+                    <div class="kpi-value">{{ stats()?.totalTrips | number }}</div>
+                    <div class="kpi-label">Trajets sur la plateforme</div>
+                </article>
+                <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip teal">🎫</span></header>
+                    <div class="kpi-value">{{ stats()?.totalTickets | number }}</div>
+                    <div class="kpi-label">Tickets vendus (actifs)</div>
+                </article>
+            </div>
+
+            <div class="revenue-card">
+                <div class="revenue-card__head">
+                    <span class="kpi-label">Chiffre d’affaires</span>
+                    <strong class="revenue-total">{{ stats()?.totalRevenue | number }} FCFA</strong>
+                </div>
+                <p class="revenue-card__hint">Tous temps, réservations non annulées.</p>
+                <div class="revenue-split">
+                    <div class="revenue-split__item">
+                        <span>Via Mobili</span>
+                        <strong>{{ stats()?.revenueOnline | number }} FCFA</strong>
+                    </div>
+                    <div class="revenue-split__item">
+                        <span>Au guichet</span>
+                        <strong>{{ stats()?.revenueOffline | number }} FCFA</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="overview-section" aria-labelledby="admin-month-heading">
+            <h2 id="admin-month-heading" class="overview-section__title">📅 Ce mois-ci <span class="overview-section__month">({{ currentMonthLabel }})</span></h2>
+            @if (isLoadingMonth()) {
+                <p class="overview-section__loading">Chargement…</p>
+            } @else {
+                <div class="kpi-grid kpi-5row">
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip green">🚌</span></header>
+                        <div class="kpi-value">{{ month().activeTrips }}</div>
+                        <div class="kpi-label">Trajets actifs</div>
+                    </article>
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip teal">🎫</span></header>
+                        <div class="kpi-value">{{ month().ticketsSold }}</div>
+                        <div class="kpi-label">Tickets vendus</div>
+                    </article>
+                </div>
+
+                <div class="revenue-card">
+                    <div class="revenue-card__head">
+                        <span class="kpi-label">Chiffre d’affaires</span>
+                        <strong class="revenue-total">{{ month().revenueTotal | number }} FCFA</strong>
+                    </div>
+                    <div class="revenue-split">
+                        <div class="revenue-split__item">
+                            <span>Via Mobili</span>
+                            <strong>{{ month().revenueOnline | number }} FCFA</strong>
+                            <em>{{ month().ticketsSoldOnline }} ticket{{ month().ticketsSoldOnline > 1 ? 's' : '' }}</em>
+                        </div>
+                        <div class="revenue-split__item">
+                            <span>Au guichet</span>
+                            <strong>{{ month().revenueOffline | number }} FCFA</strong>
+                            <em>{{ month().ticketsSoldOffline }} ticket{{ month().ticketsSoldOffline > 1 ? 's' : '' }}</em>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
+    </div>
 
     <h2 class="section-title">Espaces d’analyse</h2>
     <div class="hub-grid">

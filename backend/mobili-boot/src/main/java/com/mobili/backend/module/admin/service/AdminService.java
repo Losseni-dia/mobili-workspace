@@ -181,6 +181,10 @@ public class AdminService {
 
         Double revenue = bookingRepository.sumTotalRevenue();
         double totalRevenue = revenue != null ? revenue : 0.0;
+        Double revenueOnlineRaw = bookingRepository.sumRevenueOnline();
+        Double revenueOfflineRaw = bookingRepository.sumRevenueOffline();
+        double revenueOnline = revenueOnlineRaw != null ? revenueOnlineRaw : 0.0;
+        double revenueOffline = revenueOfflineRaw != null ? revenueOfflineRaw : 0.0;
 
         log.info("[AdminStats] users={}, partners={}, trips={}, bookings={}, tickets={}, revenue={}",
                 totalUsers, totalPartners, totalTrips, activeBookings, totalTickets, totalRevenue);
@@ -191,7 +195,9 @@ public class AdminService {
                 totalTrips,
                 totalTickets,
                 activeBookings,
-                totalRevenue);
+                totalRevenue,
+                revenueOnline,
+                revenueOffline);
     }
 
     @Transactional(readOnly = true)
@@ -215,7 +221,10 @@ public class AdminService {
                         t.getAmountPaid(),
                         t.getStatus() != null ? t.getStatus().name() : "—",
                         t.getSeatNumber(),
-                        t.isScanned()))
+                        t.isScanned(),
+                        t.getBooking() != null && t.getBooking().getStatus() != null
+                                ? t.getBooking().getStatus().name()
+                                : null))
                 .toList();
     }
 
