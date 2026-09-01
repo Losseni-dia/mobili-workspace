@@ -37,6 +37,8 @@ export interface AnalyticsSummary {
   from: string;
   days: number;
   byType: AnalyticsCountByType[];
+  /** Mêmes types sur la période précédente de même durée — pour un delta en %. */
+  previousByType: AnalyticsCountByType[];
 }
 
 export interface AnalyticsRecentEvent {
@@ -44,6 +46,13 @@ export interface AnalyticsRecentEvent {
   occurredAt: string;
   eventType: string;
   detail: string;
+}
+
+/** Classement des exceptions serveur par fréquence (page Analyse app). */
+export interface TopErrorEntry {
+  exceptionClass: string;
+  count: number;
+  lastOccurredAt: string | null;
 }
 
 export type TripStatsPeriod = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM';
@@ -265,8 +274,16 @@ export class AdminService {
     return this.http.get<AnalyticsSummary>(`/admin/analytics/summary?days=${days}`);
   }
 
-  getRecentAnalyticsEvents(limit = 50): Observable<AnalyticsRecentEvent[]> {
-    return this.http.get<AnalyticsRecentEvent[]>(`/admin/analytics/recent-events?limit=${limit}`);
+  getRecentAnalyticsEvents(limit = 50, days?: number | null): Observable<AnalyticsRecentEvent[]> {
+    let params = new HttpParams().set('limit', String(limit));
+    if (days != null) {
+      params = params.set('days', String(days));
+    }
+    return this.http.get<AnalyticsRecentEvent[]>('/admin/analytics/recent-events', { params });
+  }
+
+  getTopErrors(days = 7, limit = 10): Observable<TopErrorEntry[]> {
+    return this.http.get<TopErrorEntry[]>(`/admin/analytics/top-errors?days=${days}&limit=${limit}`);
   }
 
   getTripAnalytics(

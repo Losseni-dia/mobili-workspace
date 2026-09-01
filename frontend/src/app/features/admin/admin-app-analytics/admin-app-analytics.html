@@ -8,13 +8,13 @@
     </header>
 
     <section class="doc-block">
-        <h2>Types d’événements suivis (côté serveur    )</h2>
+        <h2>Types d’événements suivis (côté serveur)</h2>
         <ul class="doc-list">
             <li><strong>Échec de connexion</strong> : tentative refusée (identifiant inconnu, compte désactivé ou mot de passe incorrect).</li>
             <li><strong>Recherche sans résultat</strong> : requête <code>GET /v1/trips/search</code> avec critères de villes / date et zéro trajet retourné (utile pour ajuster l’offre ou les textes d’aide).</li>
             <li><strong>Réservation créée / paiement confirmé</strong> : cycle de vente (création, puis validation portefeuille ou FedaPay).</li>
             <li><strong>Trajet publié</strong> : nouvelle offre enregistrée par un partenaire.</li>
-            <li><strong>Erreur serveur</strong> : exception non gérée (classe d’exception enregistrée ; pas de fuite de données clients).</li>
+            <li><strong>Erreur serveur</strong> : exception non gérée (classe d’exception + route enregistrées ; pas de fuite de données clients).</li>
         </ul>
     </section>
 
@@ -22,11 +22,16 @@
         <h2>Connexions (table <code>login_events</code>)</h2>
         <p>
             Chaque connexion réussie (POST <code>/v1/auth/login</code>) alimente un <strong>comptage par jour</strong> et le nombre d’<strong>utilisateurs uniques</strong> par date calendaire.
-            Les graphiques ci-dessous permettent d’évaluer l’<strong>engagement</strong> et d’anticiper la charge, sans conserver le mot de passe.
+            Le graphique suit désormais la même fenêtre que les agrégats ci-dessous (7/14/30 jours).
         </p>
     </section>
 
-    @if (loginStats(); as ls) {
+    @if (isLoadingLogin() && !loginStats()) {
+        <div class="sk-grid">
+            <div class="sk-card"></div>
+            <div class="sk-card"></div>
+        </div>
+    } @else if (loginStats(); as ls) {
         <section class="kpi-grid kpi-grid--login">
             <article class="kpi">
                 <span class="kpi-chip teal">🔑</span>
@@ -38,13 +43,20 @@
                 <div class="kpi-value">{{ ls.todayUniqueUsers | number }}</div>
                 <div class="kpi-label">Utilisateurs uniques (jour)</div>
             </article>
+            @if (failedLoginRate(); as rate) {
+                <article class="kpi">
+                    <span class="kpi-chip red">⚠️</span>
+                    <div class="kpi-value">{{ rate | number: "1.1-1" }} %</div>
+                    <div class="kpi-label">Taux d’échec de connexion ({{ analyticsDays() }}j)</div>
+                </article>
+            }
         </section>
 
         @if (ls.history.length) {
             <section class="panel">
                 <header class="panel-head">
                     <h2>Connexions par jour</h2>
-                    <span class="panel-hint">30 jours</span>
+                    <span class="panel-hint">{{ analyticsDays() }} jours</span>
                 </header>
                 <div class="chart-bar">
                     @for (day of ls.history; track day.date) {
@@ -63,7 +75,7 @@
 
     <section class="doc-block">
         <h2>Agrégats d’événements (produit / sécurité)</h2>
-        <p>Choisis la fenêtre d’analyse. Les compteurs sont <strong>additifs</strong> sur l’intervalle (ré-exécutions, tests multipliés).</p>
+        <p>Choisis la fenêtre d’analyse. Les compteurs sont <strong>additifs</strong> sur l’intervalle (ré-exécutions, tests multipliés) et comparés à la période précédente de même durée.</p>
         <div class="chip-row">
             <button type="button" class="chip" [class.active]="analyticsDays() === 7" (click)="setAnalyticsDays(7)">7 jours</button>
             <button type="button" class="chip" [class.active]="analyticsDays() === 14" (click)="setAnalyticsDays(14)">14 jours</button>
@@ -71,51 +83,115 @@
         </div>
     </section>
 
-    <section class="panel">
-        <header class="panel-head">
-            <h2>Totaux par type d’événement</h2>
-            <span class="panel-hint">{{ analyticsDays() }} derniers jours</span>
-        </header>
-        @if (analyticsLoadError()) {
-            <p class="analytics-error">Impossible de charger l’agrégat.</p>
-        } @else if (analyticsSummary(); as asum) {
-            @if (asum.byType.length) {
-                <ul class="analytics-list">
-                    @for (row of asum.byType; track row.type) {
-                        <li>
-                            <span class="al-label">{{ eventTypeLabel(row.type) }}</span>
-                            <span class="al-count">{{ row.count | number }}</span>
-                        </li>
-                    }
-                </ul>
-            } @else {
-                <p class="analytics-empty">Aucun enregistrement sur cette période.</p>
+    <div class="analytics-2col">
+        <section class="panel">
+            <header class="panel-head">
+                <h2>Totaux par type d’événement</h2>
+                <span class="panel-hint">{{ analyticsDays() }} derniers jours</span>
+            </header>
+            @if (isLoadingSummary() && !analyticsSummary()) {
+                <div class="sk-grid"><div class="sk-card"></div></div>
+            } @else if (analyticsLoadError()) {
+                <p class="analytics-error">Impossible de charger l’agrégat.</p>
+            } @else if (analyticsSummary(); as asum) {
+                @if (asum.byType.length) {
+                    <ul class="analytics-list">
+                        @for (row of asum.byType; track row.type) {
+                            <li [class]="'sev-' + severityClass(row.type)">
+                                <span class="al-label">{{ eventTypeLabel(row.type) }}</span>
+                                <span class="al-right">
+                                    <span class="al-count">{{ row.count | number }}</span>
+                                    @if (deltaFor(row.type); as delta) {
+                                        <span class="al-delta" [class.up]="delta >= 0" [class.down]="delta < 0">
+                                            {{ delta >= 0 ? '▲' : '▼' }} {{ delta | number: "1.0-0" }} %
+                                        </span>
+                                    }
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                } @else {
+                    <p class="analytics-empty">Aucun enregistrement sur cette période.</p>
+                }
             }
-        } @else {
-            <p class="analytics-empty">Chargement…</p>
-        }
-    </section>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <h2>Top erreurs serveur</h2>
+                <span class="panel-hint">{{ analyticsDays() }} derniers jours</span>
+            </header>
+            @if (topErrorsError()) {
+                <p class="analytics-error">Impossible de charger le classement.</p>
+            } @else if (topErrors(); as errs) {
+                @if (errs.length) {
+                    <ul class="analytics-list">
+                        @for (e of errs; track e.exceptionClass) {
+                            <li class="sev-danger">
+                                <span class="al-label" [title]="e.exceptionClass">{{ e.exceptionClass }}</span>
+                                <span class="al-right">
+                                    <span class="al-count">{{ e.count | number }}</span>
+                                    @if (e.lastOccurredAt) {
+                                        <span class="al-sub">dernière : {{ e.lastOccurredAt | date: 'dd/MM HH:mm' }}</span>
+                                    }
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                } @else {
+                    <p class="analytics-empty">Aucune erreur serveur sur cette période. 🎉</p>
+                }
+            } @else {
+                <div class="sk-grid"><div class="sk-card"></div></div>
+            }
+        </section>
+    </div>
 
     <section class="panel">
         <header class="panel-head">
             <h2>Journal détaillé (ligne à ligne)</h2>
-            <span class="panel-hint">{{ visibleEvents().length }} / {{ filteredEvents().length }} affichés (200 derniers chargés)</span>
+            <span class="panel-hint">{{ visibleGroups().length }} / {{ groupedEvents().length }} lignes affichées ({{ filteredEvents().length }} événements bruts)</span>
         </header>
-        <p class="analytics-intro">Horodatage serveur, type et libellé généré par l’API. Export possible via copie de tableau pour analyse ultérieure.</p>
-        @if (recentEventsError()) {
+        <p class="analytics-intro">
+            Horodatage serveur, type et libellé généré par l’API. Les doublons consécutifs (même type + même détail, ex. une rafale d’erreurs identiques) sont regroupés en une seule ligne « × N ».
+        </p>
+
+        <div class="journal-toolbar">
+            <div class="chip-row">
+                <button type="button" class="chip" [class.active]="journalWindow() === 'all'" (click)="setJournalWindow('all')">Tout (200 dern.)</button>
+                <button type="button" class="chip" [class.active]="journalWindow() === 1" (click)="setJournalWindow(1)">24h</button>
+                <button type="button" class="chip" [class.active]="journalWindow() === 7" (click)="setJournalWindow(7)">7 jours</button>
+                <button type="button" class="chip" [class.active]="journalWindow() === 30" (click)="setJournalWindow(30)">30 jours</button>
+            </div>
+            <label class="evt-type-filter">
+                <select [ngModel]="typeFilter()" (ngModelChange)="onTypeFilterChange($event)">
+                    <option value="all">Tous les types</option>
+                    @for (t of knownEventTypes; track t) {
+                        <option [value]="t">{{ eventTypeLabel(t) }}</option>
+                    }
+                </select>
+            </label>
+            <label class="evt-search">
+                <span class="evt-search-ico">🔍</span>
+                <input
+                    type="text"
+                    [ngModel]="eventSearch()"
+                    (ngModelChange)="onEventSearchChange($event)"
+                    placeholder="Filtrer par type ou détail…"
+                >
+            </label>
+            @if (filteredEvents().length) {
+                <button type="button" class="btn-export" (click)="exportJournalCsv()">⬇ CSV</button>
+            }
+        </div>
+
+        @if (isLoadingJournal() && !recentEvents()) {
+            <div class="sk-grid"><div class="sk-card"></div></div>
+        } @else if (recentEventsError()) {
             <p class="analytics-error">Chargement du journal impossible.</p>
         } @else if (recentEvents(); as evs) {
             @if (evs.length) {
-                <label class="evt-search">
-                    <span class="evt-search-ico">🔍</span>
-                    <input
-                        type="text"
-                        [ngModel]="eventSearch()"
-                        (ngModelChange)="onEventSearchChange($event)"
-                        placeholder="Filtrer par type ou détail…"
-                    >
-                </label>
-                @if (visibleEvents().length) {
+                @if (visibleGroups().length) {
                     <div class="table-wrap">
                         <table class="evt-table">
                             <thead>
@@ -126,19 +202,29 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @for (row of visibleEvents(); track row.id) {
-                                    <tr>
-                                        <td class="evt-td-time">{{ row.occurredAt | date: 'dd/MM/yyyy, HH:mm:ss' }}</td>
-                                        <td class="evt-td-type">{{ eventTypeLabel(row.eventType) }}</td>
-                                        <td class="evt-td-detail">{{ row.detail }}</td>
+                                @for (g of visibleGroups(); track g.sampleId) {
+                                    <tr [class]="'sev-row-' + severityClass(g.eventType)">
+                                        <td class="evt-td-time">
+                                            {{ g.latestAt | date: 'dd/MM/yyyy, HH:mm:ss' }}
+                                            @if (g.count > 1) {
+                                                <span class="evt-range">→ {{ g.earliestAt | date: 'HH:mm:ss' }}</span>
+                                            }
+                                        </td>
+                                        <td class="evt-td-type">{{ eventTypeLabel(g.eventType) }}</td>
+                                        <td class="evt-td-detail">
+                                            {{ g.detail }}
+                                            @if (g.count > 1) {
+                                                <span class="evt-count-badge">× {{ g.count }}</span>
+                                            }
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
-                    @if (visibleLimit() < filteredEvents().length) {
+                    @if (visibleLimit() < groupedEvents().length) {
                         <button type="button" class="evt-show-more" (click)="showMoreEvents()">
-                            Afficher 50 de plus ({{ filteredEvents().length - visibleLimit() }} restants)
+                            Afficher 50 de plus ({{ groupedEvents().length - visibleLimit() }} restants)
                         </button>
                     }
                 } @else {
@@ -147,8 +233,6 @@
             } @else {
                 <p class="analytics-empty">Journal vide.</p>
             }
-        } @else {
-            <p class="analytics-empty">Chargement…</p>
         }
     </section>
 

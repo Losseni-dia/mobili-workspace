@@ -91,6 +91,95 @@
 
 // KPI sans .kpi-head (puce seule)
 .kpi-grid--login .kpi .kpi-chip { margin-bottom: 10px; display: block; }
+.kpi-chip.red { background: rgba(#dc2626, 0.1); color: #dc2626; }
+
+// ====== Agrégats + Top erreurs côte à côte ============
+.analytics-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  @media (max-width: 860px) { grid-template-columns: 1fr; }
+}
+
+// Sévérité par type — bande latérale colorée sur les lignes d'agrégat/journal (jamais la seule
+// info : le libellé texte reste toujours présent à côté).
+.analytics-list li {
+  border-left: 3px solid transparent;
+  &.sev-danger { border-left-color: #dc2626; }
+  &.sev-warning { border-left-color: #d97706; }
+  &.sev-success { border-left-color: variables.$station-green; }
+}
+
+.al-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.al-delta {
+  font-size: 0.72rem;
+  font-weight: 800;
+  &.up { color: #dc2626; }
+  &.down { color: variables.$station-green; }
+}
+.al-sub {
+  font-size: 0.68rem;
+  color: variables.$gray-400;
+  white-space: nowrap;
+}
+
+.sev-row-danger td.evt-td-type { color: #dc2626; }
+.sev-row-warning td.evt-td-type { color: #d97706; }
+.sev-row-success td.evt-td-type { color: variables.$station-green; }
+
+.evt-count-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: variables.$gray-100;
+  color: variables.$gray-600;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.evt-range {
+  display: block;
+  font-size: 0.68rem;
+  color: variables.$gray-400;
+}
+
+// ====== Toolbar journal : fenêtre + filtre type + recherche + export ============
+.journal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.evt-type-filter {
+  select {
+    padding: 8px 12px;
+    border: 1px solid variables.$gray-200;
+    border-radius: variables.$radius-sm;
+    background: variables.$white;
+    font-size: 0.85rem;
+    color: variables.$mobili-blue-deep;
+  }
+}
+
+.btn-export {
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  padding: 8px 16px;
+  border-radius: variables.$radius-sm;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: variables.$mobili-blue-deep;
+  cursor: pointer;
+  &:hover { border-color: rgba(variables.$mobili-blue, 0.4); }
+}
 
 // ====== Journal détaillé : recherche + pagination progressive ============
 .evt-search {
