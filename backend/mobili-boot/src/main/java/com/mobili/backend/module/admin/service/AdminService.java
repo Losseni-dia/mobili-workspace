@@ -30,7 +30,6 @@ import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 import com.mobili.backend.module.booking.ticket.util.TicketSegmentUtil;
 import com.mobili.backend.module.partner.repository.PartnerRepository;
-import com.mobili.backend.module.station.repository.StationRepository;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.user.repository.UserRepository;
 
@@ -55,7 +54,6 @@ public class AdminService {
     private final LoginEventRepository loginEventRepository;
     private final AppAnalyticsEventRepository appAnalyticsEventRepository;
     private final TicketRepository ticketRepository;
-    private final StationRepository stationRepository;
 
 
 
@@ -314,20 +312,6 @@ public class AdminService {
                             ticketsAmount + serviceFee + luggageFee,
                             b.getStatus() != null ? b.getStatus().name() : "—");
                 })
-                .toList();
-    }
-
-    /** Toutes les gares, toutes compagnies confondues — filtre de la page Stats métier. */
-    @Transactional(readOnly = true)
-    public List<com.mobili.backend.module.admin.dto.AdminStationOptionResponse> getStationOptions() {
-        return stationRepository.findAll().stream()
-                .map(s -> new com.mobili.backend.module.admin.dto.AdminStationOptionResponse(
-                        s.getId(),
-                        s.getName(),
-                        s.getPartner() != null ? s.getPartner().getName() : "—"))
-                .sorted(java.util.Comparator.comparing(
-                        com.mobili.backend.module.admin.dto.AdminStationOptionResponse::name,
-                        String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 

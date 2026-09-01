@@ -1,6 +1,5 @@
 package com.mobili.backend.module.admin.service;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mobili.backend.module.admin.dto.AdminTripStatsResponse;
 import com.mobili.backend.module.admin.dto.RevenueDonutSliceResponse;
 import com.mobili.backend.module.admin.dto.TripStatEntryResponse;
-import com.mobili.backend.module.admin.dto.TripStatsDayEntryResponse;
 import com.mobili.backend.module.admin.dto.VolumeDonutSliceResponse;
 import com.mobili.backend.module.admin.model.TripStatsPeriod;
 import com.mobili.backend.module.booking.booking.projection.TripStatsAggrJpa;
@@ -27,13 +25,8 @@ public class TripStatisticsService {
 
     private final BookingRepository bookingRepository;
 
-    /** Nombre de lignes renvoyées par classement — la page affiche un "top 10" par défaut avec
-     *  "Voir plus" côté client jusqu'à cette limite, sans nouvel appel réseau. */
-    private static final int TOP_N = 50;
-
     @Transactional(readOnly = true)
-    public AdminTripStatsResponse forPeriod(
-            TripStatsPeriod period, LocalDate fromDate, LocalDate toDate, Long stationId, Long partnerId) {
+    public AdminTripStatsResponse forPeriod(TripStatsPeriod period, LocalDate fromDate, LocalDate toDate) {
         LocalDateTime to;
         LocalDateTime from;
         if (period == TripStatsPeriod.CUSTOM && fromDate != null && toDate != null) {
@@ -45,57 +38,21 @@ public class TripStatisticsService {
                 case DAY -> LocalDate.now().atStartOfDay();
                 case WEEK -> LocalDate.now().minusDays(6).atStartOfDay();
                 case MONTH -> LocalDate.now().minusDays(29).atStartOfDay();
-                case YEAR -> LocalDate.now().minusDays(364).atStartOfDay();
                 case CUSTOM -> LocalDate.now().minusDays(29).atStartOfDay(); // repli si dates manquantes
             };
         }
 
-        TripStatsAggrJpa agg = bookingRepository.aggregateForTripStats(from, to, stationId, partnerId);
+        TripStatsAggrJpa agg = bookingRepository.aggregateForTripStats(from, to);
         if (agg == null) {
-            agg = new TripStatsAggrJpa(0.0, 0L, 0L, 0.0, 0.0, 0.0);
+            agg = new TripStatsAggrJpa(0.0, 0L, 0L);
         }
         double totalRev = agg.getTotalRevenue();
         long totalBook = agg.getTotalBookings();
         long distinctTrips = agg.getDistinctTrips();
         double avg = totalBook > 0 ? totalRev / (double) totalBook : 0.0;
 
-        // Période précédente de même durée, immédiatement avant `from` — pour une variation en
-        // % ("+12 % vs période précédente"), jamais affichée si la précédente est vide (évite
-        // une div/0 ou un pourcentage absurde du type "+∞ %").
-        long durationSeconds = Duration.between(from, to).getSeconds();
-        LocalDateTime prevTo = from;
-        LocalDateTime prevFrom = from.minusSeconds(durationSeconds);
-        TripStatsAggrJpa prevAgg = bookingRepository.aggregateForTripStats(prevFrom, prevTo, stationId, partnerId);
-        Long previousTotalBookings = null;
-        Double previousTotalRevenue = null;
-        Double bookingsDeltaPercent = null;
-        Double revenueDeltaPercent = null;
-        if (prevAgg != null && (prevAgg.getTotalBookings() > 0 || prevAgg.getTotalRevenue() > 0.5)) {
-            previousTotalBookings = prevAgg.getTotalBookings();
-            previousTotalRevenue = prevAgg.getTotalRevenue();
-            if (previousTotalBookings > 0) {
-                bookingsDeltaPercent = ((totalBook - previousTotalBookings) / (double) previousTotalBookings) * 100.0;
-            }
-            if (previousTotalRevenue > 0.5) {
-                revenueDeltaPercent = ((totalRev - previousTotalRevenue) / previousTotalRevenue) * 100.0;
-            }
-        }
-
-        List<TripStatsPerTripJpa> byCount = bookingRepository.findTripStatsOrderedByBookingCount(
-                from, to, stationId, partnerId);
-        List<TripStatsPerTripJpa> byRev = bookingRepository.findTripStatsOrderedByRevenue(
-                from, to, stationId, partnerId);
-
-        List<Object[]> dailyRaw = bookingRepository.dailyTripStatsBetween(from, to, stationId, partnerId);
-        List<TripStatsDayEntryResponse> timeline = buildTimeline(dailyRaw);
-
-        // Ce que la plateforme retient : forfait client (jamais reversé) + commission prélevée
-        // sur les ventes — même distinction que la page Transactions admin (Frais Mobili /
-        // Commission / Net compagnies), ici agrégée sur toute la période/le périmètre choisi.
-        double totalServiceFee = agg.getTotalServiceFee();
-        Integer commissionRaw = bookingRepository.sumCommissionForPeriod(from, to, stationId, partnerId);
-        double totalCommission = commissionRaw != null ? commissionRaw : 0.0;
-        double netCompany = totalRev - totalServiceFee - totalCommission;
+        List<TripStatsPerTripJpa> byCount = bookingRepository.findTripStatsOrderedByBookingCount(from, to);
+        List<TripStatsPerTripJpa> byRev = bookingRepository.findTripStatsOrderedByRevenue(from, to);
 
         return new AdminTripStatsResponse(
                 period,
@@ -105,52 +62,17 @@ public class TripStatisticsService {
                 totalRev,
                 distinctTrips,
                 avg,
-                agg.getRevenueOnline(),
-                agg.getRevenueOffline(),
-                totalServiceFee,
-                totalCommission,
-                netCompany,
-                previousTotalBookings,
-                previousTotalRevenue,
-                bookingsDeltaPercent,
-                revenueDeltaPercent,
-                mapTopN(byCount),
-                mapTopN(byRev),
+                mapTop10(byCount),
+                mapTop10(byRev),
                 buildRevenueDonut(byRev, totalRev),
-                buildVolumeDonut(byCount, totalBook),
-                timeline);
+                buildVolumeDonut(byCount, totalBook));
     }
 
-    /**
-     * Convertit les lignes brutes (day, count, revenue) en points de courbe — un point par jour
-     * civil tel que renvoyé par la requête (les jours sans vente n'apparaissent pas en base,
-     * mais rien n'oblige à les combler ici : un simple point manquant sur la courbe suffit,
-     * jamais un 0 qui suggérerait à tort une activité mesurée ce jour-là).
-     */
-    private static List<TripStatsDayEntryResponse> buildTimeline(List<Object[]> rows) {
-        List<TripStatsDayEntryResponse> out = new ArrayList<>();
-        for (Object[] row : rows) {
-            LocalDate date;
-            Object rawDate = row[0];
-            if (rawDate instanceof java.sql.Date sqlDate) {
-                date = sqlDate.toLocalDate();
-            } else if (rawDate instanceof LocalDate ld) {
-                date = ld;
-            } else {
-                date = LocalDate.parse(rawDate.toString());
-            }
-            long count = ((Number) row[1]).longValue();
-            double revenue = ((Number) row[2]).doubleValue();
-            out.add(new TripStatsDayEntryResponse(date, count, revenue));
-        }
-        return out;
-    }
-
-    private static List<TripStatEntryResponse> mapTopN(List<TripStatsPerTripJpa> rows) {
+    private static List<TripStatEntryResponse> mapTop10(List<TripStatsPerTripJpa> rows) {
         List<TripStatEntryResponse> out = new ArrayList<>();
         int rank = 1;
         for (TripStatsPerTripJpa r : rows) {
-            if (rank > TOP_N) {
+            if (rank > 10) {
                 break;
             }
             String dep = r.getDepartureCity();
@@ -160,7 +82,7 @@ public class TripStatisticsService {
             double rev = r.getRevenue();
             long tripId = r.getTripId();
             String route = dep + " → " + arr;
-            out.add(new TripStatEntryResponse(rank, tripId, route, partner, r.getStationName(), cnt, rev));
+            out.add(new TripStatEntryResponse(rank, tripId, route, partner, cnt, rev));
             rank++;
         }
         return out;
