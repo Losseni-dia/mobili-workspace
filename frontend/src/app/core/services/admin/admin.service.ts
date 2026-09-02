@@ -11,6 +11,8 @@ export interface AdminStats {
   /** Trajets dont le départ tombe dans l'année civile en cours, tout statut confondu —
    *  comparable à "Trajets avec ventes" de Stats métier (même filtre de date). */
   totalTripsThisYear: number;
+  /** = totalTripsThisYear - trajets distincts avec ≥1 ticket vendu sur l'année. */
+  tripsWithoutSalesThisYear: number;
   totalTickets: number;
   activeBookings: number;
   totalRevenue: number;

@@ -14,6 +14,7 @@ class AdminStats {
     required this.totalPartners,
     required this.totalTrips,
     required this.totalTripsThisYear,
+    required this.tripsWithoutSalesThisYear,
     required this.activeBookings,
     required this.totalTickets,
     required this.totalRevenue,
@@ -26,6 +27,8 @@ class AdminStats {
   /// totalTrips (all-time, sans filtre) pour rendre lisible l'écart entre les deux (trajets sans
   /// aucune vente sur l'année).
   final int totalTripsThisYear;
+  /// = totalTripsThisYear - trajets distincts avec ≥1 ticket vendu sur l'année.
+  final int tripsWithoutSalesThisYear;
   final double totalRevenue;
   /// Répartition all-time du CA par canal (CONFIRMED = en ligne, OFFLINE_SALE = guichet) —
   /// voir AdminStatsResponse.revenueOnline/Offline (backend). totalRevenue = leur somme.
@@ -35,6 +38,7 @@ class AdminStats {
     totalPartners: (j['totalPartners'] as num?)?.toInt() ?? 0,
     totalTrips: (j['totalTrips'] as num?)?.toInt() ?? 0,
     totalTripsThisYear: (j['totalTripsThisYear'] as num?)?.toInt() ?? 0,
+    tripsWithoutSalesThisYear: (j['tripsWithoutSalesThisYear'] as num?)?.toInt() ?? 0,
     activeBookings: (j['activeBookings'] as num?)?.toInt() ?? 0,
     totalTickets: (j['totalTickets'] as num?)?.toInt() ?? 0,
     totalRevenue: (j['totalRevenue'] as num?)?.toDouble() ?? 0,

@@ -42,6 +42,11 @@
                     <div class="kpi-label">Trajets de l'année en cours</div>
                 </article>
                 <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip orange">📭</span></header>
+                    <div class="kpi-value">{{ stats()?.tripsWithoutSalesThisYear | number }}</div>
+                    <div class="kpi-label">Trajets sans aucune vente (année)</div>
+                </article>
+                <article class="kpi">
                     <header class="kpi-head"><span class="kpi-chip teal">🎫</span></header>
                     <div class="kpi-value">{{ stats()?.totalTickets | number }}</div>
                     <div class="kpi-label">Tickets vendus (actifs)</div>

@@ -276,11 +276,26 @@ class AdminDashboardPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  KpiCard(
-                    icon: Icons.confirmation_number_rounded,
-                    label: 'Tickets vendus (actifs)',
-                    value: '${stats.totalTickets}',
-                    color: AppColors.mobiliBlue,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: KpiCard(
+                          icon: Icons.event_busy_rounded,
+                          label: 'Trajets sans vente (année)',
+                          value: '${stats.tripsWithoutSalesThisYear}',
+                          color: AppColors.warning,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: KpiCard(
+                          icon: Icons.confirmation_number_rounded,
+                          label: 'Tickets vendus (actifs)',
+                          value: '${stats.totalTickets}',
+                          color: AppColors.mobiliBlue,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   AdminSectionTitle(title: '📅 Ce mois-ci — ${_currentMonthLabel()}'),

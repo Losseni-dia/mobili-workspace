@@ -182,6 +182,12 @@ public class AdminService {
         java.time.LocalDateTime yearStart = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 1, 1, 0, 0);
         java.time.LocalDateTime yearEnd = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 12, 31, 23, 59, 59);
         long totalTripsThisYear = tripRepository.countByDepartureDateTimeBetween(yearStart, yearEnd);
+        // Trajets distincts avec >= 1 ticket vendu sur l'année, tout station/compagnie confondus
+        // (mêmes params null que Stats métier sans filtre) — la TAILLE de la liste groupée donne
+        // le nombre de trajets "avec ventes", jamais besoin de charger les tickets eux-mêmes ici.
+        long tripsWithSalesThisYear = ticketRepository
+                .ticketCountsPerTripForPeriod(yearStart, yearEnd, null, null).size();
+        long tripsWithoutSalesThisYear = Math.max(0, totalTripsThisYear - tripsWithSalesThisYear);
         long activeBookings = bookingRepository.count();
         long totalTickets = ticketRepository.countActiveTickets();
 
@@ -206,6 +212,7 @@ public class AdminService {
                 totalPartners,
                 totalTrips,
                 totalTripsThisYear,
+                tripsWithoutSalesThisYear,
                 totalTickets,
                 activeBookings,
                 totalRevenue,
