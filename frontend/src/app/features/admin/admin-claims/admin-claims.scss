@@ -208,6 +208,12 @@
     textarea { resize: vertical; }
   }
 
+  .claim-cancel-action {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px dashed variables.$gray-200;
+  }
+
   .modal-footer {
     display: flex;
     justify-content: flex-end;

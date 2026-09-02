@@ -62,9 +62,6 @@
                 <td class="mono">{{ c.createdAt | date: 'dd/MM/yy HH:mm' }}</td>
                 <td class="right">
                   <button type="button" class="row-btn" (click)="askHandle(c)">Traiter</button>
-                  @if (c.booking && c.booking.status !== 'CANCELLED') {
-                    <button type="button" class="row-btn danger" (click)="askCancel(c)">Annuler résa</button>
-                  }
                 </td>
               </tr>
             }
@@ -116,6 +113,14 @@
 
           @if (handleError()) {
             <div class="admin-alert" role="alert">{{ handleError() }}</div>
+          }
+
+          @if (c.booking && c.booking.status !== 'CANCELLED') {
+            <div class="claim-cancel-action">
+              <button type="button" class="row-btn danger" (click)="askCancel(c)">
+                {{ requestedTicketIds(c).length > 0 ? 'Annuler les tickets demandés' : 'Annuler la réservation' }}
+              </button>
+            </div>
           }
         </div>
         <div class="modal-footer">
