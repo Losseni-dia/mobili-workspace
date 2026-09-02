@@ -8,6 +8,9 @@ public record AdminStatsResponse(
          *  comparable à "Trajets avec ventes" de Stats métier (même année, même filtre sur la
          *  date de départ). totalTrips (all-time, sans filtre) reste inchangé à côté. */
         long totalTripsThisYear,
+        /** = totalTripsThisYear - (nombre de trajets distincts avec au moins 1 ticket vendu sur
+         *  l'année) : trajets publiés cette année qui n'ont encore rien vendu. */
+        long tripsWithoutSalesThisYear,
         long totalTickets,
         long activeBookings,
         double totalRevenue,
