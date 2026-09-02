@@ -95,6 +95,16 @@ public class Booking extends AbstractEntity {
     private Integer extraHoldBags = 0;
 
     /**
+     * Nombre de bagages soute supplémentaires déjà déclarés/remboursés lors d'annulations
+     * précédentes sur cette réservation — jamais automatique, jamais déduit du forfait ou du
+     * transport : voir BookingService.cancelTickets/cancelBooking, où l'admin déclare
+     * explicitement combien de bagages annuler à chaque fois. Plafonné à {@link #extraHoldBags}
+     * cumulé sur toutes les annulations.
+     */
+    @Column(name = "refunded_extra_hold_bags", nullable = false)
+    private Integer refundedExtraHoldBags = 0;
+
+    /**
      * Covoiturage uniquement : date limite pour que le chauffeur réponde
      * (accepte/refuse) à la demande — 24h après la création. Null pour les
      * réservations sur trajets publics (achat direct, pas de validation).

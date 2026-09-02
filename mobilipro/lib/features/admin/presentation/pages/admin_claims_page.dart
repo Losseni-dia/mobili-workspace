@@ -496,6 +496,93 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     }
   }
 
+  /// Bagages soute encore remboursables sur cette réservation (voir GET
+  /// /admin/bookings/{id}/baggage-info) — le bagage n'est JAMAIS remboursé automatiquement, voir
+  /// _confirmCancelDialog. 0 en cas d'échec réseau (l'annulation reste possible, juste sans
+  /// proposer de bagage à déclarer cette fois-ci).
+  Future<int> _fetchRemainingBags(int bookingId) async {
+    try {
+      final res = await ApiClient.instance.dio
+          .get<Map<String, dynamic>>('/admin/bookings/$bookingId/baggage-info');
+      return (res.data?['remaining'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Dialogue de confirmation d'annulation — inclut la déclaration du nombre de bagages soute à
+  /// rembourser (jamais automatique, jamais déduit du forfait) si la réservation en a encore
+  /// (`maxBags > 0`). @return le nombre de bagages déclarés si confirmé, null si annulé.
+  Future<int?> _confirmCancelDialog({
+    required String title,
+    required String detail,
+    required int maxBags,
+  }) {
+    int declaredBags = 0;
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(detail),
+              if (maxBags > 0) ...[
+                const SizedBox(height: 14),
+                const Divider(),
+                const SizedBox(height: 8),
+                const Text(
+                  'Bagages soute à rembourser',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.mobiliBlueDeep),
+                ),
+                Text(
+                  'Jamais automatique : déclare combien de bagages rembourser '
+                  '($maxBags encore remboursable(s) sur cette réservation).',
+                  style: const TextStyle(fontSize: 11, color: AppColors.gray500),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: declaredBags > 0
+                          ? () => setDialogState(() => declaredBags--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline_rounded),
+                    ),
+                    Text(
+                      '$declaredBags',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                    ),
+                    IconButton(
+                      onPressed: declaredBags < maxBags
+                          ? () => setDialogState(() => declaredBags++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, declaredBags),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Confirmer', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Raccourci vers l'endpoint existant POST /admin/bookings/{id}/cancel —
   // la réclamation ne déclenche jamais l'annulation automatiquement, c'est
   // toujours un geste manuel de l'admin après review (voir conception
@@ -504,35 +591,24 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     final booking = widget.claim.booking;
     if (booking == null) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Annuler cette réservation ?'),
-        content: Text(
-          '${booking.reference} — ${booking.route}\n'
+    final maxBags = await _fetchRemainingBags(booking.bookingId);
+    if (!mounted) return;
+    final declaredBags = await _confirmCancelDialog(
+      title: 'Annuler cette réservation ?',
+      detail: '${booking.reference} — ${booking.route}\n'
           '${booking.totalPrice.toStringAsFixed(0)} FCFA\n\n'
-          'Le remboursement Stripe (si applicable) sera déclenché automatiquement.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Confirmer', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+          'Le remboursement Stripe (si applicable) sera déclenché automatiquement, '
+          'hors forfait de service (jamais remboursé, ni total ni partiel).',
+      maxBags: maxBags,
     );
-    if (confirmed != true || !mounted) return;
+    if (declaredBags == null || !mounted) return;
 
     setState(() => _cancelling = true);
     try {
-      final res = await ApiClient.instance.dio
-          .post<Map<String, dynamic>>('/admin/bookings/${booking.bookingId}/cancel');
+      final res = await ApiClient.instance.dio.post<Map<String, dynamic>>(
+        '/admin/bookings/${booking.bookingId}/cancel',
+        queryParameters: {'declaredBagsToCancel': declaredBags},
+      );
       final result = CancelBookingResult.fromJson(res.data!);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -558,37 +634,24 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     final ticketIds = _requestedTicketIds;
     if (booking == null || ticketIds.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Annuler les tickets sélectionnés ?'),
-        content: Text(
-          '${booking.reference} — ${booking.route}\n'
+    final maxBags = await _fetchRemainingBags(booking.bookingId);
+    if (!mounted) return;
+    final declaredBags = await _confirmCancelDialog(
+      title: 'Annuler les tickets sélectionnés ?',
+      detail: '${booking.reference} — ${booking.route}\n'
           '${ticketIds.length} ticket(s) sur cette réservation.\n\n'
           'Le remboursement Stripe (si applicable) sera déclenché automatiquement, '
           'hors forfait de service.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Confirmer', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      maxBags: maxBags,
     );
-    if (confirmed != true || !mounted) return;
+    if (declaredBags == null || !mounted) return;
 
     setState(() => _cancelling = true);
     try {
       final res = await ApiClient.instance.dio.post<Map<String, dynamic>>(
         '/admin/bookings/${booking.bookingId}/cancel-tickets',
         data: ticketIds,
+        queryParameters: {'declaredBagsToCancel': declaredBags},
       );
       final result = CancelBookingResult.fromJson(res.data!);
       if (mounted) {

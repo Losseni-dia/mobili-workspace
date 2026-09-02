@@ -62,6 +62,9 @@
                 <td class="mono">{{ c.createdAt | date: 'dd/MM/yy HH:mm' }}</td>
                 <td class="right">
                   <button type="button" class="row-btn" (click)="askHandle(c)">Traiter</button>
+                  @if (c.booking && c.booking.status !== 'CANCELLED') {
+                    <button type="button" class="row-btn danger" (click)="askCancel(c)">Annuler résa</button>
+                  }
                 </td>
               </tr>
             }
@@ -120,6 +123,62 @@
           <button type="button" class="btn-confirm" [disabled]="handleSubmitting()" (click)="confirmHandle()">
             {{ handleSubmitting() ? 'Envoi…' : 'Enregistrer' }}
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (pendingCancel(); as c) {
+    <div class="modal-overlay" (click)="closeCancel()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>
+            {{ requestedTicketIds(c).length > 0
+              ? 'Annuler ' + requestedTicketIds(c).length + ' ticket(s) ?'
+              : 'Annuler cette réservation ?' }}
+          </h3>
+          <button type="button" class="close-btn" (click)="closeCancel()">×</button>
+        </div>
+        <div class="modal-body">
+          @if (cancelResultMessage(); as msg) {
+            <div class="admin-alert admin-alert--success" role="status">{{ msg }}</div>
+          } @else {
+            <p class="modal-subtitle">
+              #{{ c.booking?.reference }} — {{ c.booking?.route }}<br>
+              {{ c.booking?.totalPrice | number }} FCFA<br><br>
+              Le remboursement Stripe (si applicable) sera déclenché automatiquement, hors
+              forfait de service (jamais remboursé, ni total ni partiel).
+            </p>
+
+            @if (cancelMaxBags() > 0) {
+              <div class="baggage-declare">
+                <span class="baggage-declare__label">Bagages soute à rembourser</span>
+                <p class="baggage-declare__hint">
+                  Jamais automatique : déclare combien de bagages rembourser
+                  ({{ cancelMaxBags() }} encore remboursable(s) sur cette réservation).
+                </p>
+                <div class="baggage-declare__stepper">
+                  <button type="button" (click)="decrementCancelBags()" [disabled]="cancelDeclaredBags() === 0">−</button>
+                  <strong>{{ cancelDeclaredBags() }}</strong>
+                  <button type="button" (click)="incrementCancelBags()" [disabled]="cancelDeclaredBags() >= cancelMaxBags()">+</button>
+                </div>
+              </div>
+            }
+
+            @if (cancelError()) {
+              <div class="admin-alert" role="alert">{{ cancelError() }}</div>
+            }
+          }
+        </div>
+        <div class="modal-footer">
+          @if (cancelResultMessage()) {
+            <button type="button" class="btn-confirm" (click)="closeCancel()">Fermer</button>
+          } @else {
+            <button type="button" class="btn-cancel" [disabled]="cancelSubmitting()" (click)="closeCancel()">Annuler</button>
+            <button type="button" class="btn-confirm btn-confirm--danger" [disabled]="cancelSubmitting()" (click)="confirmCancel()">
+              {{ cancelSubmitting() ? 'Envoi…' : 'Confirmer l\'annulation' }}
+            </button>
+          }
         </div>
       </div>
     </div>
