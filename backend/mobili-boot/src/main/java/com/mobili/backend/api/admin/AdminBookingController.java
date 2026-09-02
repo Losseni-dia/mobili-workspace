@@ -42,8 +42,13 @@ public class AdminBookingController {
         // Déterminer le provider du paiement AVANT annulation : cancelBooking()
         // ne renvoie aucune information exploitable par l'UI, et ne déclenche
         // un remboursement automatique que pour Stripe.
+        // SUCCESS et REFUNDED tous les deux acceptés : un paiement déjà partiellement remboursé
+        // (annulation antérieure d'une partie des tickets de cette réservation) doit rester
+        // détectable, sinon l'admin voit à tort "aucun paiement lié à cette réservation" sur
+        // toute annulation suivant la première (incident 2026-09-02).
         PaymentProvider provider = paymentRepository
-                .findByBookingIdAndStatus(bookingId, PaymentStatus.SUCCESS)
+                .findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        bookingId, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED))
                 .map(Payment::getProvider)
                 .orElse(null);
 
@@ -82,8 +87,13 @@ public class AdminBookingController {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Aucun ticket à annuler.");
         }
 
+        // SUCCESS et REFUNDED tous les deux acceptés : un paiement déjà partiellement remboursé
+        // (annulation antérieure d'une partie des tickets de cette réservation) doit rester
+        // détectable, sinon l'admin voit à tort "aucun paiement lié à cette réservation" sur
+        // toute annulation suivant la première (incident 2026-09-02).
         PaymentProvider provider = paymentRepository
-                .findByBookingIdAndStatus(bookingId, PaymentStatus.SUCCESS)
+                .findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        bookingId, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED))
                 .map(Payment::getProvider)
                 .orElse(null);
 

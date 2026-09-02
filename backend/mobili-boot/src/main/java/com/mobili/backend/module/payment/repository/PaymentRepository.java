@@ -29,6 +29,28 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             Long bookingId, PaymentProvider provider, PaymentStatus status);
 
     /**
+     * Même usage que findAllByBookingIdAndProviderAndStatusOrderByIdDesc, mais accepte aussi
+     * REFUNDED — un paiement déjà partiellement remboursé (annulation ciblée d'une partie des
+     * tickets d'une réservation à plusieurs sièges) doit rester trouvable pour un remboursement
+     * SUIVANT sur la même réservation. Sans ça, une 2e annulation partielle (Booking déjà passé
+     * REFUNDED après la 1re) ne retrouvait plus aucun paiement Stripe : triggerRefund
+     * (BookingService) l'ignorait silencieusement, et l'argent des tickets annulés ensuite
+     * n'était jamais reversé au client (incident constaté en prod le 2026-09-02 — voir aussi
+     * PaymentRefundService.refund, qui doit accepter SUCCESS et REFUNDED pour la même raison).
+     */
+    List<Payment> findAllByBookingIdAndProviderAndStatusInOrderByIdDesc(
+            Long bookingId, PaymentProvider provider, List<PaymentStatus> statuses);
+
+    /**
+     * Détermine le provider d'un paiement pour l'affichage admin (message de remboursement),
+     * même élargissement que ci-dessus : un paiement déjà REFUNDED (remboursement partiel
+     * antérieur) doit toujours être retrouvé, sinon l'admin voit à tort "aucun paiement lié à
+     * cette réservation" sur toute annulation suivant la première (incident 2026-09-02).
+     */
+    Optional<Payment> findFirstByBookingIdAndStatusInOrderByIdDesc(
+            Long bookingId, List<PaymentStatus> statuses);
+
+    /**
      * Utilisé pour retrouver le paiement en cours AVANT que son externalReference
      * n'ait jamais été écrit (webhook Stripe ET callback FedaPay recevant l'ID de
      * transaction pour la première fois — voir

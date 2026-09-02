@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,8 @@ class AdminBookingControllerTest {
     void cancelBooking_stripePayment_reportsAutoRefunded() {
         Payment payment = new Payment();
         payment.setProvider(PaymentProvider.STRIPE);
-        when(paymentRepository.findByBookingIdAndStatus(1L, PaymentStatus.SUCCESS))
+        when(paymentRepository.findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        1L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.of(payment));
 
         ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(1L);
@@ -66,7 +68,8 @@ class AdminBookingControllerTest {
     void cancelBooking_fedapayPayment_reportsManualRefundRequired() {
         Payment payment = new Payment();
         payment.setProvider(PaymentProvider.FEDAPAY);
-        when(paymentRepository.findByBookingIdAndStatus(2L, PaymentStatus.SUCCESS))
+        when(paymentRepository.findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        2L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.of(payment));
 
         ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(2L);
@@ -80,7 +83,8 @@ class AdminBookingControllerTest {
 
     @Test
     void cancelBooking_noSuccessfulPayment_reportsNoRefund() {
-        when(paymentRepository.findByBookingIdAndStatus(3L, PaymentStatus.SUCCESS))
+        when(paymentRepository.findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        3L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.empty());
 
         ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(3L);
@@ -89,5 +93,28 @@ class AdminBookingControllerTest {
         CancelBookingResponse body = response.getBody();
         assertNull(body.provider());
         assertFalse(body.autoRefunded());
+    }
+
+    /**
+     * Incident 2026-09-02 : sur une réservation à plusieurs tickets, une 1re annulation
+     * partielle fait déjà passer le paiement en REFUNDED (PaymentRefundService.refund) — une 2e
+     * annulation doit encore détecter le provider Stripe (pour déclencher un nouveau
+     * remboursement partiel et afficher le bon message), pas retomber sur "aucun paiement lié".
+     */
+    @Test
+    void cancelBooking_alreadyPartiallyRefundedPayment_stillReportsStripe() {
+        Payment payment = new Payment();
+        payment.setProvider(PaymentProvider.STRIPE);
+        payment.setStatus(PaymentStatus.REFUNDED);
+        when(paymentRepository.findFirstByBookingIdAndStatusInOrderByIdDesc(
+                        4L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
+                .thenReturn(Optional.of(payment));
+
+        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(4L);
+
+        verify(bookingService).cancelBooking(4L);
+        CancelBookingResponse body = response.getBody();
+        assertEquals("STRIPE", body.provider());
+        assertTrue(body.message().contains("automatiquement"));
     }
 }

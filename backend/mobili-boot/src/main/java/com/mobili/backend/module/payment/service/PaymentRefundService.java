@@ -39,9 +39,17 @@ public class PaymentRefundService {
         Payment payment = paymentRepository.findByExternalReference(externalReference)
                 .orElseThrow(() -> new IllegalArgumentException("Paiement introuvable : " + externalReference));
 
-        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+        // REFUNDED est accepté en plus de SUCCESS : un paiement déjà partiellement remboursé
+        // (annulation ciblée d'une partie des tickets d'une réservation à plusieurs sièges) doit
+        // pouvoir recevoir un NOUVEAU remboursement partiel ensuite — Stripe accepte plusieurs
+        // remboursements partiels sur le même paiement tant que le cumul ne dépasse pas le
+        // montant payé (l'API renverra une erreur explicite sinon, jamais un remboursement en
+        // double silencieux). Avant ce correctif (incident 2026-09-02), une 2e annulation sur la
+        // même réservation ne trouvait plus aucun paiement remboursable : l'argent des tickets
+        // annulés ensuite n'était jamais reversé au client.
+        if (payment.getStatus() != PaymentStatus.SUCCESS && payment.getStatus() != PaymentStatus.REFUNDED) {
             log.error("❌ Remboursement impossible. Statut actuel: {}", payment.getStatus());
-            throw new IllegalStateException("Seul un paiement au statut SUCCESS peut être remboursé.");
+            throw new IllegalStateException("Seul un paiement au statut SUCCESS ou REFUNDED peut être remboursé.");
         }
 
         PaymentService paymentService = paymentServices.stream()
