@@ -58,6 +58,18 @@
         @if (backfillServiceFeeResultMessage(); as msg) {
             <span class="backfill-result">{{ msg }}</span>
         }
+        <button
+            type="button"
+            class="btn-export"
+            [disabled]="isBackfillingCommission()"
+            title="Calcule la commission des tickets créés avant l'introduction du calcul de commission — sans effet sur les tickets déjà corrects."
+            (click)="backfillMissingTicketCommission()"
+        >
+            📊 {{ isBackfillingCommission() ? 'Rattrapage en cours…' : 'Calculer la commission manquante' }}
+        </button>
+        @if (backfillCommissionResultMessage(); as msg) {
+            <span class="backfill-result">{{ msg }}</span>
+        }
     </div>
 </section>
 

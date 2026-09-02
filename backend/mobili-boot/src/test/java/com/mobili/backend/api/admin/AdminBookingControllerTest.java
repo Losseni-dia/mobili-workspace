@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.mobili.backend.module.admin.dto.CancelBookingResponse;
 import com.mobili.backend.module.booking.booking.service.BookingService;
+import com.mobili.backend.module.booking.ticket.service.TicketService;
 import com.mobili.backend.module.payment.entity.Payment;
 import com.mobili.backend.module.payment.enums.PaymentProvider;
 import com.mobili.backend.module.payment.enums.PaymentStatus;
@@ -38,12 +39,14 @@ class AdminBookingControllerTest {
     private BookingService bookingService;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private TicketService ticketService;
 
     private AdminBookingController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AdminBookingController(bookingService, paymentRepository);
+        controller = new AdminBookingController(bookingService, paymentRepository, ticketService);
     }
 
     @Test

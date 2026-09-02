@@ -487,4 +487,10 @@ export class AdminService {
   backfillOfflineSaleServiceFee(): Observable<{ bookingsFixed: number }> {
     return this.http.post<{ bookingsFixed: number }>('/admin/bookings/backfill-offline-sale-service-fee', {});
   }
+
+  /** Rattrapage ponctuel : calcule la commission des tickets créés avant l'introduction de
+   *  CompanyCommissionService (ancien flux sans décomposition tarifaire). Idempotent. */
+  backfillMissingTicketCommission(): Observable<{ ticketsFixed: number }> {
+    return this.http.post<{ ticketsFixed: number }>('/admin/bookings/backfill-missing-ticket-commission', {});
+  }
 }

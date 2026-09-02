@@ -12,7 +12,23 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
-    
+
+    /**
+     * Tickets sans commission calculée (créés avant l'introduction de CompanyCommissionService,
+     * via l'ancien TicketService.createFromBooking(booking, name, seat) sans décomposition
+     * tarifaire) mais dont on peut recalculer la commission SANS RISQUE : monthlySequenceNumber
+     * (position mensuelle déjà réservée et figée à l'époque, voir PartnerMonthlyVolumeService)
+     * et transportFare sont déjà connus — jamais besoin de retoucher le compteur mensuel ni de
+     * réordonner quoi que ce soit, juste appliquer CompanyCommissionService.calculateCommission
+     * à des données déjà figées. Les tickets sans monthlySequenceNumber (bien plus anciens) ne
+     * sont volontairement PAS inclus ici : reconstruire leur position rétroactivement risquerait
+     * de dupliquer ou décaler des positions déjà utilisées par des tickets plus récents.
+     */
+    @Query("SELECT t FROM Ticket t WHERE t.commissionAmount IS NULL "
+                    + "AND t.transportFare IS NOT NULL AND t.monthlySequenceNumber IS NOT NULL")
+    List<Ticket> findTicketsMissingCommissionButBackfillable();
+
+
     @EntityGraph(attributePaths = {
             "trip",
             "booking",

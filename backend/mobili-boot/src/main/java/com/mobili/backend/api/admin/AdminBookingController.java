@@ -36,6 +36,7 @@ public class AdminBookingController {
 
     private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
+    private final com.mobili.backend.module.booking.ticket.service.TicketService ticketService;
 
     @PostMapping("/{bookingId}/cancel")
     public ResponseEntity<CancelBookingResponse> cancelBooking(@PathVariable Long bookingId) {
@@ -137,6 +138,19 @@ public class AdminBookingController {
         int fixed = bookingService.backfillOfflineSaleServiceFee();
         log.info("💰 Rattrapage forfait guichet déclenché depuis l'admin : {} résa(s) corrigée(s).", fixed);
         return ResponseEntity.ok(java.util.Map.of("bookingsFixed", fixed));
+    }
+
+    /**
+     * Rattrapage ponctuel : calcule la commission des tickets créés avant l'introduction de
+     * CompanyCommissionService (ancien TicketService.createFromBooking sans décomposition
+     * tarifaire). Idempotent, voir TicketService.backfillMissingTicketCommission — sans risque à
+     * rappeler plusieurs fois.
+     */
+    @PostMapping("/backfill-missing-ticket-commission")
+    public ResponseEntity<java.util.Map<String, Object>> backfillMissingTicketCommission() {
+        int fixed = ticketService.backfillMissingTicketCommission();
+        log.info("💰 Rattrapage commission tickets déclenché depuis l'admin : {} ticket(s) corrigé(s).", fixed);
+        return ResponseEntity.ok(java.util.Map.of("ticketsFixed", fixed));
     }
 
     private String buildRefundMessage(PaymentProvider provider, String prefix, double refunded) {
