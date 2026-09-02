@@ -90,6 +90,20 @@ public class BookingService {
     @Transactional
     public Booking createOfflineSale(BookingRequestDTO dto) {
         Booking booking = create(dto);
+
+        // Vente guichet (sur place) : aucun forfait de service — ce forfait finance
+        // uniquement la commodité du paiement en ligne (Stripe/FedaPay), jamais pertinent pour
+        // un passager qui paie physiquement à la gare. create() calcule pourtant le forfait de
+        // façon identique au flux en ligne (computePricing, aucune distinction de canal) : on le
+        // retire ici du prix total AVANT de figer le statut OFFLINE_SALE et de générer les
+        // tickets, pour que amountPaid par ticket (TicketService.createFromBooking, dérivé de
+        // booking.getTotalPrice()) ne comprenne jamais ce forfait fantôme (incident constaté en
+        // prod le 2026-09-02).
+        if (booking.getServiceFee() != null && booking.getServiceFee() > 0) {
+            booking.setTotalPrice(booking.getTotalPrice() - booking.getServiceFee());
+            booking.setServiceFee(0);
+        }
+
         booking.setStatus(BookingStatus.OFFLINE_SALE);
         booking = bookingRepository.save(booking);
 
