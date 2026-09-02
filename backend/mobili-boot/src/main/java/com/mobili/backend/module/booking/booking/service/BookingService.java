@@ -220,8 +220,16 @@ public class BookingService {
             return 0;
         }
 
+        // Ne teste pas QUE VALIDÉ : un ticket déjà UTILISÉ (scanné à l'embarquement) ou ARRIVÉ
+        // est tout aussi "actif/honoré" qu'un VALIDÉ — seul ANNULÉ ne l'est pas. Avant ce
+        // correctif (incident constaté en prod le 2026-09-02), une réservation à 2 tickets dont
+        // 1 UTILISÉ + 1 qu'on venait d'annuler basculait quand même en CANCELLED (aucun VALIDÉ
+        // restant), alors qu'elle contenait encore un billet bien vendu et honoré — Stats métier
+        // (qui filtrait alors sur le statut de la réservation) excluait ce ticket à tort.
         boolean anyStillActive = booking.getTickets().stream()
-                .anyMatch(t -> t.getStatus() == TicketStatus.VALIDÉ);
+                .anyMatch(t -> t.getStatus() == TicketStatus.VALIDÉ
+                        || t.getStatus() == TicketStatus.UTILISÉ
+                        || t.getStatus() == TicketStatus.ARRIVÉ);
         if (!anyStillActive) {
             // Dernier ticket actif annulé : la réservation suit, comme cancelBooking().
             booking.setStatus(BookingStatus.CANCELLED);

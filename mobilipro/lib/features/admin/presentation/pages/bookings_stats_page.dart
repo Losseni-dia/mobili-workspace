@@ -176,7 +176,7 @@ class _TripStatsDetailPageState extends ConsumerState<TripStatsDetailPage> {
                       Expanded(
                         child: KpiCard(
                           icon: Icons.directions_bus_rounded,
-                          label: 'Trajets actifs',
+                          label: 'Trajets avec ventes',
                           value: '${trip.activeTripCount}',
                           color: AppColors.stationGreen,
                         ),
