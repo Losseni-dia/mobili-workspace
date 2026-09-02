@@ -263,7 +263,7 @@ class _EscalesChips extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'PASSANT PAR :',
+          'VIA :',
           style: AppTextStyles.labelSmall.copyWith(
             color: AppColors.gray400,
             fontSize: 9,
