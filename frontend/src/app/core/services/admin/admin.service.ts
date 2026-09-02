@@ -493,4 +493,46 @@ export class AdminService {
   backfillMissingTicketCommission(): Observable<{ ticketsFixed: number }> {
     return this.http.post<{ ticketsFixed: number }>('/admin/bookings/backfill-missing-ticket-commission', {});
   }
+
+  /** Bagages soute encore remboursables sur cette réservation — le bagage n'est JAMAIS
+   *  remboursé automatiquement, voir BookingService.refundDeclaredBaggage. */
+  getBookingBaggageInfo(bookingId: number): Observable<BaggageInfo> {
+    return this.http.get<BaggageInfo>(`/admin/bookings/${bookingId}/baggage-info`);
+  }
+
+  /** Annule toute la réservation. `declaredBagsToCancel` : nombre de bagages à rembourser en
+   *  plus des tickets, jamais déduit automatiquement de baggageFee. */
+  cancelBooking(bookingId: number, declaredBagsToCancel: number): Observable<CancelBookingResult> {
+    const params = new HttpParams().set('declaredBagsToCancel', String(declaredBagsToCancel));
+    return this.http.post<CancelBookingResult>(`/admin/bookings/${bookingId}/cancel`, {}, { params });
+  }
+
+  /** Annule uniquement les tickets ciblés — voir cancelBooking pour declaredBagsToCancel. */
+  cancelTickets(
+    bookingId: number,
+    ticketIds: number[],
+    declaredBagsToCancel: number,
+  ): Observable<CancelBookingResult> {
+    const params = new HttpParams().set('declaredBagsToCancel', String(declaredBagsToCancel));
+    return this.http.post<CancelBookingResult>(
+      `/admin/bookings/${bookingId}/cancel-tickets`,
+      ticketIds,
+      { params },
+    );
+  }
+}
+
+export interface BaggageInfo {
+  totalBags: number;
+  alreadyRefunded: number;
+  remaining: number;
+  unitBagPrice: number;
+}
+
+export interface CancelBookingResult {
+  bookingId: number;
+  provider: string | null;
+  autoRefunded: boolean;
+  message: string;
+  refunded: number;
 }

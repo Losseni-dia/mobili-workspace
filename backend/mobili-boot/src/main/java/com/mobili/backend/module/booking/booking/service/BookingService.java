@@ -188,9 +188,16 @@ public class BookingService {
         return fixed;
     }
 
-    /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket actif n'a été annulé. */
+    /**
+     * @param declaredBagsToCancel nombre de bagages soute supplémentaires à rembourser pour
+     *                             CETTE annulation — jamais automatique/déduit de baggageFee,
+     *                             toujours déclaré explicitement par l'admin (voir
+     *                             {@link #refundDeclaredBaggage}). 0 si aucun bagage à rembourser.
+     * @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket actif n'a été
+     *         annulé ET aucun bagage déclaré.
+     */
     @Transactional
-    public double cancelBooking(Long bookingId) {
+    public double cancelBooking(Long bookingId, int declaredBagsToCancel) {
         Booking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Réservation introuvable"));
 
@@ -214,6 +221,7 @@ public class BookingService {
             }
         }
 
+        double baggageRefund = refundDeclaredBaggage(booking, declaredBagsToCancel);
         bookingRepository.save(booking);
 
         // Libération immédiate du siège : seatsOccupiedOnLeg() (TripRunService) exclut déjà
@@ -227,7 +235,7 @@ public class BookingService {
         tripRunService.refreshTripAvailableSeatsCounter(trip);
         tripRepository.save(trip);
 
-        double refundable = computeRefundableAmount(justCancelled);
+        double refundable = computeRefundableAmount(justCancelled) + baggageRefund;
         triggerRefund(bookingId, refundable);
 
         log.info("✅ Réservation #{} annulée et processus de remboursement initié", bookingId);
@@ -241,9 +249,14 @@ public class BookingService {
      * réservation elle-même bascule CANCELLED (même cascade que cancelBooking, pas de double
      * remboursement puisqu'on ne rembourse ici que les tickets qu'on vient d'annuler).
      */
-    /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket ciblé n'a été annulé. */
+    /**
+     * @param declaredBagsToCancel nombre de bagages soute supplémentaires à rembourser pour
+     *                             CETTE annulation — voir {@link #refundDeclaredBaggage}.
+     * @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket ciblé n'a été
+     *         annulé ET aucun bagage déclaré.
+     */
     @Transactional
-    public double cancelTickets(Long bookingId, List<Long> ticketIds) {
+    public double cancelTickets(Long bookingId, List<Long> ticketIds, int declaredBagsToCancel) {
         if (ticketIds == null || ticketIds.isEmpty()) {
             throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Aucun ticket sélectionné.");
         }
@@ -287,6 +300,8 @@ public class BookingService {
             // Dernier ticket actif annulé : la réservation suit, comme cancelBooking().
             booking.setStatus(BookingStatus.CANCELLED);
         }
+
+        double baggageRefund = refundDeclaredBaggage(booking, declaredBagsToCancel);
         bookingRepository.save(booking);
 
         Trip trip = tripRepository.findByIdWithPartnerAndStops(booking.getTrip().getId())
@@ -295,7 +310,7 @@ public class BookingService {
         tripRunService.refreshTripAvailableSeatsCounter(trip);
         tripRepository.save(trip);
 
-        double refundable = computeRefundableAmount(justCancelled);
+        double refundable = computeRefundableAmount(justCancelled) + baggageRefund;
         triggerRefund(bookingId, refundable);
 
         log.info("✅ {} ticket(s) annulé(s) sur la réservation #{} ({})",
@@ -342,22 +357,52 @@ public class BookingService {
     /**
      * Montant remboursable pour CES tickets — JAMAIS le forfait client (frais irrécupérables
      * chez l'agrégateur de paiement in/out, jamais reversés à Mobili elle-même, donc jamais
-     * remboursables au passager). Repose sur transportFare/baggageFee, figés par ticket à la
-     * vente. Pour un ticket antérieur à cette scission (les deux null), on retombe sur
-     * amountPaid en meilleur effort — inclut alors une part de forfait qu'on ne peut plus
-     * isoler rétroactivement, comme partout ailleurs dans ce fichier pour les données
+     * remboursables au passager), et JAMAIS le bagage automatiquement (voir
+     * {@link #refundDeclaredBaggage} — l'admin doit déclarer explicitement combien de bagages
+     * rembourser, jamais déduit de baggageFee ici). Repose sur transportFare, figé par ticket à
+     * la vente. Pour un ticket antérieur à cette scission (transportFare null), on retombe sur
+     * amountPaid en meilleur effort — inclut alors une part de forfait (et de bagage) qu'on ne
+     * peut plus isoler rétroactivement, comme partout ailleurs dans ce fichier pour les données
      * historiques.
      */
     private double computeRefundableAmount(List<Ticket> tickets) {
         double total = 0;
         for (Ticket t : tickets) {
             if (t.getTransportFare() != null) {
-                total += t.getTransportFare() + (t.getBaggageFee() != null ? t.getBaggageFee() : 0.0);
+                total += t.getTransportFare();
             } else if (t.getAmountPaid() != null) {
                 total += t.getAmountPaid();
             }
         }
         return total;
+    }
+
+    /**
+     * Bagage soute supplémentaire à rembourser pour CETTE annulation — jamais automatique
+     * (contrairement à l'ancien calcul via baggageFee) : l'admin déclare explicitement combien
+     * de bagages annuler, potentiellement en plusieurs fois sur la même réservation. Plafonné au
+     * total réellement enregistré ({@link Booking#getExtraHoldBags()}) cumulé sur toutes les
+     * annulations déjà effectuées ({@link Booking#getRefundedExtraHoldBags()}) — empêche de
+     * rembourser plus de bagages qu'il n'y en a, même en plusieurs fois.
+     *
+     * @return montant à ajouter au remboursement (FCFA) — 0 si declaredBagsToCancel est 0.
+     */
+    private double refundDeclaredBaggage(Booking booking, int declaredBagsToCancel) {
+        if (declaredBagsToCancel <= 0) {
+            return 0;
+        }
+        int totalBags = booking.getExtraHoldBags() != null ? booking.getExtraHoldBags() : 0;
+        int alreadyRefunded = booking.getRefundedExtraHoldBags() != null ? booking.getRefundedExtraHoldBags() : 0;
+        int remaining = totalBags - alreadyRefunded;
+        if (declaredBagsToCancel > remaining) {
+            throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                    "Impossible de rembourser " + declaredBagsToCancel + " bagage(s) : seulement "
+                            + remaining + " encore remboursable(s) sur " + totalBags + " enregistré(s) au total.");
+        }
+        Trip trip = booking.getTrip();
+        double unitBagPrice = trip != null && trip.getExtraHoldBagPrice() != null ? trip.getExtraHoldBagPrice() : 0.0;
+        booking.setRefundedExtraHoldBags(alreadyRefunded + declaredBagsToCancel);
+        return declaredBagsToCancel * unitBagPrice;
     }
 
     @Transactional

@@ -57,9 +57,9 @@ class AdminBookingControllerTest {
                         1L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.of(payment));
 
-        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(1L);
+        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(1L, 0);
 
-        verify(bookingService).cancelBooking(1L);
+        verify(bookingService).cancelBooking(1L, 0);
         CancelBookingResponse body = response.getBody();
         assertEquals(1L, body.bookingId());
         assertEquals("STRIPE", body.provider());
@@ -75,9 +75,9 @@ class AdminBookingControllerTest {
                         2L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.of(payment));
 
-        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(2L);
+        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(2L, 0);
 
-        verify(bookingService).cancelBooking(2L);
+        verify(bookingService).cancelBooking(2L, 0);
         CancelBookingResponse body = response.getBody();
         assertEquals("FEDAPAY", body.provider());
         assertFalse(body.autoRefunded());
@@ -90,9 +90,9 @@ class AdminBookingControllerTest {
                         3L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.empty());
 
-        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(3L);
+        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(3L, 0);
 
-        verify(bookingService).cancelBooking(3L);
+        verify(bookingService).cancelBooking(3L, 0);
         CancelBookingResponse body = response.getBody();
         assertNull(body.provider());
         assertFalse(body.autoRefunded());
@@ -113,9 +113,9 @@ class AdminBookingControllerTest {
                         4L, List.of(PaymentStatus.SUCCESS, PaymentStatus.REFUNDED)))
                 .thenReturn(Optional.of(payment));
 
-        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(4L);
+        ResponseEntity<CancelBookingResponse> response = controller.cancelBooking(4L, 0);
 
-        verify(bookingService).cancelBooking(4L);
+        verify(bookingService).cancelBooking(4L, 0);
         CancelBookingResponse body = response.getBody();
         assertEquals("STRIPE", body.provider());
         assertTrue(body.message().contains("automatiquement"));

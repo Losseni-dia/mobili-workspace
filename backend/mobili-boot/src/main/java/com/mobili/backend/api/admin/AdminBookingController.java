@@ -13,10 +13,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,8 +40,17 @@ public class AdminBookingController {
     private final PaymentRepository paymentRepository;
     private final com.mobili.backend.module.booking.ticket.service.TicketService ticketService;
 
+    /**
+     * @param declaredBagsToCancel nombre de bagages soute supplémentaires à rembourser en plus
+     *                             des tickets — jamais automatique (voir
+     *                             BookingService.refundDeclaredBaggage) : 0 par défaut, l'admin
+     *                             doit le déclarer explicitement s'il y a des bagages à
+     *                             rembourser sur cette annulation.
+     */
     @PostMapping("/{bookingId}/cancel")
-    public ResponseEntity<CancelBookingResponse> cancelBooking(@PathVariable Long bookingId) {
+    public ResponseEntity<CancelBookingResponse> cancelBooking(
+            @PathVariable Long bookingId,
+            @RequestParam(defaultValue = "0") int declaredBagsToCancel) {
         // Déterminer le provider du paiement AVANT annulation : cancelBooking()
         // ne renvoie aucune information exploitable par l'UI, et ne déclenche
         // un remboursement automatique que pour Stripe.
@@ -53,7 +64,7 @@ public class AdminBookingController {
                 .map(Payment::getProvider)
                 .orElse(null);
 
-        double refunded = bookingService.cancelBooking(bookingId);
+        double refunded = bookingService.cancelBooking(bookingId, declaredBagsToCancel);
 
         boolean autoRefunded = provider == PaymentProvider.STRIPE;
         String message = buildRefundMessage(provider, "Réservation annulée.", refunded);
@@ -77,7 +88,9 @@ public class AdminBookingController {
      */
     @PostMapping("/{bookingId}/cancel-tickets")
     public ResponseEntity<CancelBookingResponse> cancelTickets(
-            @PathVariable Long bookingId, @RequestBody List<Long> ticketIds) {
+            @PathVariable Long bookingId,
+            @RequestBody List<Long> ticketIds,
+            @RequestParam(defaultValue = "0") int declaredBagsToCancel) {
         // AUDIT-MOBILI.md §1.1 : List<Long> brut, aucune contrainte de taille/format
         // auparavant — un corps vide/null n'était pas rejeté explicitement. Vérification
         // manuelle plutôt que @Validated + @NotEmpty sur le paramètre : GlobalExceptionHandler
@@ -98,7 +111,7 @@ public class AdminBookingController {
                 .map(Payment::getProvider)
                 .orElse(null);
 
-        double refunded = bookingService.cancelTickets(bookingId, ticketIds);
+        double refunded = bookingService.cancelTickets(bookingId, ticketIds, declaredBagsToCancel);
 
         boolean autoRefunded = provider == PaymentProvider.STRIPE && refunded > 0;
         String message = buildRefundMessage(
@@ -113,6 +126,26 @@ public class AdminBookingController {
                 autoRefunded,
                 message,
                 refunded));
+    }
+
+    /**
+     * Bagages soute supplémentaires de cette réservation — total enregistré, déjà remboursés
+     * (cumul sur d'éventuelles annulations précédentes), et donc encore déclarables. Consommé
+     * par les UI d'annulation (web/mobilipro) pour plafonner la déclaration à
+     * {@code remaining} et ne jamais proposer plus que ce qui est réellement remboursable.
+     */
+    @GetMapping("/{bookingId}/baggage-info")
+    public ResponseEntity<java.util.Map<String, Object>> getBaggageInfo(@PathVariable Long bookingId) {
+        var booking = bookingService.findById(bookingId);
+        int total = booking.getExtraHoldBags() != null ? booking.getExtraHoldBags() : 0;
+        int alreadyRefunded = booking.getRefundedExtraHoldBags() != null ? booking.getRefundedExtraHoldBags() : 0;
+        double unitPrice = booking.getTrip() != null && booking.getTrip().getExtraHoldBagPrice() != null
+                ? booking.getTrip().getExtraHoldBagPrice() : 0.0;
+        return ResponseEntity.ok(java.util.Map.of(
+                "totalBags", total,
+                "alreadyRefunded", alreadyRefunded,
+                "remaining", Math.max(0, total - alreadyRefunded),
+                "unitBagPrice", unitPrice));
     }
 
     /**

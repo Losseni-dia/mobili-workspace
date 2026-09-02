@@ -107,6 +107,46 @@
   background: variables.$danger-soft;
   color: variables.$danger;
   font-size: 0.88rem;
+
+  &--success {
+    background: variables.$station-green-soft;
+    color: variables.$station-green;
+  }
+}
+
+// ====== Déclaration bagages (modale annulation) ===========================
+.baggage-declare {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: variables.$radius-sm;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+
+  &__label { display: block; font-weight: 800; font-size: 0.82rem; color: variables.$mobili-blue-deep; }
+  &__hint { margin: 4px 0 10px; font-size: 0.78rem; color: variables.$gray-500; line-height: 1.4; }
+
+  &__stepper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid variables.$gray-300;
+      background: variables.$white;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: variables.$mobili-blue-deep;
+      cursor: pointer;
+
+      &:hover:not(:disabled) { background: variables.$gray-100; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+
+    strong { font-size: 1.05rem; min-width: 20px; text-align: center; }
+  }
 }
 
 // ====== Modale de traitement =============================================
@@ -175,6 +215,11 @@
     margin-top: 4px;
 
     .btn-cancel { @include mixins.btn-ghost; padding: 10px 18px; }
-    .btn-confirm { @include mixins.btn-primary; padding: 10px 18px; }
+    .btn-confirm {
+      @include mixins.btn-primary;
+      padding: 10px 18px;
+
+      &--danger { background: variables.$danger; &:hover { background: variables.$danger; opacity: 0.9; } }
+    }
   }
 }
