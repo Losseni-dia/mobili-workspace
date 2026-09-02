@@ -291,6 +291,7 @@ public class AdminService {
                         b.getTotalPrice(),
                         b.getGrossAmount() + (b.getServiceFee() != null ? b.getServiceFee() : 0),
                         b.getStatus() != null ? b.getStatus().name() : "—",
+                        b.getServiceFee(),
                         b.getSeatNumbers(),
                         // Sièges dont le ticket a été annulé individuellement — même calcul que
                         // BookingMapper.fillSegmentLabelsAndUnitPrice (côté partenaire).

@@ -244,6 +244,10 @@ export interface AdminBookingListItem {
   /** Montant réellement dû aujourd'hui (se réduit après annulation partielle) — à afficher. */
   amount: number;
   status: string;
+  /** Forfait de service client — 0 pour une vente guichet (OFFLINE_SALE). À masquer côté
+   *  affichage pour OFFLINE_SALE plutôt que de se fier uniquement à cette valeur (couvre aussi
+   *  les ventes guichet historiques créées avant ce correctif, voir BookingService.createOfflineSale). */
+  serviceFee: number | null;
   /** Tous les numéros de sièges réservés à l'origine — voir BookingResponse.seatNumbers (même
    *  convention côté partenaire, booking-list.component). */
   seatNumbers: string[];

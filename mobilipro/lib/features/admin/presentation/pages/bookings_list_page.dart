@@ -234,6 +234,11 @@ class _AdminBookingCard extends StatelessWidget {
                     '${booking.departureDateTime != null ? ' · Départ ${DateFormat('dd/MM/yy HH:mm').format(booking.departureDateTime!)}' : ''}',
                     style: const TextStyle(fontSize: 10, color: AppColors.gray400),
                   ),
+                  if (!booking.isOfflineSale && booking.serviceFee != null)
+                    Text(
+                      'Forfait ${booking.serviceFee} F',
+                      style: const TextStyle(fontSize: 10, color: AppColors.gray400),
+                    ),
                 ],
               ),
             ),

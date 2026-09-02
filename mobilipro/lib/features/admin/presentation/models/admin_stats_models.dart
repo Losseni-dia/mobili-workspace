@@ -353,6 +353,7 @@ class AdminBookingListItem {
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
+    this.serviceFee,
     this.seatNumbers = const [],
     this.cancelledSeatNumbers = const [],
   });
@@ -362,6 +363,12 @@ class AdminBookingListItem {
   /// Date de départ du voyage — distincte de bookingDate (date de réservation).
   final DateTime? departureDateTime;
   final double totalPrice;
+  /// Forfait de service client — 0 pour une vente guichet (OFFLINE_SALE, voir
+  /// BookingService.createOfflineSale). À masquer côté affichage pour OFFLINE_SALE plutôt que
+  /// de se fier uniquement à cette valeur (couvre aussi les ventes guichet historiques créées
+  /// avant ce correctif).
+  final int? serviceFee;
+  bool get isOfflineSale => status.toUpperCase() == 'OFFLINE_SALE';
   /// Tous les numéros de sièges réservés à l'origine — même convention que côté web
   /// (admin-bookings.ts / booking-list.component.ts).
   final List<String> seatNumbers;
@@ -388,6 +395,7 @@ class AdminBookingListItem {
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
+        serviceFee: (j['serviceFee'] as num?)?.toInt(),
         seatNumbers: (j['seatNumbers'] as List<dynamic>? ?? [])
             .map((e) => e as String)
             .toList(),
