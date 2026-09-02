@@ -4,6 +4,10 @@ public record AdminStatsResponse(
         long totalUsers,
         long totalPartners,
         long totalTrips,
+        /** Trajets dont le départ tombe dans l'année civile en cours — quel que soit le statut,
+         *  comparable à "Trajets avec ventes" de Stats métier (même année, même filtre sur la
+         *  date de départ). totalTrips (all-time, sans filtre) reste inchangé à côté. */
+        long totalTripsThisYear,
         long totalTickets,
         long activeBookings,
         double totalRevenue,

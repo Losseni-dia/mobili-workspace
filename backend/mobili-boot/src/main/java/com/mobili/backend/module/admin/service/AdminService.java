@@ -179,6 +179,9 @@ public class AdminService {
         long totalUsers = userRepository.count();
         long totalPartners = partnerRepository.count();
         long totalTrips = tripRepository.count();
+        java.time.LocalDateTime yearStart = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 1, 1, 0, 0);
+        java.time.LocalDateTime yearEnd = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 12, 31, 23, 59, 59);
+        long totalTripsThisYear = tripRepository.countByDepartureDateTimeBetween(yearStart, yearEnd);
         long activeBookings = bookingRepository.count();
         long totalTickets = ticketRepository.countActiveTickets();
 
@@ -202,6 +205,7 @@ public class AdminService {
                 totalUsers,
                 totalPartners,
                 totalTrips,
+                totalTripsThisYear,
                 totalTickets,
                 activeBookings,
                 totalRevenue,
