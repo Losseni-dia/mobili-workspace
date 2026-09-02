@@ -35,6 +35,7 @@ import com.mobili.backend.module.payment.service.FrontendReturnUrlResolver;
 import com.mobili.backend.module.payment.service.PaymentCreationService;
 import com.mobili.backend.module.payment.service.PaymentGatewayResolver;
 import com.mobili.backend.module.payment.service.PaymentService;
+import com.mobili.backend.module.payment.service.PaymentStatusUpdateService;
 
 /**
  * Note : la logique de webhook FedaPay a été déplacée vers {@link FedaPayCallbackController}
@@ -59,6 +60,8 @@ class PaymentControllerTest {
     private PaymentService paymentService;
     @Mock
     private FrontendReturnUrlResolver frontendReturnUrlResolver;
+    @Mock
+    private PaymentStatusUpdateService paymentStatusUpdateService;
 
     private PaymentController paymentController;
 
@@ -70,7 +73,8 @@ class PaymentControllerTest {
                 paymentGatewayResolver,
                 paymentCreationService,
                 exchangeRateService,
-                frontendReturnUrlResolver);
+                frontendReturnUrlResolver,
+                paymentStatusUpdateService);
     }
 
     @Test
@@ -141,6 +145,11 @@ class PaymentControllerTest {
 
         assertTrue(response.getBody().confirmed());
         assertEquals(BookingStatus.CONFIRMED.name(), response.getBody().status());
+        // Incident 2026-09-02 : sans cet appel, le Payment restait bloqué PENDING pour toute
+        // résa confirmée via ce chemin (vérification active FedaPay, primaire en prod) — une
+        // annulation admin ultérieure affichait alors à tort "aucun paiement lié à cette
+        // réservation" malgré un paiement Mobile Money bien reçu.
+        verify(paymentStatusUpdateService).markAsSuccessWithReference(3L, "fedapay-tx-123");
         verify(bookingService).confirmBookingAfterPayment(3L);
     }
 

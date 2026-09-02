@@ -20,6 +20,7 @@ import com.mobili.backend.module.payment.service.FrontendReturnUrlResolver;
 import com.mobili.backend.module.payment.service.PaymentCreationService;
 import com.mobili.backend.module.payment.service.PaymentGatewayResolver;
 import com.mobili.backend.module.payment.service.PaymentService;
+import com.mobili.backend.module.payment.service.PaymentStatusUpdateService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class PaymentController {
     private final PaymentCreationService paymentCreationService;
     private final ExchangeRateService exchangeRateService;
     private final FrontendReturnUrlResolver frontendReturnUrlResolver;
+    private final PaymentStatusUpdateService paymentStatusUpdateService;
 
 @PostMapping("/checkout/{bookingId}")
 public ResponseEntity<PaymentResponse> createCheckout(
@@ -120,6 +122,17 @@ public ResponseEntity<PaymentResponse> createCheckout(
             return ResponseEntity.ok(new PaymentVerifyResponse(false, st.name()));
         }
         if (fedaPayService.isTransactionApprovedForBooking(txId)) {
+            // Marquer le Payment SUCCESS AVANT de confirmer la réservation — sans ça, ce chemin
+            // (vérification active côté client, PRIMAIRE en prod pour FedaPay : le webhook
+            // FedaPayCallbackController n'atteint pas toujours l'API à temps, voir
+            // payment-success.component.ts) confirmait la réservation et générait les billets
+            // SANS JAMAIS mettre à jour le Payment, qui restait bloqué PENDING indéfiniment.
+            // Conséquence en prod : toute annulation admin d'une résa payée par Mobile Money/
+            // FedaPay via ce chemin affichait à tort "aucun paiement lié à cette réservation"
+            // (incident constaté 2026-09-02) — le paiement existait bien, juste jamais marqué
+            // SUCCESS. markAsSuccessWithReference est idempotent (no-op si déjà SUCCESS), donc
+            // sans risque si le webhook finit quand même par arriver après coup.
+            paymentStatusUpdateService.markAsSuccessWithReference(bookingId, txId);
             bookingService.confirmBookingAfterPayment(bookingId);
             return ResponseEntity.ok(new PaymentVerifyResponse(true, BookingStatus.CONFIRMED.name()));
         }
