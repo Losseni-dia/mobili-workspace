@@ -106,6 +106,13 @@
   @media (min-width: 900px) {
     grid-template-columns: 1fr 1fr;
   }
+
+  // 3 sections (Depuis toujours / Cette année / Ce mois-ci) pleinement côte à côte seulement au
+  // -delà de 1500px — en dessous, 2 colonnes (même logique que admin-dashboard.scss).
+  @media (min-width: 1500px) {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1760px;
+  }
 }
 
 .gare-kpis {
