@@ -7,22 +7,28 @@ import { toLocalDateString } from '../../../core/utils/period-range.util';
  * jamais une fenêtre glissante, toujours les vraies bornes civiles. */
 export interface PeriodStats {
   activeTrips: number;
+  tripsWithSales: number;
   ticketsSold: number;
   ticketsSoldOnline: number;
   ticketsSoldOffline: number;
   revenueTotal: number;
   revenueOnline: number;
   revenueOffline: number;
+  newUsers: number;
+  newPartners: number;
 }
 
 const EMPTY_PERIOD_STATS: PeriodStats = {
   activeTrips: 0,
+  tripsWithSales: 0,
   ticketsSold: 0,
   ticketsSoldOnline: 0,
   ticketsSoldOffline: 0,
   revenueTotal: 0,
   revenueOnline: 0,
   revenueOffline: 0,
+  newUsers: 0,
+  newPartners: 0,
 };
 
 @Component({
@@ -154,6 +160,27 @@ export class AdminDashboard implements OnInit {
         target.update((m) => ({ ...m, revenueTotal: 0, revenueOnline: 0, revenueOffline: 0 }));
         loading.set(false);
       },
+    });
+
+    this.adminService.getRegistrationStats(from, to).subscribe({
+      next: (data) => {
+        const newUsers = data.history.reduce((sum, d) => sum + d.count, 0);
+        target.update((m) => ({ ...m, newUsers }));
+      },
+      error: () => target.update((m) => ({ ...m, newUsers: 0 })),
+    });
+
+    this.adminService.getPartnerRegistrationStats(from, to).subscribe({
+      next: (data) => {
+        const newPartners = data.history.reduce((sum, d) => sum + d.count, 0);
+        target.update((m) => ({ ...m, newPartners }));
+      },
+      error: () => target.update((m) => ({ ...m, newPartners: 0 })),
+    });
+
+    this.adminService.getTripsWithSalesCount(from, to).subscribe({
+      next: (data) => target.update((m) => ({ ...m, tripsWithSales: data.count })),
+      error: () => target.update((m) => ({ ...m, tripsWithSales: 0 })),
     });
   }
 }

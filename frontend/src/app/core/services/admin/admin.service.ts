@@ -21,6 +21,24 @@ export interface AdminStats {
   revenueOffline: number;
 }
 
+/** Un jour civil + un compteur — même forme pour inscriptions users et partenaires. */
+export interface DayCountEntry {
+  date: string;
+  count: number;
+}
+
+export interface DailyRegistrationStats {
+  todayRegistrations: number;
+  totalUsers: number;
+  history: DayCountEntry[];
+}
+
+export interface DailyPartnerRegistrationStats {
+  todayRegistrations: number;
+  totalPartners: number;
+  history: DayCountEntry[];
+}
+
 export interface DayLoginEntry {
   date: string;
   totalLogins: number;
@@ -275,6 +293,29 @@ export class AdminService {
 
   getDailyLoginStats(days = 30): Observable<DailyLoginStats> {
     return this.http.get<DailyLoginStats>(`/admin/stats/daily-logins?days=${days}`);
+  }
+
+  /** Inscriptions utilisateurs sur [fromDate, toDate] (bornes civiles, YYYY-MM-DD) — somme de
+   *  history[].count pour obtenir un total période, même principe que getTripList/getTicketList. */
+  getRegistrationStats(fromDate: string, toDate: string): Observable<DailyRegistrationStats> {
+    return this.http.get<DailyRegistrationStats>('/admin/stats/registrations', {
+      params: this.dateRangeParams(fromDate, toDate),
+    });
+  }
+
+  /** Inscriptions partenaires sur [fromDate, toDate] — voir getRegistrationStats. */
+  getPartnerRegistrationStats(fromDate: string, toDate: string): Observable<DailyPartnerRegistrationStats> {
+    return this.http.get<DailyPartnerRegistrationStats>('/admin/stats/partners', {
+      params: this.dateRangeParams(fromDate, toDate),
+    });
+  }
+
+  /** Trajets distincts avec ≥1 ticket vendu sur [fromDate, toDate] — même définition que "Trajets
+   *  avec ventes" de Stats métier, réutilisée pour Vue d'ensemble (sections année/mois). */
+  getTripsWithSalesCount(fromDate: string, toDate: string): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>('/admin/stats/trips-with-sales-count', {
+      params: this.dateRangeParams(fromDate, toDate),
+    });
   }
 
   getAnalyticsSummary(days = 7): Observable<AnalyticsSummary> {

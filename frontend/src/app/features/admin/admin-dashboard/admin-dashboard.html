@@ -69,9 +69,24 @@
             } @else {
                 <div class="kpi-grid kpi-5row">
                     <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip blue">👥</span></header>
+                        <div class="kpi-value">{{ year().newUsers | number }}</div>
+                        <div class="kpi-label">Utilisateurs inscrits</div>
+                    </article>
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip purple">🏢</span></header>
+                        <div class="kpi-value">{{ year().newPartners | number }}</div>
+                        <div class="kpi-label">Partenaires inscrits</div>
+                    </article>
+                    <article class="kpi">
                         <header class="kpi-head"><span class="kpi-chip green">🚌</span></header>
                         <div class="kpi-value">{{ year().activeTrips }}</div>
                         <div class="kpi-label">Trajets actifs</div>
+                    </article>
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip green">✅</span></header>
+                        <div class="kpi-value">{{ year().tripsWithSales | number }}</div>
+                        <div class="kpi-label">Trajets avec ventes</div>
                     </article>
                     <article class="kpi">
                         <header class="kpi-head"><span class="kpi-chip orange">📭</span></header>
@@ -113,9 +128,24 @@
             } @else {
                 <div class="kpi-grid kpi-5row">
                     <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip blue">👥</span></header>
+                        <div class="kpi-value">{{ month().newUsers | number }}</div>
+                        <div class="kpi-label">Utilisateurs inscrits</div>
+                    </article>
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip purple">🏢</span></header>
+                        <div class="kpi-value">{{ month().newPartners | number }}</div>
+                        <div class="kpi-label">Partenaires inscrits</div>
+                    </article>
+                    <article class="kpi">
                         <header class="kpi-head"><span class="kpi-chip green">🚌</span></header>
                         <div class="kpi-value">{{ month().activeTrips }}</div>
                         <div class="kpi-label">Trajets actifs</div>
+                    </article>
+                    <article class="kpi">
+                        <header class="kpi-head"><span class="kpi-chip green">✅</span></header>
+                        <div class="kpi-value">{{ month().tripsWithSales | number }}</div>
+                        <div class="kpi-label">Trajets avec ventes</div>
                     </article>
                     <article class="kpi">
                         <header class="kpi-head"><span class="kpi-chip teal">🎫</span></header>
