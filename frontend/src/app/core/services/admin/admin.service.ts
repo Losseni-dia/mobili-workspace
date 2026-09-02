@@ -8,6 +8,9 @@ export interface AdminStats {
   totalUsers: number;
   totalPartners: number;
   totalTrips: number;
+  /** Trajets dont le départ tombe dans l'année civile en cours, tout statut confondu —
+   *  comparable à "Trajets avec ventes" de Stats métier (même filtre de date). */
+  totalTripsThisYear: number;
   totalTickets: number;
   activeBookings: number;
   totalRevenue: number;

@@ -71,6 +71,16 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT COUNT(t) FROM Trip t WHERE t.partner.id = ?1")
     long countTripsByPartner(Long partnerId);
 
+    /**
+     * Vue d'ensemble admin : "Trajets de l'année en cours" — comparable à "Trajets avec ventes"
+     * de Stats métier (même filtre sur departureDateTime, même année), à côté de "Trajets sur la
+     * plateforme" (totalTrips = count() sans aucun filtre) pour que l'écart entre les deux se
+     * lise clairement (trajets sans aucune vente sur l'année). N'importe quel statut compté ici,
+     * comme totalTrips — seul le filtre de date change.
+     */
+    @Query("SELECT COUNT(t) FROM Trip t WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to")
+    long countByDepartureDateTimeBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Query("SELECT COUNT(t) FROM Trip t WHERE t.partner.id = :partnerId AND t.station.id = :stationId")
     long countTripsByPartnerAndStation(@Param("partnerId") Long partnerId, @Param("stationId") Long stationId);
 

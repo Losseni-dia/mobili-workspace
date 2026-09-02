@@ -37,6 +37,11 @@
                     <div class="kpi-label">Trajets sur la plateforme</div>
                 </article>
                 <article class="kpi">
+                    <header class="kpi-head"><span class="kpi-chip green">📅</span></header>
+                    <div class="kpi-value">{{ stats()?.totalTripsThisYear | number }}</div>
+                    <div class="kpi-label">Trajets de l'année en cours</div>
+                </article>
+                <article class="kpi">
                     <header class="kpi-head"><span class="kpi-chip teal">🎫</span></header>
                     <div class="kpi-value">{{ stats()?.totalTickets | number }}</div>
                     <div class="kpi-label">Tickets vendus (actifs)</div>
