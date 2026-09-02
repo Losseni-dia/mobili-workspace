@@ -93,7 +93,13 @@
                             <td>{{ b.route }}</td>
                             <td class="mono">{{ b.bookingDate | date: 'dd/MM/yyyy HH:mm' }}</td>
                             <td class="mono">{{ b.departureDateTime ? (b.departureDateTime | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
-                            <td>{{ b.numberOfSeats }}</td>
+                            <td>
+                                <div class="seat-tags">
+                                    @for (seat of b.seatNumbers; track seat) {
+                                        <span class="seat-chip" [class.cancelled]="isSeatCancelled(b, seat)" [title]="isSeatCancelled(b, seat) ? 'Ticket annulé' : ''">{{ seat }}</span>
+                                    }
+                                </div>
+                            </td>
                             <td>
                                 <span class="status-pill" [class.active]="b.status !== 'CANCELLED'" [class.warn]="b.status === 'CANCELLED'">
                                     <span class="dot"></span>

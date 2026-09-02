@@ -158,6 +158,12 @@ export class AdminBookings implements OnInit {
     this.detailsBooking.set(null);
   }
 
+  /** Un ticket annulé individuellement au sein d'une résa multi-sièges encore confirmée — même
+   *  convention que côté partenaire (booking-list.component.ts). */
+  isSeatCancelled(booking: AdminBookingListItem, seat: string): boolean {
+    return (booking.cancelledSeatNumbers || []).includes(seat);
+  }
+
   /**
    * Montant réel de la réservation dans le détail : `amount`/`totalPrice` sont figés à la
    * création et ne bougent pas si un ticket est annulé individuellement ensuite — on recalcule

@@ -290,7 +290,15 @@ public class AdminService {
                         b.getNumberOfSeats(),
                         b.getTotalPrice(),
                         b.getGrossAmount() + (b.getServiceFee() != null ? b.getServiceFee() : 0),
-                        b.getStatus() != null ? b.getStatus().name() : "—"))
+                        b.getStatus() != null ? b.getStatus().name() : "—",
+                        b.getSeatNumbers(),
+                        // Sièges dont le ticket a été annulé individuellement — même calcul que
+                        // BookingMapper.fillSegmentLabelsAndUnitPrice (côté partenaire).
+                        b.getTickets() == null ? java.util.Set.of() : b.getTickets().stream()
+                                .filter(t -> t.getStatus() == com.mobili.backend.module.booking.ticket.entity.TicketStatus.ANNULÉ)
+                                .map(com.mobili.backend.module.booking.ticket.entity.Ticket::getSeatNumber)
+                                .filter(java.util.Objects::nonNull)
+                                .collect(java.util.stream.Collectors.toSet())))
                 .toList();
     }
 

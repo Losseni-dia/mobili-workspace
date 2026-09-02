@@ -12,6 +12,7 @@ import '../widgets/admin_seen_tracker.dart';
 import 'registration_stats_page.dart';
 import 'partner_stats_page.dart';
 import 'bookings_stats_page.dart';
+import 'bookings_list_page.dart';
 import 'trips_list_page.dart';
 import 'tickets_list_page.dart';
 import 'covoiturage_stats_page.dart';
@@ -665,7 +666,28 @@ class AdminDashboardPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(child: SizedBox()),
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final bookingsCountAsync = ref.watch(
+                              _monthlyBookingsCountProvider,
+                            );
+                            final bookingsCount = bookingsCountAsync.valueOrNull ?? 0;
+                            return _cardWithBadge(
+                              context,
+                              ref,
+                              icon: Icons.bookmark_rounded,
+                              label: 'Réservations',
+                              value: '$bookingsCount',
+                              color: AppColors.mobiliBlue,
+                              seenKey: 'admin_bookings_total_v1',
+                              currentTotal: bookingsCount,
+                              subtitle: _currentMonthLabel(),
+                              destination: const AdminBookingsListPage(),
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
