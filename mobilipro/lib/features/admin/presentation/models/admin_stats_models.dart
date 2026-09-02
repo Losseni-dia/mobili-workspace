@@ -353,6 +353,8 @@ class AdminBookingListItem {
     required this.numberOfSeats,
     required this.totalPrice,
     required this.status,
+    this.seatNumbers = const [],
+    this.cancelledSeatNumbers = const [],
   });
   final int id, numberOfSeats;
   final String reference, customerName, route, partnerName, stationName, status;
@@ -360,6 +362,14 @@ class AdminBookingListItem {
   /// Date de départ du voyage — distincte de bookingDate (date de réservation).
   final DateTime? departureDateTime;
   final double totalPrice;
+  /// Tous les numéros de sièges réservés à l'origine — même convention que côté web
+  /// (admin-bookings.ts / booking-list.component.ts).
+  final List<String> seatNumbers;
+  /// Sous-ensemble de seatNumbers dont le ticket a été annulé individuellement — reste affiché
+  /// (barré/grisé), jamais retiré de la liste.
+  final List<String> cancelledSeatNumbers;
+
+  bool isSeatCancelled(String seat) => cancelledSeatNumbers.contains(seat);
 
   factory AdminBookingListItem.fromJson(Map<String, dynamic> j) =>
       AdminBookingListItem(
@@ -378,6 +388,12 @@ class AdminBookingListItem {
         numberOfSeats: (j['numberOfSeats'] as num?)?.toInt() ?? 0,
         totalPrice: (j['totalPrice'] as num?)?.toDouble() ?? 0,
         status: j['status'] as String? ?? '',
+        seatNumbers: (j['seatNumbers'] as List<dynamic>? ?? [])
+            .map((e) => e as String)
+            .toList(),
+        cancelledSeatNumbers: (j['cancelledSeatNumbers'] as List<dynamic>? ?? [])
+            .map((e) => e as String)
+            .toList(),
       );
 }
 

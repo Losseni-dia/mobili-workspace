@@ -244,6 +244,12 @@ export interface AdminBookingListItem {
   /** Montant réellement dû aujourd'hui (se réduit après annulation partielle) — à afficher. */
   amount: number;
   status: string;
+  /** Tous les numéros de sièges réservés à l'origine — voir BookingResponse.seatNumbers (même
+   *  convention côté partenaire, booking-list.component). */
+  seatNumbers: string[];
+  /** Sous-ensemble de seatNumbers dont le ticket a été annulé individuellement — reste affiché
+   *  (barré/grisé), jamais retiré de la liste. */
+  cancelledSeatNumbers?: string[];
 }
 
 /**

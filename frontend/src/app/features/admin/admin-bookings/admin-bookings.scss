@@ -231,6 +231,25 @@
   gap: 6px;
 }
 
+// ====== sièges (liste principale) — mêmes règles que côté partenaire
+// (booking-list.component.scss) : siège annulé individuellement gardé visible, barré/grisé.
+.seat-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+.seat-chip {
+  padding: 3px 10px;
+  border-radius: variables.$radius-pill;
+  background: variables.$mobili-yellow;
+  color: variables.$mobili-blue-deep;
+  font-size: 0.75rem;
+  font-weight: 900;
+
+  &.cancelled {
+    background: variables.$gray-100;
+    color: variables.$gray-500;
+    text-decoration: line-through;
+  }
+}
+
 .passenger-row {
   display: flex;
   align-items: center;

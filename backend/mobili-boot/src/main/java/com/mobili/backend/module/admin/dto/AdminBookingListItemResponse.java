@@ -1,6 +1,7 @@
 package com.mobili.backend.module.admin.dto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 public record AdminBookingListItemResponse(
         Long id,
@@ -21,5 +22,12 @@ public record AdminBookingListItemResponse(
          *  tickets encore actifs) — se réduit après une annulation partielle, contrairement à
          *  {@link #totalPrice()}. Champ à afficher côté admin. */
         Double amount,
-        String status) {
+        String status,
+        /** Tous les numéros de sièges réservés à l'origine — voir BookingResponseDTO.seatNumbers
+         *  (même convention côté partenaire, BookingMapper). */
+        Set<String> seatNumbers,
+        /** Sous-ensemble de seatNumbers dont le ticket a été annulé individuellement — reste
+         *  affiché (barré/grisé), jamais retiré de la liste. Même convention que
+         *  BookingResponseDTO.cancelledSeatNumbers. */
+        Set<String> cancelledSeatNumbers) {
 }

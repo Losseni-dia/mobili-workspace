@@ -382,10 +382,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         // d'achat) : le partenaire/gare n'est payé qu'une fois le voyage effectué, donc une
         // vente de septembre pour un trajet de novembre ne doit apparaître que dans le mois de
         // novembre — sinon la gare voit un montant qu'elle ne peut pas encore percevoir.
-        @Query("SELECT b FROM Booking b " +
+        // b.tickets (bag) + b.seatNumbers (Set) fetch-joints ensemble sans risque de
+        // MultipleBagFetchException : Hibernate ne l'interdit qu'entre 2 bags (List sans
+        // @OrderColumn), jamais entre un bag et un Set — voir seatNumbers/passengerNames
+        // (Set<String>, Booking.java), déjà fetch-jointés ensemble ailleurs (findAllByPartnerId
+        // AndOptionalStationIdAndDateRangeRaw). Nécessaires pour afficher les numéros de sièges
+        // (et les sièges annulés individuellement) sur la liste admin, comme côté partenaire.
+        @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.partner " +
                         "JOIN FETCH b.customer c " +
+                        "LEFT JOIN FETCH b.tickets " +
+                        "LEFT JOIN FETCH b.seatNumbers " +
                         "WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to " +
                         "AND (:search IS NULL OR :search = '' " +
                         "     OR LOWER(b.reference) LIKE LOWER(CONCAT('%', :search, '%')) " +
