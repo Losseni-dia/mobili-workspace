@@ -18,7 +18,7 @@
 
             <label class="claims-field">
                 <span>Motif</span>
-                <select [ngModel]="reason()" (ngModelChange)="reason.set($event)" [disabled]="reasonLocked()">
+                <select [ngModel]="reason()" (ngModelChange)="onReasonChange($event)" [disabled]="reasonLocked()">
                     @for (r of reasons; track r) {
                         <option [value]="r">{{ reasonLabels[r] }}</option>
                     }
@@ -28,13 +28,54 @@
             @if (needsBooking()) {
                 <label class="claims-field">
                     <span>Réservation concernée</span>
-                    <select [ngModel]="bookingId()" (ngModelChange)="bookingId.set($event)">
+                    <select [ngModel]="bookingId()" (ngModelChange)="onBookingSelected($event)">
                         <option [ngValue]="null">— Choisir une réservation —</option>
                         @for (b of bookings(); track b.id) {
                             <option [ngValue]="b.id">{{ bookingLabel(b) }}</option>
                         }
                     </select>
                 </label>
+
+                @if (reason() === 'CANCELLATION' && selectedBooking() && selectedBooking()!.numberOfSeats > 1) {
+                    <div class="claims-field">
+                        <span>Sièges à annuler</span>
+                        <p class="claims-hint">Décochez les sièges que vous souhaitez garder — par défaut, toute la réservation est visée.</p>
+                        @if (loadingTickets()) {
+                            <p class="claims-hint">Chargement…</p>
+                        } @else {
+                            <ul class="claims-ticket-list">
+                                @for (t of bookingTickets() || []; track t.id) {
+                                    <li
+                                        class="claims-ticket-item"
+                                        [class.claims-ticket-item--selected]="selectedTicketIds().has(t.id!)"
+                                        [class.claims-ticket-item--disabled]="!cancellableTickets().includes(t)"
+                                        (click)="cancellableTickets().includes(t) && toggleTicket(t.id!)"
+                                    >
+                                        <span>Siège {{ t.seatNumber }} — {{ t.passengerFullName }}</span>
+                                        @if (!cancellableTickets().includes(t)) {
+                                            <em>Déjà {{ t.status.toLowerCase() }}, non annulable</em>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+
+                @if (reason() === 'CANCELLATION' && selectedBooking() && (selectedBooking()!.extraHoldBags ?? 0) > 0) {
+                    <div class="claims-field">
+                        <span>Bagages soute à rembourser</span>
+                        <p class="claims-hint">
+                            Cette réservation a {{ selectedBooking()!.extraHoldBags }} bagage(s) soute supplémentaire(s)
+                            enregistré(s). Indiquez combien vous souhaitez faire rembourser — l'équipe Mobili valide cette demande.
+                        </p>
+                        <div class="claims-bags-stepper">
+                            <button type="button" (click)="decrementBags()" [disabled]="declaredBags() === 0">−</button>
+                            <strong>{{ declaredBags() }}</strong>
+                            <button type="button" (click)="incrementBags()" [disabled]="declaredBags() >= (selectedBooking()!.extraHoldBags ?? 0)">+</button>
+                        </div>
+                    </div>
+                }
             }
 
             <label class="claims-field">
