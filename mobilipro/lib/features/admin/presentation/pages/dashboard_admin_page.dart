@@ -118,6 +118,56 @@ final _monthlyTicketsProvider = FutureProvider.autoDispose<
   return (total: online + offline, online: online, offline: offline);
 });
 
+/// Bornes calendaires de l'année en cours (1er janvier → 31 décembre) — même principe que
+/// _currentCalendarMonthPeriod, pour la nouvelle section "Cette année" (ajoutée le 2026-09-02
+/// entre "Depuis toujours" et "Ce mois-ci", parité avec admin-dashboard.ts côté web).
+AdminStatsPeriod _currentCalendarYearPeriod() {
+  final now = DateTime.now();
+  return (
+    days: 0,
+    fromDate: DateTime(now.year, 1, 1),
+    toDate: DateTime(now.year, 12, 31),
+  );
+}
+
+final _yearlyTripsCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  final f = DateFormat('yyyy-MM-dd');
+  final res = await ApiClient.instance.dio.get<List<dynamic>>(
+    '/admin/stats/trips/list',
+    queryParameters: {
+      'fromDate': f.format(DateTime(now.year, 1, 1)),
+      'toDate': f.format(DateTime(now.year, 12, 31)),
+    },
+  );
+  return (res.data ?? []).length;
+});
+
+final _yearlyRevenueProvider =
+    FutureProvider.autoDispose<({double total, double online, double offline})>((ref) async {
+      final transactions = await ref.watch(
+        transactionListProvider((period: _currentCalendarYearPeriod(), search: '')).future,
+      );
+      final online = transactions
+          .where((t) => t.status.toUpperCase() == 'CONFIRMED')
+          .fold<double>(0, (sum, t) => sum + t.totalPrice);
+      final offline = transactions
+          .where((t) => t.status.toUpperCase() == 'OFFLINE_SALE')
+          .fold<double>(0, (sum, t) => sum + t.totalPrice);
+      return (total: online + offline, online: online, offline: offline);
+    });
+
+final _yearlyTicketsProvider = FutureProvider.autoDispose<
+    ({int total, int online, int offline})>((ref) async {
+  final tickets = await ref.watch(
+    ticketListProvider((period: _currentCalendarYearPeriod(), search: '')).future,
+  );
+  final active = tickets.where((t) => t.status.toUpperCase() != 'ANNULÉ');
+  final online = active.where((t) => t.bookingStatus == 'CONFIRMED').length;
+  final offline = active.where((t) => t.bookingStatus == 'OFFLINE_SALE').length;
+  return (total: online + offline, online: online, offline: offline);
+});
+
 /// Total de réclamations jamais créées (pas seulement "en attente") — même
 /// convention que les autres compteurs de _cardWithBadge : un total qui ne
 /// fait que croître, pour que badge = currentTotal - lastSeen se comporte
@@ -267,32 +317,55 @@ class AdminDashboardPage extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: KpiCard(
-                          icon: Icons.event_available_rounded,
-                          label: 'Trajets (année en cours)',
-                          value: '${stats.totalTripsThisYear}',
-                          color: AppColors.stationGreen,
+                          icon: Icons.confirmation_number_rounded,
+                          label: 'Tickets vendus (actifs)',
+                          value: '${stats.totalTickets}',
+                          color: AppColors.mobiliBlue,
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  AdminSectionTitle(title: '🗓️ Cette année — ${DateTime.now().year}'),
+                  const SizedBox(height: 10),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final revenueAsync = ref.watch(_yearlyRevenueProvider);
+                      final revenue = revenueAsync.valueOrNull ??
+                          (total: 0.0, online: 0.0, offline: 0.0);
+                      final ticketsAsync = ref.watch(_yearlyTicketsProvider);
+                      final tickets = ticketsAsync.valueOrNull ?? (total: 0, online: 0, offline: 0);
+                      return _MonthRevenueCard(
+                        revenue: revenue,
+                        tickets: tickets,
+                        title: '${DateTime.now().year}',
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
-                        child: KpiCard(
-                          icon: Icons.event_busy_rounded,
-                          label: 'Trajets sans vente (année)',
-                          value: '${stats.tripsWithoutSalesThisYear}',
-                          color: AppColors.warning,
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final tripsCountAsync = ref.watch(_yearlyTripsCountProvider);
+                            final tripsCount = tripsCountAsync.valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.directions_bus_rounded,
+                              label: 'Trajets actifs',
+                              value: '$tripsCount',
+                              color: AppColors.stationGreen,
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: KpiCard(
-                          icon: Icons.confirmation_number_rounded,
-                          label: 'Tickets vendus (actifs)',
-                          value: '${stats.totalTickets}',
-                          color: AppColors.mobiliBlue,
+                          icon: Icons.event_busy_rounded,
+                          label: 'Trajets sans vente',
+                          value: '${stats.tripsWithoutSalesThisYear}',
+                          color: AppColors.warning,
                         ),
                       ),
                     ],
@@ -617,9 +690,16 @@ class _AllTimeRevenueCard extends StatelessWidget {
 /// Carte revenus "Ce mois-ci" — répartition Via Mobili / Au guichet, avec nombre de tickets
 /// vendus par canal (disponible côté mois, contrairement au bloc all-time ci-dessus).
 class _MonthRevenueCard extends StatelessWidget {
-  const _MonthRevenueCard({required this.revenue, required this.tickets});
+  const _MonthRevenueCard({
+    required this.revenue,
+    required this.tickets,
+    this.title,
+  });
   final ({double total, double online, double offline}) revenue;
   final ({int total, int online, int offline}) tickets;
+  /// Libellé de la période — par défaut le mois en cours (usage historique), passé
+  /// explicitement pour la section "Cette année".
+  final String? title;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -655,7 +735,7 @@ class _MonthRevenueCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Revenus plateforme — ${_currentMonthLabel()}',
+                    'Revenus plateforme — ${title ?? _currentMonthLabel()}',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(

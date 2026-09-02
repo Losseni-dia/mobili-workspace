@@ -19,8 +19,8 @@
 }
 
 // ======================================================================
-//  VUE D'ENSEMBLE — deux blocs (depuis toujours / mois en cours), côte à
-//  côte sur écran large, jamais mélangés sur un même chiffre.
+//  VUE D'ENSEMBLE — trois blocs (depuis toujours / année en cours / mois en
+//  cours), côte à côte sur écran large, jamais mélangés sur un même chiffre.
 // ======================================================================
 .overview-row {
   display: grid;
@@ -30,6 +30,13 @@
 
   @media (min-width: 1100px) {
     grid-template-columns: 1fr 1fr;
+  }
+
+  // 3 sections pleinement côte à côte seulement au-delà de 1500px — en dessous, "Depuis
+  // toujours" + "Cette année" sur la 1re ligne, "Ce mois-ci" seul en dessous (2 colonnes),
+  // plutôt que 3 colonnes étroites illisibles.
+  @media (min-width: 1500px) {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
