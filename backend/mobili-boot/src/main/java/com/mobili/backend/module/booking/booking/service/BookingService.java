@@ -259,21 +259,29 @@ public class BookingService {
      * paiement Stripe avait échoué puis été retenté avec succès (2 lignes Payment
      * provider=STRIPE pour cette réservation), et risquait sinon de rembourser via
      * l'externalReference d'un paiement FAILED/PENDING plutôt que celui réellement payé.
-     * findAllByBookingIdAndProviderAndStatusOrderByIdDesc filtre sur SUCCESS et prend le
-     * plus récent en cas de doublon — jamais d'exception, jamais le mauvais paiement.
+     * findAllByBookingIdAndProviderAndStatusInOrderByIdDesc filtre sur SUCCESS/REFUNDED et prend
+     * le plus récent en cas de doublon — jamais d'exception, jamais le mauvais paiement. REFUNDED
+     * est inclus depuis le 2026-09-02 : une réservation à plusieurs tickets annulés en plusieurs
+     * fois voit son paiement passer REFUNDED dès le 1er remboursement partiel
+     * (PaymentRefundService.refund) — sans ce statut en plus, une 2e annulation ne retrouvait
+     * plus aucun paiement à rembourser et l'argent des tickets annulés ensuite n'était jamais
+     * reversé au client (le seul symptôme visible côté admin était un message trompeur "aucun
+     * paiement lié à cette réservation").
      */
     private void triggerRefund(Long bookingId, double amount) {
         if (amount <= 0) {
             return;
         }
-        List<Payment> stripeSuccessPayments = paymentRepository.findAllByBookingIdAndProviderAndStatusOrderByIdDesc(
+        List<Payment> stripePayments = paymentRepository.findAllByBookingIdAndProviderAndStatusInOrderByIdDesc(
                 bookingId,
                 com.mobili.backend.module.payment.enums.PaymentProvider.STRIPE,
-                com.mobili.backend.module.payment.enums.PaymentStatus.SUCCESS);
-        if (stripeSuccessPayments.isEmpty()) {
+                java.util.List.of(
+                        com.mobili.backend.module.payment.enums.PaymentStatus.SUCCESS,
+                        com.mobili.backend.module.payment.enums.PaymentStatus.REFUNDED));
+        if (stripePayments.isEmpty()) {
             return;
         }
-        Payment payment = stripeSuccessPayments.get(0);
+        Payment payment = stripePayments.get(0);
         log.info("💳 Remboursement de {} FCFA pour Booking #{}", Math.round(amount), bookingId);
         paymentRefundService.refund(payment.getExternalReference(), Math.round(amount));
     }
