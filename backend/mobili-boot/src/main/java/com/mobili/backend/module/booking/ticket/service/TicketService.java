@@ -39,6 +39,7 @@ public class TicketService {
     private final UserService userService;
     private final TripRunService tripRunService;
     private final InboxNotificationService inboxNotificationService;
+    private final com.mobili.backend.module.pricing.service.CompanyCommissionService companyCommissionService;
 
     @Transactional(readOnly = true)
     public List<Ticket> findAllByTripId(Long tripId) {
@@ -78,6 +79,35 @@ public class TicketService {
             }
         }
         return tickets;
+    }
+
+    /**
+     * Rattrapage ponctuel (à exécuter une fois, via l'endpoint admin dédié) : calcule la
+     * commission des tickets créés avant l'introduction de CompanyCommissionService (via
+     * l'ancien TicketService.createFromBooking(booking, name, seat), sans décomposition
+     * tarifaire) — voir TicketRepository.findTicketsMissingCommissionButBackfillable pour le
+     * critère exact de sélection (ne touche jamais la position mensuelle, déjà figée). Idempotent
+     * — ne retraite jamais un ticket qui a déjà une commission (filtre `commissionAmount IS
+     * NULL`), donc sans risque de double calcul si relancé plusieurs fois.
+     *
+     * @return nombre de tickets effectivement corrigés.
+     */
+    @Transactional
+    public int backfillMissingTicketCommission() {
+        List<Ticket> tickets = ticketRepository.findTicketsMissingCommissionButBackfillable();
+        int fixed = 0;
+        for (Ticket t : tickets) {
+            double ticketPrice = t.getTransportFare()
+                    + (t.getBaggageFee() != null ? t.getBaggageFee() : 0.0);
+            CommissionResult commission = companyCommissionService.calculateCommission(
+                    ticketPrice, t.getMonthlySequenceNumber());
+            t.setCommissionRate(commission.rate());
+            t.setCommissionAmount(commission.amount());
+            ticketRepository.save(t);
+            fixed++;
+        }
+        log.info("💰 Rattrapage commission tickets : {} ticket(s) corrigé(s).", fixed);
+        return fixed;
     }
 
     @Transactional

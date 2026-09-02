@@ -24,6 +24,7 @@ import com.mobili.backend.module.booking.ticket.entity.TicketStatus;
 import com.mobili.backend.module.booking.ticket.repository.TicketRepository;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.entity.Partner;
+import com.mobili.backend.module.pricing.service.CompanyCommissionService;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.repository.TripRepository;
 import com.mobili.backend.module.trip.service.TripRunService;
@@ -50,13 +51,15 @@ class TicketServiceOwnershipTest {
     private TripRunService tripRunService;
     @Mock
     private InboxNotificationService inboxNotificationService;
+    @Mock
+    private CompanyCommissionService companyCommissionService;
 
     private TicketService ticketService;
 
     @BeforeEach
     void setUp() {
         ticketService = new TicketService(ticketRepository, tripService, tripRepository, userService, tripRunService,
-                inboxNotificationService);
+                inboxNotificationService, companyCommissionService);
     }
 
     @AfterEach

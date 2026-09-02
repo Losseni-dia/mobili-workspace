@@ -174,16 +174,25 @@ export class AdminBookings implements OnInit {
   /**
    * Montant réel de la réservation dans le détail : `amount`/`totalPrice` sont figés à la
    * création et ne bougent pas si un ticket est annulé individuellement ensuite — on recalcule
-   * donc à partir des tickets actifs chargés (`t.price` = montant réellement payé pour ce
-   * siège), dès qu'ils sont disponibles. Retombe sur `amount`/`totalPrice` tant que le détail
-   * charge. Même correctif que côté partenaire (booking-list.component.ts).
+   * donc à partir des tickets actifs chargés, dès qu'ils sont disponibles. Retombe sur
+   * `amount`/`totalPrice` tant que le détail charge.
+   *
+   * `t.transportPrice` (jamais `t.price` seul = amountPaid, qui inclut une part égale du
+   * forfait répartie par siège à la création) + `t.luggageFee`, PUIS le forfait de la
+   * réservation ajouté UNE SEULE FOIS (`booking.serviceFee`, jamais reparti au ticket) : le
+   * forfait ne bouge JAMAIS lors d'une annulation totale ou partielle, jamais remboursé (voir
+   * Booking.getGrossAmount(), backend, qui applique la même règle — additionner `t.price` par
+   * ticket actif faisait perdre une part du forfait à chaque annulation, incident constaté en
+   * prod le 2026-09-02, ex. RESERVATION-273508).
    */
   detailsActiveAmount = computed<number | null>(() => {
     const tickets = this.detailsTickets();
     if (!tickets.length) return null;
-    return tickets
+    const activeAmount = tickets
       .filter((t) => (t.status || '').toUpperCase() !== 'ANNULÉ')
-      .reduce((sum, t) => sum + (t.price || 0), 0);
+      .reduce((sum, t) => sum + (t.transportPrice ?? t.price ?? 0) + (t.luggageFee ?? 0), 0);
+    const booking = this.detailsBooking();
+    return activeAmount + (booking?.serviceFee ?? 0);
   });
 
   // ====== Rattrapage ponctuel : tickets manquants des ventes guichet historiques ======
@@ -242,6 +251,34 @@ export class AdminBookings implements OnInit {
         console.error('Erreur rattrapage forfait guichet', err);
         this.backfillServiceFeeResultMessage.set('Échec du rattrapage — voir la console pour le détail.');
         this.isBackfillingServiceFee.set(false);
+      },
+    });
+  }
+
+  // ====== Rattrapage ponctuel : commission manquante sur d'anciens tickets ======
+  // Tickets créés avant l'introduction de CompanyCommissionService (ancien flux sans
+  // décomposition tarifaire) — commissionAmount jamais calculé. Idempotent : ne retraite jamais
+  // un ticket qui a déjà une commission (voir TicketRepository.findTicketsMissingCommissionButBackfillable).
+  isBackfillingCommission = signal(false);
+  backfillCommissionResultMessage = signal<string | null>(null);
+
+  backfillMissingTicketCommission(): void {
+    if (this.isBackfillingCommission()) return;
+    this.isBackfillingCommission.set(true);
+    this.backfillCommissionResultMessage.set(null);
+    this.adminService.backfillMissingTicketCommission().subscribe({
+      next: ({ ticketsFixed }) => {
+        this.backfillCommissionResultMessage.set(
+          ticketsFixed > 0
+            ? `${ticketsFixed} ticket(s) corrigé(s) — commission calculée.`
+            : 'Aucun ticket sans commission trouvé.',
+        );
+        this.isBackfillingCommission.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur rattrapage commission tickets', err);
+        this.backfillCommissionResultMessage.set('Échec du rattrapage — voir la console pour le détail.');
+        this.isBackfillingCommission.set(false);
       },
     });
   }
