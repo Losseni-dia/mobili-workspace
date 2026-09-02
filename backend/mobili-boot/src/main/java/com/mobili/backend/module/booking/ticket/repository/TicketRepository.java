@@ -60,10 +60,22 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     // Tickets) — constaté en prod (133 tickets réels vs 124 "billets" = bookings). Filtre sur
     // tr.departureDateTime (date du voyage), jamais bookingDate (date d'achat), comme partout
     // ailleurs dans ce module.
+    //
+    // Filtre b.status IN (...) retiré le 2026-09-02 : incident constaté en prod (133 tickets
+    // "vendus (actifs)" au dashboard vs 130 en Stats métier "Année", écart de 3). Cause :
+    // BookingService.cancelTickets() ne fait basculer la réservation en CANCELLED que si plus
+    // aucun ticket n'est VALIDÉ — mais un ticket UTILISÉ (déjà scanné à l'embarquement) ou ARRIVÉ
+    // ne compte pas dans ce test, donc une réservation avec 1 ticket UTILISÉ + le reste annulé
+    // finissait quand même CANCELLED alors qu'elle contient un billet bien vendu et honoré. Ce
+    // filtre excluait alors ce ticket des stats métier tout en le comptant côté dashboard — deux
+    // définitions divergentes pour la même notion de "vendu". Le statut du TICKET
+    // (`tk.status <> 'ANNULÉ'`) est la seule source de vérité fiable ici, le statut de la
+    // réservation-parent ne doit plus être re-vérifié : un ticket ne peut de toute façon jamais
+    // exister avant que sa réservation soit passée CONFIRMED (voir BookingService.confirmPayment/
+    // confirmBookingAfterPayment, qui créent les tickets seulement après ce passage).
 
-    @Query("SELECT COUNT(tk) FROM Ticket tk JOIN tk.booking b JOIN tk.trip tr "
+    @Query("SELECT COUNT(tk) FROM Ticket tk JOIN tk.trip tr "
                     + "WHERE tk.status <> 'ANNULÉ' "
-                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
                     + "AND tr.departureDateTime >= :from AND tr.departureDateTime < :to "
                     + "AND (:stationId IS NULL OR tr.station.id = :stationId) "
                     + "AND (:partnerId IS NULL OR tr.partner.id = :partnerId)")
@@ -76,9 +88,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     // Object[] (tripId, count) plutôt qu'une expression `new ...(...)` — évite toute question de
     // type au niveau JPQL (COUNT() renvoie toujours Long, aucun risque de mismatch avec un champ
     // de constructeur, contrairement à l'incident du 2026-09-01 sur un SUM() d'entier).
-    @Query("SELECT tk.trip.id, COUNT(tk) FROM Ticket tk JOIN tk.booking b "
+    @Query("SELECT tk.trip.id, COUNT(tk) FROM Ticket tk "
                     + "WHERE tk.status <> 'ANNULÉ' "
-                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
                     + "AND tk.trip.departureDateTime >= :from AND tk.trip.departureDateTime < :to "
                     + "AND (:stationId IS NULL OR tk.trip.station.id = :stationId) "
                     + "AND (:partnerId IS NULL OR tk.trip.partner.id = :partnerId) "
@@ -93,10 +104,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     // par ticket (jamais bookings). Native SQL comme dailyTripStatsBetween (BookingRepository).
     @Query(value = "SELECT DATE(t.departure_date_time) as day, COUNT(*) as cnt "
                     + "FROM tickets tk "
-                    + "JOIN bookings b ON tk.booking_id = b.id "
                     + "JOIN trips t ON tk.trip_id = t.id "
                     + "WHERE tk.status <> 'ANNULÉ' "
-                    + "AND b.status IN ('CONFIRMED','COMPLETED','OFFLINE_SALE') "
                     + "AND t.departure_date_time >= :from AND t.departure_date_time < :to "
                     + "AND (:stationId IS NULL OR t.station_id = :stationId) "
                     + "AND (:partnerId IS NULL OR t.partner_id = :partnerId) "
