@@ -25,9 +25,14 @@ class GareTicketItem {
     required this.seatNumber,
     required this.scanned,
     required this.bookingStatus,
+    this.tripId,
   });
   final int id;
   final String ticketNumber, passengerName, route, status, seatNumber;
+  /// Trajet auquel ce ticket appartient — voir PartnerTicketResponse.tripId (backend). Permet de
+  /// compter les trajets distincts avec ventes ("Trajets avec ventes", Vue d'ensemble) sans
+  /// requête supplémentaire.
+  final int? tripId;
   final DateTime bookingDate;
   /// Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distingue vente en
   /// ligne / guichet, distinct du statut du ticket lui-même.
@@ -59,6 +64,7 @@ class GareTicketItem {
     seatNumber: j['seatNumber'] as String? ?? '',
     scanned: j['scanned'] as bool? ?? false,
     bookingStatus: j['bookingStatus'] as String?,
+    tripId: (j['tripId'] as num?)?.toInt(),
   );
 }
 

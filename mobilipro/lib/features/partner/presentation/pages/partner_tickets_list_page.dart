@@ -27,6 +27,7 @@ class PartnerTicketItem {
     required this.scanned,
     required this.bookingStatus,
     this.grossAmount,
+    this.tripId,
   });
   final int id;
   final String ticketNumber,
@@ -35,6 +36,10 @@ class PartnerTicketItem {
       stationName,
       status,
       seatNumber;
+  /// Trajet auquel ce ticket appartient — voir PartnerTicketResponse.tripId (backend). Permet de
+  /// compter les trajets distincts avec ventes ("Trajets avec ventes", Vue d'ensemble) sans
+  /// requête supplémentaire.
+  final int? tripId;
   final DateTime bookingDate;
   /// Statut de la réservation d'origine (CONFIRMED/OFFLINE_SALE/...) — distingue vente en
   /// ligne / guichet, distinct du statut du ticket lui-même.
@@ -74,6 +79,7 @@ class PartnerTicketItem {
         bookingStatus: j['bookingStatus'] as String?,
         seatNumber: j['seatNumber'] as String? ?? '',
         scanned: j['scanned'] as bool? ?? false,
+        tripId: (j['tripId'] as num?)?.toInt(),
       );
 }
 

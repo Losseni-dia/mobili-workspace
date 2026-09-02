@@ -51,6 +51,51 @@
         }
     </section>
 
+    <section class="gare-kpis" aria-labelledby="gare-year-heading" [class.gare-kpis--locked]="gareActionsLocked()">
+        <h2 id="gare-year-heading" class="gare-kpis-title">🗓️ Cette année <span class="gare-kpis-month">({{ currentYearLabel }})</span></h2>
+        @if (gareActionsLocked()) {
+            <p class="gare-company-locked-hint" role="status">
+                Ces chiffres seront disponibles dès que le dirigeant aura validé votre gare.
+            </p>
+        } @else if (isLoadingYear()) {
+            <p class="gare-kpis-status">Chargement…</p>
+        } @else {
+            <div class="gare-kpis-grid">
+                <div class="kpi-card">
+                    <span class="kpi-label">Trajets actifs</span>
+                    <strong class="kpi-value">{{ year().activeTrips }}</strong>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Trajets avec ventes</span>
+                    <strong class="kpi-value">{{ year().tripsWithSales }}</strong>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Tickets vendus</span>
+                    <strong class="kpi-value">{{ year().ticketsSold }}</strong>
+                </div>
+            </div>
+
+            <div class="revenue-card">
+                <div class="revenue-card__head">
+                    <span class="kpi-label">Revenu de l'année</span>
+                    <strong class="revenue-total">{{ year().revenueTotal | number }} FCFA</strong>
+                </div>
+                <div class="revenue-split">
+                    <div class="revenue-split__item">
+                        <span>Via Mobili</span>
+                        <strong>{{ year().revenueOnline | number }} FCFA</strong>
+                        <em>{{ year().ticketsSoldOnline }} ticket{{ year().ticketsSoldOnline > 1 ? 's' : '' }}</em>
+                    </div>
+                    <div class="revenue-split__item">
+                        <span>Au guichet</span>
+                        <strong>{{ year().revenueOffline | number }} FCFA</strong>
+                        <em>{{ year().ticketsSoldOffline }} ticket{{ year().ticketsSoldOffline > 1 ? 's' : '' }}</em>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+
     <section class="gare-kpis" aria-labelledby="gare-kpis-heading" [class.gare-kpis--locked]="gareActionsLocked()">
         <h2 id="gare-kpis-heading" class="gare-kpis-title">📅 Ce mois-ci <span class="gare-kpis-month">({{ currentMonthLabel }})</span></h2>
         @if (gareActionsLocked()) {
@@ -63,29 +108,33 @@
             <div class="gare-kpis-grid">
                 <div class="kpi-card">
                     <span class="kpi-label">Trajets actifs</span>
-                    <strong class="kpi-value">{{ activeTripsCount() ?? 0 }}</strong>
+                    <strong class="kpi-value">{{ month().activeTrips }}</strong>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Trajets avec ventes</span>
+                    <strong class="kpi-value">{{ month().tripsWithSales }}</strong>
                 </div>
                 <div class="kpi-card">
                     <span class="kpi-label">Tickets vendus</span>
-                    <strong class="kpi-value">{{ ticketsSoldCount() ?? 0 }}</strong>
+                    <strong class="kpi-value">{{ month().ticketsSold }}</strong>
                 </div>
             </div>
 
             <div class="revenue-card">
                 <div class="revenue-card__head">
                     <span class="kpi-label">Revenu du mois</span>
-                    <strong class="revenue-total">{{ revenueTotal() | number }} FCFA</strong>
+                    <strong class="revenue-total">{{ month().revenueTotal | number }} FCFA</strong>
                 </div>
                 <div class="revenue-split">
                     <div class="revenue-split__item">
                         <span>Via Mobili</span>
-                        <strong>{{ revenueOnline() | number }} FCFA</strong>
-                        <em>{{ ticketsSoldOnline() }} ticket{{ ticketsSoldOnline() > 1 ? 's' : '' }}</em>
+                        <strong>{{ month().revenueOnline | number }} FCFA</strong>
+                        <em>{{ month().ticketsSoldOnline }} ticket{{ month().ticketsSoldOnline > 1 ? 's' : '' }}</em>
                     </div>
                     <div class="revenue-split__item">
                         <span>Au guichet</span>
-                        <strong>{{ revenueOffline() | number }} FCFA</strong>
-                        <em>{{ ticketsSoldOffline() }} ticket{{ ticketsSoldOffline() > 1 ? 's' : '' }}</em>
+                        <strong>{{ month().revenueOffline | number }} FCFA</strong>
+                        <em>{{ month().ticketsSoldOffline }} ticket{{ month().ticketsSoldOffline > 1 ? 's' : '' }}</em>
                     </div>
                 </div>
             </div>

@@ -231,6 +231,70 @@ final _monthlyRevenueProvider =
       },
     );
 
+/// Bornes calendaires de l'année en cours, sous forme de PartnerPeriod "custom" — PartnerPeriod
+/// n'a pas de mode "année" prédéfini (today/week/month/custom uniquement), voir
+/// partner_period_selector.dart.
+PartnerPeriod _currentCalendarYearAsPartnerPeriod() {
+  final now = DateTime.now();
+  return PartnerPeriod(
+    mode: PartnerPeriodMode.custom,
+    customFrom: DateTime(now.year, 1, 1),
+    customTo: DateTime(now.year, 12, 31),
+  );
+}
+
+final _yearlyActiveTripsCountProvider = FutureProvider.autoDispose<int>((
+  ref,
+) async {
+  final dio = ApiClient.instance.dio;
+  final now = DateTime.now();
+  final f = DateFormat('yyyy-MM-dd');
+  final response = await dio.get<List<dynamic>>(
+    '/trips/my-trips/range',
+    queryParameters: {
+      'fromDate': f.format(DateTime(now.year, 1, 1)),
+      'toDate': f.format(DateTime(now.year, 12, 31)),
+    },
+  );
+  final trips = response.data ?? [];
+  return trips
+      .where((t) => (t as Map<String, dynamic>)['status'] != 'ANNULÉ')
+      .length;
+});
+
+final _yearlyRevenueProvider =
+    FutureProvider.autoDispose<({double total, double online, double offline})>(
+      (ref) async {
+        final dio = ApiClient.instance.dio;
+        final now = DateTime.now();
+        final f = DateFormat('yyyy-MM-dd');
+        final response = await dio.get<List<dynamic>>(
+          '/bookings/partner/my-bookings/range',
+          queryParameters: {
+            'fromDate': f.format(DateTime(now.year, 1, 1)),
+            'toDate': f.format(DateTime(now.year, 12, 31)),
+          },
+        );
+        final bookings = response.data ?? [];
+        double online = 0;
+        double offline = 0;
+        for (final b in bookings) {
+          final map = b as Map<String, dynamic>;
+          final status = map['status'] as String?;
+          final ticketsTotalAmount =
+              (map['ticketsTotalAmount'] as num?)?.toDouble();
+          final luggageFee = (map['luggageFee'] as num?)?.toDouble() ?? 0;
+          final amount = (map['amount'] as num?)?.toDouble() ??
+              (ticketsTotalAmount != null
+                  ? ticketsTotalAmount + luggageFee
+                  : (map['totalPrice'] as num?)?.toDouble() ?? 0);
+          if (status == 'CONFIRMED') online += amount;
+          if (status == 'OFFLINE_SALE') offline += amount;
+        }
+        return (total: online + offline, online: online, offline: offline);
+      },
+    );
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
@@ -407,6 +471,85 @@ class DashboardPartnerPage extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 20),
+                          _SectionLabel('🗓️ Cette année — ${DateTime.now().year}'),
+                          const SizedBox(height: 10),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final revenueAsync = ref.watch(_yearlyRevenueProvider);
+                              final revenue = revenueAsync.valueOrNull ??
+                                  (total: 0.0, online: 0.0, offline: 0.0);
+                              final yearTicketsAsync = ref.watch(
+                                partnerTicketsRangeProvider((
+                                  period: _currentCalendarYearAsPartnerPeriod(),
+                                  stationId: null,
+                                  search: '',
+                                )),
+                              );
+                              final yearTickets = yearTicketsAsync.valueOrNull ?? const [];
+                              final ticketsOnline = yearTickets
+                                  .where((t) => t.bookingStatus == 'CONFIRMED')
+                                  .length;
+                              final ticketsOffline = yearTickets
+                                  .where((t) => t.bookingStatus == 'OFFLINE_SALE')
+                                  .length;
+                              return _PeriodRevenueCard(
+                                title: '${DateTime.now().year}',
+                                revenue: revenue,
+                                ticketsOnline: ticketsOnline,
+                                ticketsOffline: ticketsOffline,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Consumer(
+                                  builder: (context, ref, _) {
+                                    final v = ref
+                                            .watch(_yearlyActiveTripsCountProvider)
+                                            .valueOrNull ??
+                                        0;
+                                    return _StatCard(
+                                      icon: Icons.directions_bus_rounded,
+                                      label: 'Trajets actifs',
+                                      value: '$v',
+                                      color: AppColors.mobiliBlue,
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Consumer(
+                                  builder: (context, ref, _) {
+                                    final yearTickets = ref
+                                            .watch(
+                                              partnerTicketsRangeProvider((
+                                                period:
+                                                    _currentCalendarYearAsPartnerPeriod(),
+                                                stationId: null,
+                                                search: '',
+                                              )),
+                                            )
+                                            .valueOrNull ??
+                                        const [];
+                                    final tripsWithSales = <int>{
+                                      for (final t in yearTickets)
+                                        if (t.tripId != null) t.tripId!,
+                                    }.length;
+                                    return _StatCard(
+                                      icon: Icons.check_circle_rounded,
+                                      label: 'Trajets avec ventes',
+                                      value: '$tripsWithSales',
+                                      color: AppColors.stationGreen,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
                           _SectionLabel('📅 Ce mois-ci — ${_currentMonthLabel()}'),
                           const SizedBox(height: 10),
                           Consumer(
@@ -431,96 +574,36 @@ class DashboardPartnerPage extends ConsumerWidget {
                               final ticketsOffline = monthTickets
                                   .where((t) => t.bookingStatus == 'OFFLINE_SALE')
                                   .length;
-                              return Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF0A1F6E),
-                                      AppColors.mobiliBlueDeep,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.white.withValues(
-                                              alpha: 0.15,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.payments_rounded,
-                                            color: AppColors.mobiliYellow,
-                                            size: 22,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Revenus — ${_currentMonthLabel()}',
-                                              style: const TextStyle(
-                                                color: AppColors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            Text(
-                                              '${NumberFormat('#,###').format(revenue.total)} FCFA',
-                                              style: const TextStyle(
-                                                color: AppColors.mobiliYellow,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 14),
-                                    const Divider(
-                                      color: Colors.white12,
-                                      height: 1,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _RevenueChip(
-                                            icon: Icons.wifi_rounded,
-                                            label: 'En ligne',
-                                            amount: revenue.online,
-                                            ticketCount: ticketsOnline,
-                                            color: AppColors.stationGreen,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: _RevenueChip(
-                                            icon: Icons.point_of_sale_rounded,
-                                            label: 'Physique',
-                                            amount: revenue.offline,
-                                            ticketCount: ticketsOffline,
-                                            color: AppColors.mobiliYellow,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                              return _PeriodRevenueCard(
+                                title: _currentMonthLabel(),
+                                revenue: revenue,
+                                ticketsOnline: ticketsOnline,
+                                ticketsOffline: ticketsOffline,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final monthTickets = ref
+                                      .watch(
+                                        partnerTicketsRangeProvider((
+                                          period: PartnerPeriod.month,
+                                          stationId: null,
+                                          search: '',
+                                        )),
+                                      )
+                                      .valueOrNull ??
+                                  const [];
+                              final tripsWithSales = <int>{
+                                for (final t in monthTickets)
+                                  if (t.tripId != null) t.tripId!,
+                              }.length;
+                              return _StatCard(
+                                icon: Icons.check_circle_rounded,
+                                label: 'Trajets avec ventes',
+                                value: '$tripsWithSales',
+                                color: AppColors.stationGreen,
                               );
                             },
                           ),
@@ -982,6 +1065,103 @@ class _StatCard extends StatelessWidget {
             color: AppColors.gray500,
             fontWeight: FontWeight.w500,
           ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Carte revenus d'une période (mois/année en cours) — extraite pour être réutilisée par les
+/// sections "Cette année" et "Ce mois-ci" sans dupliquer ~90 lignes de Container identiques.
+class _PeriodRevenueCard extends StatelessWidget {
+  const _PeriodRevenueCard({
+    required this.title,
+    required this.revenue,
+    required this.ticketsOnline,
+    required this.ticketsOffline,
+  });
+  final String title;
+  final ({double total, double online, double offline}) revenue;
+  final int ticketsOnline;
+  final int ticketsOffline;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF0A1F6E), AppColors.mobiliBlueDeep],
+      ),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.payments_rounded,
+                color: AppColors.mobiliYellow,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Revenus — $title',
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '${NumberFormat('#,###').format(revenue.total)} FCFA',
+                  style: const TextStyle(
+                    color: AppColors.mobiliYellow,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        const Divider(color: Colors.white12, height: 1),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.wifi_rounded,
+                label: 'En ligne',
+                amount: revenue.online,
+                ticketCount: ticketsOnline,
+                color: AppColors.stationGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _RevenueChip(
+                icon: Icons.point_of_sale_rounded,
+                label: 'Physique',
+                amount: revenue.offline,
+                ticketCount: ticketsOffline,
+                color: AppColors.mobiliYellow,
+              ),
+            ),
+          ],
         ),
       ],
     ),
