@@ -156,15 +156,32 @@ export class AdminClaims implements OnInit {
   cancelError = signal<string | null>(null);
   cancelResultMessage = signal<string | null>(null);
 
+  /** Bagages soute que le VOYAGEUR a demandé à faire rembourser (voir mobile_app,
+   *  ClaimFormPage._claimDetails, details['bagsToCancel']) — une simple SUGGESTION pour
+   *  préremplir le stepper, jamais exécutée automatiquement : l'admin reste libre de l'ajuster
+   *  (et la valeur reste de toute façon plafonnée à ce qui est réellement remboursable). */
+  private requestedBagsToCancel(c: AdminClaim): number {
+    const raw = c.details?.['bagsToCancel'];
+    if (!raw || !raw.trim()) return 0;
+    const n = parseInt(raw.trim(), 10);
+    return Number.isNaN(n) ? 0 : n;
+  }
+
   askCancel(c: AdminClaim) {
     if (!c.booking) return;
+    // Toujours déclenchée depuis la modale "Traiter" — on la referme pour ne jamais empiler
+    // les deux modales à l'écran en même temps.
+    this.pendingHandle.set(null);
     this.cancelError.set(null);
     this.cancelResultMessage.set(null);
     this.cancelDeclaredBags.set(0);
     this.cancelMaxBags.set(0);
     this.pendingCancel.set(c);
     this.adminService.getBookingBaggageInfo(c.booking.bookingId).subscribe({
-      next: (info) => this.cancelMaxBags.set(info.remaining),
+      next: (info) => {
+        this.cancelMaxBags.set(info.remaining);
+        this.cancelDeclaredBags.set(Math.min(this.requestedBagsToCancel(c), info.remaining));
+      },
       // Non bloquant : l'annulation reste possible, juste sans proposer de bagage cette fois-ci.
       error: () => this.cancelMaxBags.set(0),
     });
