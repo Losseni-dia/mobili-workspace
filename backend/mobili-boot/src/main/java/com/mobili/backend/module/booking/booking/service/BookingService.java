@@ -149,6 +149,45 @@ public class BookingService {
         return fixed;
     }
 
+    /**
+     * Rattrapage ponctuel (à exécuter une fois, via l'endpoint admin dédié) : retire le forfait
+     * de service client des ventes guichet (OFFLINE_SALE) créées AVANT le correctif de
+     * {@link #createOfflineSale} (2026-09-02) — un paiement sur place n'a jamais dû inclure ce
+     * forfait, qui finance uniquement la commodité du paiement en ligne. Recalcule aussi
+     * amountPaid de chaque ticket déjà généré (dérivé de booking.getTotalPrice(), qui contenait
+     * le forfait à la création). Idempotent — ne retraite jamais une réservation dont le
+     * serviceFee est déjà à 0 (voir BookingRepository.findOfflineSaleBookingsWithServiceFee,
+     * filtre {@code b.serviceFee > 0}), donc sans risque de double retrait si relancé plusieurs
+     * fois. Ne touche jamais les réservations en ligne (CONFIRMED), dont le forfait reste dû.
+     *
+     * @return nombre de réservations effectivement corrigées.
+     */
+    @Transactional
+    public int backfillOfflineSaleServiceFee() {
+        List<Booking> bookings = bookingRepository.findOfflineSaleBookingsWithServiceFee();
+        int fixed = 0;
+        for (Booking booking : bookings) {
+            int oldServiceFee = booking.getServiceFee();
+            double newTotalPrice = booking.getTotalPrice() - oldServiceFee;
+            booking.setTotalPrice(newTotalPrice);
+            booking.setServiceFee(0);
+
+            int seats = Math.max(1, booking.getNumberOfSeats());
+            double newAmountPaid = newTotalPrice / seats;
+            for (Ticket t : booking.getTickets()) {
+                t.setAmountPaid(newAmountPaid);
+            }
+
+            bookingRepository.save(booking);
+            fixed++;
+            log.info("💰 Rattrapage forfait guichet : Booking #{} — forfait {} FCFA retiré (nouveau total {} FCFA).",
+                    booking.getId(), oldServiceFee, newTotalPrice);
+        }
+        log.info("💰 Rattrapage forfait guichet : {} réservation(s) corrigée(s) sur {} trouvée(s) avec forfait.",
+                fixed, bookings.size());
+        return fixed;
+    }
+
     /** @return montant remboursé (FCFA, jamais le forfait) — 0 si aucun ticket actif n'a été annulé. */
     @Transactional
     public double cancelBooking(Long bookingId) {

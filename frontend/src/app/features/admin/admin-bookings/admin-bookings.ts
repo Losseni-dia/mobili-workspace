@@ -215,4 +215,34 @@ export class AdminBookings implements OnInit {
       },
     });
   }
+
+  // ====== Rattrapage ponctuel : forfait des ventes guichet historiques ======
+  // BookingService.createOfflineSale() appliquait le forfait de service client comme pour un
+  // paiement en ligne avant son correctif (incident 2026-09-02) — jamais pertinent pour un
+  // paiement sur place. Bouton idempotent : sans effet si relancé sur des réservations déjà
+  // corrigées (voir BookingRepository.findOfflineSaleBookingsWithServiceFee).
+  isBackfillingServiceFee = signal(false);
+  backfillServiceFeeResultMessage = signal<string | null>(null);
+
+  backfillOfflineSaleServiceFee(): void {
+    if (this.isBackfillingServiceFee()) return;
+    this.isBackfillingServiceFee.set(true);
+    this.backfillServiceFeeResultMessage.set(null);
+    this.adminService.backfillOfflineSaleServiceFee().subscribe({
+      next: ({ bookingsFixed }) => {
+        this.backfillServiceFeeResultMessage.set(
+          bookingsFixed > 0
+            ? `${bookingsFixed} réservation(s) guichet corrigée(s) — forfait retiré.`
+            : 'Aucune réservation guichet avec forfait trouvée.',
+        );
+        this.isBackfillingServiceFee.set(false);
+        this.load();
+      },
+      error: (err) => {
+        console.error('Erreur rattrapage forfait guichet', err);
+        this.backfillServiceFeeResultMessage.set('Échec du rattrapage — voir la console pour le détail.');
+        this.isBackfillingServiceFee.set(false);
+      },
+    });
+  }
 }

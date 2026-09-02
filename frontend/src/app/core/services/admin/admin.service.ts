@@ -481,4 +481,10 @@ export class AdminService {
   backfillOfflineSaleTickets(): Observable<{ bookingsFixed: number }> {
     return this.http.post<{ bookingsFixed: number }>('/admin/bookings/backfill-offline-sale-tickets', {});
   }
+
+  /** Rattrapage ponctuel (incident 2026-09-02) : retire le forfait de service client des ventes
+   *  guichet créées avant le correctif (BookingService.createOfflineSale). Idempotent. */
+  backfillOfflineSaleServiceFee(): Observable<{ bookingsFixed: number }> {
+    return this.http.post<{ bookingsFixed: number }>('/admin/bookings/backfill-offline-sale-service-fee', {});
+  }
 }

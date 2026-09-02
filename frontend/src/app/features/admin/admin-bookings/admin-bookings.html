@@ -46,6 +46,18 @@
         @if (backfillResultMessage(); as msg) {
             <span class="backfill-result">{{ msg }}</span>
         }
+        <button
+            type="button"
+            class="btn-export"
+            [disabled]="isBackfillingServiceFee()"
+            title="Retire le forfait de service client des ventes guichet enregistrées avant le correctif — sans effet sur les réservations déjà correctes ni sur les résas en ligne."
+            (click)="backfillOfflineSaleServiceFee()"
+        >
+            💰 {{ isBackfillingServiceFee() ? 'Rattrapage en cours…' : 'Retirer le forfait des ventes guichet' }}
+        </button>
+        @if (backfillServiceFeeResultMessage(); as msg) {
+            <span class="backfill-result">{{ msg }}</span>
+        }
     </div>
 </section>
 

@@ -127,6 +127,18 @@ public class AdminBookingController {
         return ResponseEntity.ok(java.util.Map.of("bookingsFixed", fixed));
     }
 
+    /**
+     * Rattrapage ponctuel (incident 2026-09-02) : retire le forfait de service client des
+     * ventes guichet créées avant le correctif de BookingService.createOfflineSale. Idempotent,
+     * voir sa Javadoc — sans risque à rappeler plusieurs fois.
+     */
+    @PostMapping("/backfill-offline-sale-service-fee")
+    public ResponseEntity<java.util.Map<String, Object>> backfillOfflineSaleServiceFee() {
+        int fixed = bookingService.backfillOfflineSaleServiceFee();
+        log.info("💰 Rattrapage forfait guichet déclenché depuis l'admin : {} résa(s) corrigée(s).", fixed);
+        return ResponseEntity.ok(java.util.Map.of("bookingsFixed", fixed));
+    }
+
     private String buildRefundMessage(PaymentProvider provider, String prefix, double refunded) {
         if (provider == PaymentProvider.STRIPE) {
             return prefix + " Remboursement Stripe de " + Math.round(refunded)

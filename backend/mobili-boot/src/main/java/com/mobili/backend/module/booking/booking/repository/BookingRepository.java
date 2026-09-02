@@ -37,6 +37,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         "AND b.tickets IS EMPTY")
         List<Booking> findOfflineSaleBookingsWithoutTickets();
 
+        /**
+         * Rattrapage ponctuel (incident 2026-09-02) : ventes guichet créées AVANT le correctif de
+         * BookingService.createOfflineSale, dont le totalPrice/serviceFee inclut encore le
+         * forfait de service client (jamais pertinent pour un paiement sur place). Tickets
+         * fetch-joints pour recalculer amountPaid de chacun sans requête supplémentaire.
+         */
+        @Query("SELECT DISTINCT b FROM Booking b " +
+                        "LEFT JOIN FETCH b.tickets " +
+                        "WHERE b.status = com.mobili.backend.module.booking.booking.entity.BookingStatus.OFFLINE_SALE " +
+                        "AND b.serviceFee > 0")
+        List<Booking> findOfflineSaleBookingsWithServiceFee();
+
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "JOIN FETCH b.customer " +
