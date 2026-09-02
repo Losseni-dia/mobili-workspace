@@ -394,17 +394,20 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         // d'achat) : le partenaire/gare n'est payé qu'une fois le voyage effectué, donc une
         // vente de septembre pour un trajet de novembre ne doit apparaître que dans le mois de
         // novembre — sinon la gare voit un montant qu'elle ne peut pas encore percevoir.
-        // b.tickets (bag) + b.seatNumbers (Set) fetch-joints ensemble sans risque de
-        // MultipleBagFetchException : Hibernate ne l'interdit qu'entre 2 bags (List sans
-        // @OrderColumn), jamais entre un bag et un Set — voir seatNumbers/passengerNames
-        // (Set<String>, Booking.java), déjà fetch-jointés ensemble ailleurs (findAllByPartnerId
-        // AndOptionalStationIdAndDateRangeRaw). Nécessaires pour afficher les numéros de sièges
-        // (et les sièges annulés individuellement) sur la liste admin, comme côté partenaire.
+        // BUG CONSTATÉ EN PRODUCTION (2026-09-02, régression du jour même) : b.tickets (bag) fetch-
+        // jointé EN MÊME TEMPS que b.seatNumbers (Set) produisait un produit cartésien qui
+        // dupliquait les tickets en mémoire — Booking.getGrossAmount() (AdminService.getBookingList,
+        // champ amount) sommait alors des doublons, gonflant le montant affiché après une
+        // annulation partielle au lieu de le réduire correctement. Exactement le même piège déjà
+        // documenté sur findAllByPartnerIdAndOptionalStationIdAndDateRangeRaw ci-dessous (b.tickets
+        // n'y est délibérément jamais fetch-joint avec seatNumbers/passengerNames pour cette
+        // raison). Seul b.seatNumbers reste fetch-joint ici (Set, nécessaire pour l'affichage des
+        // sièges) — b.tickets reste lazy, chargé normalement à la demande dans la même transaction
+        // (AdminService.getBookingList est @Transactional(readOnly = true)), sans duplication.
         @Query("SELECT DISTINCT b FROM Booking b " +
                         "JOIN FETCH b.trip t " +
                         "LEFT JOIN FETCH t.partner " +
                         "JOIN FETCH b.customer c " +
-                        "LEFT JOIN FETCH b.tickets " +
                         "LEFT JOIN FETCH b.seatNumbers " +
                         "WHERE t.departureDateTime >= :from AND t.departureDateTime <= :to " +
                         "AND (:search IS NULL OR :search = '' " +
