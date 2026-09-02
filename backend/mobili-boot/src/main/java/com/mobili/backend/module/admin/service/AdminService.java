@@ -174,6 +174,27 @@ public class AdminService {
         return new DailyTicketStatsResponse(todayCount, totalTickets, history);
     }
 
+    /**
+     * Trajets distincts avec ≥1 ticket vendu sur [from, to], tout station/compagnie confondus
+     * (mêmes params null que Stats métier sans filtre) — la TAILLE de la liste groupée donne le
+     * nombre de trajets "avec ventes", jamais besoin de charger les tickets eux-mêmes ici. Utilisé
+     * par getGlobalStats() (année en cours) et par l'endpoint dédié /stats/trips-with-sales-count
+     * (Vue d'ensemble web/mobilipro, sections "Cette année" / "Ce mois-ci") — une seule définition
+     * partagée, jamais recalculée différemment entre les deux usages.
+     */
+    @Transactional(readOnly = true)
+    public long countTripsWithSales(java.time.LocalDateTime from, java.time.LocalDateTime to) {
+        return ticketRepository.ticketCountsPerTripForPeriod(from, to, null, null).size();
+    }
+
+    @Transactional(readOnly = true)
+    public com.mobili.backend.module.admin.dto.TripsWithSalesCountResponse getTripsWithSalesCount(
+            LocalDate fromDate, LocalDate toDate) {
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : LocalDate.now().minusDays(29).atStartOfDay();
+        LocalDateTime to = toDate != null ? toDate.atTime(23, 59, 59) : LocalDateTime.now();
+        return new com.mobili.backend.module.admin.dto.TripsWithSalesCountResponse(countTripsWithSales(from, to));
+    }
+
     @Transactional(readOnly = true)
     public AdminStatsResponse getGlobalStats() {
         long totalUsers = userRepository.count();
@@ -182,11 +203,7 @@ public class AdminService {
         java.time.LocalDateTime yearStart = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 1, 1, 0, 0);
         java.time.LocalDateTime yearEnd = java.time.LocalDateTime.of(java.time.LocalDate.now().getYear(), 12, 31, 23, 59, 59);
         long totalTripsThisYear = tripRepository.countByDepartureDateTimeBetween(yearStart, yearEnd);
-        // Trajets distincts avec >= 1 ticket vendu sur l'année, tout station/compagnie confondus
-        // (mêmes params null que Stats métier sans filtre) — la TAILLE de la liste groupée donne
-        // le nombre de trajets "avec ventes", jamais besoin de charger les tickets eux-mêmes ici.
-        long tripsWithSalesThisYear = ticketRepository
-                .ticketCountsPerTripForPeriod(yearStart, yearEnd, null, null).size();
+        long tripsWithSalesThisYear = countTripsWithSales(yearStart, yearEnd);
         long tripsWithoutSalesThisYear = Math.max(0, totalTripsThisYear - tripsWithSalesThisYear);
         long activeBookings = bookingRepository.count();
         long totalTickets = ticketRepository.countActiveTickets();

@@ -229,6 +229,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getTripList(fromDate, toDate, search));
     }
 
+    @GetMapping("/stats/trips-with-sales-count")
+    public ResponseEntity<com.mobili.backend.module.admin.dto.TripsWithSalesCountResponse> getTripsWithSalesCount(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(adminService.getTripsWithSalesCount(fromDate, toDate));
+    }
+
     @GetMapping("/stats/covoiturage")
     public ResponseEntity<com.mobili.backend.module.admin.dto.DailyCovoiturageStatsResponse> getCovoiturageStats(
             @RequestParam(defaultValue = "30") int days,

@@ -168,6 +168,69 @@ final _yearlyTicketsProvider = FutureProvider.autoDispose<
   return (total: online + offline, online: online, offline: offline);
 });
 
+/// Trajets distincts avec ≥1 ticket vendu — même définition/endpoint que Stats métier
+/// ("Trajets avec ventes"), réutilisé ici pour ne jamais recalculer différemment.
+Future<int> _tripsWithSalesCount(DateTime from, DateTime to) async {
+  final f = DateFormat('yyyy-MM-dd');
+  final res = await ApiClient.instance.dio.get<Map<String, dynamic>>(
+    '/admin/stats/trips-with-sales-count',
+    queryParameters: {'fromDate': f.format(from), 'toDate': f.format(to)},
+  );
+  return (res.data?['count'] as num?)?.toInt() ?? 0;
+}
+
+final _yearlyTripsWithSalesProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  return _tripsWithSalesCount(DateTime(now.year, 1, 1), DateTime(now.year, 12, 31));
+});
+
+final _monthlyTripsWithSalesProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  return _tripsWithSalesCount(
+    DateTime(now.year, now.month, 1),
+    DateTime(now.year, now.month + 1, 0),
+  );
+});
+
+/// Inscriptions utilisateurs/partenaires sur une période — somme de history[].count, même
+/// principe que côté web (admin-dashboard.ts). Réutilise registrationStatsProvider/
+/// partnerStatsProvider déjà partagés avec registration_stats_page.dart/partner_stats_page.dart.
+final _yearlyNewUsersProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  final period = (days: 0, fromDate: DateTime(now.year, 1, 1), toDate: DateTime(now.year, 12, 31));
+  final stats = await ref.watch(registrationStatsProvider(period).future);
+  return stats.history.fold<int>(0, (sum, d) => sum + d.count);
+});
+
+final _monthlyNewUsersProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  final period = (
+    days: 0,
+    fromDate: DateTime(now.year, now.month, 1),
+    toDate: DateTime(now.year, now.month + 1, 0),
+  );
+  final stats = await ref.watch(registrationStatsProvider(period).future);
+  return stats.history.fold<int>(0, (sum, d) => sum + d.count);
+});
+
+final _yearlyNewPartnersProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  final period = (days: 0, fromDate: DateTime(now.year, 1, 1), toDate: DateTime(now.year, 12, 31));
+  final stats = await ref.watch(partnerStatsProvider(period).future);
+  return stats.history.fold<int>(0, (sum, d) => sum + d.count);
+});
+
+final _monthlyNewPartnersProvider = FutureProvider.autoDispose<int>((ref) async {
+  final now = DateTime.now();
+  final period = (
+    days: 0,
+    fromDate: DateTime(now.year, now.month, 1),
+    toDate: DateTime(now.year, now.month + 1, 0),
+  );
+  final stats = await ref.watch(partnerStatsProvider(period).future);
+  return stats.history.fold<int>(0, (sum, d) => sum + d.count);
+});
+
 /// Total de réclamations jamais créées (pas seulement "en attente") — même
 /// convention que les autres compteurs de _cardWithBadge : un total qui ne
 /// fait que croître, pour que badge = currentTotal - lastSeen se comporte
@@ -348,6 +411,38 @@ class AdminDashboardPage extends ConsumerWidget {
                       Expanded(
                         child: Consumer(
                           builder: (context, ref, _) {
+                            final v = ref.watch(_yearlyNewUsersProvider).valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.people_rounded,
+                              label: 'Utilisateurs inscrits',
+                              value: '$v',
+                              color: AppColors.mobiliBlue,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final v = ref.watch(_yearlyNewPartnersProvider).valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.business_rounded,
+                              label: 'Partenaires inscrits',
+                              value: '$v',
+                              color: AppColors.proGold,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, _) {
                             final tripsCountAsync = ref.watch(_yearlyTripsCountProvider);
                             final tripsCount = tripsCountAsync.valueOrNull ?? 0;
                             return KpiCard(
@@ -361,14 +456,26 @@ class AdminDashboardPage extends ConsumerWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: KpiCard(
-                          icon: Icons.event_busy_rounded,
-                          label: 'Trajets sans vente',
-                          value: '${stats.tripsWithoutSalesThisYear}',
-                          color: AppColors.warning,
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final v = ref.watch(_yearlyTripsWithSalesProvider).valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.check_circle_rounded,
+                              label: 'Trajets avec ventes',
+                              value: '$v',
+                              color: AppColors.stationGreen,
+                            );
+                          },
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  KpiCard(
+                    icon: Icons.event_busy_rounded,
+                    label: 'Trajets sans vente',
+                    value: '${stats.tripsWithoutSalesThisYear}',
+                    color: AppColors.warning,
                   ),
                   const SizedBox(height: 16),
                   AdminSectionTitle(title: '📅 Ce mois-ci — ${_currentMonthLabel()}'),
@@ -381,6 +488,50 @@ class AdminDashboardPage extends ConsumerWidget {
                       final ticketsAsync = ref.watch(_monthlyTicketsProvider);
                       final tickets = ticketsAsync.valueOrNull ?? (total: 0, online: 0, offline: 0);
                       return _MonthRevenueCard(revenue: revenue, tickets: tickets);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final v = ref.watch(_monthlyNewUsersProvider).valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.people_rounded,
+                              label: 'Utilisateurs inscrits',
+                              value: '$v',
+                              color: AppColors.mobiliBlue,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final v = ref.watch(_monthlyNewPartnersProvider).valueOrNull ?? 0;
+                            return KpiCard(
+                              icon: Icons.business_rounded,
+                              label: 'Partenaires inscrits',
+                              value: '$v',
+                              color: AppColors.proGold,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final v = ref.watch(_monthlyTripsWithSalesProvider).valueOrNull ?? 0;
+                      return KpiCard(
+                        icon: Icons.check_circle_rounded,
+                        label: 'Trajets avec ventes',
+                        value: '$v',
+                        color: AppColors.stationGreen,
+                      );
                     },
                   ),
                   const SizedBox(height: 10),
