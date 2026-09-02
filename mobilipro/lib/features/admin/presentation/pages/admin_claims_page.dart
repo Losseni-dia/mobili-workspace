@@ -430,6 +430,17 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
         .toList();
   }
 
+  /// Bagages soute que le VOYAGEUR a demandé à faire rembourser (voir mobile_app,
+  /// ClaimFormPage._claimDetails, details['bagsToCancel']) — une simple SUGGESTION pour
+  /// préremplir le stepper de _confirmCancelDialog, jamais exécutée automatiquement : l'admin
+  /// reste libre de l'ajuster (et la valeur reste de toute façon plafonnée à ce qui est
+  /// réellement remboursable, voir GET /admin/bookings/{id}/baggage-info).
+  int get _requestedBagsToCancel {
+    final raw = widget.claim.details['bagsToCancel'];
+    if (raw == null || raw.trim().isEmpty) return 0;
+    return int.tryParse(raw.trim()) ?? 0;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -517,8 +528,11 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
     required String title,
     required String detail,
     required int maxBags,
+    int initialBags = 0,
   }) {
-    int declaredBags = 0;
+    // Suggestion du voyageur plafonnée au réellement remboursable — jamais au-delà de maxBags
+    // même si la demande initiale était plus élevée (résa déjà partiellement remboursée depuis).
+    int declaredBags = initialBags.clamp(0, maxBags);
     return showDialog<int>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -540,7 +554,8 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
                 ),
                 Text(
                   'Jamais automatique : déclare combien de bagages rembourser '
-                  '($maxBags encore remboursable(s) sur cette réservation).',
+                  '($maxBags encore remboursable(s) sur cette réservation).'
+                  '${initialBags > 0 ? " Le voyageur a demandé $initialBags." : ""}',
                   style: const TextStyle(fontSize: 11, color: AppColors.gray500),
                 ),
                 const SizedBox(height: 8),
@@ -600,6 +615,7 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
           'Le remboursement Stripe (si applicable) sera déclenché automatiquement, '
           'hors forfait de service (jamais remboursé, ni total ni partiel).',
       maxBags: maxBags,
+      initialBags: _requestedBagsToCancel,
     );
     if (declaredBags == null || !mounted) return;
 
@@ -643,6 +659,7 @@ class _ClaimDetailSheetState extends State<_ClaimDetailSheet> {
           'Le remboursement Stripe (si applicable) sera déclenché automatiquement, '
           'hors forfait de service.',
       maxBags: maxBags,
+      initialBags: _requestedBagsToCancel,
     );
     if (declaredBags == null || !mounted) return;
 

@@ -67,6 +67,14 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
   bool _loadingTickets = false;
   Set<int> _selectedTicketIds = {};
 
+  /// Uniquement pour le motif "annulation" : nombre de bagages soute supplémentaires que le
+  /// voyageur souhaite faire rembourser — jamais automatique côté admin (voir
+  /// BookingService.refundDeclaredBaggage), l'admin voit cette valeur comme une DEMANDE à
+  /// valider, pas une exécution directe. 0 tant qu'aucune réservation avec bagages n'est
+  /// sélectionnée ; sinon initialisé au total enregistré (comportement par défaut "j'annule
+  /// tout", même logique que _selectedTicketIds).
+  int _declaredBags = 0;
+
   File? _attachment;
 
   /// Tant qu'aucune réservation n'est choisie, la liste reste dépliée ; dès
@@ -129,9 +137,14 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
       setState(() {
         _bookingTickets = null;
         _selectedTicketIds = {};
+        _declaredBags = 0;
       });
       return;
     }
+    // Bagages : indépendant du nombre de sièges (contrairement à la sélection de tickets,
+    // qui ne s'affiche que sur une résa multi-sièges) — par défaut, tout le quota enregistré
+    // est déclaré ("j'annule tout"), l'utilisateur peut le réduire ensuite.
+    setState(() => _declaredBags = booking.extraHoldBags);
     if (booking.numberOfSeats <= 1) {
       setState(() {
         _bookingTickets = null;
@@ -169,6 +182,7 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
       _bookingListExpanded = true;
       _bookingTickets = null;
       _selectedTicketIds = {};
+      _declaredBags = 0;
     });
     if (reason.requiresBooking && _myBookings == null) {
       _loadBookings();
@@ -185,17 +199,28 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
     return true;
   }
 
-  /// null (résa entière) sauf si l'utilisateur a désélectionné au moins un siège
-  /// annulable — dans ce cas, seuls les tickets encore cochés sont ciblés.
+  /// ticketIds : absent (résa entière) sauf si l'utilisateur a désélectionné au moins un
+  /// siège annulable — dans ce cas, seuls les tickets encore cochés sont ciblés.
+  /// bagsToCancel : nombre de bagages soute que le voyageur demande à faire rembourser —
+  /// une DEMANDE pour l'admin (jamais exécutée automatiquement, voir
+  /// BookingService.refundDeclaredBaggage), absent si aucun bagage enregistré sur la résa.
   Map<String, String>? get _claimDetails {
+    final details = <String, String>{};
+
     final tickets = _bookingTickets;
-    if (tickets == null || tickets.isEmpty) return null;
-    final cancellableIds = tickets.where((t) => t.isCancellable).map((t) => t.id!).toSet();
-    if (_selectedTicketIds.length >= cancellableIds.length) {
-      // Tout est coché : équivalent à "toute la réservation", pas besoin de le préciser.
-      return null;
+    if (tickets != null && tickets.isNotEmpty) {
+      final cancellableIds = tickets.where((t) => t.isCancellable).map((t) => t.id!).toSet();
+      if (_selectedTicketIds.length < cancellableIds.length) {
+        // Tout coché = équivalent à "toute la réservation", pas besoin de le préciser.
+        details['ticketIds'] = _selectedTicketIds.join(',');
+      }
     }
-    return {'ticketIds': _selectedTicketIds.join(',')};
+
+    if (_reason == ClaimReasonType.cancellation && _declaredBags > 0) {
+      details['bagsToCancel'] = _declaredBags.toString();
+    }
+
+    return details.isEmpty ? null : details;
   }
 
   Future<void> _pickAttachment() async {
@@ -342,6 +367,25 @@ class _ClaimFormPageState extends ConsumerState<ClaimFormPage> {
                     _selectedTicketIds.add(id);
                   }
                 }),
+              ),
+            ],
+            if (_reason == ClaimReasonType.cancellation &&
+                _selectedBooking != null &&
+                _selectedBooking!.extraHoldBags > 0) ...[
+              const SizedBox(height: 14),
+              const _SectionTitle('Bagages soute à rembourser'),
+              const SizedBox(height: 4),
+              Text(
+                'Cette réservation a ${_selectedBooking!.extraHoldBags} bagage(s) soute '
+                'supplémentaire(s) enregistré(s). Indiquez combien vous souhaitez faire '
+                'rembourser — l\'équipe Mobili valide cette demande.',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.gray500),
+              ),
+              const SizedBox(height: 8),
+              _BagsStepper(
+                value: _declaredBags,
+                max: _selectedBooking!.extraHoldBags,
+                onChanged: (v) => setState(() => _declaredBags = v),
               ),
             ],
             const SizedBox(height: 20),
@@ -708,6 +752,45 @@ class _TicketSelector extends StatelessWidget {
       }).toList(),
     );
   }
+}
+
+class _BagsStepper extends StatelessWidget {
+  const _BagsStepper({required this.value, required this.max, required this.onChanged});
+  final int value;
+  final int max;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.gray200),
+        ),
+        child: Row(
+          children: [
+            IconButton(
+              onPressed: value > 0 ? () => onChanged(value - 1) : null,
+              icon: const Icon(Icons.remove_circle_outline_rounded),
+              color: AppColors.mobiliBlue,
+            ),
+            Expanded(
+              child: Text(
+                '$value bagage${value > 1 ? 's' : ''}',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium
+                    .copyWith(fontWeight: FontWeight.w800, color: AppColors.gray700),
+              ),
+            ),
+            IconButton(
+              onPressed: value < max ? () => onChanged(value + 1) : null,
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              color: AppColors.mobiliBlue,
+            ),
+          ],
+        ),
+      );
 }
 
 class _BookingCard extends StatelessWidget {
