@@ -235,6 +235,8 @@
 // (booking-list.component.scss) : siège annulé individuellement gardé visible, barré/grisé.
 .seat-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 
+.muted { color: variables.$gray-400; }
+
 .seat-chip {
   padding: 3px 10px;
   border-radius: variables.$radius-pill;

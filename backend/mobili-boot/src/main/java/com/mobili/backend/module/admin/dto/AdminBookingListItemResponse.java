@@ -23,6 +23,12 @@ public record AdminBookingListItemResponse(
          *  {@link #totalPrice()}. Champ à afficher côté admin. */
         Double amount,
         String status,
+        /** Forfait de service client — 0 pour une vente guichet (OFFLINE_SALE, voir
+         *  BookingService.createOfflineSale) : ce forfait finance uniquement la commodité du
+         *  paiement en ligne, jamais pertinent pour un passager payant physiquement à la gare.
+         *  À masquer côté affichage pour OFFLINE_SALE plutôt que de se fier uniquement à cette
+         *  valeur (couvre aussi les ventes guichet historiques créées avant ce correctif). */
+        Integer serviceFee,
         /** Tous les numéros de sièges réservés à l'origine — voir BookingResponseDTO.seatNumbers
          *  (même convention côté partenaire, BookingMapper). */
         Set<String> seatNumbers,

@@ -79,6 +79,7 @@
                         <th>Date voyage</th>
                         <th>Sièges</th>
                         <th>Statut</th>
+                        <th class="right">Forfait</th>
                         <th class="right">Montant</th>
                         <th class="right">Actions</th>
                     </tr>
@@ -105,6 +106,13 @@
                                     <span class="dot"></span>
                                     {{ b.status }}
                                 </span>
+                            </td>
+                            <td class="right">
+                                @if (isOfflineSale(b)) {
+                                    <span class="muted">—</span>
+                                } @else {
+                                    {{ b.serviceFee | number }} FCFA
+                                }
                             </td>
                             <td class="right amount">{{ (b.amount ?? b.totalPrice) | number }} FCFA</td>
                             <td class="right">

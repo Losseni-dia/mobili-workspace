@@ -164,6 +164,13 @@ export class AdminBookings implements OnInit {
     return (booking.cancelledSeatNumbers || []).includes(seat);
   }
 
+  /** Forfait client à afficher — jamais pour une vente guichet (OFFLINE_SALE), même si la
+   *  valeur stockée n'est pas encore à 0 (réservations historiques antérieures au correctif
+   *  BookingService.createOfflineSale, 2026-09-02). */
+  isOfflineSale(booking: AdminBookingListItem): boolean {
+    return (booking.status || '').toUpperCase() === 'OFFLINE_SALE';
+  }
+
   /**
    * Montant réel de la réservation dans le détail : `amount`/`totalPrice` sont figés à la
    * création et ne bougent pas si un ticket est annulé individuellement ensuite — on recalcule
