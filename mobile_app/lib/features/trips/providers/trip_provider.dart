@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +10,7 @@ import '../../bookings/domain/models/booking.dart';
 import '../../bookings/domain/models/payment_request.dart';
 import '../../bookings/domain/models/payment_verification_response.dart';
 import '../domain/models/trip.dart';
+import '../domain/models/trip_eta.dart';
 import '../domain/models/trip_stop.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,6 +128,85 @@ final tripDetailProvider =
 final tripStopsProvider =
     FutureProvider.autoDispose.family<List<TripStop>, int>((ref, tripId) {
   return ref.read(tripServiceProvider).getTripStops(tripId);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ETA temps réel (trajet EN_COURS) — voir TripLiveMap pour la position
+// (Firestore) qui alimente updatePosition() ci-dessous, et backend
+// TripEtaService pour le calcul (Mapbox/Google Maps, cache serveur 75s).
+// ─────────────────────────────────────────────────────────────────────────────
+
+class TripEtaState {
+  const TripEtaState({this.eta, this.isLoading = false, this.errorMessage});
+
+  final TripEta? eta;
+  final bool isLoading;
+  final String? errorMessage;
+
+  TripEtaState copyWith({
+    TripEta? eta,
+    bool? isLoading,
+    String? errorMessage,
+  }) =>
+      TripEtaState(
+        eta: eta ?? this.eta,
+        isLoading: isLoading ?? this.isLoading,
+        errorMessage: errorMessage,
+      );
+}
+
+class TripEtaNotifier extends StateNotifier<TripEtaState> {
+  TripEtaNotifier(this._tripId, this._service) : super(const TripEtaState()) {
+    _timer = Timer.periodic(_refreshInterval, (_) => _refresh());
+  }
+
+  // Recalcul toutes les 5 min tant que l'écran de suivi est ouvert — jamais
+  // à chaque position GPS (10-15s), qui doublerait le coût des appels
+  // Mapbox/Google Maps pour rien (voir plan Étape 5, backend TripEtaService).
+  static const _refreshInterval = Duration(minutes: 5);
+
+  final int _tripId;
+  final TripService _service;
+  Timer? _timer;
+  double? _lastLat;
+  double? _lastLng;
+
+  /// Appelé par TripLiveMap à chaque nouvelle position Firestore. Ne
+  /// déclenche un appel réseau immédiat que pour le tout premier calcul
+  /// (avant, aucune position connue) — les suivants attendent le timer.
+  void updatePosition(double lat, double lng) {
+    final isFirstPosition = _lastLat == null;
+    _lastLat = lat;
+    _lastLng = lng;
+    if (isFirstPosition) {
+      unawaited(_refresh());
+    }
+  }
+
+  Future<void> _refresh() async {
+    final lat = _lastLat;
+    final lng = _lastLng;
+    if (lat == null || lng == null) return;
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final eta = await _service.getEta(_tripId, lat, lng);
+      state = TripEtaState(eta: eta);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+final tripEtaProvider =
+    StateNotifierProvider.autoDispose.family<TripEtaNotifier, TripEtaState, int>(
+        (ref, tripId) {
+  return TripEtaNotifier(tripId, ref.read(tripServiceProvider));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

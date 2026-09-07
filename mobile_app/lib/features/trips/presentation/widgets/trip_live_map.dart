@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../../core/config/mapbox_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../providers/trip_provider.dart';
 
 /// Carte de suivi temps réel du véhicule — affichée uniquement pendant
 /// `trip.isInProgress` (voir `trip_detail_page.dart`). Lit le document
@@ -20,15 +22,15 @@ import '../../../../core/theme/app_text_styles.dart';
 /// active ou trajet pas EN_COURS — voir backend LiveTrackingTokenService)
 /// puis `signInWithCustomToken`. Un ID token Firebase vit 1h : renouvelé
 /// toutes les 45 min tant que ce widget reste monté.
-class TripLiveMap extends StatefulWidget {
+class TripLiveMap extends ConsumerStatefulWidget {
   const TripLiveMap({super.key, required this.tripId});
   final int tripId;
 
   @override
-  State<TripLiveMap> createState() => _TripLiveMapState();
+  ConsumerState<TripLiveMap> createState() => _TripLiveMapState();
 }
 
-class _TripLiveMapState extends State<TripLiveMap> {
+class _TripLiveMapState extends ConsumerState<TripLiveMap> {
   static const _reauthInterval = Duration(minutes: 45);
 
   Timer? _reauthTimer;
@@ -105,6 +107,18 @@ class _TripLiveMapState extends State<TripLiveMap> {
         final lat = (data?['lat'] as num?)?.toDouble();
         final lng = (data?['lng'] as num?)?.toDouble();
         final timestamp = data?['timestamp'] as Timestamp?;
+
+        if (lat != null && lng != null) {
+          // Alimente tripEtaProvider (recalcul ETA toutes les 5 min, jamais
+          // à chaque position) — ref.read en dehors du cycle de build via
+          // un post-frame callback, jamais pendant build().
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ref
+                .read(tripEtaProvider(widget.tripId).notifier)
+                .updatePosition(lat, lng);
+          });
+        }
 
         return ClipRRect(
           borderRadius: BorderRadius.circular(16),
