@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Position temps réel du véhicule pendant un trajet en cours — voir
+// backend/mobili-boot/.../module/tracking/service/LiveTrackingTokenService.java pour le mint
+// des custom tokens Firebase qui portent les claims tripId/role vérifiés ci-dessous. Un
+// document unique par trajet, écrasé à chaque position (pas d'historique) :
+// live_positions/{tripId} = { lat, lng, heading, speed, timestamp: serverTimestamp, tripId }.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /live_positions/{tripId} {
+      // Lecture : chauffeur ou passager du BON trajet uniquement (claim tripId doit correspondre
+      // à l'ID du document demandé — jamais un accès en lecture à un autre trajet).
+      allow read: if request.auth != null
+                   && request.auth.token.tripId == tripId
+                   && (request.auth.token.role == 'driver' || request.auth.token.role == 'passenger');
+
+      // Écriture : réservée au chauffeur du BON trajet — jamais un passager, jamais un
+      // chauffeur d'un autre trajet (même si son claim tripId a expiré/n'a pas été renouvelé).
+      allow write: if request.auth != null
+                    && request.auth.token.tripId == tripId
+                    && request.auth.token.role == 'driver';
+
+      // Aucune suppression côté client — jamais utile pour ce document (toujours écrasé, pas
+      // d'historique), et éviterait qu'un client mal intentionné efface la position en cours.
+      allow delete: if false;
+    }
+  }
+}

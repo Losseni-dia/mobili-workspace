@@ -5,15 +5,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
 import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.tracking.service.LiveTrackingTokenService;
 import com.mobili.backend.module.trip.dto.TripEtaResponse;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
@@ -38,6 +41,7 @@ public class TripReadController {
     private final AnalyticsEventService analyticsEventService;
     private final CityRepository cityRepository;
     private final TripEtaService tripEtaService;
+    private final LiveTrackingTokenService liveTrackingTokenService;
 
     @GetMapping("/cities")
     public List<String> getCities(
@@ -81,6 +85,17 @@ public class TripReadController {
             @RequestParam double lat,
             @RequestParam double lng) {
         return tripEtaService.getEta(id, lat, lng);
+    }
+
+    /**
+     * Jeton Firebase pour la lecture de la position temps réel (Firestore) — voir
+     * LiveTrackingTokenService (vérifie réservation active + trajet EN_COURS).
+     */
+    @GetMapping("/{id}/live-tracking-token")
+    public java.util.Map<String, String> getLiveTrackingToken(
+            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
+        String token = liveTrackingTokenService.mintPassengerToken(id, principal.getUser().getId());
+        return java.util.Map.of("token", token);
     }
 
     @GetMapping("/{id}")
