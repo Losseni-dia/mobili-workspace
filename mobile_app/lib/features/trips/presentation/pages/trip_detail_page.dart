@@ -11,6 +11,7 @@ import '../../../../shared/widgets/mobili_loader.dart';
 import '../../providers/trip_provider.dart';
 import '../../domain/models/trip.dart';
 import '../../../bookings/presentation/pages/booking_page.dart';
+import '../widgets/trip_live_map.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider note moyenne
@@ -292,6 +293,13 @@ class _TripDetailContent extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // ── Suivi temps réel (trajet EN_COURS uniquement) ─
+                if (trip.isInProgress)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: TripLiveMap(tripId: trip.id),
+                  ),
 
                 // ── Escales ──────────────────────────────
                // ── Conducteur (covoiturage uniquement) ───
