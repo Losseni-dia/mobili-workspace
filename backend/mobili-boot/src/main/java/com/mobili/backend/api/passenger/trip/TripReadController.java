@@ -14,12 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
 import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.trip.dto.TripEtaResponse;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
 import com.mobili.backend.module.trip.entity.TransportType;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.entity.TripStatus;
+import com.mobili.backend.module.trip.service.TripEtaService;
 import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
 
@@ -35,6 +37,7 @@ public class TripReadController {
     private final TripRunService tripRunService;
     private final AnalyticsEventService analyticsEventService;
     private final CityRepository cityRepository;
+    private final TripEtaService tripEtaService;
 
     @GetMapping("/cities")
     public List<String> getCities(
@@ -64,6 +67,20 @@ public class TripReadController {
     @GetMapping("/{id}/stops")
     public List<TripStopResponseDTO> listStops(@PathVariable Long id) {
         return tripService.listStops(id);
+    }
+
+    /**
+     * ETA vers le prochain arrêt — appelé par l'app passager toutes les 5 min pendant qu'un
+     * écran de suivi est ouvert (jamais à chaque position GPS reçue via Firestore, qui arrive
+     * toutes les 10-15s). {@code lat}/{@code lng} : dernière position du véhicule connue côté
+     * client (reçue via Firestore, pas stockée côté backend — voir TripEtaService).
+     */
+    @GetMapping("/{id}/eta")
+    public TripEtaResponse getEta(
+            @PathVariable Long id,
+            @RequestParam double lat,
+            @RequestParam double lng) {
+        return tripEtaService.getEta(id, lat, lng);
     }
 
     @GetMapping("/{id}")
