@@ -51,6 +51,9 @@ dependencies:
   firebase_messaging: ^15.0.0
   firebase_analytics: ^11.0.0
   flutter_local_notifications: ^17.0.0
+  cloud_firestore: ^5.4.0 # position temps réel du trajet (live_positions/{tripId})
+  firebase_auth: ^5.3.0 # signInWithCustomToken — jeton minté par /trips/{id}/live-tracking-token
+  mapbox_maps_flutter: ^2.5.0 # carte de suivi temps réel (trip_live_map.dart)
 dependency_overrides:
   # flutter_plugin_android_lifecycle >=2.0.28 exige compileSdk 36 côté consommateurs, mais le
   # module Android de file_picker (transitif via image_picker/mobile_scanner aussi) est encore
