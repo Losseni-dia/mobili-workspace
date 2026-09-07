@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:mobilipro/features/chauffeurs/presentation/models/chauffeur_dash
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/qr_scanner_widget.dart';
+import '../../../tracking/data/live_tracking_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilitaire statut ticket (global au fichier)
@@ -673,7 +676,15 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
       );
       if (mounted) {
         widget.onStatusChanged(isLast ? 'TERMINÉ' : 'EN_COURS');
+        // Flux GPS temps réel, indépendant du départ manuel ci-dessus (voir
+        // LiveTrackingService) : démarré au tout premier départ, arrêté à
+        // l'arrivée (isLast) ou en cas d'annulation ramenant à l'arrêt 0
+        // (_undoLastDeparture ci-dessous). N'affecte jamais ce flux manuel.
+        if (_currentStop == 0) {
+          unawaited(LiveTrackingService.instance.start(widget.trip.id));
+        }
         if (isLast) {
+          unawaited(LiveTrackingService.instance.stop());
           setState(() => _tripEnded = true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -721,6 +732,11 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
           _currentStop = newCurrentStop;
           _tripEnded = false;
         });
+        // Retour à l'arrêt 0 : le premier départ (qui avait démarré le
+        // tracking) est annulé — coupe le flux GPS en cohérence.
+        if (newCurrentStop == 0) {
+          unawaited(LiveTrackingService.instance.stop());
+        }
         widget.onStatusChanged(newCurrentStop == 0 ? 'PROGRAMMÉ' : 'EN_COURS');
         _refreshStop();
         ScaffoldMessenger.of(context).showSnackBar(
