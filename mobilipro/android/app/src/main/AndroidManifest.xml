@@ -1,9 +1,24 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Tracking GPS temps réel du trajet (flutter_background_geolocation) — voir
+         live_tracking_service.dart. ACCESS_BACKGROUND_LOCATION est nécessaire car l'app doit
+         continuer à émettre la position pendant qu'elle est en arrière-plan (chauffeur qui
+         verrouille l'écran). FOREGROUND_SERVICE_LOCATION requis à partir d'Android 14
+         (API 34) pour le type de service de premier plan utilisé par le plugin. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:label="Mobilipro"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        tools:replace="android:label">
         <activity
             android:name=".MainActivity"
             android:exported="true"
