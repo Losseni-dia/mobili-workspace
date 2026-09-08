@@ -99,7 +99,13 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<AuthState> {
 
 Future<bool> login({required String login, required String password}) async {
     if (state.valueOrNull?.isLoading == true) return false;
-    state = AsyncData(state.requireValue.asLoading());
+    // valueOrNull (pas requireValue) : build() (vérification de session en
+    // cours via getMe()) peut ne pas encore avoir résolu si l'utilisateur
+    // tape sur "Connexion" très tôt après le démarrage de l'app — requireValue
+    // plante sinon (AsyncLoading n'a pas de valeur), observé en pratique sur
+    // un démarrage à froid ralenti par l'initialisation des nouveaux plugins
+    // (Firestore/Auth/geolocation, tracking temps réel).
+    state = AsyncData((state.valueOrNull ?? const AuthState()).asLoading());
     try {
       final authResponse = await _service.login(
         login: login,
@@ -135,7 +141,7 @@ Future<bool> login({required String login, required String password}) async {
   }
 
 Future<void> logout() async {
-    state = AsyncData(state.requireValue.asLoading());
+    state = AsyncData((state.valueOrNull ?? const AuthState()).asLoading());
     await _service.logout();
     state = const AsyncData(AuthState(status: AuthStatus.unauthenticated));
     ref.invalidate(notificationsProvider);
@@ -151,7 +157,7 @@ Future<bool> register({
     File? avatarFile,
   }) async {
     if (state.valueOrNull?.isLoading == true) return false;
-    state = AsyncData(state.requireValue.asLoading());
+    state = AsyncData((state.valueOrNull ?? const AuthState()).asLoading());
     try {
       final profile = await _service.register(
         firstname: firstname,
@@ -197,7 +203,7 @@ Future<bool> registerCompany({
     required File transportCardBackFile,
   }) async {
     if (state.valueOrNull?.isLoading == true) return false;
-    state = AsyncData(state.requireValue.asLoading());
+    state = AsyncData((state.valueOrNull ?? const AuthState()).asLoading());
     try {
       final authResponse = await _service.registerCompany(
         companyData: companyData,
