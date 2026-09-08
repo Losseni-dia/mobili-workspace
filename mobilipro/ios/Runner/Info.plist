@@ -34,6 +34,18 @@
 	<string>Mobilipro utilise l'appareil photo pour scanner les QR codes des billets à l'embarquement et pour ajouter des photos (documents, pièces jointes).</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Mobilipro accède à vos photos pour joindre des documents (KYC, pièces jointes support) depuis votre galerie.</string>
+	<!-- Tracking GPS temps réel du trajet (flutter_background_geolocation) — voir
+	     live_tracking_service.dart. "Always" est requis pour continuer à émettre la position
+	     pendant que l'app est en arrière-plan (chauffeur qui verrouille l'écran pendant le
+	     trajet) ; UIBackgroundModes "location" autorise l'exécution en tâche de fond associée. -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Mobilipro utilise votre position en arrière-plan pour transmettre le trajet en temps réel aux passagers pendant que le service est en cours.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Mobilipro utilise votre position pour transmettre le trajet en temps réel aux passagers.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

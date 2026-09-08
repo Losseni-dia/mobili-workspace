@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../core/network/api_client.dart';
 import '../domain/models/trip.dart';
+import '../domain/models/trip_eta.dart';
 import '../domain/models/trip_stop.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -121,6 +122,20 @@ class TripService {
         .toList();
     await _putCached(cacheKey, stops.map((s) => s.toJson()).toList());
     return stops;
+  }
+
+  // ── ETA (real-time, no cache — déjà amorti par un cache serveur court) ─────
+
+  /// [lat]/[lng] : dernière position connue du véhicule (reçue via
+  /// Firestore côté client, jamais stockée côté backend — voir
+  /// TripEtaService). Appelé toutes les 5 min par tripEtaProvider, jamais à
+  /// chaque position GPS.
+  Future<TripEta> getEta(int tripId, double lat, double lng) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/trips/$tripId/eta',
+      queryParameters: {'lat': lat, 'lng': lng},
+    );
+    return TripEta.fromJson(response.data!);
   }
 
   // ── Occupied seats (real-time, no cache) ──────────────────────────────────

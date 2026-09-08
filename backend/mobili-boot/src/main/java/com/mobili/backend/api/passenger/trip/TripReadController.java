@@ -5,21 +5,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
 import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.tracking.service.LiveTrackingTokenService;
+import com.mobili.backend.module.trip.dto.TripEtaResponse;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.trip.dto.mapper.TripMapper;
 import com.mobili.backend.module.trip.entity.TransportType;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.entity.TripStatus;
+import com.mobili.backend.module.trip.service.TripEtaService;
 import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
 
@@ -35,6 +40,8 @@ public class TripReadController {
     private final TripRunService tripRunService;
     private final AnalyticsEventService analyticsEventService;
     private final CityRepository cityRepository;
+    private final TripEtaService tripEtaService;
+    private final LiveTrackingTokenService liveTrackingTokenService;
 
     @GetMapping("/cities")
     public List<String> getCities(
@@ -64,6 +71,31 @@ public class TripReadController {
     @GetMapping("/{id}/stops")
     public List<TripStopResponseDTO> listStops(@PathVariable Long id) {
         return tripService.listStops(id);
+    }
+
+    /**
+     * ETA vers le prochain arrêt — appelé par l'app passager toutes les 5 min pendant qu'un
+     * écran de suivi est ouvert (jamais à chaque position GPS reçue via Firestore, qui arrive
+     * toutes les 10-15s). {@code lat}/{@code lng} : dernière position du véhicule connue côté
+     * client (reçue via Firestore, pas stockée côté backend — voir TripEtaService).
+     */
+    @GetMapping("/{id}/eta")
+    public TripEtaResponse getEta(
+            @PathVariable Long id,
+            @RequestParam double lat,
+            @RequestParam double lng) {
+        return tripEtaService.getEta(id, lat, lng);
+    }
+
+    /**
+     * Jeton Firebase pour la lecture de la position temps réel (Firestore) — voir
+     * LiveTrackingTokenService (vérifie réservation active + trajet EN_COURS).
+     */
+    @GetMapping("/{id}/live-tracking-token")
+    public java.util.Map<String, String> getLiveTrackingToken(
+            @PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
+        String token = liveTrackingTokenService.mintPassengerToken(id, principal.getUser().getId());
+        return java.util.Map.of("token", token);
     }
 
     @GetMapping("/{id}")

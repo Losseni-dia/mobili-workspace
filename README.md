@@ -108,6 +108,19 @@ ng serve
 
 Modèle : [`.env.example`](.env.example). Le backend charge les variables (dont `DB_PASSWORD`, `JWT_SECRET`, clés FedaPay) via `.env` à la racine ou l’environnement. Ne pas commiter `.env` (voir [`.gitignore`](.gitignore)).
 
+<a id="tracking-temps-reel"></a>
+
+### Géolocalisation temps réel + passerelle Mapbox/Google Maps
+
+Position du véhicule diffusée en direct (mobilipro → Firestore → mobile_app) et ETA calculée à la demande — voir `module/tracking` et `module/routing` côté backend.
+
+- **Firestore, pas PostgreSQL** : le flux de position (`live_positions/{tripId}`, un document par trajet, jamais d'historique) est entièrement porté par Firebase Firestore, en lecture/écriture directe client↔Firestore. Le backend n'y touche jamais — son seul rôle est de minter des **custom tokens Firebase** scopés `tripId`/`role` (`LiveTrackingTokenService`), après vérification des règles métier réelles en base (chauffeur bien assigné, réservation passager active, trajet `EN_COURS`). L'arbitrage lecture/écriture final se fait dans `firestore.rules`, jamais côté backend.
+- **Renouvellement des jetons toutes les ~45 min** : un ID token Firebase vit 1h, un trajet dure plus longtemps. `LiveTrackingService` (mobilipro) et `TripLiveMap` (mobile_app) reprogramment chacun un appel à leur endpoint `live-tracking-token` respectif toutes les 45 min tant que le tracking/l'écran de suivi reste actif — sans ça, le flux Firestore serait coupé silencieusement à la première expiration de token.
+- **ETA à la demande, pas de scheduler backend** : `GET /trips/{id}/eta` est appelé côté client toutes les 5 min tant que l'écran de suivi est ouvert (jamais à chaque position GPS, qui arrive toutes les 10-15s — ça doublerait le coût des appels Mapbox/Google Maps pour rien). Pas de `@Scheduled` par trajet actif côté backend : le coût reste proportionnel à l'usage réel, et un cache serveur court (`TripEtaService`, TTL 75s, en mémoire) amortit le seul cas qui justifierait un scheduler — plusieurs passagers du même trajet ouvrant l'écran en même temps.
+- **Mapbox primaire, bascule Google Maps automatique** : uniquement sur un vrai code métier "aucun itinéraire" (`NoRoute` Mapbox / `ZERO_RESULTS` Google), jamais sur une erreur réseau générique — voir `DirectionsOrchestratorService`.
+- **`mobile_app`, build avec la carte** : le token Mapbox public (`pk.*`) n'est jamais commité — passer `--dart-define=MAPBOX_ACCESS_TOKEN=...` (valeur : `MOBILEAPP_MAPBOX_ACCESS_TOKEN` dans `.env.example`) à `flutter build`/`flutter run`. Sans ce flag, `TripLiveMap` s'efface silencieusement (le reste de l'écran — ETA, arrêts — continue de fonctionner). Le SDK natif Mapbox, lui, se télécharge à la compilation via un token distinct (`MAPBOX_DOWNLOADS_TOKEN`, secret, jamais exposé côté client) déjà configuré dans `mobile_app/android/build.gradle.kts`.
+- **`mobilipro`, tracking arrière-plan** : `flutter_background_geolocation` (Transistorsoft, licence commerciale STARTER, coût confirmé avant le démarrage de ce chantier) — seul un test sur appareil physique (idéalement Oppo/Xiaomi/Huawei) valide la survie réelle du tracking en arrière-plan prolongé ; `flutter analyze`/`build` ne le couvre pas.
+
 ### Déploiement / Docker / CI-CD
 
 **Hors dépôt** : ce cours de code se concentre sur le backend Spring et le frontend Angular. Tu peux ajouter plus tard compose, images, pipelines (GitHub Actions, etc.) sur une branche dédiée ou un autre dépôt.

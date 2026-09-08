@@ -104,6 +104,17 @@ stripe:
   secret-key: ${STRIPE_SECRET_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
 
+# Passerelle directions/ETA (module routing) : Mapbox en fournisseur principal, bascule
+# automatique vers Google Maps en cas de NoRoute — voir DirectionsOrchestratorService. Convention
+# unique adoptée ici (contrairement à fedapay/stripe ci-dessus, où certaines classes lisent le
+# nom de la variable d'env directement) : toujours lire via le chemin YAML dans le code Java.
+mapbox:
+  access-token: ${MAPBOX_ACCESS_TOKEN}
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY}
+
 payment:
   exchange:
     # Taux fixe EUR/XOF (traité BCEAO / Trésor français), pas une approximation.

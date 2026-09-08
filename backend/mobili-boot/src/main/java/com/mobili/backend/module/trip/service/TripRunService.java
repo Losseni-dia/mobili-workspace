@@ -131,6 +131,30 @@ public class TripRunService {
                 .orElse(null);
     }
 
+    /**
+     * Prochain arrêt non encore quitté (TripStop complet, pas seulement son nom de ville) — voir
+     * {@link #nextStopCityOrNull} pour la logique de résolution, identique. Utilisé par le
+     * module routing pour résoudre la destination de l'appel Directions : si l'arrêt renvoyé n'a
+     * pas de coordonnées renseignées (latitude/longitude null), le calcul d'ETA doit être
+     * indisponible pour ce trajet, jamais une estimation approximative.
+     */
+    @Transactional(readOnly = true)
+    public TripStop nextStopOrNull(Trip trip) {
+        ensureStops(trip);
+        int last = lastStopIndex(trip);
+        int currentStop = tripStopEventRepository
+                .findMaxStopIndexByTripIdAndEventType(trip.getId(), TripStopEventType.DEPARTURE_FROM_STOP)
+                .orElse(-1);
+        int nextIndex = currentStop + 1;
+        if (nextIndex > last) {
+            return null;
+        }
+        return trip.getStops().stream()
+                .filter(s -> s.getStopIndex() == nextIndex)
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional
     public void recordDepartureFromStop(Trip trip, int stopIndex, LocalDateTime recordedAt) {
         ensureStops(trip);

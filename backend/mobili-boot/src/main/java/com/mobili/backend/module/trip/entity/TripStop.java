@@ -35,4 +35,15 @@ public class TripStop extends AbstractEntity {
     /** Heure planifiée de départ du car depuis cet arrêt (cut-off vente embarquement ici). */
     @Column(name = "planned_departure_at", nullable = false)
     private LocalDateTime plannedDepartureAt;
+
+    /**
+     * Coordonnées GPS de cet arrêt — nullable, renseignées manuellement (pas d'interface de
+     * saisie). Un arrêt sans coordonnées rend le calcul d'ETA (module routing) indisponible pour
+     * ce trajet, jamais une estimation approximative basée sur un centre-ville par défaut.
+     */
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 }

@@ -22,6 +22,7 @@ import com.mobili.backend.module.trip.dto.driver.AlightingPassengerResponse;
 import com.mobili.backend.module.trip.dto.driver.DriverAlightedRequest;
 import com.mobili.backend.module.trip.dto.driver.DriverDepartureRequest;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.tracking.service.LiveTrackingTokenService;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.service.TripRunService;
 import com.mobili.backend.module.trip.service.TripService;
@@ -39,6 +40,7 @@ public class TripDriverController {
     private final TripRunService tripRunService;
     private final TicketService ticketService;
     private final TicketMapper ticketMapper;
+    private final LiveTrackingTokenService liveTrackingTokenService;
 
     @PostMapping("/departures")
     public void recordDeparture(
@@ -68,6 +70,19 @@ public class TripDriverController {
     public void startTrip(
             @PathVariable Long tripId, @AuthenticationPrincipal UserPrincipal principal) {
         tripService.startChauffeurTrip(tripId, principal);
+    }
+
+    /**
+     * Jeton Firebase pour la diffusion de la position temps réel (Firestore) — voir
+     * LiveTrackingTokenService. Même garde d'autorisation que les autres actions chauffeur de ce
+     * contrôleur (assertPartnerOrGareCanOperateDriverTrip).
+     */
+    @PostMapping("/live-tracking-token")
+    public Map<String, String> mintLiveTrackingToken(
+            @PathVariable Long tripId, @AuthenticationPrincipal UserPrincipal principal) {
+        tripService.assertPartnerOrGareCanOperateDriverTrip(tripId, principal);
+        String token = liveTrackingTokenService.mintDriverToken(tripId, principal.getUser().getId());
+        return Map.of("token", token);
     }
 
     /** Synthèse bagages (réservations confirmées vs politique du voyage). */

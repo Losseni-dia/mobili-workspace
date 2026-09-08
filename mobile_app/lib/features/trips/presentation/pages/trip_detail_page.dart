@@ -11,6 +11,7 @@ import '../../../../shared/widgets/mobili_loader.dart';
 import '../../providers/trip_provider.dart';
 import '../../domain/models/trip.dart';
 import '../../../bookings/presentation/pages/booking_page.dart';
+import '../widgets/trip_live_map.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider note moyenne
@@ -293,6 +294,18 @@ class _TripDetailContent extends StatelessWidget {
                   ),
                 ),
 
+                // ── Suivi temps réel (trajet EN_COURS uniquement) ─
+                if (trip.isInProgress) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: _EtaBadge(trip: trip),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: TripLiveMap(tripId: trip.id),
+                  ),
+                ],
+
                 // ── Escales ──────────────────────────────
                // ── Conducteur (covoiturage uniquement) ───
                 if (trip.isCovoiturage &&
@@ -421,6 +434,62 @@ class _TripDetailContent extends StatelessWidget {
             MaterialPageRoute<void>(builder: (_) => BookingPage(trip: trip)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge ETA — "En route vers X — dans Y min", alimenté par tripEtaProvider
+// (recalcul toutes les 5 min, voir trip_provider.dart). Affiché uniquement
+// pendant trip.isInProgress (voir _TripDetailContent ci-dessus).
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EtaBadge extends ConsumerWidget {
+  const _EtaBadge({required this.trip});
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final etaState = ref.watch(tripEtaProvider(trip.id));
+    final eta = etaState.eta;
+    final destination = eta?.destinationCity ?? trip.nextStopCity;
+
+    final String label;
+    if (eta == null) {
+      // Position pas encore reçue (TripLiveMap vient de se monter) ou 1er
+      // calcul en cours — jamais d'estimation inventée entre-temps.
+      label = destination != null ? 'En route vers $destination' : 'En route';
+    } else if (!eta.available) {
+      // Prochain arrêt sans coordonnées renseignées (voir backend
+      // TripEtaService) — jamais une estimation approximative.
+      label = 'En route vers ${destination ?? ''} — Temps restant indisponible';
+    } else {
+      label = 'En route vers ${destination ?? ''} — dans ${eta.durationMinutes} min';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.mobiliBlue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.directions_bus_filled_rounded,
+              size: 18, color: AppColors.mobiliBlue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.mobiliBlueDeep,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
