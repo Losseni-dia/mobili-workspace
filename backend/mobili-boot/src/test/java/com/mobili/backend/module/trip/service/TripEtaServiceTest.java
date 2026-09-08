@@ -110,6 +110,28 @@ class TripEtaServiceTest {
     }
 
     @Test
+    void getEta_orchestratorThrows_returnsUnavailableInsteadOfPropagating() {
+        // Ni Mapbox ni Google Maps n'ont pu calculer d'itinéraire (ex. position d'origine trop
+        // éloignée pour un trajet routier, ou panne réseau des deux fournisseurs) — voir
+        // TripEtaService.getEta, qui doit dégrader vers "indisponible" plutôt que de laisser
+        // l'exception remonter en 500.
+        Trip trip = enCoursTrip();
+        when(tripService.findById(1L)).thenReturn(trip);
+        TripStop stop = new TripStop();
+        stop.setCityLabel("San-Pedro");
+        stop.setLatitude(4.7485);
+        stop.setLongitude(-6.6363);
+        when(tripRunService.nextStopOrNull(trip)).thenReturn(stop);
+        when(directionsOrchestratorService.getDirectionsWithFallback(any()))
+                .thenThrow(new RuntimeException("Aucun itinéraire trouvé par aucun fournisseur"));
+
+        TripEtaResponse response = tripEtaService.getEta(1L, 50.85, 4.35);
+
+        assertFalse(response.available());
+        assertEquals("San-Pedro", response.destinationCity());
+    }
+
+    @Test
     void getEta_secondCallWithinTtl_usesCacheWithoutCallingOrchestratorAgain() {
         Trip trip = enCoursTrip();
         when(tripService.findById(1L)).thenReturn(trip);

@@ -68,8 +68,19 @@ public class TripEtaService {
         } else {
             DirectionsRequest request = new DirectionsRequest(
                     originLat, originLng, nextStop.getLatitude(), nextStop.getLongitude());
-            DirectionsResult result = directionsOrchestratorService.getDirectionsWithFallback(request);
-            response = TripEtaResponse.available(nextStop.getCityLabel(), result);
+            try {
+                DirectionsResult result = directionsOrchestratorService.getDirectionsWithFallback(request);
+                response = TripEtaResponse.available(nextStop.getCityLabel(), result);
+            } catch (Exception e) {
+                // Ni Mapbox ni Google Maps n'ont pu calculer d'itinéraire (aucune route possible
+                // entre les deux points, ou panne réseau des deux fournisseurs) — dégrade
+                // proprement vers "indisponible" plutôt qu'un 500 : jamais une estimation fausse,
+                // mais jamais non plus une requête qui casse juste parce qu'un calcul externe a
+                // échoué. Le cache court (75s) évite de retenter ce calcul coûteux en boucle.
+                log.warn("⚠️ ETA indisponible pour Trip #{} — échec du calcul d'itinéraire ({}, {}) -> ({}, {}) : {}",
+                        tripId, originLat, originLng, nextStop.getLatitude(), nextStop.getLongitude(), e.getMessage());
+                response = TripEtaResponse.unavailable(nextStop.getCityLabel());
+            }
         }
 
         cache.put(tripId, new CachedEta(response, Instant.now()));
