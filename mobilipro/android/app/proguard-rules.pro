@@ -51,6 +51,20 @@
     <init>(java.lang.Throwable);
 }
 
+# androidx.work (WorkManager) — utilisé en interne par flutter_background_geolocation pour
+# planifier ses tâches. Root cause du crash au lancement observé en prod ("Unable to get
+# provider androidx.startup.InitializationProvider" -> "Failed to create an instance of class
+# androidx.work.impl.WorkDatabase") : WorkManager génère sa base Room (WorkDatabase_Impl) via
+# un mécanisme que R8 ne détecte pas comme utilisé et supprime silencieusement — le crash
+# survient dès le tout premier ContentProvider chargé par le système au démarrage de l'app,
+# avant même MainActivity, ce qui explique le crash systématique "à l'ouverture" (aucun lien
+# avec les règles Firestore/EventBus ajoutées juste avant, qui restent nécessaires mais ne
+# suffisaient pas).
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class * extends androidx.work.ListenableWorker {
+    <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+
 # Attributs nécessaires pour que les stack traces obfusquées restent
 # ré-associables via --split-debug-info (voir deploy-mobilipro.yml).
 -keepattributes SourceFile,LineNumberTable
