@@ -52,7 +52,12 @@ public class LiveTrackingTokenService {
      */
     public String mintDriverToken(Long tripId, Long driverUserId) {
         String uid = "driver-" + driverUserId;
-        Map<String, Object> claims = Map.of("tripId", tripId, "role", "driver");
+        // tripId en String (pas Long) : firestore.rules compare request.auth.token.tripId à
+        // {tripId}, le segment de chemin du document — toujours une chaîne côté Firestore. Un
+        // claim numérique ne serait jamais égal à cette chaîne (pas de coercition implicite
+        // dans le langage des règles), bloquant silencieusement lecture/écriture malgré un
+        // jeton par ailleurs valide.
+        Map<String, Object> claims = Map.of("tripId", String.valueOf(tripId), "role", "driver");
         try {
             setClaimsCreatingUserIfNeeded(uid, claims);
             String token = FirebaseAuth.getInstance().createCustomToken(uid, claims);
@@ -90,7 +95,9 @@ public class LiveTrackingTokenService {
         }
 
         String uid = "passenger-" + passengerUserId;
-        Map<String, Object> claims = Map.of("tripId", tripId, "role", "passenger");
+        // Même remarque que mintDriverToken : tripId en String pour matcher le segment de
+        // chemin Firestore dans firestore.rules.
+        Map<String, Object> claims = Map.of("tripId", String.valueOf(tripId), "role", "passenger");
         try {
             setClaimsCreatingUserIfNeeded(uid, claims);
             String token = FirebaseAuth.getInstance().createCustomToken(uid, claims);
