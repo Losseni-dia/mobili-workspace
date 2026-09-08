@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -5,149 +7,194 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Script PONCTUEL, autonome — pas un composant applicatif permanent, jamais appelé par le
- * backend. Géocode (une seule fois) les villes distinctes de trip_stops encore sans
- * latitude/longitude, via l'API Mapbox Geocoding (MAPBOX_ACCESS_TOKEN — même token que
- * mapbox.access-token dans /etc/mobili/mobili.env), et génère un fichier SQL avec les UPDATE
- * correspondants, à relire et exécuter manuellement.
+ * backend. À relancer de temps en temps (manuellement) pour rattraper les nouvelles villes
+ * ajoutées via de nouveaux trajets. Interroge lui-même trip_stops (via `psql` en sous-processus
+ * — aucune dépendance JDBC ajoutée) pour trouver les city_label encore sans coordonnées, les
+ * géocode via l'API Mapbox Geocoding, et écrit les UPDATE correspondants dans un fichier SQL à
+ * relire et exécuter manuellement.
  *
- * N'exécute AUCUNE commande SQL lui-même — se contente d'écrire scripts/geocoded-cities.sql.
+ * N'exécute AUCUNE commande d'écriture SQL lui-même — seulement un SELECT en lecture pour
+ * trouver les villes, puis écrit le fichier SQL des UPDATE.
+ *
+ * IMPORTANT — ce que ce script ne peut PAS faire à ta place :
+ *  - Désambiguïser un nom de ville qui existe dans plusieurs pays (ex. "Touba" au Sénégal ET en
+ *    Côte d'Ivoire) — la recherche Mapbox se fait sans filtre pays, donc le 1er résultat mondial
+ *    est retenu, qui peut être le mauvais pays. Les noms listés dans AMBIGUOUS_NAMES ci-dessous
+ *    déclenchent un avertissement explicite dans le fichier de sortie, à vérifier à la main.
+ *  - Détecter des données de test (ex. "Ssss", "Ville desservie 1") au-delà du filtre basique
+ *    ci-dessous (EXCLUDE_PATTERNS) — relis toujours le fichier généré avant de l'exécuter.
  *
  * Usage :
- *   MAPBOX_ACCESS_TOKEN=pk.xxx java GeocodeTripStopCities.java
- *
- * Chaque entrée : { requête envoyée à Mapbox (avec pays pour désambiguïser), code pays ISO
- * 3166-1 alpha-2, liste des city_label variantes trouvées en base à mettre à jour ensemble }.
- * "Touba (CI)" désambiguïsé explicitement du Touba sénégalais (deux vraies villes homonymes) —
- * voir échange avec l'utilisateur, Partie 3.
+ *   MAPBOX_ACCESS_TOKEN=pk.xxx \
+ *   DB_CONNINFO="host=... port=5432 dbname=mobili_db user=postgres sslmode=require" \
+ *   PGPASSWORD=... \
+ *   java GeocodeTripStopCities.java
  */
 public class GeocodeTripStopCities {
 
-    record CityGroup(String query, String countryCode, List<String> variants) {}
+    /** Noms connus pour exister dans plusieurs pays — à vérifier manuellement dans le fichier
+     *  de sortie avant exécution (voir échange Partie 2/3 sur "Touba" CI vs SN). */
+    private static final Set<String> AMBIGUOUS_NAMES = Set.of("touba");
 
-    private static final List<CityGroup> CITIES = List.of(
-        new CityGroup("Accra", "GH", List.of("Accra")),
-        new CityGroup("Assini", "CI", List.of("Assini")),
-        new CityGroup("Bako", "CI", List.of("Bako")),
-        new CityGroup("Bamako", "ML", List.of("Bamako")),
-        new CityGroup("Bangolo", "CI", List.of("Bangolo")),
-        new CityGroup("Biankouman", "CI", List.of("Biankouman")),
-        new CityGroup("Bobo-Dioulasso", "BF", List.of("Bobodioulasso")),
-        new CityGroup("Bougouni", "ML", List.of("Bougouni")),
-        new CityGroup("Bouna", "CI", List.of("Bouna")),
-        new CityGroup("Boundiali", "CI", List.of("Boundiali")),
-        new CityGroup("Bujumbura", "BI", List.of("Bujumbura")),
-        new CityGroup("Conakry", "GN", List.of("Conakry")),
-        new CityGroup("Cotonou", "BJ", List.of("Cotonou")),
-        new CityGroup("Dabou", "CI", List.of("Dabou")),
-        new CityGroup("Dakar", "SN", List.of("Dakar")),
-        new CityGroup("Dimbokro", "CI", List.of("Dimbokro")),
-        new CityGroup("Dosso", "NE", List.of("Dosso")),
-        new CityGroup("Duékoué", "CI", List.of("Duékoué", "Duekoue")),
-        new CityGroup("Elubo", "GH", List.of("Elubo")),
-        new CityGroup("Ferkessédougou", "CI", List.of("Ferké")),
-        new CityGroup("Gaya", "NE", List.of("Gaya")),
-        new CityGroup("Gbéléla", "CI", List.of("Gbéléla")),
-        new CityGroup("Gitega", "BI", List.of("Gitega")),
-        new CityGroup("Grand-Béréby", "CI", List.of("Grand bérébi")),
-        new CityGroup("Grand-Zattry", "CI", List.of("Grand zattry")),
-        new CityGroup("Kankan", "GN", List.of("Kankan")),
-        new CityGroup("Katiola", "CI", List.of("Katiola")),
-        new CityGroup("Kolia", "CI", List.of("Kolia")),
-        new CityGroup("Kouto", "CI", List.of("Kouto")),
-        new CityGroup("Kumasi", "GH", List.of("Kumassi")),
-        new CityGroup("Lakota", "CI", List.of("Lakota")),
-        new CityGroup("Laoudi-Ba", "CI", List.of("Laoudi-ba")),
-        new CityGroup("Lobia", "CI", List.of("Lobia")),
-        new CityGroup("Lomé", "TG", List.of("Lomé")),
-        new CityGroup("Madinani", "CI", List.of("Madinani")),
-        new CityGroup("Malanville", "BJ", List.of("Malanville")),
-        new CityGroup("Méagui", "CI", List.of("Méagui", "Meagui")),
-        new CityGroup("Niakara", "CI", List.of("Niakara")),
-        new CityGroup("Niamey", "NE", List.of("Niamey")),
-        new CityGroup("Niangoloko", "BF", List.of("Niangoloko")),
-        new CityGroup("Noé", "CI", List.of("Noé")),
-        new CityGroup("Odienné", "CI", List.of("Odienne")), // "Odienné" déjà géocodé (voir seed-trip-stop-coordinates.sql) — ici seulement la variante sans accent
-        new CityGroup("Ouangolodougou", "CI", List.of("Ouangolodougou")),
-        new CityGroup("Oumé", "CI", List.of("Oumé")),
-        new CityGroup("Pogo", "CI", List.of("Pogo")),
-        new CityGroup("Sakassou", "CI", List.of("Sakassou")),
-        new CityGroup("Samango", "CI", List.of("Samango")),
-        new CityGroup("San-Pédro", "CI", List.of("San pedro", "San-pedro", "San-pédro")), // "San-Pedro" (avec tiret, sans accent) déjà géocodé
-        new CityGroup("Sassandra", "CI", List.of("Sassandra")),
-        new CityGroup("Sikasso", "ML", List.of("Sikasso")),
-        new CityGroup("Soubré", "CI", List.of("Soubré", "Soubre")),
-        new CityGroup("Tabou", "CI", List.of("Tabou")),
-        new CityGroup("Tanger", "MA", List.of("Tanger")),
-        new CityGroup("Thiaroye", "SN", List.of("Thiaroye")),
-        new CityGroup("Thiès", "SN", List.of("Thiès")),
-        new CityGroup("Tiassale", "CI", List.of("Tiassale")),
-        new CityGroup("Tingrela", "CI", List.of("Tingrela")),
-        new CityGroup("Touba", "CI", List.of("Touba (CI)")), // Touba Côte d'Ivoire — PAS Touba Sénégal, voir désambiguïsation Partie 2/3
-        new CityGroup("Yabayo", "CI", List.of("Yabayo")),
-        new CityGroup("Yamoussoukro", "CI", List.of("Yamassoukro")) // "Yamoussoukro" (orthographe correcte) déjà géocodé
-    );
+    /** Filtre basique anti-données-de-test — pas exhaustif, une relecture manuelle reste
+     *  nécessaire (voir Partie 1 du nettoyage : "Ssss", "Ville desservie N", combinaisons
+     *  "Ville A - Ville B - Ville C", etc.). */
+    private static final Pattern[] EXCLUDE_PATTERNS = {
+        Pattern.compile("^(.)\\1{2,}$", Pattern.CASE_INSENSITIVE), // lettre répétée (Ssss, Dddd, Ffff...)
+        Pattern.compile("^ville desservie \\d+$", Pattern.CASE_INSENSITIVE), // placeholders
+        Pattern.compile("^none$", Pattern.CASE_INSENSITIVE),
+        Pattern.compile(".* - .* - .*"),               // tronçons compressés type "A - B - C"
+    };
+
+    /** Ajoutés manuellement après un géocodage automatique qui les a résolus vers un mauvais
+     *  pays/une mauvaise ville homonyme (voir historique du chat) — la recherche par nom seul,
+     *  même avec biais géographique, ne peut pas fiabiliser ces cas ambigus/tronqués. */
+    private static final Set<String> KNOWN_MANUAL_REVIEW = Set.of("coto", "bobo");
+
+    /** Biaise (sans exclure) les résultats vers l'Afrique de l'Ouest — la plupart des trajets
+     *  sont dans cette zone, mais un vrai trajet européen (ex. Bruxelles/Lille/Paris, trajet de
+     *  test) reste correctement géocodé : `proximity` influence juste le classement, il ne
+     *  filtre pas les autres pays comme le ferait `country`. */
+    private static final String PROXIMITY_ABIDJAN = "-4.0083,5.3600";
 
     private static final Pattern COORD_PATTERN =
         Pattern.compile("\"center\"\\s*:\\s*\\[\\s*(-?[0-9.]+)\\s*,\\s*(-?[0-9.]+)\\s*]");
 
     public static void main(String[] args) throws Exception {
-        String token = System.getenv("MAPBOX_ACCESS_TOKEN");
-        if (token == null || token.isBlank()) {
-            System.err.println("MAPBOX_ACCESS_TOKEN non défini — voir /etc/mobili/mobili.env");
-            System.exit(1);
+        String mapboxToken = requireEnv("MAPBOX_ACCESS_TOKEN");
+        String dbConnInfo = requireEnv("DB_CONNINFO");
+
+        List<String> cities = fetchCitiesMissingCoordinates(dbConnInfo);
+        List<String> filtered = new ArrayList<>();
+        List<String> excluded = new ArrayList<>();
+        for (String city : cities) {
+            if (looksLikeTestData(city) || KNOWN_MANUAL_REVIEW.contains(city.trim().toLowerCase())) {
+                excluded.add(city);
+            } else {
+                filtered.add(city);
+            }
         }
 
-        System.out.println(CITIES.size() + " villes à géocoder (1 appel API chacune, "
-            + "gratuit — tier gratuit Mapbox Geocoding : 100 000 requêtes/mois).");
+        System.out.println(cities.size() + " ville(s) sans coordonnées trouvée(s) en base.");
+        if (!excluded.isEmpty()) {
+            System.out.println(excluded.size() + " exclue(s) par le filtre anti-test (à vérifier "
+                + "quand même à l'oeil, ce filtre n'est pas exhaustif) : " + excluded);
+        }
+        if (filtered.isEmpty()) {
+            System.out.println("Rien à géocoder — toutes les villes ont déjà des coordonnées "
+                + "(ou ont été exclues par le filtre).");
+            return;
+        }
+        System.out.println(filtered.size() + " ville(s) à géocoder (1 appel API Mapbox chacune, "
+            + "gratuit — tier gratuit : 100 000 requêtes/mois).");
 
         HttpClient client = HttpClient.newHttpClient();
         StringBuilder sql = new StringBuilder();
-        sql.append("-- Généré par scripts/GeocodeTripStopCities.java — à relire avant exécution.\n");
-        sql.append("-- Coordonnées issues du 1er résultat Mapbox Geocoding pour chaque requête ci-dessous.\n\n");
+        sql.append("-- Généré automatiquement par scripts/GeocodeTripStopCities.java — à relire avant exécution.\n");
+        sql.append("-- Recherche Mapbox SANS filtre pays (villes découvertes automatiquement, pays inconnu\n");
+        sql.append("-- à l'avance) : vérifier en particulier les lignes marquées AMBIGU ci-dessous.\n\n");
 
-        int ok = 0, failed = 0;
-        for (CityGroup city : CITIES) {
-            String encodedQuery = java.net.URLEncoder.encode(city.query(), StandardCharsets.UTF_8);
+        int ok = 0, failed = 0, ambiguous = 0;
+        for (String city : filtered) {
+            String encodedQuery = java.net.URLEncoder.encode(city, StandardCharsets.UTF_8);
             String url = "https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodedQuery + ".json"
-                + "?access_token=" + token
-                + "&country=" + city.countryCode().toLowerCase()
+                + "?access_token=" + mapboxToken
+                + "&proximity=" + PROXIMITY_ABIDJAN
                 + "&limit=1";
 
             HttpRequest request = HttpRequest.newBuilder(URI.create(url)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             Matcher matcher = COORD_PATTERN.matcher(response.body());
+            boolean isAmbiguous = AMBIGUOUS_NAMES.contains(city.trim().toLowerCase());
             if (response.statusCode() == 200 && matcher.find()) {
                 double lng = Double.parseDouble(matcher.group(1));
                 double lat = Double.parseDouble(matcher.group(2));
-                String variantsInClause = city.variants().stream()
-                    .map(v -> "'" + v.replace("'", "''") + "'")
-                    .reduce((a, b) -> a + ", " + b).orElse("");
+                if (isAmbiguous) {
+                    sql.append("-- ⚠️ AMBIGU (plusieurs pays possibles pour ce nom) — VÉRIFIER avant d'exécuter :\n");
+                    ambiguous++;
+                }
                 sql.append(String.format(java.util.Locale.ROOT,
-                    "UPDATE trip_stops SET latitude = %.4f, longitude = %.4f WHERE city_label IN (%s); -- %s%n",
-                    lat, lng, variantsInClause, city.query()));
-                System.out.println("✅ " + city.query() + " -> " + lat + ", " + lng);
+                    "UPDATE trip_stops SET latitude = %.4f, longitude = %.4f WHERE city_label = '%s';%n",
+                    lat, lng, city.replace("'", "''")));
+                System.out.println((isAmbiguous ? "⚠️ " : "✅ ") + city + " -> " + lat + ", " + lng);
                 ok++;
             } else {
-                sql.append("-- ÉCHEC géocodage : ").append(city.query())
-                   .append(" (variantes : ").append(city.variants()).append(") — statut HTTP ")
-                   .append(response.statusCode()).append(", à traiter manuellement.\n");
-                System.err.println("❌ Échec pour " + city.query() + " (HTTP " + response.statusCode() + ")");
+                sql.append("-- ÉCHEC géocodage : '").append(city.replace("'", "''"))
+                   .append("' — statut HTTP ").append(response.statusCode())
+                   .append(", à traiter manuellement.\n");
+                System.err.println("❌ Échec pour " + city + " (HTTP " + response.statusCode() + ")");
                 failed++;
             }
         }
 
-        Path outPath = Path.of("scripts/geocoded-cities.sql");
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+        // Écrit dans le répertoire courant (pas "scripts/..." en dur) — ce script est lancé
+        // depuis n'importe où (ex. /tmp sur le serveur), pas forcément depuis la racine du repo.
+        Path outPath = Path.of("geocoded-cities-" + timestamp + ".sql");
         Files.writeString(outPath, sql.toString());
         System.out.println();
-        System.out.println(ok + " villes géocodées, " + failed + " échecs.");
+        System.out.println(ok + " géocodée(s) (dont " + ambiguous + " ambiguë(s) à vérifier), " + failed + " échec(s).");
         System.out.println("Fichier écrit : " + outPath.toAbsolutePath());
-        System.out.println("Relis-le avant de l'exécuter sur la base — aucune commande SQL n'a été lancée.");
+        System.out.println("Relis-le avant de l'exécuter sur la base — aucune commande d'écriture SQL n'a été lancée.");
+    }
+
+    private static boolean looksLikeTestData(String city) {
+        for (Pattern p : EXCLUDE_PATTERNS) {
+            if (p.matcher(city).matches() || p.matcher(city).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Lit trip_stops via `psql -t -A` (sortie brute, une valeur par ligne) — pas de driver
+     *  JDBC ajouté, réutilise le psql déjà présent sur ce serveur. PGPASSWORD (env) évite le
+     *  prompt interactif. */
+    private static List<String> fetchCitiesMissingCoordinates(String dbConnInfo) throws Exception {
+        String query = "SELECT DISTINCT city_label FROM trip_stops "
+            + "WHERE latitude IS NULL OR longitude IS NULL ORDER BY city_label;";
+        ProcessBuilder pb = new ProcessBuilder("psql", dbConnInfo, "-t", "-A", "-c", query);
+        pb.redirectErrorStream(false);
+        Process process = pb.start();
+
+        List<String> cities = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.isBlank()) {
+                    cities.add(line.trim());
+                }
+            }
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            try (BufferedReader err = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                err.lines().forEach(System.err::println);
+            }
+            throw new IllegalStateException("psql a échoué (code " + exitCode + ") — voir stderr ci-dessus.");
+        }
+        return cities;
+    }
+
+    private static String requireEnv(String name) {
+        String value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            System.err.println(name + " non défini.");
+            System.exit(1);
+        }
+        return value;
     }
 }
