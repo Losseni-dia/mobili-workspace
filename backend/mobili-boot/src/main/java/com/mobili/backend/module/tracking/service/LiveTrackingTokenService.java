@@ -1,7 +1,9 @@
 package com.mobili.backend.module.tracking.service;
 
+import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
 
 import com.mobili.backend.module.booking.booking.entity.Booking;
 import com.mobili.backend.module.booking.booking.entity.BookingStatus;
@@ -52,7 +54,7 @@ public class LiveTrackingTokenService {
         String uid = "driver-" + driverUserId;
         Map<String, Object> claims = Map.of("tripId", tripId, "role", "driver");
         try {
-            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+            setClaimsCreatingUserIfNeeded(uid, claims);
             String token = FirebaseAuth.getInstance().createCustomToken(uid, claims);
             log.info("🚀 Jeton de tracking chauffeur créé pour Trip #{} (uid={})", tripId, uid);
             return token;
@@ -90,7 +92,7 @@ public class LiveTrackingTokenService {
         String uid = "passenger-" + passengerUserId;
         Map<String, Object> claims = Map.of("tripId", tripId, "role", "passenger");
         try {
-            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+            setClaimsCreatingUserIfNeeded(uid, claims);
             String token = FirebaseAuth.getInstance().createCustomToken(uid, claims);
             log.info("🚀 Jeton de tracking passager créé pour Trip #{} (uid={})", tripId, uid);
             return token;
@@ -98,6 +100,26 @@ public class LiveTrackingTokenService {
             log.error("💥 Échec création jeton de tracking passager pour Trip #{} : {}", tripId, e.getMessage());
             throw new MobiliException(MobiliErrorCode.INTERNAL_SERVER_ERROR,
                     "Échec de préparation du suivi temps réel.");
+        }
+    }
+
+    /**
+     * setCustomUserClaims exige que l'utilisateur Firebase existe déjà (contrairement à
+     * createCustomToken, qui accepte n'importe quel uid) — la toute première fois qu'un chauffeur
+     * ou passager démarre le suivi temps réel, cet uid ("driver-{id}"/"passenger-{id}") n'existe
+     * pas encore côté Firebase et l'appel échoue avec USER_NOT_FOUND. On le crée alors à la volée
+     * avant de réessayer — idempotent, les appels suivants pour le même uid passent directement.
+     */
+    private void setClaimsCreatingUserIfNeeded(String uid, Map<String, Object> claims) throws FirebaseAuthException {
+        try {
+            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+        } catch (FirebaseAuthException e) {
+            if (e.getAuthErrorCode() != AuthErrorCode.USER_NOT_FOUND) {
+                throw e;
+            }
+            log.info("ℹ️ Utilisateur Firebase {} inexistant — création avant mint du jeton.", uid);
+            FirebaseAuth.getInstance().createUser(new UserRecord.CreateRequest().setUid(uid));
+            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
         }
     }
 
