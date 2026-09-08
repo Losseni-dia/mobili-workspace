@@ -61,14 +61,20 @@ class _TripLiveMapState extends ConsumerState<TripLiveMap> {
   }
 
   Future<void> _authenticate() async {
-    final response = await ApiClient.instance.dio.get<Map<String, dynamic>>(
-      '/trips/${widget.tripId}/live-tracking-token',
-    );
-    final token = response.data?['token'] as String?;
-    if (token == null || token.isEmpty) {
-      throw StateError('Jeton de tracking absent de la réponse backend.');
+    try {
+      final response = await ApiClient.instance.dio.get<Map<String, dynamic>>(
+        '/trips/${widget.tripId}/live-tracking-token',
+      );
+      final token = response.data?['token'] as String?;
+      if (token == null || token.isEmpty) {
+        throw StateError('Jeton de tracking absent de la réponse backend.');
+      }
+      await fb_auth.FirebaseAuth.instance.signInWithCustomToken(token);
+      debugPrint('[TripLiveMap] ✅ Authentifié pour Trip #${widget.tripId}');
+    } catch (e) {
+      debugPrint('[TripLiveMap] ❌ Auth échouée pour Trip #${widget.tripId} : $e');
+      rethrow;
     }
-    await fb_auth.FirebaseAuth.instance.signInWithCustomToken(token);
   }
 
   @override
@@ -103,10 +109,15 @@ class _TripLiveMapState extends ConsumerState<TripLiveMap> {
           .doc('${widget.tripId}')
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          debugPrint('[TripLiveMap] ❌ Erreur stream Firestore Trip #${widget.tripId} : ${snapshot.error}');
+        }
         final data = snapshot.data?.data();
         final lat = (data?['lat'] as num?)?.toDouble();
         final lng = (data?['lng'] as num?)?.toDouble();
         final timestamp = data?['timestamp'] as Timestamp?;
+        debugPrint('[TripLiveMap] Snapshot Trip #${widget.tripId} : '
+            'exists=${snapshot.data?.exists}, lat=$lat, lng=$lng');
 
         if (lat != null && lng != null) {
           // Alimente tripEtaProvider (recalcul ETA toutes les 5 min, jamais

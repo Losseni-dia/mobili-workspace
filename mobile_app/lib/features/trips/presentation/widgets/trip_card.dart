@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/trip.dart';
+import '../../providers/trip_provider.dart';
+import 'trip_live_eta_feed.dart';
 
 class TripCard extends StatelessWidget {
   const TripCard({
@@ -302,15 +305,43 @@ class _EscalesChips extends StatelessWidget {
 // Badge trajet déjà parti ("En cours" / "En route vers X")
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _InProgressBadge extends StatelessWidget {
+class _InProgressBadge extends ConsumerWidget {
   const _InProgressBadge({required this.trip});
   final Trip trip;
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // TripLiveEtaFeed n'affiche rien par lui-même — il alimente juste
+    // tripEtaProvider en position (silencieusement sans effet si ce
+    // passager n'a pas de réservation active sur ce trajet précis, cas
+    // normal pour un trajet d'un autre voyageur visible dans le catalogue).
+    return TripLiveEtaFeed(
+      tripId: trip.id,
+      child: Consumer(
+        builder: (context, ref, _) {
+          final eta = ref.watch(tripEtaProvider(trip.id)).eta;
+          final destination = eta?.destinationCity ?? trip.nextStopCity;
+          final String label;
+          if (destination == null) {
+            label = 'En cours';
+          } else if (eta != null && eta.available) {
+            label = 'En route vers $destination — dans ${eta.durationMinutes} min';
+          } else {
+            label = 'En route vers $destination';
+          }
+          return _InProgressBadgeContent(label: label);
+        },
+      ),
+    );
+  }
+}
+
+class _InProgressBadgeContent extends StatelessWidget {
+  const _InProgressBadgeContent({required this.label});
+  final String label;
+
+  @override
   Widget build(BuildContext context) {
-    final label = trip.nextStopCity != null
-        ? 'En route vers ${trip.nextStopCity}'
-        : 'En cours';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

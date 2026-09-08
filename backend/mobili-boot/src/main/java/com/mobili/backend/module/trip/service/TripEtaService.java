@@ -71,6 +71,8 @@ public class TripEtaService {
             try {
                 DirectionsResult result = directionsOrchestratorService.getDirectionsWithFallback(request);
                 response = TripEtaResponse.available(nextStop.getCityLabel(), result);
+                log.info("✅ ETA calculée pour Trip #{} -> {} : {}s ({}).",
+                        tripId, nextStop.getCityLabel(), result.durationSeconds(), result.provider());
             } catch (Exception e) {
                 // Ni Mapbox ni Google Maps n'ont pu calculer d'itinéraire (aucune route possible
                 // entre les deux points, ou panne réseau des deux fournisseurs) — dégrade
