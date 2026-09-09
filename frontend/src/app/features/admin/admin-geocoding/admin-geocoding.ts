@@ -8,23 +8,128 @@ import {
 } from '../../../core/services/admin/admin.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 
-/** Pays desservis en pratique par Mobili — restreint la recherche Mapbox à ce pays pour lever
- *  une ambiguïté (ex. "Touba" CI vs SN) ou corriger un résultat aberrant (ex. "Pogo" -> Pologne).
- *  "" = recherche mondiale avec simple biais de proximité (comportement d'origine). */
-export const GEOCODING_COUNTRY_OPTIONS: { code: string; label: string }[] = [
-  { code: '', label: 'Aucun (recherche mondiale)' },
-  { code: 'CI', label: "Côte d'Ivoire" },
-  { code: 'SN', label: 'Sénégal' },
-  { code: 'ML', label: 'Mali' },
-  { code: 'BF', label: 'Burkina Faso' },
-  { code: 'GH', label: 'Ghana' },
-  { code: 'TG', label: 'Togo' },
-  { code: 'BJ', label: 'Bénin' },
-  { code: 'NE', label: 'Niger' },
-  { code: 'GN', label: 'Guinée' },
-  { code: 'BI', label: 'Burundi' },
-  { code: 'MA', label: 'Maroc' },
+/** Restreint la recherche Mapbox à ce pays pour lever une ambiguïté (ex. "Touba" CI vs SN) ou
+ *  corriger un résultat aberrant (ex. "Pogo" -> Pologne, "Bruxelles" -> hameau français près de
+ *  Chartres). "" = recherche mondiale avec simple biais de proximité (comportement d'origine).
+ *  Couvre l'Afrique (trajets réels de la plateforme) ET l'Europe (tests ponctuels type Bruxelles
+ *  -> Côte d'Ivoire, voir historique tracking temps réel). */
+export const GEOCODING_COUNTRY_OPTIONS: { code: string; label: string; group: string }[] = [
+  { code: '', label: 'Aucun (recherche mondiale)', group: '' },
+
+  { code: 'DZ', label: 'Algérie', group: 'Afrique' },
+  { code: 'AO', label: 'Angola', group: 'Afrique' },
+  { code: 'BJ', label: 'Bénin', group: 'Afrique' },
+  { code: 'BW', label: 'Botswana', group: 'Afrique' },
+  { code: 'BF', label: 'Burkina Faso', group: 'Afrique' },
+  { code: 'BI', label: 'Burundi', group: 'Afrique' },
+  { code: 'CV', label: 'Cap-Vert', group: 'Afrique' },
+  { code: 'CM', label: 'Cameroun', group: 'Afrique' },
+  { code: 'CF', label: 'République centrafricaine', group: 'Afrique' },
+  { code: 'TD', label: 'Tchad', group: 'Afrique' },
+  { code: 'KM', label: 'Comores', group: 'Afrique' },
+  { code: 'CG', label: 'Congo', group: 'Afrique' },
+  { code: 'CD', label: 'RD Congo', group: 'Afrique' },
+  { code: 'DJ', label: 'Djibouti', group: 'Afrique' },
+  { code: 'EG', label: 'Égypte', group: 'Afrique' },
+  { code: 'GQ', label: 'Guinée équatoriale', group: 'Afrique' },
+  { code: 'ER', label: 'Érythrée', group: 'Afrique' },
+  { code: 'SZ', label: 'Eswatini', group: 'Afrique' },
+  { code: 'ET', label: 'Éthiopie', group: 'Afrique' },
+  { code: 'GA', label: 'Gabon', group: 'Afrique' },
+  { code: 'GM', label: 'Gambie', group: 'Afrique' },
+  { code: 'GH', label: 'Ghana', group: 'Afrique' },
+  { code: 'GN', label: 'Guinée', group: 'Afrique' },
+  { code: 'GW', label: 'Guinée-Bissau', group: 'Afrique' },
+  { code: 'CI', label: "Côte d'Ivoire", group: 'Afrique' },
+  { code: 'KE', label: 'Kenya', group: 'Afrique' },
+  { code: 'LS', label: 'Lesotho', group: 'Afrique' },
+  { code: 'LR', label: 'Liberia', group: 'Afrique' },
+  { code: 'LY', label: 'Libye', group: 'Afrique' },
+  { code: 'MG', label: 'Madagascar', group: 'Afrique' },
+  { code: 'MW', label: 'Malawi', group: 'Afrique' },
+  { code: 'ML', label: 'Mali', group: 'Afrique' },
+  { code: 'MR', label: 'Mauritanie', group: 'Afrique' },
+  { code: 'MU', label: 'Maurice', group: 'Afrique' },
+  { code: 'MA', label: 'Maroc', group: 'Afrique' },
+  { code: 'MZ', label: 'Mozambique', group: 'Afrique' },
+  { code: 'NA', label: 'Namibie', group: 'Afrique' },
+  { code: 'NE', label: 'Niger', group: 'Afrique' },
+  { code: 'NG', label: 'Nigeria', group: 'Afrique' },
+  { code: 'RW', label: 'Rwanda', group: 'Afrique' },
+  { code: 'ST', label: 'Sao Tomé-et-Principe', group: 'Afrique' },
+  { code: 'SN', label: 'Sénégal', group: 'Afrique' },
+  { code: 'SC', label: 'Seychelles', group: 'Afrique' },
+  { code: 'SL', label: 'Sierra Leone', group: 'Afrique' },
+  { code: 'SO', label: 'Somalie', group: 'Afrique' },
+  { code: 'ZA', label: 'Afrique du Sud', group: 'Afrique' },
+  { code: 'SS', label: 'Soudan du Sud', group: 'Afrique' },
+  { code: 'SD', label: 'Soudan', group: 'Afrique' },
+  { code: 'TZ', label: 'Tanzanie', group: 'Afrique' },
+  { code: 'TG', label: 'Togo', group: 'Afrique' },
+  { code: 'TN', label: 'Tunisie', group: 'Afrique' },
+  { code: 'UG', label: 'Ouganda', group: 'Afrique' },
+  { code: 'ZM', label: 'Zambie', group: 'Afrique' },
+  { code: 'ZW', label: 'Zimbabwe', group: 'Afrique' },
+
+  { code: 'AL', label: 'Albanie', group: 'Europe' },
+  { code: 'AD', label: 'Andorre', group: 'Europe' },
+  { code: 'AT', label: 'Autriche', group: 'Europe' },
+  { code: 'BY', label: 'Biélorussie', group: 'Europe' },
+  { code: 'BE', label: 'Belgique', group: 'Europe' },
+  { code: 'BA', label: 'Bosnie-Herzégovine', group: 'Europe' },
+  { code: 'BG', label: 'Bulgarie', group: 'Europe' },
+  { code: 'HR', label: 'Croatie', group: 'Europe' },
+  { code: 'CY', label: 'Chypre', group: 'Europe' },
+  { code: 'CZ', label: 'Tchéquie', group: 'Europe' },
+  { code: 'DK', label: 'Danemark', group: 'Europe' },
+  { code: 'EE', label: 'Estonie', group: 'Europe' },
+  { code: 'FI', label: 'Finlande', group: 'Europe' },
+  { code: 'FR', label: 'France', group: 'Europe' },
+  { code: 'DE', label: 'Allemagne', group: 'Europe' },
+  { code: 'GR', label: 'Grèce', group: 'Europe' },
+  { code: 'HU', label: 'Hongrie', group: 'Europe' },
+  { code: 'IS', label: 'Islande', group: 'Europe' },
+  { code: 'IE', label: 'Irlande', group: 'Europe' },
+  { code: 'IT', label: 'Italie', group: 'Europe' },
+  { code: 'XK', label: 'Kosovo', group: 'Europe' },
+  { code: 'LV', label: 'Lettonie', group: 'Europe' },
+  { code: 'LI', label: 'Liechtenstein', group: 'Europe' },
+  { code: 'LT', label: 'Lituanie', group: 'Europe' },
+  { code: 'LU', label: 'Luxembourg', group: 'Europe' },
+  { code: 'MT', label: 'Malte', group: 'Europe' },
+  { code: 'MD', label: 'Moldavie', group: 'Europe' },
+  { code: 'MC', label: 'Monaco', group: 'Europe' },
+  { code: 'ME', label: 'Monténégro', group: 'Europe' },
+  { code: 'NL', label: 'Pays-Bas', group: 'Europe' },
+  { code: 'MK', label: 'Macédoine du Nord', group: 'Europe' },
+  { code: 'NO', label: 'Norvège', group: 'Europe' },
+  { code: 'PL', label: 'Pologne', group: 'Europe' },
+  { code: 'PT', label: 'Portugal', group: 'Europe' },
+  { code: 'RO', label: 'Roumanie', group: 'Europe' },
+  { code: 'RU', label: 'Russie', group: 'Europe' },
+  { code: 'SM', label: 'Saint-Marin', group: 'Europe' },
+  { code: 'RS', label: 'Serbie', group: 'Europe' },
+  { code: 'SK', label: 'Slovaquie', group: 'Europe' },
+  { code: 'SI', label: 'Slovénie', group: 'Europe' },
+  { code: 'ES', label: 'Espagne', group: 'Europe' },
+  { code: 'SE', label: 'Suède', group: 'Europe' },
+  { code: 'CH', label: 'Suisse', group: 'Europe' },
+  { code: 'UA', label: 'Ukraine', group: 'Europe' },
+  { code: 'GB', label: 'Royaume-Uni', group: 'Europe' },
+  { code: 'VA', label: 'Vatican', group: 'Europe' },
 ];
+
+/** Regroupe GEOCODING_COUNTRY_OPTIONS par continent pour l'affichage en <optgroup> — l'option
+ *  "" (recherche mondiale) reste hors groupe, affichée seule en tête de liste. */
+export function groupedCountryOptions() {
+  const groups = new Map<string, { code: string; label: string }[]>();
+  for (const opt of GEOCODING_COUNTRY_OPTIONS) {
+    if (!opt.group) continue;
+    if (!groups.has(opt.group)) groups.set(opt.group, []);
+    groups.get(opt.group)!.push(opt);
+  }
+  return Array.from(groups.entries()).map(([group, options]) => ({ group, options }));
+}
 
 /** Une ligne d'aperçu + son état d'édition dans l'écran (sélection, nom corrigé, pays choisi). */
 interface GeocodingRow extends GeocodingPreviewItem {
@@ -49,7 +154,8 @@ export class AdminGeocoding {
   private admin = inject(AdminService);
   private toast = inject(NotificationService);
 
-  countryOptions = GEOCODING_COUNTRY_OPTIONS;
+  worldOption = GEOCODING_COUNTRY_OPTIONS[0];
+  countryGroups = groupedCountryOptions();
 
   rows = signal<GeocodingRow[]>([]);
   loading = signal(false);

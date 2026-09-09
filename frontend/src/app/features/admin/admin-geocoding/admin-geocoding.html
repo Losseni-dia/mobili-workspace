@@ -60,8 +60,13 @@
                 </td>
                 <td>
                   <select class="country-select" [ngModel]="row.country" (ngModelChange)="updateCountry(row, $event)">
-                    @for (opt of countryOptions; track opt.code) {
-                      <option [value]="opt.code">{{ opt.label }}</option>
+                    <option [value]="worldOption.code">{{ worldOption.label }}</option>
+                    @for (grp of countryGroups; track grp.group) {
+                      <optgroup [label]="grp.group">
+                        @for (opt of grp.options; track opt.code) {
+                          <option [value]="opt.code">{{ opt.label }}</option>
+                        }
+                      </optgroup>
                     }
                   </select>
                 </td>
