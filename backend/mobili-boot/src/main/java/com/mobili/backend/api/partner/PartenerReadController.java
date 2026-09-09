@@ -3,15 +3,11 @@ package com.mobili.backend.api.partner;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.partner.dto.PartnerProfileDTO;
 import com.mobili.backend.module.partner.dto.mapper.PartnerMapper;
 import com.mobili.backend.module.partner.service.PartnerService;
-import com.mobili.backend.shared.mobiliError.exception.MobiliErrorCode;
-import com.mobili.backend.shared.mobiliError.exception.MobiliException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,14 +32,18 @@ public class PartenerReadController {
         return partenaireMapper.toProfileDto(partenaireService.findById(id));
     }
 
+    /**
+     * Pas de {@code @AuthenticationPrincipal UserPrincipal} ici : une connexion gare
+     * s'authentifie via {@code StationPrincipal}, pas {@code UserPrincipal} — l'exiger en
+     * paramètre le laissait `null` pour ce cas (Spring ne fait pas correspondre le type), d'où un
+     * 403 "Utilisateur non identifié" systématique pour toute gare appelant cet endpoint (constaté
+     * en test : add-trip côté gare ne pouvait jamais charger le pays de la société, donc jamais de
+     * suggestions de ville). PartnerService.getCurrentPartner() lit déjà l'authentification
+     * lui-même et gère nativement les deux types de principal — on s'appuie dessus.
+     */
     @GetMapping("/my-company")
     @PreAuthorize("hasAnyRole('PARTNER', 'GARE', 'ADMIN','STATION')")
-    public PartnerProfileDTO getMyCompany(@AuthenticationPrincipal UserPrincipal principal) {
-
-        if (principal == null || principal.getUser() == null) {
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Utilisateur non identifié");
-        }
-
+    public PartnerProfileDTO getMyCompany() {
         return partenaireMapper.toProfileDto(
                 partenaireService.getCurrentPartnerEnsuringRegistrationCode());
     }
