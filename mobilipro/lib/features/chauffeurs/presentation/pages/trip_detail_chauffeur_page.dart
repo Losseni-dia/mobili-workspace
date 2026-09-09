@@ -309,46 +309,9 @@ class _TripDetailChauffeurPageState
           ],
         ),
         actions: [
-          if (_trip.isUpcoming)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ElevatedButton.icon(
-                onPressed: _isStarting ? null : _startTrip,
-                icon: _isStarting
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          color: AppColors.mobiliBlueDeep,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.play_arrow_rounded,
-                        size: 18,
-                        color: AppColors.mobiliBlueDeep,
-                      ),
-                label: Text(
-                  _isStarting ? '...' : 'Démarrer',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.mobiliBlueDeep,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.mobiliYellow,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
+          // "Démarrer" déplacé sous le bandeau infos (voir body) : trop petit
+          // et trop discret ici pour une action aussi centrale (retour
+          // utilisateur — doit être "en bas, en grand, bien visible").
           // Modifier/Supprimer : réservé aux trajets covoiturage de
           // l'organisateur lui-même — jamais sur un trajet ASSIGNED (le
           // chauffeur compagnie ne possède pas ses trajets).
@@ -396,6 +359,50 @@ class _TripDetailChauffeurPageState
       body: Column(
         children: [
           _TripInfoBanner(trip: _trip),
+          // Bouton principal "Démarrer" — grand, pleine largeur, toujours
+          // visible quel que soit l'onglet actif (contrairement à l'ancien
+          // bouton discret dans l'AppBar). Fait à la fois passer le trajet
+          // EN_COURS et enregistrer le départ du premier arrêt en un seul
+          // tap (voir TripService.startChauffeurTrip + handleTripJustStarted).
+          if (_trip.isUpcoming)
+            Container(
+              width: double.infinity,
+              color: AppColors.white,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: ElevatedButton.icon(
+                onPressed: _isStarting ? null : _startTrip,
+                icon: _isStarting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppColors.mobiliBlueDeep,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 22,
+                        color: AppColors.mobiliBlueDeep,
+                      ),
+                label: Text(
+                  _isStarting ? 'Démarrage...' : 'Démarrer le trajet',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.mobiliBlueDeep,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.mobiliYellow,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: TabBarView(
               controller: _tabCtrl,
@@ -1105,9 +1112,10 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                           ),
                           const SizedBox(height: 20),
                           // Arrêt 0 avant le tout premier départ : pas de bouton
-                          // "Quitter [ville origine]" ici — "Démarrer" (AppBar)
-                          // fait déjà les deux (voir handleTripJustStarted),
-                          // avoir les deux actions visibles pour le même
+                          // "Quitter [ville origine]" ici — le grand bouton
+                          // "Démarrer le trajet" (au-dessus des onglets, voir
+                          // body de TripDetailChauffeurPage) fait déjà les
+                          // deux, avoir les deux actions visibles pour le même
                           // événement prêtait à confusion (retour utilisateur).
                           if (_currentStop == 0 && widget.trip.isUpcoming)
                             Container(
@@ -1125,7 +1133,7 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Appuyez sur "Démarrer" en haut pour commencer le trajet.',
+                                      'Utilisez le bouton "Démarrer le trajet" en haut de l\'écran.',
                                       style: TextStyle(fontSize: 12.5, color: AppColors.mobiliBlueDeep),
                                     ),
                                   ),
