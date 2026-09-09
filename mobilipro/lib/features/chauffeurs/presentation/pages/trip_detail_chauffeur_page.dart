@@ -176,6 +176,7 @@ class _TripDetailChauffeurPageState
   late TabController _tabCtrl;
   bool _isStarting = false;
   late ChauffeurTripItem _trip;
+  final _stopsTabKey = GlobalKey<_StopsTabState>();
 
   @override
   void initState() {
@@ -221,6 +222,13 @@ class _TripDetailChauffeurPageState
       );
       if (mounted) {
         _applyTripStatus('EN_COURS');
+        // Le backend (TripService.startChauffeurTrip) enregistre déjà en un
+        // seul appel le statut EN_COURS ET le départ du premier arrêt — on
+        // relaie ça à l'onglet Arrêts pour épargner un second tap "Quitter
+        // [ville origine]" sur un événement déjà acté côté serveur (retour
+        // utilisateur : "le chauffeur est obligé de taper démarrer, est-ce
+        // qu'on ne peut pas fusionner en une seule action ?").
+        _stopsTabKey.currentState?.handleTripJustStarted();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Trajet démarré ✅'),
@@ -393,7 +401,11 @@ class _TripDetailChauffeurPageState
               controller: _tabCtrl,
               children: [
                 _PassengersTab(tripId: _trip.id),
-                _StopsTab(trip: _trip, onStatusChanged: _applyTripStatus),
+                _StopsTab(
+                  key: _stopsTabKey,
+                  trip: _trip,
+                  onStatusChanged: _applyTripStatus,
+                ),
                 QrScannerWidget(tripId: _trip.id, showResultOverlay: true),
               ],
             ),
@@ -666,7 +678,7 @@ class _PassengersTabState extends ConsumerState<_PassengersTab> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StopsTab extends ConsumerStatefulWidget {
-  const _StopsTab({required this.trip, required this.onStatusChanged});
+  const _StopsTab({super.key, required this.trip, required this.onStatusChanged});
   final ChauffeurTripItem trip;
   final ValueChanged<String> onStatusChanged;
 
@@ -743,6 +755,32 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
     } finally {
       if (mounted) setState(() => _isRecordingDeparture = false);
     }
+  }
+
+  /// Appelé par _TripDetailChauffeurPageState juste après un "Démarrer"
+  /// réussi (bouton AppBar) — TripService.startChauffeurTrip enregistre déjà
+  /// côté backend, en un seul appel, à la fois le statut EN_COURS ET le
+  /// départ du tout premier arrêt (voir commentaire backend). Sans ce
+  /// relais, l'onglet Arrêts restait bloqué sur l'arrêt 0 et le chauffeur
+  /// devait taper une seconde fois "Quitter [ville origine]" pour un
+  /// événement déjà enregistré côté serveur — deux taps pour une seule
+  /// action logique ("le trajet démarre"). Idempotent : ne fait rien si déjà
+  /// avancé (double appel, ou trajet rouvert après un premier démarrage).
+  void handleTripJustStarted() {
+    if (!mounted || _currentStop != 0 || _tripEnded) return;
+    final stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull;
+    if (stops == null || stops.length <= 1) {
+      // Un seul arrêt (trajet dégénéré) : rien à avancer, le départ du
+      // premier arrêt = déjà l'arrivée, le backend l'a déjà mis TERMINÉ.
+      return;
+    }
+    setState(() => _currentStop = 1);
+    _refreshStop();
+    unawaited(LiveTrackingService.instance.start(
+      widget.trip.id,
+      onAutoDeparture: _handleAutoDeparture,
+    ));
+    _updateGeofenceWatch();
   }
 
   /// Appelé par LiveTrackingService quand un départ est détecté
@@ -1066,73 +1104,103 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                                   ),
                           ),
                           const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _isRecordingDeparture
-                                  ? null
-                                  : () => _recordDeparture(
-                                      currentStopName,
-                                      isLastStop,
+                          // Arrêt 0 avant le tout premier départ : pas de bouton
+                          // "Quitter [ville origine]" ici — "Démarrer" (AppBar)
+                          // fait déjà les deux (voir handleTripJustStarted),
+                          // avoir les deux actions visibles pour le même
+                          // événement prêtait à confusion (retour utilisateur).
+                          if (_currentStop == 0 && widget.trip.isUpcoming)
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: AppColors.mobiliBlue.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.mobiliBlue.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.info_outline_rounded, size: 18, color: AppColors.mobiliBlue),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Appuyez sur "Démarrer" en haut pour commencer le trajet.',
+                                      style: TextStyle(fontSize: 12.5, color: AppColors.mobiliBlueDeep),
                                     ),
-                              icon: _isRecordingDeparture
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
+                                  ),
+                                ],
+                              ),
+                            )
+                          else ...[
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: _isRecordingDeparture
+                                    ? null
+                                    : () => _recordDeparture(
+                                        currentStopName,
+                                        isLastStop,
                                       ),
-                                    )
-                                  : Icon(
-                                      isLastStop
-                                          ? Icons.flag_rounded
-                                          : Icons.directions_bus_rounded,
-                                      size: 18,
-                                    ),
-                              label: Text(
-                                _isRecordingDeparture
-                                    ? 'Enregistrement...'
-                                    : isLastStop
-                                    ? 'Terminer le trajet'
-                                    : 'Quitter $currentStopName',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
+                                icon: _isRecordingDeparture
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(
+                                        isLastStop
+                                            ? Icons.flag_rounded
+                                            : Icons.directions_bus_rounded,
+                                        size: 18,
+                                      ),
+                                label: Text(
+                                  _isRecordingDeparture
+                                      ? 'Enregistrement...'
+                                      : isLastStop
+                                      ? 'Terminer le trajet'
+                                      : 'Quitter $currentStopName',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isLastStop
-                                    ? AppColors.danger
-                                    : AppColors.mobiliBlue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isLastStop
+                                      ? AppColors.danger
+                                      : AppColors.mobiliBlue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: _isRecordingDeparture
-                                  ? null
-                                  : _undoLastDeparture,
-                              icon: const Icon(
-                                Icons.undo_rounded,
-                                size: 14,
-                                color: AppColors.gray400,
-                              ),
-                              label: const Text(
-                                'Annuler le dernier départ',
-                                style: TextStyle(
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: _isRecordingDeparture
+                                    ? null
+                                    : _undoLastDeparture,
+                                icon: const Icon(
+                                  Icons.undo_rounded,
+                                  size: 14,
                                   color: AppColors.gray400,
-                                  fontSize: 12,
+                                ),
+                                label: const Text(
+                                  'Annuler le dernier départ',
+                                  style: TextStyle(
+                                    color: AppColors.gray400,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
