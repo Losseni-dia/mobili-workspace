@@ -183,6 +183,14 @@ public class PartnerService {
             p.setRegistrationCode(generateUniqueRegistrationCode());
             p = partenaireRepository.save(p);
         }
+        // Force le chargement complet de la relation lazy AVANT la fin de la transaction —
+        // sinon PartnerMapper.toProfileDto (appelé dans le contrôleur, hors session puisque
+        // spring.jpa.open-in-view=false) lève une LazyInitializationException dès qu'il accède
+        // à country.getName() (ajouté avec le @Mapping countryId/countryName ; getId() seul
+        // n'aurait pas suffi à révéler le problème — un proxy Hibernate connaît déjà son id sans
+        // toucher la base, contrairement aux autres colonnes). 500 constaté en test après ce
+        // changement.
+        org.hibernate.Hibernate.initialize(p.getCountry());
         return p;
     }
 
