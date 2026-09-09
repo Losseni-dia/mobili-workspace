@@ -23,6 +23,10 @@ public class TripStopSyncService {
     /** Délai entre deux arrêts consécutifs pour l’horaire planifié (MVP). */
     public static final int PLANNED_LEG_MINUTES = 60;
 
+    /** Un arrêt déjà résolu (ville + coordonnées si connues) — voir TripService.buildStructuredStops. */
+    public record ResolvedStop(String cityLabel, Double latitude, Double longitude) {
+    }
+
     public void syncStopsForTrip(Trip trip) {
         trip.getStops().clear();
         List<String> labels = buildCityLabels(trip);
@@ -32,6 +36,32 @@ public class TripStopSyncService {
             stop.setTrip(trip);
             stop.setStopIndex(i);
             stop.setCityLabel(labels.get(i));
+            stop.setPlannedDepartureAt(base.plusMinutes((long) i * PLANNED_LEG_MINUTES));
+            trip.getStops().add(stop);
+        }
+    }
+
+    /**
+     * Même reconstruction que {@link #syncStopsForTrip(Trip)}, mais à partir d'arrêts déjà résolus
+     * vers de vraies villes (cityId/coordonnées connues) au lieu de redécouper
+     * {@code trip.getMoreInfo()} sur des virgules — utilisé quand le client envoie
+     * {@code TripRequestDTO.stops}/{@code departureCityId}/{@code arrivalCityId} (voir
+     * TripService.save). Les coordonnées, quand présentes, alimentent le calcul de durée réelle
+     * (module routing) au lieu du forfait {@link #PLANNED_LEG_MINUTES} par tronçon.
+     */
+    public void syncStopsForTrip(Trip trip, List<ResolvedStop> resolvedStops) {
+        trip.getStops().clear();
+        LocalDateTime base = trip.getDepartureDateTime();
+        for (int i = 0; i < resolvedStops.size(); i++) {
+            ResolvedStop r = resolvedStops.get(i);
+            TripStop stop = new TripStop();
+            stop.setTrip(trip);
+            stop.setStopIndex(i);
+            stop.setCityLabel(r.cityLabel());
+            stop.setLatitude(r.latitude());
+            stop.setLongitude(r.longitude());
+            // TODO(B3) : remplacer par la durée réelle (DirectionsOrchestratorService) quand les
+            // coordonnées des deux extrémités du tronçon sont connues ; repli sur ce forfait sinon.
             stop.setPlannedDepartureAt(base.plusMinutes((long) i * PLANNED_LEG_MINUTES));
             trip.getStops().add(stop);
         }

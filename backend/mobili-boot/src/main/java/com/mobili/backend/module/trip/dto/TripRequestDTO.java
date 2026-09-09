@@ -34,6 +34,15 @@ public class TripRequestDTO {
     @NotBlank(message = "La ville d'arrivée est obligatoire")
     private String arrivalCity;
 
+    /**
+     * Ville choisie dans la liste (voir GET /trips/cities/by-country) — prioritaire sur
+     * {@link #departureCity}/{@link #arrivalCity} si présente. {@code null} = repli texte libre
+     * ("ville introuvable", voir CityLookupService) ; departureCity/arrivalCity restent
+     * obligatoires dans tous les cas pour l'affichage et la compatibilité des anciens clients.
+     */
+    private Long departureCityId;
+    private Long arrivalCityId;
+
     // Harmonisé avec le front-end et l'entité
     @NotBlank(message = "Le lieu d'embarquement est obligatoire")
     private String boardingPoint;
@@ -68,8 +77,19 @@ public class TripRequestDTO {
     @Min(value = 1, message = "Il doit y avoir au moins une place disponible")
     private Integer availableSeats;
 
-    // Contiendra les villes d'arrêt (stops)
+    // Contiendra les villes d'arrêt (stops) — conservé pour compatibilité (affichage,
+    // anciens clients qui n'envoient pas encore `stops`) ; recalculé côté serveur à partir de
+    // `stops` quand cette liste est fournie (voir TripService.buildStructuredStops).
     private String moreInfo;
+
+    /**
+     * Arrêts intermédiaires structurés (remplace le découpage de {@link #moreInfo} sur des
+     * virgules) — chaque entrée vient de la liste des villes du pays de la société, ou du repli
+     * "ville introuvable" (voir TripStopInput). {@code null} = pas encore migré côté appelant,
+     * TripService retombe sur l'ancien découpage texte de {@link #moreInfo}.
+     */
+    @Valid
+    private List<TripStopInput> stops;
 
     /**
      * Tarifs par tronçon consécutif (0→1, 1→2, …). {@code null} = ne pas modifier les tarifs existants

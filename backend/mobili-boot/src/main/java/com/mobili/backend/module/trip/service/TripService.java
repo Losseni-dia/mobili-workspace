@@ -20,10 +20,12 @@ import com.mobili.backend.module.trip.dto.TripLegFareRequest;
 import com.mobili.backend.module.trip.dto.TripPricePreviewRequest;
 import com.mobili.backend.module.trip.dto.TripPricePreviewResponse;
 import com.mobili.backend.module.trip.dto.TripRequestDTO;
+import com.mobili.backend.module.trip.dto.TripStopInput;
 import com.mobili.backend.module.trip.dto.TripStopResponseDTO;
 import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.city.entity.City;
 import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.city.service.CityLookupService;
 import com.mobili.backend.module.trip.dto.chauffeur.ChauffeurTripListItem;
 import com.mobili.backend.module.trip.dto.chauffeur.ChauffeurTripsOverviewResponse;
 import com.mobili.backend.module.trip.dto.driver.DriverLuggageSummaryResponse;
@@ -68,6 +70,7 @@ public class TripService {
     private final UserRepository userRepository;
     private final CovoiturageSoloPartnerBootstrap covoiturageSoloPartnerBootstrap;
     private final CityRepository cityRepository;
+    private final CityLookupService cityLookupService;
 
     public List<String> findDistinctCities(String q) {
         return tripRepository.findDistinctCities(
@@ -517,7 +520,12 @@ public class TripService {
         if (trip.getStops() == null) {
             trip.setStops(new ArrayList<>());
         }
-        tripStopSyncService.syncStopsForTrip(trip);
+        List<TripStopSyncService.ResolvedStop> structuredStops = buildStructuredStops(trip, requestDto, partner);
+        if (structuredStops != null) {
+            tripStopSyncService.syncStopsForTrip(trip, structuredStops);
+        } else {
+            tripStopSyncService.syncStopsForTrip(trip);
+        }
 
         if (legFares != null && !legFares.isEmpty()) {
             tripRunService.ensureStops(trip);
@@ -1016,6 +1024,77 @@ public class TripService {
         t.setStops(new ArrayList<>());
         t.setOriginDestinationPrice(req.getOriginDestinationPrice());
         return t;
+    }
+
+    /**
+     * Résout departureCityId/arrivalCityId/stops (voir TripRequestDTO) vers de vraies villes et
+     * reconstruit la liste ordonnée des arrêts avec leurs coordonnées — {@code null} si le client
+     * n'envoie aucune info structurée (ancien format), pour que {@code save()} retombe sur le
+     * découpage texte historique de {@code moreInfo} (aucune régression pour les appelants pas
+     * encore migrés, voir B2). Met aussi à jour {@code trip.departureCity}/{@code arrivalCity}/
+     * {@code moreInfo} (String) à partir des noms résolus, pour ne rien casser des lectures
+     * existantes (tickets, emails, catalogue) qui affichent déjà ces champs.
+     */
+    private List<TripStopSyncService.ResolvedStop> buildStructuredStops(
+            Trip trip, TripRequestDTO dto, Partner partner) {
+        boolean hasStructuredInfo = dto.getDepartureCityId() != null
+                || dto.getArrivalCityId() != null
+                || dto.getStops() != null;
+        if (!hasStructuredInfo) {
+            return null;
+        }
+
+        List<TripStopSyncService.ResolvedStop> resolved = new ArrayList<>();
+        List<String> intermediateNames = new ArrayList<>();
+
+        City departure = resolveTripCity(dto.getDepartureCityId(), trip.getDepartureCity(), partner);
+        trip.setDepartureCity(departure.getName());
+        resolved.add(new TripStopSyncService.ResolvedStop(
+                departure.getName(), departure.getLatitude(), departure.getLongitude()));
+        String lastName = departure.getName();
+
+        if (dto.getStops() != null) {
+            for (TripStopInput s : dto.getStops()) {
+                City city = resolveTripCity(s.getCityId(), s.getCityName(), partner);
+                if (city == null || city.getName().equalsIgnoreCase(lastName)) {
+                    continue;
+                }
+                resolved.add(new TripStopSyncService.ResolvedStop(
+                        city.getName(), city.getLatitude(), city.getLongitude()));
+                intermediateNames.add(city.getName());
+                lastName = city.getName();
+            }
+        }
+
+        City arrival = resolveTripCity(dto.getArrivalCityId(), trip.getArrivalCity(), partner);
+        trip.setArrivalCity(arrival.getName());
+        if (!arrival.getName().equalsIgnoreCase(lastName)) {
+            resolved.add(new TripStopSyncService.ResolvedStop(
+                    arrival.getName(), arrival.getLatitude(), arrival.getLongitude()));
+        }
+
+        trip.setMoreInfo(String.join(",", intermediateNames));
+        return resolved;
+    }
+
+    /** cityId (liste) prioritaire ; sinon cityName — texte libre résolu/créé en attente de
+     *  validation admin (CityLookupService), jamais bloquant. Même règle que
+     *  StationService.resolveCity : une ville d'un autre pays que celui de la société est rejetée. */
+    private City resolveTripCity(Long cityId, String cityName, Partner partner) {
+        if (cityId != null) {
+            City city = cityRepository.findById(cityId)
+                    .orElseThrow(() -> new MobiliException(MobiliErrorCode.VALIDATION_ERROR, "Ville introuvable."));
+            if (partner.getCountry() != null && city.getCountry() != null
+                    && !city.getCountry().getId().equals(partner.getCountry().getId())) {
+                throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                        "Cette ville n'appartient pas au pays de la société.");
+            }
+            return city;
+        }
+        if (cityName != null && !cityName.isBlank()) {
+            return cityLookupService.resolveOrCreatePending(cityName, partner.getCountry());
+        }
+        return null;
     }
 
     private void persistCities(Trip trip) {
