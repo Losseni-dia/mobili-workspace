@@ -188,7 +188,7 @@
   color: variables.$gray-800;
 }
 
-// ---- Colonne principale : liste (priorité), puis formulaire compact ----
+// ---- Colonne principale : formulaire d'ajout (priorité), puis liste ----
 .gares-main {
   display: flex;
   flex-direction: column;
@@ -196,7 +196,7 @@
 }
 
 .gares-form-card {
-  order: 2;
+  order: 1;
   .panel-head {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -214,7 +214,7 @@
 }
 
 .gares-list-card {
-  order: 1;
+  order: 2;
 
   .panel-head h2 {
     margin: 0;
