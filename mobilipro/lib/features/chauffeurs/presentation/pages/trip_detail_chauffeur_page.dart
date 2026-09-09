@@ -182,6 +182,8 @@ class _TripDetailChauffeurPageState
   void initState() {
     super.initState();
     _trip = widget.trip;
+    // initialIndex par défaut (0) = Arrêts — voir l'ordre des tabs plus bas
+    // (retour utilisateur : "on tombe direct sur les arrêts" à l'ouverture).
     _tabCtrl = TabController(length: 3, vsync: this);
   }
 
@@ -360,13 +362,18 @@ class _TripDetailChauffeurPageState
             fontWeight: FontWeight.w700,
             fontSize: 12,
           ),
+          // Ordre voulu : Arrêts en premier (onglet par défaut à l'ouverture
+          // — c'est l'action la plus fréquente en cours de trajet), Scanner
+          // au milieu, Passagers en dernier (consultation moins fréquente
+          // une fois le trajet lancé). Voir aussi l'ordre correspondant dans
+          // TabBarView ci-dessous.
           tabs: const [
-            Tab(icon: Icon(Icons.people_rounded, size: 16), text: 'Passagers'),
             Tab(icon: Icon(Icons.route_rounded, size: 16), text: 'Arrêts'),
             Tab(
               icon: Icon(Icons.qr_code_scanner_rounded, size: 16),
               text: 'Scanner',
             ),
+            Tab(icon: Icon(Icons.people_rounded, size: 16), text: 'Passagers'),
           ],
         ),
       ),
@@ -421,13 +428,13 @@ class _TripDetailChauffeurPageState
             child: TabBarView(
               controller: _tabCtrl,
               children: [
-                _PassengersTab(tripId: _trip.id),
                 _StopsTab(
                   key: _stopsTabKey,
                   trip: _trip,
                   onStatusChanged: _applyTripStatus,
                 ),
                 QrScannerWidget(tripId: _trip.id, showResultOverlay: true),
+                _PassengersTab(tripId: _trip.id),
               ],
             ),
           ),

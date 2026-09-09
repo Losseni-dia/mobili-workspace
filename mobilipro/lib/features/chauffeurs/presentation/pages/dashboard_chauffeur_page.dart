@@ -103,25 +103,10 @@ class DashboardChauffeurPage extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => context.go('/chauffeur/scanner'),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: AppColors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.white.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.qr_code_scanner_rounded,
-                                color: AppColors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ),
+                          // Scanner déplacé en gros bouton en tête de liste
+                          // (voir _buildScannerButton) — un seul point
+                          // d'entrée bien visible plutôt que cette icône
+                          // discrète, retirée d'ici.
                         ],
                       ),
                     ],
@@ -174,6 +159,8 @@ class DashboardChauffeurPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    _buildScannerButton(context),
+                    const SizedBox(height: 20),
                     _buildNextTrip(context, overview),
                     const SizedBox(height: 20),
                     _buildUpcomingTrips(context, overview),
@@ -197,6 +184,33 @@ class DashboardChauffeurPage extends ConsumerWidget {
   void _openDetail(BuildContext context, ChauffeurTripItem trip) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => TripDetailChauffeurPage(trip: trip)),
+    );
+  }
+
+  /// Action la plus fréquente du chauffeur (scanner un ticket à l'embarquement)
+  /// — placée en premier, grande, pleine largeur (retour utilisateur : "trop
+  /// petit caché en haut", même logique que le bouton "Démarrer" de l'écran
+  /// détail). Remplace la petite icône qui était dans l'en-tête.
+  Widget _buildScannerButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => context.go('/chauffeur/scanner'),
+        icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
+        label: const Text(
+          'Scanner un ticket',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.mobiliYellow,
+          foregroundColor: AppColors.mobiliBlueDeep,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 

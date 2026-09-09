@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobilipro/features/chauffeurs/presentation/models/chauffeur_dashboard_models.dart';
 import 'package:mobilipro/features/partner/presentation/pages/dashboard_partner_page.dart';
 
@@ -352,44 +351,28 @@ class NextTripCard extends StatelessWidget {
             children: [
               StatusBadge(status: trip.status),
               const Spacer(),
-              OutlinedButton.icon(
+              // Le scan est désormais accessible en grand depuis le haut du
+              // dashboard (un seul point d'entrée) — retiré d'ici. "Démarrer"
+              // ouvre simplement le détail du trajet (même onDetail que
+              // l'ancien "Détails") : le vrai démarrage se fait depuis le
+              // gros bouton de l'écran détail, celui-ci ne fait qu'y mener.
+              ElevatedButton.icon(
                 onPressed: onDetail,
-                icon: const Icon(Icons.visibility_rounded, size: 15),
-                label: const Text('Détails', style: TextStyle(fontSize: 12)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.white,
-                  side: BorderSide(
-                    color: AppColors.white.withValues(alpha: 0.5),
-                  ),
+                icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                label: const Text('Démarrer', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.mobiliYellow,
+                  foregroundColor: AppColors.mobiliBlueDeep,
+                  elevation: 0,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 14,
+                    vertical: 8,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              if (trip.isInProgress || trip.isUpcoming)
-                ElevatedButton.icon(
-                  onPressed: () =>
-                      context.go('/chauffeur/scanner?tripId=${trip.id}'),
-                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
-                  label: const Text('Scanner'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mobiliYellow,
-                    foregroundColor: AppColors.mobiliBlueDeep,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
             ],
           ),
         ],
@@ -496,18 +479,22 @@ class TripCard extends StatelessWidget {
                       color: AppColors.mobiliBlue.withValues(alpha: 0.2),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.visibility_rounded,
+                        isHistory ? Icons.visibility_rounded : Icons.play_arrow_rounded,
                         size: 13,
                         color: AppColors.mobiliBlue,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Voir',
-                        style: TextStyle(
+                        // "Démarrer" ouvre juste le détail du trajet (même
+                        // onDetail qu'avant, sous le nom "Voir") — cohérent
+                        // avec NextTripCard. Un trajet déjà terminé
+                        // (historique) ne se "démarre" pas, reste "Voir".
+                        isHistory ? 'Voir' : 'Démarrer',
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.mobiliBlue,
                           fontWeight: FontWeight.w600,
