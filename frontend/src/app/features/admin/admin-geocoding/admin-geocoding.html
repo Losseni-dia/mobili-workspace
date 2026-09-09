@@ -1,0 +1,90 @@
+<div class="admin-geocoding-page">
+  <section class="data-panel">
+    <header class="panel-head">
+      <div>
+        <h2>Géocodage des arrêts</h2>
+        <p>Villes d'arrêts de trajet sans coordonnées GPS — nécessaires au calcul d'ETA temps réel. Aucune écriture en base tant que tu n'as pas validé ci-dessous.</p>
+      </div>
+      <div class="panel-head__actions">
+        @if (hasLoadedOnce()) {
+          <span class="count-chip">{{ selectedCount() }} / {{ selectableRows().length }} sélectionnée(s)</span>
+        }
+        <button type="button" class="btn-new" [disabled]="loading()" (click)="loadPreview()">
+          {{ loading() ? 'Recherche…' : (hasLoadedOnce() ? 'Rafraîchir' : 'Chercher les villes manquantes') }}
+        </button>
+      </div>
+    </header>
+
+    @if (loadError()) {
+      <div class="admin-alert" role="alert">{{ loadError() }}</div>
+    }
+
+    @if (!hasLoadedOnce() && !loading()) {
+      <p class="empty-hint">Clique sur "Chercher les villes manquantes" pour lancer un aperçu (appels Mapbox Geocoding — gratuit, tier 100 000 requêtes/mois).</p>
+    } @else if (loading()) {
+      <div class="loader">Géocodage en cours (un appel par ville)…</div>
+    } @else if (rows().length === 0) {
+      <p class="empty-hint">Aucune ville sans coordonnées — tout est déjà géocodé.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="center">Appliquer</th>
+              <th>Ville (city_label)</th>
+              <th>Coordonnées trouvées</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.cityLabel) {
+              <tr [class.row-warn]="row.ambiguous" [class.row-error]="!row.latitude">
+                <td class="center">
+                  @if (row.latitude != null && row.longitude != null) {
+                    <input type="checkbox" [checked]="row.selected" (change)="toggleRow(row)" />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td><strong>{{ row.cityLabel }}</strong></td>
+                <td class="mono">
+                  @if (row.latitude != null && row.longitude != null) {
+                    {{ row.latitude }}, {{ row.longitude }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (row.ambiguous) {
+                    <span class="status-pill warn">
+                      <span class="dot"></span>
+                      Ambigu — vérifier le pays
+                    </span>
+                  } @else if (row.errorMessage) {
+                    <span class="status-pill blocked">
+                      <span class="dot"></span>
+                      {{ row.errorMessage }}
+                    </span>
+                  } @else {
+                    <span class="status-pill active">
+                      <span class="dot"></span>
+                      OK
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-actions">
+        <button type="button" class="btn-ghost" (click)="selectAllValid()">Tout cocher</button>
+        <button type="button" class="btn-ghost" (click)="clearSelection()">Tout décocher</button>
+        <button type="button" class="btn-primary" [disabled]="applying() || selectedCount() === 0" (click)="apply()">
+          {{ applying() ? 'Application…' : 'Appliquer la sélection' }}
+        </button>
+      </div>
+    }
+  </section>
+</div>

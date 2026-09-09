@@ -1,0 +1,76 @@
+@use '../../../styles/variables';
+@use '../../../styles/mixins';
+@use '../../../styles/data-panel';
+
+.admin-geocoding-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.panel-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-new {
+  @include mixins.btn-primary;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.admin-alert {
+  margin: 0 20px 16px;
+  padding: 10px 14px;
+  border-radius: variables.$radius-sm;
+  background: variables.$danger-soft;
+  color: variables.$danger;
+  font-size: 0.88rem;
+}
+
+.empty-hint,
+.loader {
+  margin: 0.5rem 20px 1rem;
+  color: variables.$gray-500;
+  font-size: 0.92rem;
+}
+
+.muted {
+  color: variables.$gray-400;
+}
+
+.row-warn {
+  background: rgba(variables.$warning, 0.06);
+}
+
+.row-error {
+  background: rgba(variables.$danger, 0.04);
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid variables.$gray-100;
+
+  .btn-ghost {
+    padding: 8px 14px;
+    border-radius: variables.$radius-sm;
+    border: 1px solid variables.$gray-200;
+    background: variables.$white;
+    color: variables.$gray-700;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover { border-color: variables.$mobili-blue; }
+  }
+
+  .btn-primary {
+    @include mixins.btn-primary;
+    padding: 8px 18px;
+    margin-left: auto;
+  }
+}

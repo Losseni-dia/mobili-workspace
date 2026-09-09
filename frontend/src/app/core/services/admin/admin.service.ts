@@ -520,6 +520,44 @@ export class AdminService {
       { params },
     );
   }
+
+  /** Géocode (Mapbox) les city_label de trip_stops encore sans coordonnées — ne modifie jamais
+   *  la base, juste un aperçu à relire avant `applyTripStopGeocoding`. */
+  previewTripStopGeocoding(): Observable<GeocodingPreviewResponse> {
+    return this.http.get<GeocodingPreviewResponse>('/admin/trip-stops-geocoding/preview');
+  }
+
+  /** Applique uniquement les lignes explicitement validées par l'admin (jamais l'aperçu entier
+   *  automatiquement). */
+  applyTripStopGeocoding(items: GeocodingApplyItem[]): Observable<GeocodingApplyResponse> {
+    return this.http.post<GeocodingApplyResponse>('/admin/trip-stops-geocoding/apply', { items });
+  }
+}
+
+/** Aligné sur GeocodingPreviewItem (backend) — une ligne de l'écran de géocodage des arrêts. */
+export interface GeocodingPreviewItem {
+  cityLabel: string;
+  latitude: number | null;
+  longitude: number | null;
+  /** Nom connu pour exister dans plusieurs pays (ex. "Touba" — Sénégal ET Côte d'Ivoire) — à
+   *  vérifier manuellement avant de valider cette ligne. */
+  ambiguous: boolean;
+  errorMessage: string | null;
+}
+
+export interface GeocodingPreviewResponse {
+  items: GeocodingPreviewItem[];
+}
+
+export interface GeocodingApplyItem {
+  cityLabel: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface GeocodingApplyResponse {
+  appliedCount: number;
+  appliedCityLabels: string[];
 }
 
 export interface BaggageInfo {

@@ -215,6 +215,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'geocoding',
+        loadComponent: () =>
+          import('./features/admin/admin-geocoding/admin-geocoding').then(
+            (m) => m.AdminGeocoding,
+          ),
+      },
+      {
         path: 'trips',
         loadComponent: () =>
           import('./features/admin/admin-trips/admin-trips').then((m) => m.AdminTrips),

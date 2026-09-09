@@ -71,6 +71,7 @@ export class AdminShellComponent {
       items: [{ label: 'Coupons', icon: '🎟️', path: '/admin/coupons' }],
     },
     { title: 'Communication', items: [{ label: 'Annonces', icon: '📣', path: '/admin/communication' }] },
+    { title: 'Outils', items: [{ label: 'Géocodage arrêts', icon: '📍', path: '/admin/geocoding' }] },
   ];
 
   pageTitle = computed(() => {
@@ -85,6 +86,7 @@ export class AdminShellComponent {
     if (url.includes('transactions')) return 'Transactions';
     if (url.includes('claims')) return 'Réclamations';
     if (url.includes('coupons')) return 'Coupons';
+    if (url.includes('geocoding')) return 'Géocodage arrêts';
     return 'Vue d’ensemble';
   });
 
