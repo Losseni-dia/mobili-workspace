@@ -74,22 +74,24 @@
                           </label>
                           <label class="ig city-autocomplete">
                             <span>Ville{{ myCountryName() ? ' (' + myCountryName() + ')' : '' }}</span>
-                            <input type="text" formControlName="city" autocomplete="off" />
-                            @if (editCitySuggestions().length > 0) {
-                              <ul class="city-suggestions">
-                                @for (c of editCitySuggestions(); track c.id) {
-                                  <li>
-                                    <button type="button" (click)="selectEditCity(c)">
-                                      {{ c.name }}
-                                      @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
-                                    </button>
-                                  </li>
+                            @if (editCityMode() === 'select') {
+                              <select (change)="onEditCitySelect($event)" [value]="editSelectedCityId() ?? ''">
+                                <option value="" disabled>Choisir une ville</option>
+                                @for (c of countryCities(); track c.id) {
+                                  <option [value]="c.id">{{ c.name }}{{ !c.verified ? ' (non vérifiée)' : '' }}</option>
                                 }
-                              </ul>
-                            } @else if (editForm.get('city')?.value && !editSelectedCityId()) {
+                                <option value="OTHER">Ville non listée…</option>
+                              </select>
+                            } @else {
+                              <div class="other-city-row">
+                                <input type="text" formControlName="city" autocomplete="off" />
+                                <button type="button" class="btn-ghost btn-small" (click)="switchEditCityToSelect()">
+                                  ← Choisir dans la liste
+                                </button>
+                              </div>
                               <p class="city-hint">
-                                Ville introuvable dans la liste — vous pouvez enregistrer quand même, elle sera
-                                soumise pour validation par un administrateur.
+                                Si cette ville n'est pas dans la liste, elle sera soumise pour validation par un
+                                administrateur.
                               </p>
                             }
                           </label>
@@ -176,22 +178,23 @@
         </label>
         <label class="ig city-autocomplete">
           <span>Ville{{ myCountryName() ? ' (' + myCountryName() + ')' : '' }}</span>
-          <input type="text" formControlName="city" placeholder="ex. Abidjan" autocomplete="off" />
-          @if (addCitySuggestions().length > 0) {
-            <ul class="city-suggestions">
-              @for (c of addCitySuggestions(); track c.id) {
-                <li>
-                  <button type="button" (click)="selectAddCity(c)">
-                    {{ c.name }}
-                    @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
-                  </button>
-                </li>
+          @if (addCityMode() === 'select') {
+            <select (change)="onAddCitySelect($event)" [value]="addSelectedCityId() ?? ''">
+              <option value="" disabled>Choisir une ville</option>
+              @for (c of countryCities(); track c.id) {
+                <option [value]="c.id">{{ c.name }}{{ !c.verified ? ' (non vérifiée)' : '' }}</option>
               }
-            </ul>
-          } @else if (form.get('city')?.value && !addSelectedCityId()) {
+              <option value="OTHER">Ville non listée…</option>
+            </select>
+          } @else {
+            <div class="other-city-row">
+              <input type="text" formControlName="city" placeholder="Nom de la ville" autocomplete="off" />
+              <button type="button" class="btn-ghost btn-small" (click)="switchAddCityToSelect()">
+                ← Choisir dans la liste
+              </button>
+            </div>
             <p class="city-hint">
-              Ville introuvable dans la liste — vous pouvez enregistrer quand même, elle sera soumise pour
-              validation par un administrateur.
+              Cette ville sera soumise pour validation par un administrateur.
             </p>
           }
         </label>

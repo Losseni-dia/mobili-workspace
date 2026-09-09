@@ -240,9 +240,23 @@
     margin-bottom: 6px;
   }
 
-  input {
+  input,
+  select {
     @include mixins.input;
     width: 100%;
+  }
+
+  select {
+    cursor: pointer;
+    background: variables.$white;
+  }
+
+  .other-city-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    input { flex: 1; }
   }
 
   // Œil "afficher/masquer" le mot de passe — aligné sur register.component.

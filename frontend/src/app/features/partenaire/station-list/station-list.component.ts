@@ -1,10 +1,7 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { BehaviorSubject, combineLatest, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { NotificationService } from '../../../core/services/notification/notification.service';
@@ -24,7 +21,6 @@ export class StationListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private toast = inject(NotificationService);
   private tripService = inject(TripService);
-  private destroyRef = inject(DestroyRef);
 
   stations = signal<Station[]>([]);
   isLoading = signal(false);
@@ -66,27 +62,20 @@ export class StationListComponent implements OnInit {
   needValidationHint = signal(false);
 
   /**
-   * Ville de la gare : autocomplétion restreinte au pays de la société connectée (une gare ne
+   * Ville de la gare : liste déroulante des villes du pays de la société connectée (une gare ne
    * peut être que dans ce pays — StationService.resolveCity impose la même règle côté backend).
-   * `*CityId` reste `null` tant que l'utilisateur n'a pas cliqué une suggestion — dans ce cas on
-   * soumet le nom tapé tel quel (repli "ville introuvable", voir CityLookupService).
+   * Repli "ville introuvable" : option "Ville non listée…" qui bascule sur une saisie libre,
+   * soumise telle quelle (voir CityLookupService), jamais bloquant.
    */
   myCountryId = signal<number | null>(null);
   myCountryName = signal<string | null>(null);
-  addCitySuggestions = signal<CityOption[]>([]);
+  /** Toutes les villes du pays — chargées une fois, dès que le pays est connu. */
+  countryCities = signal<CityOption[]>([]);
   addSelectedCityId = signal<number | null>(null);
-  editCitySuggestions = signal<CityOption[]>([]);
   editSelectedCityId = signal<number | null>(null);
-
-  /**
-   * Source de vérité RxJS du pays (en plus du signal, utilisé pour l'affichage) — nécessaire pour
-   * que la recherche ville se relance dès que le pays arrive, même sans nouvelle frappe. Sans
-   * ça : GET /partners/my-company répond après que l'utilisateur a déjà fini de taper -> la
-   * recherche s'exécute une seule fois avec countryId=null -> liste vide indéfiniment (aucune
-   * frappe supplémentaire pour la relancer) — bug constaté en test ("bouake" jamais trouvé alors
-   * que la ville existe bien en base).
-   */
-  private countryId$ = new BehaviorSubject<number | null>(null);
+  /** 'select' = liste déroulante ; 'other' = saisie libre (ville non trouvée dans la liste). */
+  addCityMode = signal<'select' | 'other'>('select');
+  editCityMode = signal<'select' | 'other'>('other');
 
   ngOnInit() {
     this.needValidationHint.set(this.route.snapshot.queryParamMap.get('needValidation') === '1');
@@ -96,50 +85,57 @@ export class StationListComponent implements OnInit {
       next: (p) => {
         this.myCountryId.set(p.countryId ?? null);
         this.myCountryName.set(p.countryName ?? null);
-        this.countryId$.next(p.countryId ?? null);
+        if (p.countryId != null) {
+          this.tripService.getCitiesByCountry(p.countryId, '').subscribe({
+            next: (cities) => this.countryCities.set(cities),
+            error: (e) => console.error('[station-list] Erreur chargement des villes', e),
+          });
+        }
       },
       error: (e) => console.error('[station-list] Erreur chargement du pays de la société', e),
     });
-
-    combineLatest([
-      this.form.get('city')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
-      this.countryId$,
-    ])
-      .pipe(
-        switchMap(([q, countryId]) => {
-          this.addSelectedCityId.set(null);
-          if (!countryId || !q || !q.trim()) return of([]);
-          return this.tripService.getCitiesByCountry(countryId, q);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((cities) => this.addCitySuggestions.set(cities));
-
-    combineLatest([
-      this.editForm.get('city')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
-      this.countryId$,
-    ])
-      .pipe(
-        switchMap(([q, countryId]) => {
-          this.editSelectedCityId.set(null);
-          if (!countryId || !q || !q.trim()) return of([]);
-          return this.tripService.getCitiesByCountry(countryId, q);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((cities) => this.editCitySuggestions.set(cities));
   }
 
-  selectAddCity(city: CityOption) {
-    this.form.patchValue({ city: city.name });
-    this.addSelectedCityId.set(city.id);
-    this.addCitySuggestions.set([]);
+  onAddCitySelect(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'OTHER') {
+      this.addCityMode.set('other');
+      this.addSelectedCityId.set(null);
+      this.form.patchValue({ city: '' });
+      return;
+    }
+    const city = this.countryCities().find((c) => c.id === Number(value));
+    if (city) {
+      this.addSelectedCityId.set(city.id);
+      this.form.patchValue({ city: city.name });
+    }
   }
 
-  selectEditCity(city: CityOption) {
-    this.editForm.patchValue({ city: city.name });
-    this.editSelectedCityId.set(city.id);
-    this.editCitySuggestions.set([]);
+  switchAddCityToSelect() {
+    this.addCityMode.set('select');
+    this.addSelectedCityId.set(null);
+    this.form.patchValue({ city: '' });
+  }
+
+  onEditCitySelect(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === 'OTHER') {
+      this.editCityMode.set('other');
+      this.editSelectedCityId.set(null);
+      this.editForm.patchValue({ city: '' });
+      return;
+    }
+    const city = this.countryCities().find((c) => c.id === Number(value));
+    if (city) {
+      this.editSelectedCityId.set(city.id);
+      this.editForm.patchValue({ city: city.name });
+    }
+  }
+
+  switchEditCityToSelect() {
+    this.editCityMode.set('select');
+    this.editSelectedCityId.set(null);
+    this.editForm.patchValue({ city: '' });
   }
 
   load() {
@@ -170,7 +166,7 @@ export class StationListComponent implements OnInit {
         next: () => {
           this.form.reset({ name: '', city: '', password: '' });
           this.addSelectedCityId.set(null);
-          this.addCitySuggestions.set([]);
+          this.addCityMode.set('select');
           this.load();
         },
         error: (e) => {
@@ -184,17 +180,18 @@ export class StationListComponent implements OnInit {
     this.editError.set(null);
     this.editingId.set(g.id);
     this.editForm.reset({ name: g.name, city: g.city, password: '' });
-    // Pas de cityId connu au départ (Station n'expose que le nom affiché) — si la ville n'est pas
-    // retouchée, saveEdit retombe sur cityName qui retrouve la même ville par son nom exact
-    // (CityLookupService.resolveOrCreatePending), aucune re-sélection nécessaire.
+    // Pas de cityId connu au départ (Station n'expose que le nom affiché) — démarre en saisie
+    // libre pré-remplie avec le nom actuel ; si la ville n'est pas retouchée, saveEdit retombe
+    // sur cityName qui retrouve la même ville par son nom exact
+    // (CityLookupService.resolveOrCreatePending). Le dirigeant peut basculer sur la liste pour
+    // relier explicitement un cityId si besoin.
     this.editSelectedCityId.set(null);
-    this.editCitySuggestions.set([]);
+    this.editCityMode.set('other');
   }
 
   cancelEdit() {
     this.editingId.set(null);
     this.editError.set(null);
-    this.editCitySuggestions.set([]);
   }
 
   // Suppression de gare : endpoint backend (DELETE /partenaire/stations/{id}) et service
