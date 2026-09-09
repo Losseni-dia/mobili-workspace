@@ -479,22 +479,22 @@ class TripCard extends StatelessWidget {
                       color: AppColors.mobiliBlue.withValues(alpha: 0.2),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // "Démarrer" reste réservé à la carte "Prochain trajet"
+                      // (NextTripCard) — un seul point d'action bien visible,
+                      // les cartes de la liste "Aujourd'hui & demain" ne font
+                      // que consulter (retour utilisateur).
                       Icon(
-                        isHistory ? Icons.visibility_rounded : Icons.play_arrow_rounded,
+                        Icons.visibility_rounded,
                         size: 13,
                         color: AppColors.mobiliBlue,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
-                        // "Démarrer" ouvre juste le détail du trajet (même
-                        // onDetail qu'avant, sous le nom "Voir") — cohérent
-                        // avec NextTripCard. Un trajet déjà terminé
-                        // (historique) ne se "démarre" pas, reste "Voir".
-                        isHistory ? 'Voir' : 'Démarrer',
-                        style: const TextStyle(
+                        'Voir',
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.mobiliBlue,
                           fontWeight: FontWeight.w600,
