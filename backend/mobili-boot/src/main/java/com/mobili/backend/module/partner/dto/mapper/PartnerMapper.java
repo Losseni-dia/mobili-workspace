@@ -22,6 +22,13 @@ public interface PartnerMapper {
     Partner toEntity(PartnerProfileDTO dto);
 
     // Pour l'affichage (Entity -> Profile)
+    // countryId/countryName : l'auto-flattening MapStruct sur une propriété imbriquée
+    // (country.id/country.name) ne s'est PAS déclenché silencieusement sans ces @Mapping
+    // explicites — vérifié dans le code généré (PartnerMapperImpl), qui omettait purement et
+    // simplement ces deux lignes malgré une compilation propre. Bug constaté en test : l'API
+    // renvoyait countryId=null alors que partners.country_id=25 en base.
+    @Mapping(target = "countryId", source = "country.id")
+    @Mapping(target = "countryName", source = "country.name")
     PartnerProfileDTO toProfileDto(Partner partner);
 
     @Mapping(target = "ownerName", expression = "java(partner.getOwner() != null ? partner.getOwner().getFirstname() + \" \" + partner.getOwner().getLastname() : \"Sans propriétaire\")")
