@@ -21,5 +21,10 @@ public interface StationRepository extends JpaRepository<Station, Long> {
 
     boolean existsByPartnerIdAndCode(Long partnerId, String code);
 
+    /** uk_stations_code (migration V24) est une contrainte unique GLOBALE, pas par société —
+     *  generateUniqueStationCode doit vérifier l'unicité globale, pas juste par partenaire, sous
+     *  peine de 409 générique si deux sociétés différentes tirent le même code aléatoire. */
+    boolean existsByCode(String code);
+
     Optional<Station> findByCode(String code);
 }

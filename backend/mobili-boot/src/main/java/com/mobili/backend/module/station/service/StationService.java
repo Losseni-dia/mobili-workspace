@@ -93,7 +93,7 @@ public class StationService {
      */
     public void applyNewStationDefaults(Station station, Partner partner) {
         station.setPartner(partner);
-        station.setCode(generateUniqueStationCode(partner.getId()));
+        station.setCode(generateUniqueStationCode());
         station.setActive(true);
     }
 
@@ -363,7 +363,7 @@ public class StationService {
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
     }
 
-    private String generateUniqueStationCode(Long partnerId) {
+    private String generateUniqueStationCode() {
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int attempt = 0; attempt < 40; attempt++) {
             StringBuilder sb = new StringBuilder("GAR-");
@@ -372,7 +372,11 @@ public class StationService {
                 sb.append(c < 10 ? (char) ('0' + c) : (char) ('A' + c - 10));
             }
             String code = sb.toString();
-            if (!stationRepository.existsByPartnerIdAndCode(partnerId, code)) {
+            // uk_stations_code (migration V24) est unique GLOBALEMENT, pas par société — vérifier
+            // seulement existsByPartnerIdAndCode laissait passer une collision entre deux sociétés
+            // différentes jusqu'à l'INSERT, qui échouait alors avec un 409 générique
+            // ("Cette ressource existe déjà.", DataIntegrityViolationException non catégorisée).
+            if (!stationRepository.existsByCode(code)) {
                 return code;
             }
         }
