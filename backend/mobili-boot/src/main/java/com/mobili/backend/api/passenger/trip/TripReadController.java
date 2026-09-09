@@ -89,7 +89,10 @@ public class TripReadController {
 
     /**
      * Jeton Firebase pour la lecture de la position temps réel (Firestore) — voir
-     * LiveTrackingTokenService (vérifie réservation active + trajet EN_COURS).
+     * LiveTrackingTokenService (vérifie uniquement que le trajet est EN_COURS). Ouvert à
+     * n'importe quel utilisateur connecté, pas seulement aux passagers ayant réservé CE trajet
+     * (ex. un proche qui veut suivre le véhicule d'un voyageur sans avoir lui-même de billet) —
+     * la seule barrière est d'avoir un compte Mobili (@AuthenticationPrincipal ci-dessous).
      */
     @GetMapping("/{id}/live-tracking-token")
     public java.util.Map<String, String> getLiveTrackingToken(

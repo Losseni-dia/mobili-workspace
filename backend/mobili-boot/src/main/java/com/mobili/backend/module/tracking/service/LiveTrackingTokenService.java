@@ -5,9 +5,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 
-import com.mobili.backend.module.booking.booking.entity.Booking;
-import com.mobili.backend.module.booking.booking.entity.BookingStatus;
-import com.mobili.backend.module.booking.booking.repository.BookingRepository;
 import com.mobili.backend.module.trip.entity.Trip;
 import com.mobili.backend.module.trip.entity.TripStatus;
 import com.mobili.backend.module.trip.service.TripService;
@@ -43,7 +40,6 @@ import java.util.Map;
 public class LiveTrackingTokenService {
 
     private final TripService tripService;
-    private final BookingRepository bookingRepository;
 
     /**
      * Le contrôle d'autorisation (chauffeur bien assigné à ce trajet) est délégué à l'appelant —
@@ -71,9 +67,12 @@ public class LiveTrackingTokenService {
     }
 
     /**
-     * Vérifie que le passager a une réservation active sur ce trajet (CONFIRMED/OFFLINE_SALE,
-     * jamais CANCELLED/PENDING/expirée) ET que le trajet est EN_COURS (pas de tracking hors
-     * service) avant de minter le jeton.
+     * Vérifie uniquement que le trajet est EN_COURS (pas de tracking hors service) avant de
+     * minter le jeton — délibérément PAS de vérification de réservation active sur ce trajet
+     * précis : n'importe quel utilisateur connecté à l'app peut suivre un trajet en cours (ex.
+     * un proche qui veut voir où se trouve le véhicule d'un voyageur, sans avoir lui-même acheté
+     * de billet). L'authentification (compte Mobili requis) reste appliquée en amont par Spring
+     * Security sur ce endpoint — voir TripReadController.getLiveTrackingToken.
      */
     @Transactional(readOnly = true)
     public String mintPassengerToken(Long tripId, Long passengerUserId) {
@@ -83,15 +82,6 @@ public class LiveTrackingTokenService {
                     tripId, trip.getStatus());
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
                     "Ce trajet n'est pas en cours : suivi temps réel indisponible.");
-        }
-
-        boolean hasActiveBooking = bookingRepository.findByTripId(tripId).stream()
-                .anyMatch(isActiveBookingForPassenger(passengerUserId));
-        if (!hasActiveBooking) {
-            log.warn("⚠️ Refus jeton tracking passager : aucune réservation active pour Trip #{} / User #{}",
-                    tripId, passengerUserId);
-            throw new MobiliException(MobiliErrorCode.ACCESS_DENIED,
-                    "Aucune réservation active sur ce trajet.");
         }
 
         String uid = "passenger-" + passengerUserId;
@@ -128,12 +118,5 @@ public class LiveTrackingTokenService {
             FirebaseAuth.getInstance().createUser(new UserRecord.CreateRequest().setUid(uid));
             FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
         }
-    }
-
-    private java.util.function.Predicate<Booking> isActiveBookingForPassenger(Long passengerUserId) {
-        return booking -> booking.getCustomer() != null
-                && booking.getCustomer().getId().equals(passengerUserId)
-                && (booking.getStatus() == BookingStatus.CONFIRMED
-                        || booking.getStatus() == BookingStatus.OFFLINE_SALE);
     }
 }
