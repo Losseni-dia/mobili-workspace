@@ -222,13 +222,27 @@ class _TripDetailChauffeurPageState
       );
       if (mounted) {
         _applyTripStatus('EN_COURS');
+        // Démarré ICI, directement, sans passer par _StopsTabState — ne doit
+        // JAMAIS dépendre de l'existence de son GlobalKey ni du chargement de
+        // la liste des arrêts (bug constaté en usage réel : le tracking ne
+        // démarrait pas du tout dans certains cas, passager bloqué sur
+        // "position non récupérée" indéfiniment). Idempotent côté
+        // LiveTrackingService (no-op si déjà démarré pour ce trip).
+        unawaited(LiveTrackingService.instance.start(
+          _trip.id,
+          onAutoDeparture: (stopIndex, cityLabel) =>
+              _stopsTabKey.currentState?.handleAutoDeparture(stopIndex, cityLabel),
+        ));
         // Le backend (TripService.startChauffeurTrip) enregistre déjà en un
         // seul appel le statut EN_COURS ET le départ du premier arrêt — on
-        // relaie ça à l'onglet Arrêts pour épargner un second tap "Quitter
-        // [ville origine]" sur un événement déjà acté côté serveur (retour
-        // utilisateur : "le chauffeur est obligé de taper démarrer, est-ce
-        // qu'on ne peut pas fusionner en une seule action ?").
-        _stopsTabKey.currentState?.handleTripJustStarted();
+        // relaie ça à l'onglet Arrêts (best-effort) pour épargner un second
+        // tap "Quitter [ville origine]" sur un événement déjà acté côté
+        // serveur (retour utilisateur : "le chauffeur est obligé de taper
+        // démarrer, est-ce qu'on ne peut pas fusionner en une seule action ?").
+        final stopsTabState = _stopsTabKey.currentState;
+        if (stopsTabState != null) {
+          unawaited(stopsTabState.handleTripJustStarted());
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Trajet démarré ✅'),
@@ -719,7 +733,7 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         if (_currentStop == 0) {
           unawaited(LiveTrackingService.instance.start(
             widget.trip.id,
-            onAutoDeparture: _handleAutoDeparture,
+            onAutoDeparture: handleAutoDeparture,
           ));
         }
         if (isLast) {
@@ -773,20 +787,37 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   /// événement déjà enregistré côté serveur — deux taps pour une seule
   /// action logique ("le trajet démarre"). Idempotent : ne fait rien si déjà
   /// avancé (double appel, ou trajet rouvert après un premier démarrage).
-  void handleTripJustStarted() {
+  Future<void> handleTripJustStarted() async {
     if (!mounted || _currentStop != 0 || _tripEnded) return;
-    final stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull;
-    if (stops == null || stops.length <= 1) {
-      // Un seul arrêt (trajet dégénéré) : rien à avancer, le départ du
-      // premier arrêt = déjà l'arrivée, le backend l'a déjà mis TERMINÉ.
-      return;
-    }
-    setState(() => _currentStop = 1);
-    _refreshStop();
+
+    // Le tracking GPS ne doit JAMAIS dépendre du chargement de la liste des
+    // arrêts — bug constaté en usage réel : le chauffeur tape le grand
+    // bouton "Démarrer" (maintenant visible immédiatement) avant que
+    // GET /trips/{id}/stops ait fini de répondre ; l'ancien code attendait
+    // silencieusement cette liste (ref.read(...).valueOrNull == null) avant
+    // de démarrer LiveTrackingService, donc le tracking ne démarrait jamais
+    // et le passager restait bloqué sur "position non récupérée" à vie.
+    // Démarré inconditionnellement ici, exactement comme le faisait l'ancien
+    // bouton "Quitter [ville origine]" (_recordDeparture, _currentStop==0).
     unawaited(LiveTrackingService.instance.start(
       widget.trip.id,
-      onAutoDeparture: _handleAutoDeparture,
+      onAutoDeparture: handleAutoDeparture,
     ));
+
+    // Avancée d'arrêt + géofence : best-effort, jamais bloquant pour le
+    // tracking ci-dessus. Si la liste n'est pas encore en cache, on attend
+    // sa résolution ; en cas d'échec, le bouton manuel "Quitter" réapparaît
+    // (widget.trip.isUpcoming devient déjà false après _applyTripStatus).
+    List<_TripStop> stops;
+    try {
+      stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull ??
+          await ref.read(_tripStopsProvider(widget.trip.id).future);
+    } catch (_) {
+      return;
+    }
+    if (!mounted || _currentStop != 0 || stops.length <= 1) return;
+    setState(() => _currentStop = 1);
+    _refreshStop();
     _updateGeofenceWatch();
   }
 
@@ -796,7 +827,7 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   /// page n'est plus montée, si l'arrêt suivi ne correspond plus à
   /// _currentStop (bouton manuel ou undo entre-temps), ou si le trajet est
   /// déjà terminé.
-  void _handleAutoDeparture(int stopIndex, String cityLabel) {
+  void handleAutoDeparture(int stopIndex, String cityLabel) {
     if (!mounted || _tripEnded || stopIndex != _currentStop) return;
     final stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull;
     if (stops == null || stops.isEmpty) return;
