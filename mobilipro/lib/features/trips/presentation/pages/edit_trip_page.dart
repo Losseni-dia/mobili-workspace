@@ -310,8 +310,16 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
     _legPriceCtrlrs.clear();
     _legFares = [];
 
+    // Départ/arrivée pas encore saisis : pas de combinaison bancale tant que le champ est vide.
+    // Départ→arrivée déjà saisi via mainPriceCtrl ("Prix complet") dès qu'il y a un arrêt
+    // intermédiaire — ne pas le redemander une 2ᵉ fois ici (voir create_trip_page.dart, même
+    // logique, et add-trip.component.ts côté web).
+    final last = allCities.length - 1;
     for (int i = 0; i < allCities.length - 1; i++) {
+      if (allCities[i].isEmpty) continue;
       for (int j = i + 1; j < allCities.length; j++) {
+        if (allCities[j].isEmpty) continue;
+        if (i == 0 && j == last && last > 1) continue;
         final leg = LegFare(
           fromIndex: i,
           toIndex: j,

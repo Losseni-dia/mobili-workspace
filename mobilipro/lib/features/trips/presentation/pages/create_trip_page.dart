@@ -316,8 +316,16 @@ class _CreateTripPageState extends ConsumerState<CreateTripPage> {
     _legFares = [];
 
     // Génère TOUTES les combinaisons from→to (non-consécutives incluses)
+    final last = allCities.length - 1;
     for (int i = 0; i < allCities.length - 1; i++) {
+      // Départ/arrivée pas encore saisis : pas de combinaison bancale tant que le champ est vide
+      // (voir add-trip.component.ts côté web, même logique).
+      if (allCities[i].isEmpty) continue;
       for (int j = i + 1; j < allCities.length; j++) {
+        if (allCities[j].isEmpty) continue;
+        // Départ→arrivée déjà saisi via mainPriceCtrl ("Prix complet") dès qu'il y a un arrêt
+        // intermédiaire — ne pas le redemander une 2ᵉ fois ici.
+        if (i == 0 && j == last && last > 1) continue;
         final leg = LegFare(
           fromIndex: i,
           toIndex: j,
