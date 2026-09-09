@@ -45,7 +45,7 @@ class PartnerGareComNotificationHelper {
         // gare).
         java.util.List<Station> targetStations;
         if (thread.getScope() == PartnerGareComThreadScope.ALL) {
-            targetStations = stationRepository.findByPartnerIdOrderByCityAscNameAsc(partnerId);
+            targetStations = stationRepository.findByPartnerIdOrderByCity_NameAscNameAsc(partnerId);
         } else {
             targetStations = thread.getTargets().stream()
                     .map(PartnerGareComThreadTarget::getStation)
