@@ -196,13 +196,6 @@
                 </p>
               }
               <h3 class="leg-title">Tronçon par tronçon</h3>
-              <p class="leg-hint">
-                Tarif pour un trajet <em>partiel</em> sur la ligne. Somme des tronçons (aperçu) :
-                <strong>{{ legsTotal() | number: '1.0-0' }} FCFA</strong>
-                @if (needsOriginDestinationPrice()) {
-                  — le parcours <strong>complet</strong> : prix indiqué ci-dessus.
-                }
-              </p>
               <div class="leg-table-wrap">
                 <table class="leg-table">
                   <thead>
@@ -213,7 +206,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of legRows(); track row.index) {
+                    @for (row of legRows(); track row.fromIndex + '-' + row.toIndex) {
                       <tr>
                         <td>{{ row.fromLabel }}</td>
                         <td>{{ row.toLabel }}</td>
@@ -224,7 +217,7 @@
                             min="0"
                             step="1"
                             [value]="row.price"
-                            (input)="onLegPriceInput(row.index, $event)"
+                            (input)="onLegPriceInput(row.fromIndex, row.toIndex, $event)"
                             inputmode="numeric"
                             aria-label="Prix de {{ row.fromLabel }} vers {{ row.toLabel }}"
                           />

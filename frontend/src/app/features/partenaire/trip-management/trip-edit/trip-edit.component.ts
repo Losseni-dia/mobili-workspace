@@ -52,7 +52,10 @@ export class TripEditComponent implements OnInit {
   @ViewChild('legFaresBlock') legFaresBlock?: ElementRef<HTMLElement>;
 
   cityLabelsPreview = signal<string[]>([]);
-  legPrices = signal<number[]>([]);
+  /** Prix par combinaison from→to, clé "fromIndex-toIndex" — toutes les combinaisons possibles,
+   *  pas seulement consécutives (voir legRows/onSubmit, même pattern qu'AddTripComponent et
+   *  create_trip_page.dart), chacune optionnelle. */
+  legPrices = signal<Map<string, number>>(new Map());
 
   /** Autocomplétion ville — voir AddTripComponent (même pattern), rattachée au pays de la
    *  société connectée. */
@@ -92,24 +95,29 @@ export class TripEditComponent implements OnInit {
     return list;
   });
 
+  /** Toutes les combinaisons from→to (pas seulement consécutives) — voir AddTripComponent.legRows
+   *  (même pattern, même logique que create_trip_page.dart côté mobilipro). */
   legRows = computed(() => {
     const labs = this.cityLabelsPreview();
     const prices = this.legPrices();
-    const rows: { index: number; fromLabel: string; toLabel: string; price: number }[] = [];
+    const rows: { fromIndex: number; toIndex: number; fromLabel: string; toLabel: string; price: number }[] = [];
     for (let i = 0; i < labs.length - 1; i++) {
-      rows.push({
-        index: i,
-        fromLabel: labs[i] || '—',
-        toLabel: labs[i + 1] || '—',
-        price: prices[i] ?? 0,
-      });
+      for (let j = i + 1; j < labs.length; j++) {
+        rows.push({
+          fromIndex: i,
+          toIndex: j,
+          fromLabel: labs[i] || '—',
+          toLabel: labs[j] || '—',
+          price: prices.get(`${i}-${j}`) ?? 0,
+        });
+      }
     }
     return rows;
   });
 
-  legsTotal = computed(() => this.legPrices().reduce((a, b) => a + b, 0));
-
-  needsOriginDestinationPrice = computed(() => this.legRows().length > 1);
+  /** 2+ tronçons : tarif explicite départ (ville) → arrivée (ville) distinct des tarifs par
+   *  combinaison — basé sur le nombre d'arrêts, pas sur legRows() (voir AddTripComponent). */
+  needsOriginDestinationPrice = computed(() => lastStopIndexFromLabels(this.cityLabelsPreview()) > 1);
   firstCityLabel = computed(() => this.cityLabelsPreview()[0]?.trim() || 'Départ');
   lastCityLabel = computed(
     () => this.cityLabelsPreview()[this.cityLabelsPreview().length - 1]?.trim() || 'Arrivée',
@@ -179,11 +187,11 @@ export class TripEditComponent implements OnInit {
     return (byLabel?.name ?? 'MASSA_NORMAL') as VehicleTypeName;
   }
 
-  onLegPriceInput(legIndex: number, ev: Event) {
+  onLegPriceInput(fromIndex: number, toIndex: number, ev: Event) {
     const el = ev.target as HTMLInputElement;
     const v = Number(el.value);
-    const next = [...this.legPrices()];
-    next[legIndex] = Number.isNaN(v) || v < 0 ? 0 : v;
+    const next = new Map(this.legPrices());
+    next.set(`${fromIndex}-${toIndex}`, Number.isNaN(v) || v < 0 ? 0 : v);
     this.legPrices.set(next);
     this.legFaresInvalid.set(false);
   }
@@ -325,10 +333,13 @@ export class TripEditComponent implements OnInit {
         this.tripStationId.set(trip.stationId != null && trip.stationId > 0 ? trip.stationId : null);
 
         if (trip.legFares && trip.legFares.length > 0) {
-          const sorted = [...trip.legFares].sort((a, b) => a.fromStopIndex - b.fromStopIndex);
-          this.legPrices.set(sorted.map((f) => f.price));
+          const map = new Map<string, number>();
+          for (const f of trip.legFares) {
+            map.set(`${f.fromStopIndex}-${f.toStopIndex}`, f.price);
+          }
+          this.legPrices.set(map);
         } else {
-          this.legPrices.set([]);
+          this.legPrices.set(new Map());
         }
 
         this.tripForm.patchValue(
@@ -386,6 +397,11 @@ export class TripEditComponent implements OnInit {
     });
   }
 
+  /** Ne fait plus que rafraîchir l'aperçu des libellés — les tarifs par combinaison (Map, clé
+   *  "fromIndex-toIndex") n'ont pas besoin d'être redimensionnés comme l'ancien tableau indexé par
+   *  tronçon consécutif : les entrées devenues obsolètes (ex. arrêt supprimé) restent simplement
+   *  ignorées par legRows(), qui ne regénère que les combinaisons encore valides (voir
+   *  AddTripComponent, même pattern). */
   private syncLegPrices() {
     const v = this.tripForm.getRawValue();
     const labels = buildTripCityLabels(
@@ -394,17 +410,6 @@ export class TripEditComponent implements OnInit {
       v.stops ?? '',
     );
     this.cityLabelsPreview.set(labels);
-
-    const last = lastStopIndexFromLabels(labels);
-
-    if (last <= 0) {
-      this.legPrices.set([]);
-    } else if (this.legPrices().length !== last) {
-      const prev = this.legPrices();
-      this.legPrices.set(
-        Array.from({ length: last }, (_, i) => (i < prev.length ? prev[i]! : 0)),
-      );
-    }
   }
 
   onFileSelected(event: Event) {
@@ -428,21 +433,24 @@ export class TripEditComponent implements OnInit {
       this.tripForm.value.stops ?? '',
     );
     const last = lastStopIndexFromLabels(labels);
-    const legs = this.legPrices();
-    if (last > 0) {
-      if (legs.length !== last || legs.some((p) => p == null || p <= 0 || Number.isNaN(p))) {
-        // Ajouter une ville étape fait apparaître un nouveau tronçon à 0 FCFA (voir
-        // syncLegPrices) : un simple toast passait inaperçu ("le bouton Enregistrer ne fait
-        // rien"). Bandeau persistant + scroll vers le tableau des tronçons en plus du toast.
-        this.legFaresInvalid.set(true);
-        this.notification.show('Indiquez un prix strictement positif pour chaque tronçon.', 'error');
-        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-    } else {
+    const rows = this.legRows();
+    // Tarifs par tronçon désormais optionnels (toutes les combinaisons, pas seulement
+    // consécutives — voir legRows/AddTripComponent) : seul le prix global du trajet reste
+    // obligatoire, direct (2 arrêts) ou "trajet complet" (3+ arrêts).
+    if (last === 0) {
       const p = Number(this.tripForm.value.price);
       if (p == null || p <= 0 || Number.isNaN(p)) {
         this.notification.show('Indiquez un prix valide pour le trajet.', 'error');
+        return;
+      }
+    } else if (last === 1) {
+      // Trajet direct à 2 arrêts : une seule combinaison possible (0-1), c'est elle qui porte le
+      // prix du trajet — mandataire comme avant.
+      const p = rows[0]?.price ?? 0;
+      if (!p || p <= 0 || Number.isNaN(p)) {
+        this.legFaresInvalid.set(true);
+        this.notification.show('Indiquez un prix valide pour ce trajet.', 'error');
+        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     }
@@ -457,8 +465,6 @@ export class TripEditComponent implements OnInit {
     const offset = dateInput.getTimezoneOffset() * 60000;
     const localISOTime = new Date(dateInput.getTime() - offset).toISOString().slice(0, 19);
 
-    const sumLegs =
-      last > 0 && legs.length === last ? legs.reduce((a, b) => a + b, 0) : Number(formValue.price ?? 0);
     let mainTripPrice: number;
     if (last > 1) {
       const od = Number(formValue.originDestinationPrice);
@@ -468,8 +474,10 @@ export class TripEditComponent implements OnInit {
         return;
       }
       mainTripPrice = od;
+    } else if (last === 1) {
+      mainTripPrice = rows[0]?.price ?? 0;
     } else {
-      mainTripPrice = last > 0 ? sumLegs : Number(formValue.price ?? 0);
+      mainTripPrice = Number(formValue.price ?? 0);
     }
     if (!Number.isFinite(mainTripPrice) || mainTripPrice < 0) {
       this.notification.show('Prix du trajet invalide.', 'error');
@@ -513,15 +521,11 @@ export class TripEditComponent implements OnInit {
       tripPayload['originDestinationPrice'] = mainTripPrice;
     }
 
-    if (last > 0 && legs.length === last) {
-      tripPayload['legFares'] = legs.map((p, i) => ({
-        fromStopIndex: i,
-        toStopIndex: i + 1,
-        price: p,
-      }));
-    } else {
-      tripPayload['legFares'] = [];
-    }
+    // Toutes les combinaisons ayant un prix renseigné (>0) partent en tarifs optionnels — voir
+    // AddTripComponent.onSubmit (même logique, alignée sur create_trip_page.dart).
+    tripPayload['legFares'] = rows
+      .filter((r) => r.price > 0)
+      .map((r) => ({ fromStopIndex: r.fromIndex, toStopIndex: r.toIndex, price: r.price }));
     tripPayload['transportType'] = formValue.transportType ?? 'PUBLIC';
 
     if (this.showChauffeurPicker()) {
