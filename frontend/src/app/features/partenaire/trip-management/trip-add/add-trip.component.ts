@@ -1,8 +1,10 @@
-import { Component, computed, ElementRef, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { startWith } from 'rxjs';
+import { Subject, of, startWith } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 import { buildTripCityLabels, lastStopIndexFromLabels } from '../../../../core/utils/trip-city-labels.util';
 import { AuthService } from '../../../../core/services/auth/auth.service';
@@ -12,7 +14,7 @@ import {
   PartnerChauffeurItem,
   Station,
 } from '../../../../core/services/partners/partenaire.service';
-import { TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
+import { CityOption, TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../../core/services/notification/notification.service';
 import { VEHICLE_TYPE_ENUM_OPTIONS, type VehicleTypeName } from '../../../../core/constants/vehicle-types';
 import { extractApiErrorMessage } from '../../../../core/utils/api-error.util';
@@ -31,6 +33,7 @@ export class AddTripComponent implements OnInit {
   private partenaireService = inject(PartenaireService);
   private router = inject(Router);
   private notification = inject(NotificationService);
+  private destroyRef = inject(DestroyRef);
 
   /** Ce composant est chargé sous /partenaire/add-trip ET /gare/add-trip (business.routes.ts) :
    *  toute navigation interne doit rester dans le bon shell, sinon partnerRoleGuard (rôle
@@ -50,6 +53,29 @@ export class AddTripComponent implements OnInit {
   cityLabelsPreview = signal<string[]>([]);
   /** Un prix par tronçon consécutif (0→1, 1→2, …). */
   legPrices = signal<number[]>([]);
+
+  /**
+   * Autocomplétion ville (départ/arrivée/arrêts) restreinte au pays de la société connectée —
+   * une gare/un trajet ne peut être que dans ce pays (StationService.resolveCity impose la même
+   * règle côté backend). `*SelectedId` reste `null` tant qu'aucune suggestion n'a été cliquée :
+   * dans ce cas le nom tapé est soumis tel quel (repli "ville introuvable", voir
+   * CityLookupService), jamais bloquant.
+   */
+  myCountryId = signal<number | null>(null);
+  departureSuggestions = signal<CityOption[]>([]);
+  departureSelectedId = signal<number | null>(null);
+  arrivalSuggestions = signal<CityOption[]>([]);
+  arrivalSelectedId = signal<number | null>(null);
+  /** Un seul champ actif à la fois pour les suggestions des arrêts (même principe que
+   *  home.component.ts departure/arrival). */
+  activeStopIndex = signal<number | null>(null);
+  stopSuggestions = signal<CityOption[]>([]);
+  private stopQuery$ = new Subject<{ index: number; q: string }>();
+
+  /** Arrêts intermédiaires — remplace le champ texte unique "Villes traversées" (CSV) par une
+   *  liste répétable ; `tripForm.get('stops')` reste alimenté en CSV en interne pour ne pas
+   *  toucher au calcul des tronçons/aperçu existant (syncLegPrices, buildTripCityLabels). */
+  stopsArray = this.fb.array<FormGroup>([]);
   stations = signal<Station[]>([]);
   chauffeurs = signal<PartnerChauffeurItem[]>([]);
   /** Gare choisie (partenaire) pour filtrer la liste des conducteurs. */
@@ -145,6 +171,11 @@ export class AddTripComponent implements OnInit {
       next: (list) => this.chauffeurs.set(list),
       error: () => this.chauffeurs.set([]),
     });
+    this.partenaireService.getMyPartnerInfo().subscribe({
+      next: (p) => this.myCountryId.set(p.countryId ?? null),
+      error: (e) => console.error('[add-trip] Erreur chargement du pays de la société', e),
+    });
+    this.wireCityAutocomplete();
     if (this.showStationPicker()) {
       this.partenaireService.listStations().subscribe({
         next: (s) => {
@@ -196,6 +227,105 @@ export class AddTripComponent implements OnInit {
         }
       }
     }
+  }
+
+  /** Autocomplétion départ/arrivée/arrêts — GET /trips/cities/by-country filtré sur le pays de la
+   *  société connectée (myCountryId). Réinitialise l'ID sélectionné dès que le texte change à la
+   *  main, pour que le repli "ville introuvable" (cityId absent, cityName soumis tel quel) ne
+   *  s'applique qu'à ce qui a réellement été tapé, jamais à une ancienne sélection périmée. */
+  private wireCityAutocomplete(): void {
+    this.tripForm
+      .get('departureCity')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          this.departureSelectedId.set(null);
+          const countryId = this.myCountryId();
+          if (!countryId || !q || !q.trim()) return of([]);
+          return this.tripService.getCitiesByCountry(countryId, q);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => this.departureSuggestions.set(cities));
+
+    this.tripForm
+      .get('arrivalCity')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          this.arrivalSelectedId.set(null);
+          const countryId = this.myCountryId();
+          if (!countryId || !q || !q.trim()) return of([]);
+          return this.tripService.getCitiesByCountry(countryId, q);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => this.arrivalSuggestions.set(cities));
+
+    this.stopQuery$
+      .pipe(
+        debounceTime(200),
+        distinctUntilChanged((a, b) => a.index === b.index && a.q === b.q),
+        switchMap(({ index, q }) => {
+          const countryId = this.myCountryId();
+          if (!countryId || !q.trim()) return of({ index, cities: [] as CityOption[] });
+          return this.tripService.getCitiesByCountry(countryId, q).pipe(map((cities) => ({ index, cities })));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ index, cities }) => {
+        if (this.activeStopIndex() === index) this.stopSuggestions.set(cities);
+      });
+
+    this.stopsArray.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.syncStopsCsv());
+  }
+
+  selectDepartureCity(city: CityOption) {
+    this.tripForm.patchValue({ departureCity: city.name });
+    this.departureSelectedId.set(city.id);
+    this.departureSuggestions.set([]);
+  }
+
+  selectArrivalCity(city: CityOption) {
+    this.tripForm.patchValue({ arrivalCity: city.name });
+    this.arrivalSelectedId.set(city.id);
+    this.arrivalSuggestions.set([]);
+  }
+
+  addStopRow() {
+    this.stopsArray.push(this.fb.group({ city: [''], cityId: [null as number | null] }));
+  }
+
+  removeStopRow(index: number) {
+    this.stopsArray.removeAt(index);
+    if (this.activeStopIndex() === index) {
+      this.activeStopIndex.set(null);
+      this.stopSuggestions.set([]);
+    }
+  }
+
+  onStopCityInput(index: number, value: string) {
+    this.stopsArray.at(index).patchValue({ city: value, cityId: null });
+    this.activeStopIndex.set(index);
+    this.stopQuery$.next({ index, q: value });
+  }
+
+  selectStopCity(index: number, city: CityOption) {
+    this.stopsArray.at(index).patchValue({ city: city.name, cityId: city.id });
+    this.stopSuggestions.set([]);
+    this.activeStopIndex.set(null);
+  }
+
+  /** Reconstruit le CSV `tripForm.get('stops')` depuis stopsArray — réutilisé tel quel par
+   *  syncLegPrices/buildTripCityLabels, aucune duplication de cette logique. */
+  private syncStopsCsv() {
+    const csv = this.stopsArray.controls
+      .map((c) => (c.get('city')!.value || '').trim())
+      .filter((name) => name !== '')
+      .join(',');
+    this.tripForm.get('stops')!.setValue(csv);
   }
 
   onLegPriceInput(legIndex: number, ev: Event) {
@@ -326,6 +456,18 @@ export class AddTripComponent implements OnInit {
       totalSeats: formValue.availableSeats,
       availableSeats: formValue.availableSeats,
       moreInfo: formValue.stops,
+      // Ville choisie dans la liste (voir GET /trips/cities/by-country) — cityId prioritaire côté
+      // backend, sinon repli sur le nom tapé (TripService.resolveTripCity, "ville introuvable").
+      // `stops` toujours envoyé (même vide) pour que le backend résolve aussi départ/arrivée en
+      // vraies villes avec coordonnées (préalable à la durée réelle, voir TripStopSyncService).
+      departureCityId: this.departureSelectedId(),
+      arrivalCityId: this.arrivalSelectedId(),
+      stops: this.stopsArray.controls
+        .map((c) => ({
+          cityId: c.get('cityId')!.value as number | null,
+          cityName: ((c.get('city')!.value as string) || '').trim(),
+        }))
+        .filter((s) => s.cityName !== ''),
     };
     if (legFares != null) {
       tripPayload['legFares'] = legFares;

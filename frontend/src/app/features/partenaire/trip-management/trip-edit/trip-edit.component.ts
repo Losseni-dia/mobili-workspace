@@ -1,14 +1,16 @@
-import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { startWith } from 'rxjs';
+import { Subject, of, startWith } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 import { buildTripCityLabels, lastStopIndexFromLabels } from '../../../../core/utils/trip-city-labels.util';
 import { ConfigurationService } from '../../../../configurations/services/configuration.service';
 import { AuthService } from '../../../../core/services/auth/auth.service';
 import { PartenaireService, PartnerChauffeurItem } from '../../../../core/services/partners/partenaire.service';
-import { TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
+import { CityOption, TripLegFarePayload, TripService } from '../../../../core/services/trip/trip.service';
 import { NotificationService } from '../../../../core/services/notification/notification.service';
 import { VEHICLE_TYPE_ENUM_OPTIONS, type VehicleTypeName } from '../../../../core/constants/vehicle-types';
 import { extractApiErrorMessage } from '../../../../core/utils/api-error.util';
@@ -29,6 +31,7 @@ export class TripEditComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private notification = inject(NotificationService);
   private configuration = inject(ConfigurationService);
+  private destroyRef = inject(DestroyRef);
 
   /** Ce composant est chargé sous /partenaire/edit-trip/:id ET /gare/edit-trip/:id
    *  (business.routes.ts) : toute navigation interne doit rester dans le bon shell, sinon
@@ -50,6 +53,22 @@ export class TripEditComponent implements OnInit {
 
   cityLabelsPreview = signal<string[]>([]);
   legPrices = signal<number[]>([]);
+
+  /** Autocomplétion ville — voir AddTripComponent (même pattern), rattachée au pays de la
+   *  société connectée. */
+  myCountryId = signal<number | null>(null);
+  departureSuggestions = signal<CityOption[]>([]);
+  departureSelectedId = signal<number | null>(null);
+  arrivalSuggestions = signal<CityOption[]>([]);
+  arrivalSelectedId = signal<number | null>(null);
+  activeStopIndex = signal<number | null>(null);
+  stopSuggestions = signal<CityOption[]>([]);
+  private stopQuery$ = new Subject<{ index: number; q: string }>();
+
+  /** Arrêts intermédiaires — voir AddTripComponent.stopsArray (même pattern). Initialisé depuis
+   *  trip.moreInfo au chargement (loadTripData), sans cityId connu (résolu par nom au prochain
+   *  enregistrement, voir TripService.resolveTripCity côté backend). */
+  stopsArray = this.fb.array<FormGroup>([]);
   chauffeurs = signal<PartnerChauffeurItem[]>([]);
   /** Gare rattachée au trajet (filtrer la liste des conducteurs côté partenaire). */
   tripStationId = signal<number | null>(null);
@@ -122,6 +141,11 @@ export class TripEditComponent implements OnInit {
       next: (list) => this.chauffeurs.set(list),
       error: () => this.chauffeurs.set([]),
     });
+    this.partenaireService.getMyPartnerInfo().subscribe({
+      next: (p) => this.myCountryId.set(p.countryId ?? null),
+      error: (e) => console.error('[trip-edit] Erreur chargement du pays de la société', e),
+    });
+    this.wireCityAutocomplete();
 
     this.syncLegPrices();
     this.tripForm.valueChanges.pipe(startWith(this.tripForm.value)).subscribe(() => this.syncLegPrices());
@@ -155,6 +179,113 @@ export class TripEditComponent implements OnInit {
     next[legIndex] = Number.isNaN(v) || v < 0 ? 0 : v;
     this.legPrices.set(next);
     this.legFaresInvalid.set(false);
+  }
+
+  /** Voir AddTripComponent.wireCityAutocomplete (même pattern, dupliqué à dessein — ces deux
+   *  formulaires n'ont pas de classe de base commune dans ce projet). */
+  private wireCityAutocomplete(): void {
+    this.tripForm
+      .get('departureCity')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          this.departureSelectedId.set(null);
+          const countryId = this.myCountryId();
+          if (!countryId || !q || !q.trim()) return of([]);
+          return this.tripService.getCitiesByCountry(countryId, q);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => this.departureSuggestions.set(cities));
+
+    this.tripForm
+      .get('arrivalCity')!
+      .valueChanges.pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          this.arrivalSelectedId.set(null);
+          const countryId = this.myCountryId();
+          if (!countryId || !q || !q.trim()) return of([]);
+          return this.tripService.getCitiesByCountry(countryId, q);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((cities) => this.arrivalSuggestions.set(cities));
+
+    this.stopQuery$
+      .pipe(
+        debounceTime(200),
+        distinctUntilChanged((a, b) => a.index === b.index && a.q === b.q),
+        switchMap(({ index, q }) => {
+          const countryId = this.myCountryId();
+          if (!countryId || !q.trim()) return of({ index, cities: [] as CityOption[] });
+          return this.tripService.getCitiesByCountry(countryId, q).pipe(map((cities) => ({ index, cities })));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ index, cities }) => {
+        if (this.activeStopIndex() === index) this.stopSuggestions.set(cities);
+      });
+
+    this.stopsArray.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.syncStopsCsv());
+  }
+
+  selectDepartureCity(city: CityOption) {
+    this.tripForm.patchValue({ departureCity: city.name });
+    this.departureSelectedId.set(city.id);
+    this.departureSuggestions.set([]);
+  }
+
+  selectArrivalCity(city: CityOption) {
+    this.tripForm.patchValue({ arrivalCity: city.name });
+    this.arrivalSelectedId.set(city.id);
+    this.arrivalSuggestions.set([]);
+  }
+
+  addStopRow() {
+    this.stopsArray.push(this.fb.group({ city: [''], cityId: [null as number | null] }));
+  }
+
+  removeStopRow(index: number) {
+    this.stopsArray.removeAt(index);
+    if (this.activeStopIndex() === index) {
+      this.activeStopIndex.set(null);
+      this.stopSuggestions.set([]);
+    }
+  }
+
+  onStopCityInput(index: number, value: string) {
+    this.stopsArray.at(index).patchValue({ city: value, cityId: null });
+    this.activeStopIndex.set(index);
+    this.stopQuery$.next({ index, q: value });
+  }
+
+  selectStopCity(index: number, city: CityOption) {
+    this.stopsArray.at(index).patchValue({ city: city.name, cityId: city.id });
+    this.stopSuggestions.set([]);
+    this.activeStopIndex.set(null);
+  }
+
+  private syncStopsCsv() {
+    const csv = this.stopsArray.controls
+      .map((c) => (c.get('city')!.value || '').trim())
+      .filter((name) => name !== '')
+      .join(',');
+    this.tripForm.get('stops')!.setValue(csv);
+  }
+
+  /** Reconstruit stopsArray depuis le CSV moreInfo chargé (loadTripData) — sans cityId connu
+   *  (voir Javadoc du champ), résolu par nom au prochain enregistrement. */
+  private setStopsArrayFromCsv(csv: string | null | undefined) {
+    this.stopsArray.clear();
+    if (!csv) return;
+    for (const part of csv.split(',')) {
+      const name = part.trim();
+      if (name === '') continue;
+      this.stopsArray.push(this.fb.group({ city: [name], cityId: [null as number | null] }), { emitEvent: false });
+    }
   }
 
   loadTripData() {
@@ -224,6 +355,7 @@ export class TripEditComponent implements OnInit {
           },
           { emitEvent: false },
         );
+        this.setStopsArrayFromCsv(trip.moreInfo);
 
         if (trip.vehicleImageUrl) {
           const url = this.configuration.resolveUploadMediaUrl(trip.vehicleImageUrl);
@@ -360,6 +492,17 @@ export class TripEditComponent implements OnInit {
       totalSeats: formValue.availableSeats,
       availableSeats: formValue.availableSeats,
       moreInfo: formValue.stops,
+      // Voir AddTripComponent.onSubmit — même logique (cityId prioritaire, repli texte "ville
+      // introuvable", `stops` toujours envoyé pour que départ/arrivée soient aussi résolus en
+      // vraies villes avec coordonnées).
+      departureCityId: this.departureSelectedId(),
+      arrivalCityId: this.arrivalSelectedId(),
+      stops: this.stopsArray.controls
+        .map((c) => ({
+          cityId: c.get('cityId')!.value as number | null,
+          cityName: ((c.get('city')!.value as string) || '').trim(),
+        }))
+        .filter((s) => s.cityName !== ''),
     };
     if (last > 1) {
       tripPayload['originDestinationPrice'] = mainTripPrice;

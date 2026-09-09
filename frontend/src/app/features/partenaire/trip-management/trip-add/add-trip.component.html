@@ -33,22 +33,73 @@
         }
 
         <div class="form-grid">
-          <div class="field">
+          <div class="field city-autocomplete">
             <label for="dep">Ville de départ</label>
-            <input id="dep" type="text" formControlName="departureCity" placeholder="Ex. Dakar" />
+            <input id="dep" type="text" formControlName="departureCity" placeholder="Ex. Dakar" autocomplete="off" />
+            @if (departureSuggestions().length > 0) {
+              <ul class="city-suggestions">
+                @for (c of departureSuggestions(); track c.id) {
+                  <li>
+                    <button type="button" (click)="selectDepartureCity(c)">
+                      {{ c.name }}
+                      @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (tripForm.get('departureCity')?.value && !departureSelectedId()) {
+              <p class="city-hint">Ville introuvable dans la liste — soumise telle quelle, en attente de validation admin.</p>
+            }
           </div>
-          <div class="field">
+          <div class="field city-autocomplete">
             <label for="arr">Ville d’arrivée</label>
-            <input id="arr" type="text" formControlName="arrivalCity" placeholder="Ex. Touba" />
+            <input id="arr" type="text" formControlName="arrivalCity" placeholder="Ex. Touba" autocomplete="off" />
+            @if (arrivalSuggestions().length > 0) {
+              <ul class="city-suggestions">
+                @for (c of arrivalSuggestions(); track c.id) {
+                  <li>
+                    <button type="button" (click)="selectArrivalCity(c)">
+                      {{ c.name }}
+                      @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (tripForm.get('arrivalCity')?.value && !arrivalSelectedId()) {
+              <p class="city-hint">Ville introuvable dans la liste — soumise telle quelle, en attente de validation admin.</p>
+            }
           </div>
           <div class="field field--full">
-            <label for="stops">Villes traversées</label>
-            <input
-              id="stops"
-              type="text"
-              formControlName="stops"
-              placeholder="Ex. Thiès, Diourbel, Khombole"
-            />
+            <label>Villes traversées</label>
+            <div class="stops-list">
+              @for (row of stopsArray.controls; track $index) {
+                <div class="stop-row city-autocomplete">
+                  <input
+                    type="text"
+                    [value]="row.get('city')!.value"
+                    (input)="onStopCityInput($index, $any($event.target).value)"
+                    placeholder="Ex. Thiès"
+                    autocomplete="off"
+                  />
+                  <button type="button" class="stop-remove" (click)="removeStopRow($index)" aria-label="Supprimer cet arrêt">✕</button>
+                  @if (activeStopIndex() === $index && stopSuggestions().length > 0) {
+                    <ul class="city-suggestions">
+                      @for (c of stopSuggestions(); track c.id) {
+                        <li>
+                          <button type="button" (click)="selectStopCity($index, c)">
+                            {{ c.name }}
+                            @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  } @else if (activeStopIndex() === $index && row.get('city')!.value && !row.get('cityId')!.value) {
+                    <p class="city-hint">Ville introuvable — soumise telle quelle, en attente de validation admin.</p>
+                  }
+                </div>
+              }
+            </div>
+            <button type="button" class="btn-add-stop" (click)="addStopRow()">+ Ajouter un arrêt</button>
             <span class="field-hint">Laissez vide si trajet direct.</span>
           </div>
         </div>
