@@ -496,97 +496,100 @@ class _EtaBadge extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Timeline arrêts — ligne verticale connectant les points, style FlixBus/
-// BlaBlaCar, plutôt que des points isolés séparés par de simples dividers.
+// Timeline arrêts — ligne horizontale connectant les points, défilable.
+// Anciennement une Column verticale (une ligne par arrêt) : avec beaucoup de
+// tronçons, la page détail s'allongeait indéfiniment. Passée en Row
+// défilable horizontalement (retour utilisateur) — hauteur fixe pour cette
+// section quel que soit le nombre d'arrêts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StopsTimeline extends StatelessWidget {
   const _StopsTimeline({required this.stops});
   final List<dynamic> stops;
 
-  static const double _railWidth = 28;
+  /// Largeur réservée à chaque arrêt (nom de ville + heure en dessous du
+  /// point) — assez pour un nom de ville moyen sans wrap intempestif.
+  static const double _stopWidth = 92;
+  static const double _dotAreaHeight = 24;
 
   @override
   Widget build(BuildContext context) {
-    // Une seule ligne continue en fond (Positioned dans un Stack), plutôt
-    // que des segments Expanded par ligne dans une Column enveloppée par
-    // IntrinsicHeight — cette dernière combinaison (Expanded imbriqué dans
-    // un contexte de hauteur intrinsèque) est un piège Flutter connu qui
-    // peut faire planter tout le layout de la page ("BoxConstraints forces
-    // an infinite width" / erreurs de layout en cascade).
-    return Stack(
-      children: [
-        Positioned(
-          left: _railWidth / 2 - 1,
-          top: 10,
-          bottom: 10,
-          child: Container(
-            width: 2,
-            color: AppColors.mobiliBlue.withValues(alpha: 0.25),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Stack(
+        children: [
+          // Ligne continue en fond, à hauteur du centre des points — même
+          // principe que l'ancienne version verticale, juste retournée.
+          Positioned(
+            top: _dotAreaHeight / 2 - 1,
+            left: _stopWidth / 2,
+            right: _stopWidth / 2,
+            child: Container(
+              height: 2,
+              color: AppColors.mobiliBlue.withValues(alpha: 0.25),
+            ),
           ),
-        ),
-        Column(
-          children: List.generate(stops.length, (i) {
-            final stop = stops[i];
-            final isFirst = i == 0;
-            final isLast = i == stops.length - 1;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: _railWidth,
-                  child: Center(
-                    child: Container(
-                      width: isFirst || isLast ? 16 : 10,
-                      height: isFirst || isLast ? 16 : 10,
-                      decoration: BoxDecoration(
-                        color: isFirst || isLast
-                            ? AppColors.mobiliBlue
-                            : AppColors.white,
-                        shape: BoxShape.circle,
-                        border: isFirst || isLast
-                            ? null
-                            : Border.all(
-                                color: AppColors.mobiliBlue, width: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(stops.length, (i) {
+              final stop = stops[i];
+              final isFirst = i == 0;
+              final isLast = i == stops.length - 1;
+              return SizedBox(
+                width: _stopWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: _dotAreaHeight,
+                      child: Center(
+                        child: Container(
+                          width: isFirst || isLast ? 16 : 10,
+                          height: isFirst || isLast ? 16 : 10,
+                          decoration: BoxDecoration(
+                            color: isFirst || isLast
+                                ? AppColors.mobiliBlue
+                                : AppColors.white,
+                            shape: BoxShape.circle,
+                            border: isFirst || isLast
+                                ? null
+                                : Border.all(
+                                    color: AppColors.mobiliBlue, width: 2),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            stop.cityName as String,
-                            style: AppTextStyles.titleMedium.copyWith(
-                              fontWeight: isFirst || isLast
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: isFirst || isLast
-                                  ? AppColors.mobiliBlueDeep
-                                  : AppColors.gray700,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          stop.formattedTime as String,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.mobiliBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    Text(
+                      stop.cityName as String,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontSize: 13,
+                        fontWeight:
+                            isFirst || isLast ? FontWeight.w700 : FontWeight.w500,
+                        color: isFirst || isLast
+                            ? AppColors.mobiliBlueDeep
+                            : AppColors.gray700,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      stop.formattedTime as String,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontSize: 12,
+                        color: AppColors.mobiliBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            );
-          }),
-        ),
-      ],
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 }
