@@ -100,6 +100,7 @@ export class TripEditComponent implements OnInit {
   legRows = computed(() => {
     const labs = this.cityLabelsPreview();
     const prices = this.legPrices();
+    const last = labs.length - 1;
     const rows: { fromIndex: number; toIndex: number; fromLabel: string; toLabel: string; price: number }[] = [];
     for (let i = 0; i < labs.length - 1; i++) {
       // Départ/arrivée pas encore saisis (obligatoires avant tout enregistrement, voir onSubmit) :
@@ -107,6 +108,9 @@ export class TripEditComponent implements OnInit {
       if (!labs[i]) continue;
       for (let j = i + 1; j < labs.length; j++) {
         if (!labs[j]) continue;
+        // Départ→arrivée déjà saisi juste au-dessus ("Prix trajet complet") dès qu'il y a un
+        // arrêt intermédiaire — ne pas le redemander une 2ᵉ fois ici.
+        if (i === 0 && j === last && last > 1) continue;
         rows.push({
           fromIndex: i,
           toIndex: j,
