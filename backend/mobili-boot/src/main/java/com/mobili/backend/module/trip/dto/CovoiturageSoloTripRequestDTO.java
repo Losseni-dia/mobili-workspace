@@ -46,4 +46,13 @@ public class CovoiturageSoloTripRequestDTO {
 
     /** Villes d’étape optionnelles, virgule (même format que l’espace pro). */
     private String moreInfo;
+
+    /**
+     * Ville choisie dans la liste (voir GET /trips/cities/by-country) — prioritaire sur
+     * {@link #departureCity}/{@link #arrivalCity} si présente, sinon repli sur le texte tapé
+     * (comportement historique inchangé, aucune régression). {@code null} = client pas encore
+     * migré vers l'autocomplétion (ancienne version de l'app mobilipro).
+     */
+    private Long departureCityId;
+    private Long arrivalCityId;
 }

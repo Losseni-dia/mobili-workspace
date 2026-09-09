@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,6 +10,20 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
+
+/// Une ville de la liste (voir GET /trips/cities/by-country) — aligné sur CityOption (backend).
+class _CityOption {
+  const _CityOption({required this.id, required this.name, required this.verified});
+  final int id;
+  final String name;
+  final bool verified;
+
+  factory _CityOption.fromJson(Map<String, dynamic> j) => _CityOption(
+        id: j['id'] as int,
+        name: j['name'] as String,
+        verified: j['verified'] as bool? ?? true,
+      );
+}
 
 /// Types de véhicule pertinents pour un conducteur particulier (cf.
 /// VehicleType.java côté backend — sous-ensemble personnel, hors flotte pro).
@@ -52,10 +67,24 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
   bool _isSaving = false;
   String? _errorMessage;
 
+  /// Autocomplétion ville — restreinte à la Côte d'Ivoire (les conducteurs covoiturage
+  /// particuliers de cette app y sont tous rattachés ; pas de notion de "pays de la société"
+  /// pour un compte individuel, contrairement au flux gares/société web). `*CityId` reste `null`
+  /// tant qu'aucune suggestion n'a été choisie : dans ce cas le nom tapé est soumis tel quel,
+  /// exactement comme avant ce changement (aucune régression sur le texte libre).
+  int? _countryId;
+  int? _departureCityId;
+  int? _arrivalCityId;
+  List<_CityOption> _departureSuggestions = [];
+  List<_CityOption> _arrivalSuggestions = [];
+  Timer? _departureDebounce;
+  Timer? _arrivalDebounce;
+
   @override
   void initState() {
     super.initState();
     if (_isEditing) _loadExistingTrip();
+    _loadCountryId();
   }
 
   @override
@@ -67,7 +96,78 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
     _priceCtrl.dispose();
     _totalSeatsCtrl.dispose();
     _moreInfoCtrl.dispose();
+    _departureDebounce?.cancel();
+    _arrivalDebounce?.cancel();
     super.dispose();
+  }
+
+  /// Résout l'id du pays "Côte d'Ivoire" une fois pour filtrer les recherches de ville — en cas
+  /// d'échec (réseau, pays introuvable), l'autocomplétion reste simplement désactivée et les
+  /// champs se comportent comme avant (texte libre), jamais bloquant.
+  Future<void> _loadCountryId() async {
+    try {
+      final res = await ApiClient.instance.dio.get<List<dynamic>>('/trips/countries');
+      final countries = res.data ?? [];
+      final ci = countries.cast<Map<String, dynamic>>().firstWhere(
+            (c) => c['isoCode'] == 'CI',
+            orElse: () => const {},
+          );
+      final id = ci['id'] as int?;
+      if (mounted && id != null) setState(() => _countryId = id);
+    } catch (_) {
+      // Pas bloquant — voir Javadoc de la méthode.
+    }
+  }
+
+  Future<List<_CityOption>> _searchCities(String query) async {
+    final countryId = _countryId;
+    if (countryId == null || query.trim().isEmpty) return [];
+    try {
+      final res = await ApiClient.instance.dio.get<List<dynamic>>(
+        '/trips/cities/by-country',
+        queryParameters: {'countryId': countryId, 'q': query.trim()},
+      );
+      return (res.data ?? [])
+          .cast<Map<String, dynamic>>()
+          .map(_CityOption.fromJson)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  void _onDepartureChanged(String value) {
+    setState(() => _departureCityId = null);
+    _departureDebounce?.cancel();
+    _departureDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final results = await _searchCities(value);
+      if (mounted) setState(() => _departureSuggestions = results);
+    });
+  }
+
+  void _onArrivalChanged(String value) {
+    setState(() => _arrivalCityId = null);
+    _arrivalDebounce?.cancel();
+    _arrivalDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final results = await _searchCities(value);
+      if (mounted) setState(() => _arrivalSuggestions = results);
+    });
+  }
+
+  void _selectDepartureCity(_CityOption city) {
+    setState(() {
+      _departureCtrl.text = city.name;
+      _departureCityId = city.id;
+      _departureSuggestions = [];
+    });
+  }
+
+  void _selectArrivalCity(_CityOption city) {
+    setState(() {
+      _arrivalCtrl.text = city.name;
+      _arrivalCityId = city.id;
+      _arrivalSuggestions = [];
+    });
   }
 
   Future<void> _loadExistingTrip() async {
@@ -142,6 +242,10 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
         'totalSeats': int.parse(_totalSeatsCtrl.text.trim()),
         if (_plateCtrl.text.trim().isNotEmpty) 'vehiculePlateNumber': _plateCtrl.text.trim(),
         if (_moreInfoCtrl.text.trim().isNotEmpty) 'moreInfo': _moreInfoCtrl.text.trim(),
+        // Ville choisie dans la liste (voir GET /trips/cities/by-country) — cityId prioritaire
+        // côté backend, sinon repli sur le nom tapé tel quel (comportement historique inchangé).
+        if (_departureCityId != null) 'departureCityId': _departureCityId,
+        if (_arrivalCityId != null) 'arrivalCityId': _arrivalCityId,
       };
 
       final formData = FormData.fromMap({
@@ -215,9 +319,33 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
 
                     const _SectionLabel(label: 'Itinéraire'),
                     const SizedBox(height: 12),
-                    _Field(controller: _departureCtrl, label: 'Ville de départ', validator: _required),
+                    _Field(
+                      controller: _departureCtrl,
+                      label: 'Ville de départ',
+                      validator: _required,
+                      onChanged: _onDepartureChanged,
+                    ),
+                    if (_departureSuggestions.isNotEmpty)
+                      _CitySuggestionsList(
+                        suggestions: _departureSuggestions,
+                        onSelect: _selectDepartureCity,
+                      )
+                    else if (_departureCtrl.text.trim().isNotEmpty && _departureCityId == null)
+                      const _CityNotFoundHint(),
                     const SizedBox(height: 12),
-                    _Field(controller: _arrivalCtrl, label: 'Ville d\'arrivée', validator: _required),
+                    _Field(
+                      controller: _arrivalCtrl,
+                      label: 'Ville d\'arrivée',
+                      validator: _required,
+                      onChanged: _onArrivalChanged,
+                    ),
+                    if (_arrivalSuggestions.isNotEmpty)
+                      _CitySuggestionsList(
+                        suggestions: _arrivalSuggestions,
+                        onSelect: _selectArrivalCity,
+                      )
+                    else if (_arrivalCtrl.text.trim().isNotEmpty && _arrivalCityId == null)
+                      const _CityNotFoundHint(),
                     const SizedBox(height: 12),
                     _Field(
                         controller: _boardingPointCtrl,
@@ -406,6 +534,67 @@ class _SectionLabel extends StatelessWidget {
       );
 }
 
+/// Liste de suggestions sous le champ ville (jamais un overlay flottant, cohérent avec le style
+/// simple des autres pages de cette app) — un tap remplit le champ et mémorise l'id choisi.
+class _CitySuggestionsList extends StatelessWidget {
+  const _CitySuggestionsList({required this.suggestions, required this.onSelect});
+
+  final List<_CityOption> suggestions;
+  final ValueChanged<_CityOption> onSelect;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 6),
+        constraints: const BoxConstraints(maxHeight: 180),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.gray200),
+        ),
+        child: ListView.builder(
+          shrinkWrap: true,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          itemCount: suggestions.length,
+          itemBuilder: (_, i) {
+            final city = suggestions[i];
+            return InkWell(
+              onTap: () => onSelect(city),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.mobiliBlue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(city.name, style: const TextStyle(color: AppColors.mobiliBlueDeep)),
+                    ),
+                    if (!city.verified)
+                      const Text('non vérifiée',
+                          style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+}
+
+/// Message affiché quand aucune suggestion ne correspond au texte tapé — la saisie reste
+/// acceptée telle quelle (repli "ville introuvable", voir CityLookupService côté backend).
+class _CityNotFoundHint extends StatelessWidget {
+  const _CityNotFoundHint();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.only(top: 6),
+        child: Text(
+          'Ville introuvable dans la liste — sera soumise telle quelle, en attente de validation admin.',
+          style: TextStyle(fontSize: 11, color: Colors.orange),
+        ),
+      );
+}
+
 class _Field extends StatelessWidget {
   const _Field({
     required this.controller,
@@ -413,6 +602,7 @@ class _Field extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -420,6 +610,7 @@ class _Field extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -427,6 +618,7 @@ class _Field extends StatelessWidget {
         validator: validator,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
           filled: true,

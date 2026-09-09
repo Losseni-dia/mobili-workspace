@@ -148,8 +148,8 @@ public class TripService {
         }
         Partner pool = covoiturageSoloPartnerBootstrap.getPoolPartner();
         Trip trip = new Trip();
-        trip.setDepartureCity(dto.getDepartureCity().trim());
-        trip.setArrivalCity(dto.getArrivalCity().trim());
+        trip.setDepartureCity(resolveCovoiturageCityName(dto.getDepartureCityId(), dto.getDepartureCity()));
+        trip.setArrivalCity(resolveCovoiturageCityName(dto.getArrivalCityId(), dto.getArrivalCity()));
         trip.setBoardingPoint(dto.getBoardingPoint().trim());
         String plate = dto.getVehiculePlateNumber() != null && !dto.getVehiculePlateNumber().isBlank()
                 ? dto.getVehiculePlateNumber().trim()
@@ -234,8 +234,8 @@ public class TripService {
         if (!admin && !t.getCovoiturageOrganizer().getId().equals(principal.getUser().getId())) {
             throw new MobiliException(MobiliErrorCode.ACCESS_DENIED, "Vous n'êtes pas l'organisateur de ce voyage.");
         }
-        t.setDepartureCity(dto.getDepartureCity().trim());
-        t.setArrivalCity(dto.getArrivalCity().trim());
+        t.setDepartureCity(resolveCovoiturageCityName(dto.getDepartureCityId(), dto.getDepartureCity()));
+        t.setArrivalCity(resolveCovoiturageCityName(dto.getArrivalCityId(), dto.getArrivalCity()));
         t.setBoardingPoint(dto.getBoardingPoint().trim());
         if (dto.getVehiculePlateNumber() != null && !dto.getVehiculePlateNumber().isBlank()) {
             t.setVehiculePlateNumber(dto.getVehiculePlateNumber().trim().toUpperCase(Locale.ROOT));
@@ -1075,6 +1075,23 @@ public class TripService {
 
         trip.setMoreInfo(String.join(",", intermediateNames));
         return resolved;
+    }
+
+    /**
+     * Résolution simplifiée pour le covoiturage particulier (pas de notion de "pays de la
+     * société" pour un compte individuel — contrairement à {@link #resolveTripCity}) : si
+     * {@code cityId} est fourni (ville choisie dans la liste, voir GET /trips/cities/by-country),
+     * son nom exact remplace le texte tapé — corrige les fautes de frappe sans jamais bloquer.
+     * Sans id, le texte tapé est conservé tel quel (comportement historique inchangé, aucune
+     * création de ville "en attente" pour ce flux — hors scope, voir plan Pays/Villes).
+     */
+    private String resolveCovoiturageCityName(Long cityId, String fallbackText) {
+        if (cityId != null) {
+            return cityRepository.findById(cityId)
+                    .map(City::getName)
+                    .orElseGet(() -> fallbackText != null ? fallbackText.trim() : null);
+        }
+        return fallbackText != null ? fallbackText.trim() : null;
     }
 
     /** cityId (liste) prioritaire ; sinon cityName — texte libre résolu/créé en attente de
