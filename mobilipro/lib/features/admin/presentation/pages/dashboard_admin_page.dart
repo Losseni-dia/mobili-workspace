@@ -21,6 +21,7 @@ import 'admin_refunds_page.dart';
 import 'admin_coupons_page.dart';
 import 'admin_claims_page.dart';
 import 'admin_transactions_page.dart';
+import 'admin_geocoding_page.dart';
 
 
 String _currentMonthLabel() {
@@ -729,6 +730,21 @@ class AdminDashboardPage extends ConsumerWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AdminGeocodingPage(),
+                      ),
+                    ),
+                    child: const KpiCard(
+                      icon: Icons.location_on_rounded,
+                      label: 'Géocodage arrêts',
+                      value: 'Gérer',
+                      color: AppColors.mobiliBlue,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Consumer(
