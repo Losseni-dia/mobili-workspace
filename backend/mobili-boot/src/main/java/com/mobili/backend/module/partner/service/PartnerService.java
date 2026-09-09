@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.city.entity.Country;
+import com.mobili.backend.module.city.repository.CountryRepository;
 import com.mobili.backend.module.notification.entity.MobiliNotificationType;
 import com.mobili.backend.module.notification.service.InboxNotificationService;
 import com.mobili.backend.module.partner.dto.PartnerRegisterDTO;
@@ -38,6 +40,7 @@ public class PartnerService {
     private final UploadService uploadService;
     private final PartnerMapper partnerMapper;
     private final InboxNotificationService inboxNotificationService;
+    private final CountryRepository countryRepository;
 
     public PartnerService(
             PartnerRepository partenaireRepository,
@@ -45,13 +48,15 @@ public class PartnerService {
             RoleRepository roleRepository,
             UploadService uploadService,
             PartnerMapper partnerMapper,
-            @Lazy InboxNotificationService inboxNotificationService) {
+            @Lazy InboxNotificationService inboxNotificationService,
+            CountryRepository countryRepository) {
         this.partenaireRepository = partenaireRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.uploadService = uploadService;
         this.partnerMapper = partnerMapper;
         this.inboxNotificationService = inboxNotificationService;
+        this.countryRepository = countryRepository;
     }
 
     public Partner getCurrentPartner() {
@@ -231,6 +236,13 @@ public class PartnerService {
 
         Partner partenaire = partnerMapper.toEntity(dto);
         partenaire.setOwner(owner);
+        // Long -> Country : pas mappé automatiquement par MapStruct, résolu explicitement.
+        if (dto.getCountryId() != null) {
+            Country country = countryRepository.findById(dto.getCountryId())
+                    .orElseThrow(() -> new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                            "Pays introuvable.", Map.of("countryId", "Pays introuvable.")));
+            partenaire.setCountry(country);
+        }
 
         Role partnerRole = roleRepository.findByName(UserRole.PARTNER).get();
         owner.getRoles().add(partnerRole);

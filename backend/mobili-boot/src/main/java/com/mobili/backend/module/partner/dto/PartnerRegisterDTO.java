@@ -16,5 +16,10 @@ public class PartnerRegisterDTO {
     private String phone;
 
     private String businessNumber;
+
+    /** Pays de la société — voir Country. Obligatoire pour les nouvelles inscriptions publiques
+     *  (RegisterCompanyPublicDTO), résolu et assigné dans PartnerService.createPartnerForOwner
+     *  (pas mappé automatiquement par MapStruct : Long -> entité Country). */
+    private Long countryId;
     // Le logo sera géré à part via le MultipartFile
 }

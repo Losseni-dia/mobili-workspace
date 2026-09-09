@@ -2,6 +2,7 @@ package com.mobili.backend.module.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -44,4 +45,9 @@ public class RegisterCompanyPublicDTO {
 
     /** RCC / N° contribuable / ICE selon pays — optionnel. */
     private String businessNumber;
+
+    /** Pays de la société — obligatoire (voir Country, GET /trips/countries). Rattache aussi
+     *  toutes les gares créées ensuite (une gare ne peut être que dans le pays de sa société). */
+    @NotNull(message = "Le pays de la société est obligatoire")
+    private Long countryId;
 }

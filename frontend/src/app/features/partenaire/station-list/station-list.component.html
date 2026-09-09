@@ -72,9 +72,26 @@
                             <span>Nom de la gare</span>
                             <input type="text" formControlName="name" />
                           </label>
-                          <label class="ig">
-                            <span>Ville</span>
-                            <input type="text" formControlName="city" />
+                          <label class="ig city-autocomplete">
+                            <span>Ville{{ myCountryName() ? ' (' + myCountryName() + ')' : '' }}</span>
+                            <input type="text" formControlName="city" autocomplete="off" />
+                            @if (editCitySuggestions().length > 0) {
+                              <ul class="city-suggestions">
+                                @for (c of editCitySuggestions(); track c.id) {
+                                  <li>
+                                    <button type="button" (click)="selectEditCity(c)">
+                                      {{ c.name }}
+                                      @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
+                                    </button>
+                                  </li>
+                                }
+                              </ul>
+                            } @else if (editForm.get('city')?.value && !editSelectedCityId()) {
+                              <p class="city-hint">
+                                Ville introuvable dans la liste — vous pouvez enregistrer quand même, elle sera
+                                soumise pour validation par un administrateur.
+                              </p>
+                            }
                           </label>
                           <label class="ig">
                             <span>Nouveau mot de passe (optionnel)</span>
@@ -157,9 +174,26 @@
           <span>Nom de la gare</span>
           <input type="text" formControlName="name" placeholder="ex. Gare UTB Adjamé" autocomplete="off" />
         </label>
-        <label class="ig">
-          <span>Ville</span>
+        <label class="ig city-autocomplete">
+          <span>Ville{{ myCountryName() ? ' (' + myCountryName() + ')' : '' }}</span>
           <input type="text" formControlName="city" placeholder="ex. Abidjan" autocomplete="off" />
+          @if (addCitySuggestions().length > 0) {
+            <ul class="city-suggestions">
+              @for (c of addCitySuggestions(); track c.id) {
+                <li>
+                  <button type="button" (click)="selectAddCity(c)">
+                    {{ c.name }}
+                    @if (!c.verified) { <span class="city-pending-tag">non vérifiée</span> }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else if (form.get('city')?.value && !addSelectedCityId()) {
+            <p class="city-hint">
+              Ville introuvable dans la liste — vous pouvez enregistrer quand même, elle sera soumise pour
+              validation par un administrateur.
+            </p>
+          }
         </label>
         <label class="ig">
           <span>Mot de passe de connexion (optionnel)</span>

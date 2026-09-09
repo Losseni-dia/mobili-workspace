@@ -25,6 +25,9 @@ export interface Partner {
   approvalStatus?: string;
   /** Motif de rejet le plus récent, renseigné uniquement si approvalStatus = REJECTED. */
   rejectionReason?: string | null;
+  /** Pays de la société — filtre les villes proposées à la création de gare. */
+  countryId?: number | null;
+  countryName?: string | null;
 }
 
 export interface PartnerDashboard {
@@ -226,14 +229,21 @@ export class PartenaireService {
     return this.http.patch<PartnerChauffeurItem>(`/partenaire/chauffeurs/${userId}/affiliation`, body);
   }
 
-  /** `password` optionnel (min. 6) — aligné sur `_StationFormSheet` (mobile) : compte connexion "gare legacy". */
-  createStation(body: { name: string; city: string; active?: boolean; password?: string }): Observable<Station> {
+  /**
+   * `password` optionnel (min. 6) — aligné sur `_StationFormSheet` (mobile) : compte connexion "gare legacy".
+   * `cityId` : ville choisie dans la liste (voir GET /trips/cities/by-country) — prioritaire si présent.
+   * `cityName` : repli "ville introuvable" (voir CityLookupService côté backend), soumis tel quel si
+   * aucune ville de la liste ne correspond ; créée en attente de validation admin.
+   */
+  createStation(
+    body: { name: string; cityId?: number; cityName?: string; active?: boolean; password?: string },
+  ): Observable<Station> {
     return this.http.post<Station>('/partenaire/stations', body);
   }
 
   updateStation(
     id: number,
-    body: { name: string; city: string; active?: boolean; password?: string },
+    body: { name: string; cityId?: number; cityName?: string; active?: boolean; password?: string },
   ): Observable<Station> {
     return this.http.put<Station>(`/partenaire/stations/${id}`, body);
   }

@@ -8,6 +8,25 @@ export interface TripLegFarePayload {
   price: number;
 }
 
+/** Aligné sur CountryOption (backend, module.city.dto) — GET /trips/countries. */
+export interface CountryOption {
+  id: number;
+  name: string;
+  isoCode: string;
+  continent: string | null;
+}
+
+/** Aligné sur CityOption (backend, module.city.dto) — GET /trips/cities/by-country.
+ *  latitude/longitude peuvent être nulles (ville pas encore géocodée par un admin) : la ville
+ *  reste sélectionnable, verified permet d'afficher un avertissement le cas échéant. */
+export interface CityOption {
+  id: number;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  verified: boolean;
+}
+
 /** Brouillon pour POST /trips/price-preview (partenaire / admin). */
 export interface TripPricePreviewDraft {
   departureCity: string;
@@ -105,6 +124,21 @@ export class TripService {
     const q = query.trim();
     if (!q) return of([]);
     return this.http.get<string[]>('/trips/cities', { params: new HttpParams().set('q', q) });
+  }
+
+  /** Liste des pays — endpoint public, utilisé par l'inscription société (choix du pays) et la
+   *  création de gare (filtrage des villes par pays du partenaire connecté). */
+  getCountries(): Observable<CountryOption[]> {
+    return this.http.get<CountryOption[]>('/trips/countries');
+  }
+
+  /** Villes rattachées à un pays donné — pour l'autocomplétion "Ville" d'une gare (une gare ne
+   *  peut être que dans le pays de sa société, voir StationService.resolveCity côté backend). */
+  getCitiesByCountry(countryId: number, query: string): Observable<CityOption[]> {
+    let params = new HttpParams().set('countryId', countryId);
+    const q = query.trim();
+    if (q) params = params.set('q', q);
+    return this.http.get<CityOption[]>('/trips/cities/by-country', { params });
   }
 
   getAllTrips(transportType?: string): Observable<Trip[]> {

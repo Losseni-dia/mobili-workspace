@@ -4,7 +4,7 @@ import com.mobili.backend.module.admin.dto.AdminCityApplyRequest;
 import com.mobili.backend.module.admin.dto.AdminCityApplyResponse;
 import com.mobili.backend.module.admin.dto.AdminCityPreviewItem;
 import com.mobili.backend.module.admin.dto.AdminCityPreviewResponse;
-import com.mobili.backend.module.admin.dto.CountryOption;
+import com.mobili.backend.module.city.dto.CountryOption;
 import com.mobili.backend.module.city.entity.City;
 import com.mobili.backend.module.city.entity.Country;
 import com.mobili.backend.module.city.repository.CityRepository;

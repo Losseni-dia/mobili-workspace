@@ -15,4 +15,8 @@ public class PartnerProfileDTO {
     private String registrationCode;
     private String approvalStatus;
     private String rejectionReason;
+    /** Pays de la société (voir Country) — filtre les villes proposées à la création de gare
+     *  (StationService.resolveCity impose la même contrainte côté backend). */
+    private Long countryId;
+    private String countryName;
 }

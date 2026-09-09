@@ -329,6 +329,57 @@
   margin-top: 4px;
 }
 
+// ---- Autocomplétion ville (rattachée au pays de la société) ----
+.city-autocomplete {
+  position: relative;
+}
+
+.city-suggestions {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: variables.$white;
+  border: 1px solid variables.$gray-200;
+  border-radius: variables.$radius-sm;
+  box-shadow: variables.$shadow-sm;
+  max-height: 220px;
+  overflow-y: auto;
+
+  li button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border: none;
+    background: none;
+    border-radius: variables.$radius-sm;
+    font-size: 0.88rem;
+    color: variables.$gray-700;
+    cursor: pointer;
+
+    &:hover { background: variables.$gray-100; }
+  }
+}
+
+.city-pending-tag {
+  margin-left: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: variables.$warning;
+}
+
+.city-hint {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: variables.$warning;
+  line-height: 1.4;
+}
+
 .btn-submit {
   @include mixins.btn-primary;
   width: 100%;

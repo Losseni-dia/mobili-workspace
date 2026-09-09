@@ -69,6 +69,8 @@ export interface RegisterCompanyPublicPayload {
   companyEmail?: string;
   companyPhone: string;
   businessNumber?: string;
+  /** Pays de la société — obligatoire (voir Country, GET /trips/countries). */
+  countryId: number;
 }
 
 /** Corps minimal renvoyé par l’API à l’inscription (aligné sur login). */

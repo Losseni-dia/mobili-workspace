@@ -79,6 +79,19 @@
                     <span>Téléphone entreprise</span>
                     <input type="tel" formControlName="companyPhone" required />
                 </label>
+                <label>
+                    <span>Pays</span>
+                    <select formControlName="countryId" required>
+                        <option [ngValue]="null" disabled>Sélectionner un pays</option>
+                        @for (grp of countryGroups(); track grp.group) {
+                            <optgroup [label]="grp.group">
+                                @for (opt of grp.options; track opt.id) {
+                                    <option [ngValue]="opt.id">{{ opt.name }}</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                </label>
                 <label class="biz-form__full">
                     <span>RCC / numéro administratif (facultatif)</span>
                     <input type="text" formControlName="businessNumber" />

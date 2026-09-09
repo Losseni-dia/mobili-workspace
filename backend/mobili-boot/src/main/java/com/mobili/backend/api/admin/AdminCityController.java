@@ -4,8 +4,8 @@ import com.mobili.backend.module.admin.dto.AdminCityApplyRequest;
 import com.mobili.backend.module.admin.dto.AdminCityApplyResponse;
 import com.mobili.backend.module.admin.dto.AdminCityPreviewItem;
 import com.mobili.backend.module.admin.dto.AdminCityPreviewResponse;
-import com.mobili.backend.module.admin.dto.CountryOption;
 import com.mobili.backend.module.admin.service.AdminCityService;
+import com.mobili.backend.module.city.dto.CountryOption;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

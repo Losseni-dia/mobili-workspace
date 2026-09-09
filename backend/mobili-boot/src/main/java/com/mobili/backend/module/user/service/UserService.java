@@ -226,6 +226,7 @@ public class UserService {
         pr.setName(dto.getCompanyName());
         pr.setEmail(dto.getCompanyEmail());
         pr.setPhone(dto.getCompanyPhone());
+        pr.setCountryId(dto.getCountryId());
         if (normalizedBusinessNumber != null) {
             pr.setBusinessNumber(normalizedBusinessNumber);
         }

@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.analytics.entity.AnalyticsEventType;
 import com.mobili.backend.module.analytics.service.AnalyticsEventService;
+import com.mobili.backend.module.city.dto.CityOption;
+import com.mobili.backend.module.city.dto.CountryOption;
 import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.city.repository.CountryRepository;
 import com.mobili.backend.module.tracking.service.LiveTrackingTokenService;
 import com.mobili.backend.module.trip.dto.TripEtaResponse;
 import com.mobili.backend.module.trip.dto.TripResponseDTO;
@@ -40,6 +43,7 @@ public class TripReadController {
     private final TripRunService tripRunService;
     private final AnalyticsEventService analyticsEventService;
     private final CityRepository cityRepository;
+    private final CountryRepository countryRepository;
     private final TripEtaService tripEtaService;
     private final LiveTrackingTokenService liveTrackingTokenService;
 
@@ -48,6 +52,30 @@ public class TripReadController {
             @RequestParam(required = false, defaultValue = "") String q) {
         return cityRepository.findByNameStartingWith(
                 q != null ? q.trim().toLowerCase() : "");
+    }
+
+    /** Liste des pays — endpoint public (même règle que /trips/cities), utilisé par l'inscription
+     *  société (choix du pays) et la création de gare (filtrage des villes par pays). Miroir de
+     *  GET /admin/cities/countries mais accessible sans droit admin. */
+    @GetMapping("/countries")
+    public List<CountryOption> getCountries() {
+        return countryRepository.findAllByOrderByNameAsc().stream()
+                .map(c -> new CountryOption(c.getId(), c.getName(), c.getIsoCode(), c.getContinent()))
+                .toList();
+    }
+
+    /** Villes filtrées par pays — utilisé par la création de gare (une gare ne peut être que dans
+     *  le pays de sa société, voir StationService.resolveCity) et, à terme, la sélection des
+     *  arrêts de trajet. Villes non vérifiées incluses (verified=false) : sélectionnables tout de
+     *  suite, l'admin affine la géoloc ensuite (écran Pays & Villes). */
+    @GetMapping("/cities/by-country")
+    public List<CityOption> getCitiesByCountry(
+            @RequestParam Long countryId,
+            @RequestParam(required = false, defaultValue = "") String q) {
+        String query = q != null ? q.trim() : "";
+        return cityRepository.findByCountryIdAndNameStartingWith(countryId, query).stream()
+                .map(c -> new CityOption(c.getId(), c.getName(), c.getLatitude(), c.getLongitude(), c.isVerified()))
+                .toList();
     }
 
     @GetMapping

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { NotificationService } from '../../../core/services/notification/notification.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
+import { CountryOption, TripService } from '../../../core/services/trip/trip.service';
 
 @Component({
   selector: 'app-register-partner',
@@ -18,10 +19,24 @@ import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
 export class RegisterPartnerComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private tripService = inject(TripService);
   private router = inject(Router);
   private notification = inject(NotificationService);
 
   isLoading = signal(false);
+  countries = signal<CountryOption[]>([]);
+
+  /** Regroupé par continent pour l'affichage en <optgroup> — même principe que l'écran admin
+   *  Pays & Villes (admin-cities.ts), mais côté formulaire public d'inscription. */
+  countryGroups = computed(() => {
+    const groups = new Map<string, CountryOption[]>();
+    for (const c of this.countries()) {
+      const key = c.continent || 'Autres';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(c);
+    }
+    return Array.from(groups.entries()).map(([group, options]) => ({ group, options }));
+  });
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   selectedLogo: File | null = null;
@@ -45,7 +60,15 @@ export class RegisterPartnerComponent {
     companyEmail: ['', [Validators.email]],
     companyPhone: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(20)]],
     businessNumber: [''],
+    countryId: [null as number | null, [Validators.required]],
   });
+
+  constructor() {
+    this.tripService.getCountries().subscribe({
+      next: (list) => this.countries.set(list),
+      error: (err) => console.error('[register-partner] Erreur chargement des pays', err),
+    });
+  }
 
   togglePassword() {
     this.showPassword.update((v) => !v);
@@ -125,6 +148,7 @@ export class RegisterPartnerComponent {
           companyEmail: v.companyEmail?.trim() || undefined,
           companyPhone: v.companyPhone.trim(),
           businessNumber: v.businessNumber?.trim() || undefined,
+          countryId: v.countryId as number,
         },
         this.selectedKycFront,
         this.selectedKycBack,
