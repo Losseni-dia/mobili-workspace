@@ -542,6 +542,30 @@ export class AdminService {
     }
     return this.http.get<GeocodingPreviewItem>('/admin/trip-stops-geocoding/geocode-one', { params });
   }
+
+  /** Écran admin Pays & Villes — villes créées à la volée (gare/trajet avec une ville absente de
+   *  la liste proposée), pas encore vérifiées par un admin. */
+  previewCities(): Observable<AdminCityPreviewResponse> {
+    return this.http.get<AdminCityPreviewResponse>('/admin/cities/preview');
+  }
+
+  applyCities(items: AdminCityApplyItem[]): Observable<AdminCityApplyResponse> {
+    return this.http.post<AdminCityApplyResponse>('/admin/cities/apply', { items });
+  }
+
+  geocodeOneCity(cityId: number, name: string, country?: string | null): Observable<AdminCityPreviewItem> {
+    let params = new HttpParams().set('cityId', String(cityId)).set('name', name);
+    if (country) {
+      params = params.set('country', country);
+    }
+    return this.http.get<AdminCityPreviewItem>('/admin/cities/geocode-one', { params });
+  }
+
+  /** Liste réelle des pays (table Country) — remplace la liste figée côté frontend utilisée par
+   *  l'écran de géocodage des arrêts, source unique désormais partagée par les deux écrans. */
+  getCountries(): Observable<CountryOption[]> {
+    return this.http.get<CountryOption[]>('/admin/cities/countries');
+  }
 }
 
 /** Aligné sur GeocodingPreviewItem (backend) — une ligne de l'écran de géocodage des arrêts. */
@@ -571,6 +595,44 @@ export interface GeocodingApplyItem {
 export interface GeocodingApplyResponse {
   appliedCount: number;
   appliedCityLabels: string[];
+}
+
+/** Aligné sur CountryOption (backend) — une entrée de la table Country réelle. */
+export interface CountryOption {
+  id: number;
+  name: string;
+  isoCode: string;
+  continent: string | null;
+}
+
+/** Aligné sur AdminCityPreviewItem (backend) — une ligne de l'écran admin Pays & Villes. */
+export interface AdminCityPreviewItem {
+  id: number;
+  name: string;
+  countryId: number | null;
+  countryName: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  ambiguous: boolean;
+  errorMessage: string | null;
+}
+
+export interface AdminCityPreviewResponse {
+  items: AdminCityPreviewItem[];
+}
+
+export interface AdminCityApplyItem {
+  id: number;
+  /** Renommage optionnel. */
+  name?: string | null;
+  countryId: number | null;
+  latitude: number;
+  longitude: number;
+}
+
+export interface AdminCityApplyResponse {
+  appliedCount: number;
+  appliedCityNames: string[];
 }
 
 export interface BaggageInfo {

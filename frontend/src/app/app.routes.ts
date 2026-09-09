@@ -222,6 +222,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'cities',
+        loadComponent: () =>
+          import('./features/admin/admin-cities/admin-cities').then((m) => m.AdminCities),
+      },
+      {
         path: 'trips',
         loadComponent: () =>
           import('./features/admin/admin-trips/admin-trips').then((m) => m.AdminTrips),

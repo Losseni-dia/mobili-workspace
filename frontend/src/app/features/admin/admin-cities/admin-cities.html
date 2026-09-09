@@ -1,0 +1,124 @@
+<div class="admin-cities-page">
+  <section class="data-panel">
+    <header class="panel-head">
+      <div>
+        <h2>Pays &amp; Villes</h2>
+        <p>Villes créées à la volée (gare ou trajet sans correspondance dans la liste proposée) — pas encore contrôlées. Aucune écriture en base tant que tu n'as pas validé ci-dessous.</p>
+      </div>
+      <div class="panel-head__actions">
+        @if (hasLoadedOnce()) {
+          <span class="count-chip">{{ selectedCount() }} / {{ selectableRows().length }} sélectionnée(s)</span>
+        }
+        <button type="button" class="btn-new" [disabled]="loading()" (click)="loadPreview()">
+          {{ loading() ? 'Recherche…' : (hasLoadedOnce() ? 'Rafraîchir' : 'Chercher les villes à valider') }}
+        </button>
+      </div>
+    </header>
+
+    @if (loadError()) {
+      <div class="admin-alert" role="alert">{{ loadError() }}</div>
+    }
+
+    @if (!hasLoadedOnce() && !loading()) {
+      <p class="empty-hint">Clique sur "Chercher les villes à valider" pour lancer un aperçu.</p>
+    } @else if (loading()) {
+      <div class="loader">Géocodage en cours (un appel par ville)…</div>
+    } @else if (rows().length === 0) {
+      <p class="empty-hint">Aucune ville en attente — tout est déjà validé.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="center">Appliquer</th>
+              <th>Ville (nom d'origine)</th>
+              <th>Nom corrigé</th>
+              <th>Pays</th>
+              <th>Coordonnées trouvées</th>
+              <th>Statut</th>
+              <th class="center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row.id) {
+              <tr [class.row-warn]="row.ambiguous" [class.row-error]="!row.latitude">
+                <td class="center">
+                  @if (row.latitude != null && row.longitude != null) {
+                    <input type="checkbox" [checked]="row.selected" (change)="toggleRow(row)" />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td><strong>{{ row.name }}</strong></td>
+                <td>
+                  <input
+                    type="text"
+                    class="edit-label-input"
+                    [ngModel]="row.editedName"
+                    (ngModelChange)="updateEditedName(row, $event)"
+                  />
+                </td>
+                <td>
+                  <select class="country-select" [ngModel]="row.countryCode" (ngModelChange)="updateCountry(row, $event)">
+                    <option value="">Aucun (recherche mondiale)</option>
+                    @for (grp of countryGroups(); track grp.group) {
+                      <optgroup [label]="grp.group">
+                        @for (opt of grp.options; track opt.id) {
+                          <option [value]="opt.isoCode">{{ opt.name }}</option>
+                        }
+                      </optgroup>
+                    }
+                  </select>
+                </td>
+                <td class="mono">
+                  @if (row.latitude != null && row.longitude != null) {
+                    {{ row.latitude }}, {{ row.longitude }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (row.ambiguous) {
+                    <span class="status-pill warn">
+                      <span class="dot"></span>
+                      Ambigu — vérifier le pays
+                    </span>
+                  } @else if (row.errorMessage) {
+                    <span class="status-pill blocked">
+                      <span class="dot"></span>
+                      {{ row.errorMessage }}
+                    </span>
+                  } @else {
+                    <span class="status-pill active">
+                      <span class="dot"></span>
+                      OK
+                    </span>
+                  }
+                </td>
+                <td class="center row-actions">
+                  <button
+                    type="button"
+                    class="btn-ghost btn-small"
+                    [disabled]="row.reGeocoding"
+                    (click)="reGeocode(row)"
+                  >
+                    {{ row.reGeocoding ? '…' : 'Re-géocoder' }}
+                  </button>
+                  <button type="button" class="btn-ghost btn-small" (click)="ignoreRow(row)">Ignorer</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-actions">
+        <button type="button" class="btn-ghost" (click)="selectAllValid()">Tout cocher</button>
+        <button type="button" class="btn-ghost" (click)="clearSelection()">Tout décocher</button>
+        <button type="button" class="btn-primary" [disabled]="applying() || selectedCount() === 0" (click)="apply()">
+          {{ applying() ? 'Validation…' : 'Valider la sélection' }}
+        </button>
+      </div>
+    }
+  </section>
+</div>

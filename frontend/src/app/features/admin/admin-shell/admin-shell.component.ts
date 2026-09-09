@@ -71,7 +71,13 @@ export class AdminShellComponent {
       items: [{ label: 'Coupons', icon: '🎟️', path: '/admin/coupons' }],
     },
     { title: 'Communication', items: [{ label: 'Annonces', icon: '📣', path: '/admin/communication' }] },
-    { title: 'Outils', items: [{ label: 'Géocodage arrêts', icon: '📍', path: '/admin/geocoding' }] },
+    {
+      title: 'Outils',
+      items: [
+        { label: 'Géocodage arrêts', icon: '📍', path: '/admin/geocoding' },
+        { label: 'Pays & Villes', icon: '🌍', path: '/admin/cities' },
+      ],
+    },
   ];
 
   pageTitle = computed(() => {
@@ -87,6 +93,7 @@ export class AdminShellComponent {
     if (url.includes('claims')) return 'Réclamations';
     if (url.includes('coupons')) return 'Coupons';
     if (url.includes('geocoding')) return 'Géocodage arrêts';
+    if (url.includes('cities')) return 'Pays & Villes';
     return 'Vue d’ensemble';
   });
 
