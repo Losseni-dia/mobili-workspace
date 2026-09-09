@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 public class StationResponseDTO {
     private Long id;
     private String name;
+    /** Nom d'affichage (City.name) — reste une String côté API, la relation FK est un détail
+     *  interne (StationService la résout à partir de Station.city). */
     private String city;
     private String code;
     private boolean active;

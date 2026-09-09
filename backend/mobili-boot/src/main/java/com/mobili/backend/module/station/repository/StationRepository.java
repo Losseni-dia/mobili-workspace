@@ -11,7 +11,9 @@ import com.mobili.backend.module.station.entity.Station;
 @Repository
 public interface StationRepository extends JpaRepository<Station, Long> {
 
-    List<Station> findByPartnerIdOrderByCityAscNameAsc(Long partnerId);
+    // city est désormais une entité (City) : navigation imbriquée city.name pour trier — voir
+    // https://docs.spring.io/spring-data/jpa/reference/repositories/query-methods-details.html
+    List<Station> findByPartnerIdOrderByCity_NameAscNameAsc(Long partnerId);
 
     Optional<Station> findByIdAndPartnerId(Long id, Long partnerId);
 

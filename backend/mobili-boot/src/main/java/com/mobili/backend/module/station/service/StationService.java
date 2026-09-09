@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
+import com.mobili.backend.module.city.entity.City;
+import com.mobili.backend.module.city.repository.CityRepository;
+import com.mobili.backend.module.city.service.CityLookupService;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.module.partner.service.PartnerService;
 import com.mobili.backend.module.station.dto.GareUserAffiliationRequest;
@@ -45,6 +48,30 @@ public class StationService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final TripRepository tripRepository;
+    private final CityRepository cityRepository;
+    private final CityLookupService cityLookupService;
+
+    /** Résout la ville d'une gare depuis cityId (liste) ou cityName (fallback "ville
+     *  introuvable") — toujours dans le même pays que la société propriétaire. */
+    private City resolveCity(StationRequestDTO dto, Partner partner) {
+        if (dto.getCityId() != null) {
+            City city = cityRepository.findById(dto.getCityId())
+                    .orElseThrow(() -> new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                            "Ville introuvable."));
+            if (partner.getCountry() != null && city.getCountry() != null
+                    && !city.getCountry().getId().equals(partner.getCountry().getId())) {
+                throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                        "Cette ville n'appartient pas au pays de la société.",
+                        Map.of("cityId", "Cette ville n'appartient pas au pays de la société."));
+            }
+            return city;
+        }
+        if (dto.getCityName() != null && !dto.getCityName().isBlank()) {
+            return cityLookupService.resolveOrCreatePending(dto.getCityName(), partner.getCountry());
+        }
+        throw new MobiliException(MobiliErrorCode.VALIDATION_ERROR,
+                "La ville est obligatoire.", Map.of("cityId", "La ville est obligatoire."));
+    }
 
 
     public boolean isStationOperational(Station s) {
@@ -77,7 +104,7 @@ public class StationService {
         if (principal instanceof com.mobili.backend.infrastructure.security.authentication.StationPrincipal) {
             // Une connexion gare voit toutes les gares de sa compagnie (utilisé
             // notamment pour choisir le destinataire d'un message "vers une autre gare").
-            List<Station> gares = stationRepository.findByPartnerIdOrderByCityAscNameAsc(partner.getId());
+            List<Station> gares = stationRepository.findByPartnerIdOrderByCity_NameAscNameAsc(partner.getId());
             List<Long> ids = gares.stream().map(Station::getId).toList();
             Map<Long, List<StationChauffeurSummary>> aff = loadChauffeursByStationIds(ids);
             return gares.stream()
@@ -98,7 +125,7 @@ public class StationService {
             Map<Long, List<StationChauffeurSummary>> aff = loadChauffeursByStationIds(List.of(s.getId()));
             return List.of(toDto(s, aff.getOrDefault(s.getId(), List.of())));
         }
-        List<Station> gares = stationRepository.findByPartnerIdOrderByCityAscNameAsc(partner.getId());
+        List<Station> gares = stationRepository.findByPartnerIdOrderByCity_NameAscNameAsc(partner.getId());
         List<Long> ids = gares.stream().map(Station::getId).toList();
         Map<Long, List<StationChauffeurSummary>> aff = loadChauffeursByStationIds(ids);
         return gares.stream()
@@ -122,7 +149,7 @@ public class StationService {
         Partner partner = partnerService.getCurrentPartnerForOperations();
         Station s = new Station();
         s.setName(dto.getName().trim());
-        s.setCity(dto.getCity().trim());
+        s.setCity(resolveCity(dto, partner));
         s.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         applyNewStationDefaults(s, partner);
         s = stationRepository.saveAndFlush(s);
@@ -141,7 +168,7 @@ public class StationService {
         Station s = stationRepository.findByIdAndPartnerId(id, partner.getId())
                 .orElseThrow(() -> new MobiliException(MobiliErrorCode.RESOURCE_NOT_FOUND, "Gare introuvable"));
         s.setName(dto.getName().trim());
-        s.setCity(dto.getCity().trim());
+        s.setCity(resolveCity(dto, partner));
         if (dto.getActive() != null) {
             s.setActive(dto.getActive());
         }
@@ -406,7 +433,7 @@ public class StationService {
         return StationResponseDTO.builder()
                 .id(s.getId())
                 .name(s.getName())
-                .city(s.getCity())
+                .city(s.getCity() != null ? s.getCity().getName() : null)
                 .code(s.getCode())
                 .active(s.isActive())
                 .partnerId(s.getPartner() != null ? s.getPartner().getId() : null)

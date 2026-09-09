@@ -10,8 +10,15 @@ public class StationRequestDTO {
     @NotBlank(message = "Le nom de la gare est obligatoire")
     private String name;
 
-    @NotBlank(message = "La ville est obligatoire")
-    private String city;
+    /** Ville choisie dans la liste (autocomplétion filtrée sur le pays de la société) — préférée
+     *  quand renseignée. */
+    private Long cityId;
+
+    /** Fallback "ville introuvable" : nom tapé par le partenaire quand aucune ville de la liste
+     *  ne correspond. Résolu/créé via CityLookupService (verified=false), rattachée au pays de la
+     *  société. Au moins un de cityId/cityName doit être renseigné (validé dans le service, pas
+     *  via annotation — dépend du choix fait côté écran). */
+    private String cityName;
 
     private Boolean active;
 

@@ -1,12 +1,15 @@
 package com.mobili.backend.module.partner.entity;
 
+import com.mobili.backend.module.city.entity.Country;
 import com.mobili.backend.module.user.entity.User;
 import com.mobili.backend.shared.abstractEntity.AbstractEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -68,6 +71,14 @@ public class Partner extends AbstractEntity {
     @OneToOne // Un partenaire a un seul propriétaire
     @JoinColumn(name = "user_id", unique = true)
     private User owner;
+
+    /** Pays de la société — obligatoire à l'inscription pour les nouveaux partenaires ; nullable
+     *  pour les sociétés déjà existantes avant ce champ (voir script de backfill, rattachées par
+     *  défaut à la Côte d'Ivoire). Les gares de ce partenaire ne peuvent choisir une ville que
+     *  dans ce même pays (voir StationService.create). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id")
+    private Country country;
 
     /**
      * {@code true} = partenaire technique Mobili (pool covoiturage particulier),

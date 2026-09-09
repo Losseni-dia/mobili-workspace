@@ -1,5 +1,6 @@
 package com.mobili.backend.module.station.entity;
 
+import com.mobili.backend.module.city.entity.City;
 import com.mobili.backend.module.partner.entity.Partner;
 import com.mobili.backend.shared.abstractEntity.AbstractEntity;
 
@@ -25,9 +26,13 @@ public class Station extends AbstractEntity {
     @Column(nullable = false)
     private String name;
 
-    /** Ville / localisation (affichage, filtres) */
-    @Column(nullable = false)
-    private String city;
+    /** Ville de la gare — choisie dans la liste gérée (voir CityLookupService pour le cas
+     *  "ville introuvable"), toujours dans le même pays que la société propriétaire (voir
+     *  StationService.create). Nullable pendant la transition (gares déjà existantes, voir
+     *  script de backfill Côte d'Ivoire par défaut). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City city;
 
     /**
      * Code interne unique par partenaire (généré automatiquement, ex. GAR-AB12F).
