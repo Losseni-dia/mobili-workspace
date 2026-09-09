@@ -102,12 +102,16 @@ export class TripEditComponent implements OnInit {
     const prices = this.legPrices();
     const rows: { fromIndex: number; toIndex: number; fromLabel: string; toLabel: string; price: number }[] = [];
     for (let i = 0; i < labs.length - 1; i++) {
+      // Départ/arrivée pas encore saisis (obligatoires avant tout enregistrement, voir onSubmit) :
+      // ne pas afficher de combinaison bancale "— → Ville" pendant la saisie.
+      if (!labs[i]) continue;
       for (let j = i + 1; j < labs.length; j++) {
+        if (!labs[j]) continue;
         rows.push({
           fromIndex: i,
           toIndex: j,
-          fromLabel: labs[i] || '—',
-          toLabel: labs[j] || '—',
+          fromLabel: labs[i],
+          toLabel: labs[j],
           price: prices.get(`${i}-${j}`) ?? 0,
         });
       }
