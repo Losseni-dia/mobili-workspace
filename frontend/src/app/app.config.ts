@@ -12,6 +12,7 @@ import { apiInterceptor } from './core/interceptors/api.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth/auth.service';
 import { MOBILI_APP_KIND, type MobiliAppKind } from './core/config/mobili-app-kind.token';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 registerLocaleData(localeFr, 'fr', localeFrExtra);
 
@@ -39,6 +40,6 @@ export const appConfig: ApplicationConfig = {
         apiInterceptor,
         authInterceptor,
       ]),
-    ),
+    ), provideClientHydration(withEventReplay()),
   ],
 };
