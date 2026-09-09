@@ -211,6 +211,13 @@
   max-height: 220px;
   overflow-y: auto;
 
+  // Dans un badge de tronçon (.stop-row), "right: 0" écraserait la liste à la largeur étroite du
+  // badge — élargie ici à une largeur fixe lisible, ancrée à gauche du badge.
+  .stop-row & {
+    right: auto;
+    width: 220px;
+  }
+
   li button {
     display: block;
     width: 100%;
@@ -239,40 +246,83 @@
   font-size: 0.8rem;
   color: variables.$warning;
   line-height: 1.4;
+
+  // Dans un badge de tronçon : détaché du flux du pill (sinon casse sa forme), positionné en
+  // popover sous le badge comme les suggestions.
+  .stop-row & {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 5;
+    width: 200px;
+    margin: 4px 0 0;
+    padding: 6px 8px;
+    background: variables.$white;
+    border: 1px solid rgba(variables.$warning, 0.4);
+    border-radius: variables.$radius-sm;
+    box-shadow: variables.$shadow-sm;
+  }
 }
 
+// Badges successifs (pas une colonne de champs pleine largeur) — autant d'arrêts que voulu sans
+// que la page s'allonge à chaque ajout, retour explicite après un premier essai en colonne.
 .stops-list {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
 .stop-row {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
+  padding: 4px 4px 4px 12px;
+  background: variables.$gray-50;
+  border: 1px solid variables.$gray-200;
+  border-radius: 999px;
+  transition: border-color variables.$t-fast;
 
-  input { flex: 1; }
+  &:focus-within { border-color: variables.$mobili-blue; }
+
+  input {
+    width: 100px;
+    border: none;
+    background: transparent;
+    padding: 4px 2px;
+    font-size: 0.85rem;
+    color: variables.$mobili-blue-deep;
+
+    &:focus { outline: none; }
+  }
 }
 
 .stop-remove {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: variables.$radius-sm;
-  border: 1px solid variables.$gray-200;
-  background: variables.$white;
-  color: variables.$gray-500;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: variables.$gray-400;
   cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
 
-  &:hover { border-color: variables.$danger; color: variables.$danger; }
+  &:hover { background: variables.$danger-soft; color: variables.$danger; }
 }
 
 .btn-add-stop {
   @include mixins.btn-ghost;
-  padding: 8px 16px;
-  font-size: 0.85rem;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  // Aligné avec les badges de tronçon (même hauteur/rythme visuel), pas un bouton pleine largeur
+  // en dessous.
+  align-self: center;
 }
 
 .field-hint {
