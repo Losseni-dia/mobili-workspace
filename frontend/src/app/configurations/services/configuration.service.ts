@@ -32,8 +32,15 @@ export class ConfigurationService {
      * Staging / Capacitor : injecte l’URL API sans dépendre du hostname.
      * 1) window.__MOBILI_API_URL__ (ex. balise script avant le bundle)
      * 2) <meta name="mobili-api-base" content="https://api…/v1">
+     *
+     * Rendu côté serveur (SSR) : ni `window` ni `document` n'existent — repli sur
+     * `CONFIGURATION_DATA.variables[envName]` (voir resolveMobiliEnvName, 'prod' par défaut côté
+     * serveur), le même comportement que si aucune override n'était trouvée en navigateur.
      */
     private readApiOverride(): string | null {
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return null;
+        }
         const w = window as unknown as { __MOBILI_API_URL__?: string };
         if (w.__MOBILI_API_URL__ && w.__MOBILI_API_URL__.trim().length > 0) {
             return normalizeApiBase(w.__MOBILI_API_URL__);

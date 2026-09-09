@@ -121,7 +121,17 @@ export class HomeComponent implements OnInit {
     this.loadAllTrips();
   }
 
+  /**
+   * Rendu côté serveur (prerender de "/") : aucun backend n'est accessible pendant le build —
+   * cette requête ne peut jamais aboutir et empêchait Angular de stabiliser le rendu (l'erreur
+   * interne remontée par le prerendering n'était pas une vraie Error, juste "[object Object]",
+   * ce qui masquait la vraie cause). Le client refait cet appel normalement à l'hydratation,
+   * exactement comme pour un chargement CSR classique.
+   */
   private loadAllTrips(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
     this.loadingTrips = true;
     const tt = this.searchForm.get('transportType')?.value?.trim() ?? '';
     this.tripService.getAllTrips(tt || undefined).subscribe({

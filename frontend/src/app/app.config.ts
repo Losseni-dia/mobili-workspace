@@ -1,6 +1,6 @@
 import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import localeFrExtra from '@angular/common/locales/extra/fr';
@@ -36,6 +36,9 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
 
     provideHttpClient(
+      // withFetch() : HttpClient utilise XMLHttpRequest par défaut, absent sous Node (SSR) —
+      // requis pour tout appel HTTP fait pendant le rendu serveur.
+      withFetch(),
       withInterceptors([
         apiInterceptor,
         authInterceptor,

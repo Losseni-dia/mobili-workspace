@@ -120,6 +120,16 @@ export class AuthService {
       this.currentUser.set(this.getUserFromStorage());
       return of(void 0);
     }
+    // Rendu côté serveur (SSR/prerender) : jamais de session à restaurer ici (pas de
+    // localStorage, et le cookie httpOnly du navigateur n'est pas pertinent à la construction
+    // build-time d'une page prérendue) — appelé par APP_INITIALIZER, donc bloquant le bootstrap ;
+    // tenter l'appel réseau ici échoue systématiquement (pas de backend accessible pendant
+    // l'extraction des routes) et l'échec remontait comme un HttpErrorResponse — qui n'est pas
+    // une instance d'Error — jusqu'à faire planter tout le build SSR. Le navigateur refera ce
+    // même hydrateFromRefresh() normalement à l'hydratation côté client.
+    if (typeof window === 'undefined') {
+      return of(void 0);
+    }
     return this.http.post<BackendAuthResponse>('/auth/refresh', {}).pipe(
       switchMap((r) => {
         this.saveUser({
@@ -168,7 +178,9 @@ export class AuthService {
   logout() {
     this.http.post('/auth/logout', {}).pipe(
       finalize(() => {
-        localStorage.removeItem('mobili_user');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('mobili_user');
+        }
         this.currentUser.set(null);
       }),
     ).subscribe();
@@ -189,11 +201,18 @@ export class AuthService {
   }
 
   private saveUser(user: AuthResponse) {
-    localStorage.setItem('mobili_user', JSON.stringify(user));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('mobili_user', JSON.stringify(user));
+    }
     this.currentUser.set(user);
   }
 
+  /** Rendu côté serveur (SSR) : pas de `localStorage` — la session n'y est de toute façon jamais
+   *  disponible avant hydratation, on démarre `currentUser` à `null` dans ce contexte. */
   private getUserFromStorage(): AuthResponse | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
     const data = localStorage.getItem('mobili_user');
     if (!data) return null;
     try {
