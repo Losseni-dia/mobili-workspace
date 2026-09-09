@@ -1050,7 +1050,7 @@ public class TripService {
         City departure = resolveTripCity(dto.getDepartureCityId(), trip.getDepartureCity(), partner);
         trip.setDepartureCity(departure.getName());
         resolved.add(new TripStopSyncService.ResolvedStop(
-                departure.getName(), departure.getLatitude(), departure.getLongitude()));
+                departure.getId(), departure.getName(), departure.getLatitude(), departure.getLongitude()));
         String lastName = departure.getName();
 
         if (dto.getStops() != null) {
@@ -1060,7 +1060,7 @@ public class TripService {
                     continue;
                 }
                 resolved.add(new TripStopSyncService.ResolvedStop(
-                        city.getName(), city.getLatitude(), city.getLongitude()));
+                        city.getId(), city.getName(), city.getLatitude(), city.getLongitude()));
                 intermediateNames.add(city.getName());
                 lastName = city.getName();
             }
@@ -1070,7 +1070,7 @@ public class TripService {
         trip.setArrivalCity(arrival.getName());
         if (!arrival.getName().equalsIgnoreCase(lastName)) {
             resolved.add(new TripStopSyncService.ResolvedStop(
-                    arrival.getName(), arrival.getLatitude(), arrival.getLongitude()));
+                    arrival.getId(), arrival.getName(), arrival.getLatitude(), arrival.getLongitude()));
         }
 
         trip.setMoreInfo(String.join(",", intermediateNames));
