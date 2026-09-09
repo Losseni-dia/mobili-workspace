@@ -29,4 +29,18 @@ public interface TripStopRepository extends JpaRepository<TripStop, Long> {
             @Param("cityLabel") String cityLabel,
             @Param("latitude") double latitude,
             @Param("longitude") double longitude);
+
+    /** Variante avec renommage — utilisée quand l'admin corrige un city_label tronqué/mal
+     *  orthographié (ex. "Coto" -> "Cotonou") avant de valider le géocodage. Renomme ET
+     *  applique la coordonnée en une seule opération, jamais l'un sans l'autre (un renommage
+     *  sans coordonnée laisserait la ville dans le même état "à géocoder", juste sous un autre
+     *  nom). */
+    @Modifying
+    @Query("UPDATE TripStop ts SET ts.cityLabel = :newCityLabel, ts.latitude = :latitude, "
+            + "ts.longitude = :longitude WHERE ts.cityLabel = :oldCityLabel")
+    int renameAndUpdateCoordinatesByCityLabel(
+            @Param("oldCityLabel") String oldCityLabel,
+            @Param("newCityLabel") String newCityLabel,
+            @Param("latitude") double latitude,
+            @Param("longitude") double longitude);
 }

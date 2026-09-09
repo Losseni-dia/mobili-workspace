@@ -32,5 +32,9 @@ public class GeocodingApplyRequest {
         private String cityLabel;
         private double latitude;
         private double longitude;
+        /** Renommage optionnel — si renseigné et différent de {@code cityLabel}, le city_label
+         *  est corrigé en base en plus d'appliquer la coordonnée (voir écran admin, action
+         *  "Modifier le nom"). {@code null}/vide = pas de renommage, comportement d'origine. */
+        private String newCityLabel;
     }
 }

@@ -49,16 +49,33 @@ public class MapboxGeocodingService {
     }
 
     public GeocodingResult geocode(String query) {
-        log.info("🚀 Requête Mapbox Geocoding : '{}'", query);
+        return geocode(query, null);
+    }
+
+    /**
+     * @param countryCode Code pays ISO 3166-1 alpha-2 (ex. "CI", "SN") — {@code null} pour une
+     *                     recherche mondiale avec simple biais de proximité. Passer un pays
+     *                     explicite RESTREINT la recherche à ce pays (contrairement à
+     *                     `proximity`, qui influence juste le classement) — c'est le seul moyen
+     *                     fiable de désambiguïser un nom existant dans plusieurs pays (ex.
+     *                     "Touba" — Sénégal ET Côte d'Ivoire), voir l'action "Re-géocoder avec un
+     *                     pays" de l'écran admin.
+     */
+    public GeocodingResult geocode(String query, String countryCode) {
+        log.info("🚀 Requête Mapbox Geocoding : '{}' (pays={})", query, countryCode);
         String encodedQuery = java.net.URLEncoder.encode(query, StandardCharsets.UTF_8);
 
         Map<String, Object> body = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/{query}.json")
-                        .queryParam("access_token", accessToken)
-                        .queryParam("proximity", PROXIMITY_ABIDJAN)
-                        .queryParam("limit", 1)
-                        .build(encodedQuery))
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/{query}.json")
+                            .queryParam("access_token", accessToken)
+                            .queryParam("proximity", PROXIMITY_ABIDJAN)
+                            .queryParam("limit", 1);
+                    if (countryCode != null && !countryCode.isBlank()) {
+                        uriBuilder.queryParam("country", countryCode.toLowerCase(Locale.ROOT));
+                    }
+                    return uriBuilder.build(encodedQuery);
+                })
                 .retrieve()
                 .body(Map.class);
 

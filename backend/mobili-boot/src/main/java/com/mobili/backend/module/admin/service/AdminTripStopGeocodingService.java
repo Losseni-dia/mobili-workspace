@@ -76,17 +76,46 @@ public class AdminTripStopGeocodingService {
     public GeocodingApplyResponse apply(GeocodingApplyRequest request) {
         List<String> applied = new ArrayList<>();
         for (GeocodingApplyRequest.Item item : request.getItems()) {
-            int updated = tripStopRepository.updateCoordinatesByCityLabel(
-                    item.getCityLabel(), item.getLatitude(), item.getLongitude());
+            boolean rename = item.getNewCityLabel() != null
+                    && !item.getNewCityLabel().isBlank()
+                    && !item.getNewCityLabel().equals(item.getCityLabel());
+
+            int updated = rename
+                    ? tripStopRepository.renameAndUpdateCoordinatesByCityLabel(
+                            item.getCityLabel(), item.getNewCityLabel(), item.getLatitude(), item.getLongitude())
+                    : tripStopRepository.updateCoordinatesByCityLabel(
+                            item.getCityLabel(), item.getLatitude(), item.getLongitude());
+
             if (updated > 0) {
                 applied.add(item.getCityLabel());
-                log.info("✅ Coordonnées appliquées pour '{}' ({} arrêt(s)) : {}, {}",
-                        item.getCityLabel(), updated, item.getLatitude(), item.getLongitude());
+                if (rename) {
+                    log.info("✅ '{}' renommé en '{}' et coordonnées appliquées ({} arrêt(s)) : {}, {}",
+                            item.getCityLabel(), item.getNewCityLabel(), updated, item.getLatitude(), item.getLongitude());
+                } else {
+                    log.info("✅ Coordonnées appliquées pour '{}' ({} arrêt(s)) : {}, {}",
+                            item.getCityLabel(), updated, item.getLatitude(), item.getLongitude());
+                }
             } else {
                 log.warn("⚠️ Aucun trip_stop trouvé pour city_label='{}' — rien appliqué.", item.getCityLabel());
             }
         }
         return new GeocodingApplyResponse(applied.size(), applied);
+    }
+
+    /**
+     * Re-géocode une seule requête (nom corrigé et/ou pays choisi par l'admin) sans toucher la
+     * base — utilisé par les actions "Modifier le nom" et "Re-géocoder avec un pays" de l'écran,
+     * pour rafraîchir l'aperçu d'une ligne avant de la valider avec apply().
+     */
+    public GeocodingPreviewItem geocodeOne(String query, String countryCode) {
+        boolean ambiguous = AMBIGUOUS_NAMES.contains(query.trim().toLowerCase())
+                && (countryCode == null || countryCode.isBlank());
+        try {
+            GeocodingResult result = mapboxGeocodingService.geocode(query, countryCode);
+            return GeocodingPreviewItem.success(query, result.latitude(), result.longitude(), ambiguous);
+        } catch (GeocodingFailedException e) {
+            return GeocodingPreviewItem.failure(query, e.getMessage());
+        }
     }
 
     private boolean looksLikeTestData(String cityLabel) {

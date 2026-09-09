@@ -43,6 +43,36 @@ class MapboxGeocodingServiceTest {
     }
 
     @Test
+    void geocode_withCountryCode_addsCountryQueryParam() {
+        withAccessToken();
+        server.expect(method(org.springframework.http.HttpMethod.GET))
+                .andExpect(requestTo(org.hamcrest.Matchers.containsString("country=ci")))
+                .andRespond(withSuccess(
+                        "{\"features\":[{\"center\":[-7.6833,8.2833]}]}",
+                        MediaType.APPLICATION_JSON));
+
+        GeocodingResult result = service.geocode("Touba", "CI");
+
+        assertEquals(8.2833, result.latitude());
+        assertEquals(-7.6833, result.longitude());
+        server.verify();
+    }
+
+    @Test
+    void geocode_nullCountryCode_omitsCountryQueryParam() {
+        withAccessToken();
+        server.expect(method(org.springframework.http.HttpMethod.GET))
+                .andExpect(requestTo(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("country="))))
+                .andRespond(withSuccess(
+                        "{\"features\":[{\"center\":[-5.0167,6.5500]}]}",
+                        MediaType.APPLICATION_JSON));
+
+        service.geocode("Toumodi", null);
+
+        server.verify();
+    }
+
+    @Test
     void geocode_emptyFeatures_throwsGeocodingFailedException() {
         withAccessToken();
         server.expect(method(org.springframework.http.HttpMethod.GET))
