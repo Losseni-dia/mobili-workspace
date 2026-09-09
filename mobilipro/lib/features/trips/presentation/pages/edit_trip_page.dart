@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +13,22 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../trips/presentation/pages/create_trip_page.dart'
     show ChauffeurItem, LegFare;
 import '../../../trips/presentation/pages/trips_gare_page.dart';
+
+/// Une ville de la liste (voir GET /trips/cities/by-country) — aligné sur CityOption (backend).
+/// Dupliqué à dessein (voir create_trip_page.dart, covoiturage_trip_form_page.dart) : classe
+/// privée non exportable entre fichiers Dart.
+class _CityOption {
+  const _CityOption({required this.id, required this.name, required this.verified});
+  final int id;
+  final String name;
+  final bool verified;
+
+  factory _CityOption.fromJson(Map<String, dynamic> j) => _CityOption(
+        id: j['id'] as int,
+        name: j['name'] as String,
+        verified: j['verified'] as bool? ?? true,
+      );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers
@@ -103,9 +120,23 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
   final Map<String, TextEditingController> _legPriceCtrlrs = {};
   List<LegFare> _legFares = [];
 
+  /// Autocomplétion ville — voir create_trip_page.dart (même pattern, dupliqué à dessein).
+  int? _countryId;
+  int? _departureCityId;
+  int? _arrivalCityId;
+  List<_CityOption> _departureSuggestions = [];
+  List<_CityOption> _arrivalSuggestions = [];
+  Timer? _departureDebounce;
+  Timer? _arrivalDebounce;
+  final List<int?> _stopCityIds = [];
+  int? _activeStopIndex;
+  List<_CityOption> _stopSuggestions = [];
+  Timer? _stopDebounce;
+
   @override
   void initState() {
     super.initState();
+    _loadCountryId();
     final t = widget.trip;
     _status = t.status;
     _departureCityCtrl = TextEditingController(text: t.departureCity);
@@ -137,6 +168,10 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
           .map((s) => s.trim())
           .where((s) => s.isNotEmpty),
     );
+    // Villes existantes chargées sans cityId connu (résolues par nom au prochain
+    // enregistrement, voir TripService.resolveTripCity côté backend — même repli que les
+    // formulaires web trip-edit/station-list).
+    _stopCityIds.addAll(List<int?>.filled(_stopCities.length, null));
     for (final city in _stopCities) {
       _stopCtrlrs.add(TextEditingController(text: city));
     }
@@ -159,7 +194,105 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
     for (final c in _legPriceCtrlrs.values) {
       c.dispose();
     }
+    _departureDebounce?.cancel();
+    _arrivalDebounce?.cancel();
+    _stopDebounce?.cancel();
     super.dispose();
+  }
+
+  /// Résout l'id du pays "Côte d'Ivoire" une fois pour filtrer les recherches de ville — voir
+  /// create_trip_page.dart (même pattern). Relance la recherche pour départ/arrivée si déjà
+  /// saisis avant que cet appel réseau ait fini.
+  Future<void> _loadCountryId() async {
+    try {
+      final res = await ApiClient.instance.dio.get<List<dynamic>>('/trips/countries');
+      final countries = res.data ?? [];
+      final ci = countries.cast<Map<String, dynamic>>().firstWhere(
+            (c) => c['isoCode'] == 'CI',
+            orElse: () => const {},
+          );
+      final id = ci['id'] as int?;
+      if (!mounted || id == null) return;
+      setState(() => _countryId = id);
+      if (_departureCityCtrl.text.trim().isNotEmpty && _departureCityId == null) {
+        _onDepartureCityChanged(_departureCityCtrl.text);
+      }
+      if (_arrivalCityCtrl.text.trim().isNotEmpty && _arrivalCityId == null) {
+        _onArrivalCityChanged(_arrivalCityCtrl.text);
+      }
+    } catch (_) {
+      // Pas bloquant — l'autocomplétion reste simplement désactivée.
+    }
+  }
+
+  Future<List<_CityOption>> _searchCities(String query) async {
+    final countryId = _countryId;
+    if (countryId == null || query.trim().isEmpty) return [];
+    try {
+      final res = await ApiClient.instance.dio.get<List<dynamic>>(
+        '/trips/cities/by-country',
+        queryParameters: {'countryId': countryId, 'q': query.trim()},
+      );
+      return (res.data ?? []).cast<Map<String, dynamic>>().map(_CityOption.fromJson).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  void _onDepartureCityChanged(String value) {
+    setState(() => _departureCityId = null);
+    _departureDebounce?.cancel();
+    _departureDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final results = await _searchCities(value);
+      if (mounted) setState(() => _departureSuggestions = results);
+    });
+  }
+
+  void _onArrivalCityChanged(String value) {
+    setState(() => _arrivalCityId = null);
+    _arrivalDebounce?.cancel();
+    _arrivalDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final results = await _searchCities(value);
+      if (mounted) setState(() => _arrivalSuggestions = results);
+    });
+  }
+
+  void _selectDepartureCity(_CityOption city) {
+    setState(() {
+      _departureCityCtrl.text = city.name;
+      _departureCityId = city.id;
+      _departureSuggestions = [];
+    });
+  }
+
+  void _selectArrivalCity(_CityOption city) {
+    setState(() {
+      _arrivalCityCtrl.text = city.name;
+      _arrivalCityId = city.id;
+      _arrivalSuggestions = [];
+    });
+  }
+
+  void _onStopCityChanged(int index, String value) {
+    _activeStopIndex = index;
+    if (index < _stopCityIds.length) {
+      setState(() => _stopCityIds[index] = null);
+    }
+    _stopDebounce?.cancel();
+    _stopDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final results = await _searchCities(value);
+      if (mounted && _activeStopIndex == index) setState(() => _stopSuggestions = results);
+    });
+  }
+
+  void _selectStopCity(int index, _CityOption city) {
+    setState(() {
+      if (index < _stopCityIds.length) _stopCityIds[index] = city.id;
+      if (index < _stopCities.length) _stopCities[index] = city.name;
+      if (index < _stopCtrlrs.length) _stopCtrlrs[index].text = city.name;
+      _stopSuggestions = [];
+      _rebuildLegFares();
+    });
   }
 
   // ── Tronçons ───────────────────────────────────────────────────────────
@@ -216,6 +349,7 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
     setState(() {
       _stopCities.add('');
       _stopCtrlrs.add(TextEditingController());
+      _stopCityIds.add(null);
       _rebuildLegFares();
     });
   }
@@ -224,6 +358,11 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
     setState(() {
       _stopCities.removeAt(index);
       _stopCtrlrs.removeAt(index).dispose();
+      if (index < _stopCityIds.length) _stopCityIds.removeAt(index);
+      if (_activeStopIndex == index) {
+        _activeStopIndex = null;
+        _stopSuggestions = [];
+      }
       _rebuildLegFares();
     });
   }
@@ -308,11 +447,29 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
 
       final moreInfo = _stopCities.where((s) => s.trim().isNotEmpty).join(', ');
 
+      // Ville choisie dans la liste (voir GET /trips/cities/by-country) — cityId prioritaire
+      // côté backend, sinon repli sur le nom tapé (TripService.resolveTripCity, "ville
+      // introuvable"). `stops` toujours envoyé (même vide) pour que le backend résolve aussi
+      // départ/arrivée en vraies villes avec coordonnées — voir create_trip_page.dart, même
+      // logique.
+      final stopsJson = <Map<String, dynamic>>[];
+      for (var i = 0; i < _stopCities.length; i++) {
+        final name = _stopCities[i].trim();
+        if (name.isEmpty) continue;
+        stopsJson.add({
+          'cityId': i < _stopCityIds.length ? _stopCityIds[i] : null,
+          'cityName': name,
+        });
+      }
+
       final body = {
         'id': widget.trip.id,
         'partnerId': 0,
         'departureCity': _departureCityCtrl.text.trim(),
         'arrivalCity': _arrivalCityCtrl.text.trim(),
+        'departureCityId': _departureCityId,
+        'arrivalCityId': _arrivalCityId,
+        'stops': stopsJson,
         'boardingPoint': _boardingPointCtrl.text.trim(),
         'vehiculePlateNumber': _plateCtrl.text.trim(),
         'vehicleType': _vehicleType,
@@ -450,14 +607,24 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
               label: 'Ville de départ',
               icon: Icons.trip_origin_rounded,
               validator: _required,
+              onChanged: _onDepartureCityChanged,
             ),
+            if (_departureSuggestions.isNotEmpty)
+              _CitySuggestionsList(suggestions: _departureSuggestions, onSelect: _selectDepartureCity)
+            else if (_departureCityCtrl.text.trim().isNotEmpty && _departureCityId == null)
+              const _CityNotFoundHint(),
             const SizedBox(height: 12),
             _Field(
               controller: _arrivalCityCtrl,
               label: 'Ville d\'arrivée',
               icon: Icons.location_on_rounded,
               validator: _required,
+              onChanged: _onArrivalCityChanged,
             ),
+            if (_arrivalSuggestions.isNotEmpty)
+              _CitySuggestionsList(suggestions: _arrivalSuggestions, onSelect: _selectArrivalCity)
+            else if (_arrivalCityCtrl.text.trim().isNotEmpty && _arrivalCityId == null)
+              const _CityNotFoundHint(),
             const SizedBox(height: 12),
             _Field(
               controller: _boardingPointCtrl,
@@ -815,14 +982,30 @@ class _EditTripPageState extends ConsumerState<EditTripPage> {
             ),
             ...List.generate(
               _stopCities.length,
-              (i) => _StopTileEditable(
-                controller: _stopCtrlrs[i],
-                index: i + 1,
-                onRemove: () => _removeStop(i),
-                onChanged: (v) => setState(() {
-                  _stopCities[i] = v;
-                  _rebuildLegFares();
-                }),
+              (i) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _StopTileEditable(
+                    controller: _stopCtrlrs[i],
+                    index: i + 1,
+                    onRemove: () => _removeStop(i),
+                    onChanged: (v) {
+                      setState(() {
+                        _stopCities[i] = v;
+                        _rebuildLegFares();
+                      });
+                      _onStopCityChanged(i, v);
+                    },
+                  ),
+                  if (_activeStopIndex == i && _stopSuggestions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 40, bottom: 8),
+                      child: _CitySuggestionsList(
+                        suggestions: _stopSuggestions,
+                        onSelect: (c) => _selectStopCity(i, c),
+                      ),
+                    ),
+                ],
               ),
             ),
             _StopTile(
@@ -1104,6 +1287,67 @@ class _SectionLabel extends StatelessWidget {
   );
 }
 
+/// Liste de suggestions sous le champ ville — voir create_trip_page.dart (même pattern,
+/// dupliqué à dessein : pas de classe de base commune entre ces formulaires).
+class _CitySuggestionsList extends StatelessWidget {
+  const _CitySuggestionsList({required this.suggestions, required this.onSelect});
+
+  final List<_CityOption> suggestions;
+  final ValueChanged<_CityOption> onSelect;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 6, bottom: 6),
+        constraints: const BoxConstraints(maxHeight: 180),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.gray200),
+        ),
+        child: ListView.builder(
+          shrinkWrap: true,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          itemCount: suggestions.length,
+          itemBuilder: (_, i) {
+            final city = suggestions[i];
+            return InkWell(
+              onTap: () => onSelect(city),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.mobiliBlue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(city.name, style: const TextStyle(color: AppColors.mobiliBlueDeep)),
+                    ),
+                    if (!city.verified)
+                      const Text('non vérifiée',
+                          style: TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+}
+
+/// Message affiché quand aucune suggestion ne correspond au texte tapé — la saisie reste
+/// acceptée telle quelle (repli "ville introuvable", voir CityLookupService côté backend).
+class _CityNotFoundHint extends StatelessWidget {
+  const _CityNotFoundHint();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.only(top: 6, bottom: 6),
+        child: Text(
+          'Ville introuvable dans la liste — sera soumise telle quelle, en attente de validation admin.',
+          style: TextStyle(fontSize: 11, color: AppColors.warning),
+        ),
+      );
+}
+
 class _Field extends StatelessWidget {
   const _Field({
     required this.controller,
@@ -1111,6 +1355,7 @@ class _Field extends StatelessWidget {
     required this.icon,
     this.validator,
     this.keyboardType,
+    this.onChanged,
   }) : maxLines = 1;
   final TextEditingController controller;
   final String label;
@@ -1118,6 +1363,7 @@ class _Field extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -1125,6 +1371,7 @@ class _Field extends StatelessWidget {
     validator: validator,
     keyboardType: keyboardType,
     maxLines: maxLines,
+    onChanged: onChanged,
     decoration: InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: AppColors.gray400, size: 20),
