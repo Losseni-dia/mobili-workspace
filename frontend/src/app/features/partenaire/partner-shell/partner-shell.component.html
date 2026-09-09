@@ -180,17 +180,41 @@
         </header>
 
         <div class="shell-content">
-            @if (companyPendingAdmin()) {
-                <div class="shell-pending-banner" role="status">
-                    <strong>Validation en cours</strong>
-                    <span
-                        >Votre compagnie est en attente d’activation par un administrateur Mobili. Vous pouvez consulter le
-                        <a routerLink="/partenaire/settings">profil compagnie</a>
-                        ; le reste de l’espace sera accessible après validation.</span
-                    >
+            @if (companyPendingAdmin() && !isSettingsRoute()) {
+                <div class="pending-approval-screen" role="status">
+                    <div class="pending-approval-icon">{{ companyRejected() ? '⛔' : '⏳' }}</div>
+                    @if (companyRejected()) {
+                        <h2>Votre société n’a pas été validée</h2>
+                        <p>
+                            Notre équipe a examiné votre dossier et n’a pas pu l’activer.
+                            @if (companyRejectionReason()) {
+                                Motif : <strong>{{ companyRejectionReason() }}</strong>.
+                            }
+                        </p>
+                        <p>Corrigez les informations de votre profil compagnie puis contactez le support Mobili.</p>
+                    } @else {
+                        <h2>Votre société est en cours de validation</h2>
+                        <p>
+                            Notre équipe examine votre dossier (pièces d’identité, carte de transporteur). Ce
+                            processus prend généralement <strong>moins de 48h</strong>.
+                        </p>
+                        <p>Vous recevrez une notification dès l’activation de votre compte.</p>
+                    }
+                    <div class="pending-approval-actions">
+                        <button
+                            type="button"
+                            class="btn-refresh"
+                            [disabled]="refreshingStatus()"
+                            (click)="refreshApprovalStatus()"
+                        >
+                            {{ refreshingStatus() ? 'Actualisation…' : 'Actualiser mon statut' }}
+                        </button>
+                        <a routerLink="/partenaire/settings" class="btn-settings-link">Voir le profil compagnie</a>
+                    </div>
                 </div>
+            } @else {
+                <router-outlet></router-outlet>
             }
-            <router-outlet></router-outlet>
         </div>
     </div>
 </div>

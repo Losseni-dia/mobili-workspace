@@ -497,26 +497,71 @@ $sidebar-w-collapsed: 76px;
   padding: 28px 32px 60px;
 }
 
-.shell-pending-banner {
+// Bloque réellement l'accès à l'espace compagnie tant que companyPendingAdmin() est vrai —
+// remplace le router-outlet (pas juste un bandeau au-dessus) : avant ce changement, un
+// formulaire (ex. création de gare) restait pleinement fonctionnel sous le bandeau et
+// n'échouait qu'au moment de la soumission (403 confus, voir feedback testeurs).
+.pending-approval-screen {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: -8px 0 20px;
-  padding: 14px 18px;
-  border-radius: 12px;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 480px;
+  margin: 60px auto;
+  padding: 40px 32px;
+  border-radius: 16px;
   border: 1px solid rgba(variables.$mobili-yellow, 0.45);
   background: color.adjust(variables.$mobili-yellow, $lightness: 32%);
   color: variables.$mobili-blue-deep;
-  font-size: 0.92rem;
-  line-height: 1.45;
 
-  strong {
-    font-size: 0.95rem;
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 800;
   }
 
-  a {
-    color: variables.$mobili-blue;
-    font-weight: 700;
+  p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: variables.$gray-600;
+  }
+}
+
+.pending-approval-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.pending-approval-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-refresh {
+  @include mixins.btn-primary;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-settings-link {
+  color: variables.$mobili-blue;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 

@@ -62,11 +62,45 @@ export class PartnerShellComponent implements OnInit {
     return this.configuration.resolveUploadMediaUrl(path ?? null);
   });
 
-  /** Inscription société : le compte existe mais l’admin doit activer la compagnie. */
+  /**
+   * Inscription société : le compte existe mais l’admin doit activer la compagnie. Basé sur
+   * `enabled` (miroir exact de PartnerService.assertPartnerCanOperate côté backend — la garde
+   * réellement appliquée sur les endpoints d'écriture), pas sur `approvalStatus` seul : plus
+   * robuste si jamais les deux champs divergent.
+   */
   companyPendingAdmin = computed(() => {
     const c = this.companyInfo();
     return c != null && c.enabled === false;
   });
+
+  /** REJECTED vs PENDING — distingue le message affiché à l'écran de blocage. */
+  companyRejected = computed(() => this.companyInfo()?.approvalStatus === 'REJECTED');
+  companyRejectionReason = computed(() => this.companyInfo()?.rejectionReason?.trim() || null);
+
+  /**
+   * Le profil compagnie (`/partenaire/settings`) reste consultable même en attente — c'est là
+   * qu'on peut voir/corriger les infos soumises — tout le reste de l'espace est bloqué par
+   * l'écran de validation plutôt que par un simple bandeau (voir shell-content, ancienne version
+   * n'empêchait pas réellement d'utiliser les formulaires sous le bandeau — feedback testeurs :
+   * bloqué par un 403 après avoir rempli tout un formulaire de gare).
+   */
+  isSettingsRoute = computed(() => this.currentUrl().includes('/partenaire/settings'));
+
+  refreshingStatus = signal(false);
+  refreshApprovalStatus() {
+    if (this.refreshingStatus()) return;
+    this.refreshingStatus.set(true);
+    this.partenaireService.getMyPartnerInfo().subscribe({
+      next: (data) => {
+        this.companyInfo.set(data);
+        this.refreshingStatus.set(false);
+      },
+      error: (err) => {
+        console.error('Erreur actualisation statut compagnie', err);
+        this.refreshingStatus.set(false);
+      },
+    });
+  }
 
   /** Court retour après copie du code gare (sidebar). */
   codeCopyFeedback = signal(false);
