@@ -325,7 +325,7 @@ class _InProgressBadge extends ConsumerWidget {
           if (destination == null) {
             label = 'En cours';
           } else if (eta != null && eta.available) {
-            label = 'En route vers $destination — dans ${eta.durationMinutes} min';
+            label = 'En route vers $destination — dans ${eta.durationLabel}';
           } else {
             label = 'En route vers $destination';
           }

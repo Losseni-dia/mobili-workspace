@@ -465,7 +465,7 @@ class _EtaBadge extends ConsumerWidget {
       // TripEtaService) — jamais une estimation approximative.
       label = 'En route vers ${destination ?? ''} — Temps restant indisponible';
     } else {
-      label = 'En route vers ${destination ?? ''} — dans ${eta.durationMinutes} min';
+      label = 'En route vers ${destination ?? ''} — dans ${eta.durationLabel}';
     }
 
     return Container(
