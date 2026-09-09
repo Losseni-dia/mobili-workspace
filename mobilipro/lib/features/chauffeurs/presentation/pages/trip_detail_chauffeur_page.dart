@@ -797,24 +797,19 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   Future<void> handleTripJustStarted() async {
     if (!mounted || _currentStop != 0 || _tripEnded) return;
 
-    // Le tracking GPS ne doit JAMAIS dépendre du chargement de la liste des
-    // arrêts — bug constaté en usage réel : le chauffeur tape le grand
-    // bouton "Démarrer" (maintenant visible immédiatement) avant que
-    // GET /trips/{id}/stops ait fini de répondre ; l'ancien code attendait
-    // silencieusement cette liste (ref.read(...).valueOrNull == null) avant
-    // de démarrer LiveTrackingService, donc le tracking ne démarrait jamais
-    // et le passager restait bloqué sur "position non récupérée" à vie.
-    // Démarré inconditionnellement ici, exactement comme le faisait l'ancien
-    // bouton "Quitter [ville origine]" (_recordDeparture, _currentStop==0).
-    unawaited(LiveTrackingService.instance.start(
-      widget.trip.id,
-      onAutoDeparture: handleAutoDeparture,
-    ));
+    // Le démarrage de LiveTrackingService se fait UNIQUEMENT dans
+    // _startTrip() (widget parent) — jamais ici en plus. Bug constaté en
+    // usage réel : les deux appels concurrents à start() pour le même trip
+    // se percutaient côté plugin natif
+    // (PlatformException "Waiting for previous start action to complete"),
+    // et l'appel perdant remettait _activeTripId à null même après le
+    // succès du premier — coupant le tracking juste après l'avoir démarré.
+    // Un seul point d'appel, plus de course.
 
-    // Avancée d'arrêt + géofence : best-effort, jamais bloquant pour le
-    // tracking ci-dessus. Si la liste n'est pas encore en cache, on attend
-    // sa résolution ; en cas d'échec, le bouton manuel "Quitter" réapparaît
-    // (widget.trip.isUpcoming devient déjà false après _applyTripStatus).
+    // Avancée d'arrêt + géofence : best-effort. Si la liste n'est pas encore
+    // en cache, on attend sa résolution ; en cas d'échec, le bouton manuel
+    // "Quitter" réapparaît (widget.trip.isUpcoming devient déjà false après
+    // _applyTripStatus).
     List<_TripStop> stops;
     try {
       stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull ??
