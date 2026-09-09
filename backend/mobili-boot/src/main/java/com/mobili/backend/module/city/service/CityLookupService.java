@@ -28,15 +28,20 @@ public class CityLookupService {
     @Transactional
     public City resolveOrCreatePending(String name, Country country) {
         String normalized = name.trim();
-        return cityRepository.findByNameIgnoreCase(normalized).orElseGet(() -> {
-            City city = new City();
-            city.setName(normalized);
-            city.setCountry(country);
-            city.setVerified(false);
-            City saved = cityRepository.save(city);
-            log.info("ℹ️ Nouvelle ville créée en attente de validation admin : '{}' ({})",
-                    normalized, country != null ? country.getIsoCode() : "pays inconnu");
-            return saved;
-        });
+        return cityRepository.findByNameIgnoreCase(normalized)
+                // Repli insensible aux accents avant de créer — sinon "Bouake" (sans accent)
+                // recrée un doublon d'une "Bouaké" déjà connue (voir migration V56, doublon
+                // constaté en base après un premier dédoublonnage LOWER()-only trop faible).
+                .or(() -> cityRepository.findByNormalizedName(normalized))
+                .orElseGet(() -> {
+                    City city = new City();
+                    city.setName(normalized);
+                    city.setCountry(country);
+                    city.setVerified(false);
+                    City saved = cityRepository.save(city);
+                    log.info("ℹ️ Nouvelle ville créée en attente de validation admin : '{}' ({})",
+                            normalized, country != null ? country.getIsoCode() : "pays inconnu");
+                    return saved;
+                });
     }
 }

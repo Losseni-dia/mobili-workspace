@@ -104,6 +104,11 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
   /// Résout l'id du pays "Côte d'Ivoire" une fois pour filtrer les recherches de ville — en cas
   /// d'échec (réseau, pays introuvable), l'autocomplétion reste simplement désactivée et les
   /// champs se comportent comme avant (texte libre), jamais bloquant.
+  ///
+  /// Relance la recherche pour un champ déjà rempli une fois l'id chargé : sans ça, si
+  /// l'utilisateur tape avant la fin de cet appel réseau, `_searchCities` s'exécute avec
+  /// `_countryId == null` et ne se relance jamais toute seule — la ville tapée reste "introuvable"
+  /// indéfiniment même si elle existe, tant qu'on ne retape pas une lettre (bug constaté en test).
   Future<void> _loadCountryId() async {
     try {
       final res = await ApiClient.instance.dio.get<List<dynamic>>('/trips/countries');
@@ -113,7 +118,14 @@ class _CovoiturageTripFormPageState extends State<CovoiturageTripFormPage> {
             orElse: () => const {},
           );
       final id = ci['id'] as int?;
-      if (mounted && id != null) setState(() => _countryId = id);
+      if (!mounted || id == null) return;
+      setState(() => _countryId = id);
+      if (_departureCtrl.text.trim().isNotEmpty && _departureCityId == null) {
+        _onDepartureChanged(_departureCtrl.text);
+      }
+      if (_arrivalCtrl.text.trim().isNotEmpty && _arrivalCityId == null) {
+        _onArrivalChanged(_arrivalCtrl.text);
+      }
     } catch (_) {
       // Pas bloquant — voir Javadoc de la méthode.
     }

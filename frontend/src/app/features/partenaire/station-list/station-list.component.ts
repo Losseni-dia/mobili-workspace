@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, combineLatest, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { PartenaireService, Station } from '../../../core/services/partners/partenaire.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
@@ -78,6 +78,16 @@ export class StationListComponent implements OnInit {
   editCitySuggestions = signal<CityOption[]>([]);
   editSelectedCityId = signal<number | null>(null);
 
+  /**
+   * Source de vérité RxJS du pays (en plus du signal, utilisé pour l'affichage) — nécessaire pour
+   * que la recherche ville se relance dès que le pays arrive, même sans nouvelle frappe. Sans
+   * ça : GET /partners/my-company répond après que l'utilisateur a déjà fini de taper -> la
+   * recherche s'exécute une seule fois avec countryId=null -> liste vide indéfiniment (aucune
+   * frappe supplémentaire pour la relancer) — bug constaté en test ("bouake" jamais trouvé alors
+   * que la ville existe bien en base).
+   */
+  private countryId$ = new BehaviorSubject<number | null>(null);
+
   ngOnInit() {
     this.needValidationHint.set(this.route.snapshot.queryParamMap.get('needValidation') === '1');
     this.load();
@@ -86,18 +96,18 @@ export class StationListComponent implements OnInit {
       next: (p) => {
         this.myCountryId.set(p.countryId ?? null);
         this.myCountryName.set(p.countryName ?? null);
+        this.countryId$.next(p.countryId ?? null);
       },
       error: (e) => console.error('[station-list] Erreur chargement du pays de la société', e),
     });
 
-    this.form
-      .get('city')!
-      .valueChanges.pipe(
-        debounceTime(200),
-        distinctUntilChanged(),
-        switchMap((q) => {
+    combineLatest([
+      this.form.get('city')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
+      this.countryId$,
+    ])
+      .pipe(
+        switchMap(([q, countryId]) => {
           this.addSelectedCityId.set(null);
-          const countryId = this.myCountryId();
           if (!countryId || !q || !q.trim()) return of([]);
           return this.tripService.getCitiesByCountry(countryId, q);
         }),
@@ -105,14 +115,13 @@ export class StationListComponent implements OnInit {
       )
       .subscribe((cities) => this.addCitySuggestions.set(cities));
 
-    this.editForm
-      .get('city')!
-      .valueChanges.pipe(
-        debounceTime(200),
-        distinctUntilChanged(),
-        switchMap((q) => {
+    combineLatest([
+      this.editForm.get('city')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
+      this.countryId$,
+    ])
+      .pipe(
+        switchMap(([q, countryId]) => {
           this.editSelectedCityId.set(null);
-          const countryId = this.myCountryId();
           if (!countryId || !q || !q.trim()) return of([]);
           return this.tripService.getCitiesByCountry(countryId, q);
         }),

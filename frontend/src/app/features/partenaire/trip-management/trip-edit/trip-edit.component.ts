@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subject, of, startWith } from 'rxjs';
+import { BehaviorSubject, Subject, combineLatest, of, startWith } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 import { buildTripCityLabels, lastStopIndexFromLabels } from '../../../../core/utils/trip-city-labels.util';
@@ -64,6 +64,10 @@ export class TripEditComponent implements OnInit {
   activeStopIndex = signal<number | null>(null);
   stopSuggestions = signal<CityOption[]>([]);
   private stopQuery$ = new Subject<{ index: number; q: string }>();
+  /** Voir StationListComponent.countryId$ (même correctif) : sans ça, la recherche exécutée
+   *  avant que GET /partners/my-company ait répondu tourne avec countryId=null et ne se relance
+   *  jamais toute seule (bug constaté en test : une ville existante jamais trouvée). */
+  private countryId$ = new BehaviorSubject<number | null>(null);
 
   /** Arrêts intermédiaires — voir AddTripComponent.stopsArray (même pattern). Initialisé depuis
    *  trip.moreInfo au chargement (loadTripData), sans cityId connu (résolu par nom au prochain
@@ -142,7 +146,10 @@ export class TripEditComponent implements OnInit {
       error: () => this.chauffeurs.set([]),
     });
     this.partenaireService.getMyPartnerInfo().subscribe({
-      next: (p) => this.myCountryId.set(p.countryId ?? null),
+      next: (p) => {
+        this.myCountryId.set(p.countryId ?? null);
+        this.countryId$.next(p.countryId ?? null);
+      },
       error: (e) => console.error('[trip-edit] Erreur chargement du pays de la société', e),
     });
     this.wireCityAutocomplete();
@@ -184,14 +191,13 @@ export class TripEditComponent implements OnInit {
   /** Voir AddTripComponent.wireCityAutocomplete (même pattern, dupliqué à dessein — ces deux
    *  formulaires n'ont pas de classe de base commune dans ce projet). */
   private wireCityAutocomplete(): void {
-    this.tripForm
-      .get('departureCity')!
-      .valueChanges.pipe(
-        debounceTime(200),
-        distinctUntilChanged(),
-        switchMap((q) => {
+    combineLatest([
+      this.tripForm.get('departureCity')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
+      this.countryId$,
+    ])
+      .pipe(
+        switchMap(([q, countryId]) => {
           this.departureSelectedId.set(null);
-          const countryId = this.myCountryId();
           if (!countryId || !q || !q.trim()) return of([]);
           return this.tripService.getCitiesByCountry(countryId, q);
         }),
@@ -199,14 +205,13 @@ export class TripEditComponent implements OnInit {
       )
       .subscribe((cities) => this.departureSuggestions.set(cities));
 
-    this.tripForm
-      .get('arrivalCity')!
-      .valueChanges.pipe(
-        debounceTime(200),
-        distinctUntilChanged(),
-        switchMap((q) => {
+    combineLatest([
+      this.tripForm.get('arrivalCity')!.valueChanges.pipe(debounceTime(200), distinctUntilChanged()),
+      this.countryId$,
+    ])
+      .pipe(
+        switchMap(([q, countryId]) => {
           this.arrivalSelectedId.set(null);
-          const countryId = this.myCountryId();
           if (!countryId || !q || !q.trim()) return of([]);
           return this.tripService.getCitiesByCountry(countryId, q);
         }),
@@ -214,12 +219,12 @@ export class TripEditComponent implements OnInit {
       )
       .subscribe((cities) => this.arrivalSuggestions.set(cities));
 
-    this.stopQuery$
+    combineLatest([
+      this.stopQuery$.pipe(debounceTime(200), distinctUntilChanged((a, b) => a.index === b.index && a.q === b.q)),
+      this.countryId$,
+    ])
       .pipe(
-        debounceTime(200),
-        distinctUntilChanged((a, b) => a.index === b.index && a.q === b.q),
-        switchMap(({ index, q }) => {
-          const countryId = this.myCountryId();
+        switchMap(([{ index, q }, countryId]) => {
           if (!countryId || !q.trim()) return of({ index, cities: [] as CityOption[] });
           return this.tripService.getCitiesByCountry(countryId, q).pipe(map((cities) => ({ index, cities })));
         }),
