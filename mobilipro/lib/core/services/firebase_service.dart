@@ -87,6 +87,31 @@ class FirebaseService {
     }
   }
 
+  /// Notification locale immédiate (pas de trajet réseau via FCM) — utilisée
+  /// par exemple par LiveTrackingService pour signaler une arrivée détectée
+  /// par géofence. Réutilise le canal déjà créé par [initialize].
+  static Future<void> showLocalNotification(String title, String body) async {
+    try {
+      await _localNotifications.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channel.id,
+            _channel.name,
+            channelDescription: _channel.description,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/launcher_icon',
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[LocalNotification] Échec affichage "$title" : $e');
+    }
+  }
+
   static Future<void> sendTokenToBackend(
     Dio dio, {
     bool isStation = false,

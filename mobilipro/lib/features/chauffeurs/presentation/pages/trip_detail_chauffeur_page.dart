@@ -75,13 +75,25 @@ class _StopPassenger {
 }
 
 class _TripStop {
-  const _TripStop({required this.stopIndex, required this.cityLabel});
+  const _TripStop({
+    required this.stopIndex,
+    required this.cityLabel,
+    this.latitude,
+    this.longitude,
+  });
   final int stopIndex;
   final String cityLabel;
+  /// Null tant que l'arrêt n'a pas été géocodé (voir écran admin) — dans ce
+  /// cas, LiveTrackingService.watchStop ne pose aucun géofence pour cet
+  /// arrêt et le bouton manuel reste le seul moyen de départ.
+  final double? latitude;
+  final double? longitude;
 
   factory _TripStop.fromJson(Map<String, dynamic> json) => _TripStop(
     stopIndex: (json['stopIndex'] as num).toInt(),
     cityLabel: json['cityLabel'] as String? ?? '',
+    latitude: (json['latitude'] as num?)?.toDouble(),
+    longitude: (json['longitude'] as num?)?.toDouble(),
   );
 }
 
@@ -667,7 +679,12 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
   bool _isRecordingDeparture = false;
   bool _tripEnded = false;
 
-  Future<void> _recordDeparture(String cityLabel, bool isLast) async {
+  /// [auto] : déclenché par géofence (LiveTrackingService, sortie de la
+  /// zone du prochain arrêt) plutôt que par un tap sur le bouton — même
+  /// requête, même effets, seul le message affiché change pour que le
+  /// chauffeur comprenne pourquoi le départ vient d'être enregistré sans
+  /// qu'il ait appuyé sur rien.
+  Future<void> _recordDeparture(String cityLabel, bool isLast, {bool auto = false}) async {
     setState(() => _isRecordingDeparture = true);
     try {
       await ApiClient.instance.dio.post<void>(
@@ -681,7 +698,10 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         // l'arrivée (isLast) ou en cas d'annulation ramenant à l'arrêt 0
         // (_undoLastDeparture ci-dessous). N'affecte jamais ce flux manuel.
         if (_currentStop == 0) {
-          unawaited(LiveTrackingService.instance.start(widget.trip.id));
+          unawaited(LiveTrackingService.instance.start(
+            widget.trip.id,
+            onAutoDeparture: _handleAutoDeparture,
+          ));
         }
         if (isLast) {
           unawaited(LiveTrackingService.instance.stop());
@@ -696,13 +716,18 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Départ de $cityLabel enregistré ✅'),
+              content: Text(
+                auto
+                    ? 'Départ automatique de $cityLabel détecté 📍'
+                    : 'Départ de $cityLabel enregistré ✅',
+              ),
               backgroundColor: AppColors.stationGreen,
               behavior: SnackBarBehavior.floating,
             ),
           );
           setState(() => _currentStop++);
           _refreshStop();
+          _updateGeofenceWatch();
         }
       }
     } catch (e) {
@@ -718,6 +743,38 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
     } finally {
       if (mounted) setState(() => _isRecordingDeparture = false);
     }
+  }
+
+  /// Appelé par LiveTrackingService quand un départ est détecté
+  /// automatiquement (sortie confirmée du géofence de l'arrêt courant) —
+  /// voir doc de classe de LiveTrackingService. Garde-fous : ignore si la
+  /// page n'est plus montée, si l'arrêt suivi ne correspond plus à
+  /// _currentStop (bouton manuel ou undo entre-temps), ou si le trajet est
+  /// déjà terminé.
+  void _handleAutoDeparture(int stopIndex, String cityLabel) {
+    if (!mounted || _tripEnded || stopIndex != _currentStop) return;
+    final stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull;
+    if (stops == null || stops.isEmpty) return;
+    final maxStop = stops.map((s) => s.stopIndex).reduce((a, b) => a > b ? a : b);
+    final isLast = stopIndex == maxStop;
+    unawaited(_recordDeparture(cityLabel, isLast, auto: true));
+  }
+
+  /// Pose le géofence sur le nouvel arrêt courant (celui que le bouton
+  /// "quitter" affiche désormais) — no-op si le tracking n'est pas actif ou
+  /// si l'arrêt n'a pas de coordonnées (voir LiveTrackingService.watchStop).
+  void _updateGeofenceWatch() {
+    if (!LiveTrackingService.instance.isTracking) return;
+    final stops = ref.read(_tripStopsProvider(widget.trip.id)).valueOrNull;
+    if (stops == null) return;
+    final stop = stops.where((s) => s.stopIndex == _currentStop).firstOrNull;
+    if (stop == null) return;
+    unawaited(LiveTrackingService.instance.watchStop(
+      stopIndex: stop.stopIndex,
+      cityLabel: stop.cityLabel,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+    ));
   }
 
   Future<void> _undoLastDeparture() async {
@@ -736,6 +793,8 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
         // tracking) est annulé — coupe le flux GPS en cohérence.
         if (newCurrentStop == 0) {
           unawaited(LiveTrackingService.instance.stop());
+        } else {
+          _updateGeofenceWatch();
         }
         widget.onStatusChanged(newCurrentStop == 0 ? 'PROGRAMMÉ' : 'EN_COURS');
         _refreshStop();

@@ -964,7 +964,8 @@ public class TripService {
     public List<TripStopResponseDTO> listStops(Long tripId) {
         Trip t = findById(tripId);
         return t.getStops().stream()
-                .map(s -> new TripStopResponseDTO(s.getStopIndex(), s.getCityLabel(), s.getPlannedDepartureAt()))
+                .map(s -> new TripStopResponseDTO(s.getStopIndex(), s.getCityLabel(),
+                        s.getPlannedDepartureAt(), s.getLatitude(), s.getLongitude()))
                 .toList();
     }
 
@@ -994,7 +995,8 @@ public class TripService {
                     draft, req.getBoardingStopIndex(), req.getAlightingStopIndex());
         }
         List<TripStopResponseDTO> stops = draft.getStops().stream()
-                .map(s -> new TripStopResponseDTO(s.getStopIndex(), s.getCityLabel(), s.getPlannedDepartureAt()))
+                .map(s -> new TripStopResponseDTO(s.getStopIndex(), s.getCityLabel(),
+                        s.getPlannedDepartureAt(), s.getLatitude(), s.getLongitude()))
                 .toList();
         return new TripPricePreviewResponse(perSeat, last, stops);
     }
