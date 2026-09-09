@@ -532,6 +532,16 @@ export class AdminService {
   applyTripStopGeocoding(items: GeocodingApplyItem[]): Observable<GeocodingApplyResponse> {
     return this.http.post<GeocodingApplyResponse>('/admin/trip-stops-geocoding/apply', { items });
   }
+
+  /** Re-géocode une seule requête (nom corrigé et/ou pays choisi par l'admin) sans toucher la
+   *  base — actions "Modifier le nom" / "Re-géocoder avec un pays" de l'écran. */
+  geocodeOneTripStopCity(query: string, country?: string | null): Observable<GeocodingPreviewItem> {
+    let params = new HttpParams().set('query', query);
+    if (country) {
+      params = params.set('country', country);
+    }
+    return this.http.get<GeocodingPreviewItem>('/admin/trip-stops-geocoding/geocode-one', { params });
+  }
 }
 
 /** Aligné sur GeocodingPreviewItem (backend) — une ligne de l'écran de géocodage des arrêts. */
@@ -553,6 +563,9 @@ export interface GeocodingApplyItem {
   cityLabel: string;
   latitude: number;
   longitude: number;
+  /** Renseigné uniquement si l'admin a corrigé le nom via "Modifier le nom" — déclenche un
+   *  renommage du city_label en base côté AdminTripStopGeocodingService.apply(). */
+  newCityLabel?: string | null;
 }
 
 export interface GeocodingApplyResponse {

@@ -31,9 +31,12 @@
           <thead>
             <tr>
               <th class="center">Appliquer</th>
-              <th>Ville (city_label)</th>
+              <th>Ville (city_label d'origine)</th>
+              <th>Nom corrigé</th>
+              <th>Pays</th>
               <th>Coordonnées trouvées</th>
               <th>Statut</th>
+              <th class="center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +50,21 @@
                   }
                 </td>
                 <td><strong>{{ row.cityLabel }}</strong></td>
+                <td>
+                  <input
+                    type="text"
+                    class="edit-label-input"
+                    [ngModel]="row.editedLabel"
+                    (ngModelChange)="updateEditedLabel(row, $event)"
+                  />
+                </td>
+                <td>
+                  <select class="country-select" [ngModel]="row.country" (ngModelChange)="updateCountry(row, $event)">
+                    @for (opt of countryOptions; track opt.code) {
+                      <option [value]="opt.code">{{ opt.label }}</option>
+                    }
+                  </select>
+                </td>
                 <td class="mono">
                   @if (row.latitude != null && row.longitude != null) {
                     {{ row.latitude }}, {{ row.longitude }}
@@ -71,6 +89,17 @@
                       OK
                     </span>
                   }
+                </td>
+                <td class="center row-actions">
+                  <button
+                    type="button"
+                    class="btn-ghost btn-small"
+                    [disabled]="row.reGeocoding"
+                    (click)="reGeocode(row)"
+                  >
+                    {{ row.reGeocoding ? '…' : 'Re-géocoder' }}
+                  </button>
+                  <button type="button" class="btn-ghost btn-small" (click)="ignoreRow(row)">Ignorer</button>
                 </td>
               </tr>
             }

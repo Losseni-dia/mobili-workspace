@@ -48,25 +48,57 @@
   background: rgba(variables.$danger, 0.04);
 }
 
+.edit-label-input {
+  width: 100%;
+  min-width: 140px;
+  padding: 6px 8px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  font-size: 0.85rem;
+
+  &:focus { border-color: variables.$mobili-blue; outline: none; }
+}
+
+.country-select {
+  padding: 6px 8px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  font-size: 0.85rem;
+  background: variables.$white;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-ghost {
+  padding: 8px 14px;
+  border-radius: variables.$radius-sm;
+  border: 1px solid variables.$gray-200;
+  background: variables.$white;
+  color: variables.$gray-700;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { border-color: variables.$mobili-blue; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-small {
+  padding: 5px 10px !important;
+  font-size: 0.78rem !important;
+}
+
 .table-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 16px 20px;
   border-top: 1px solid variables.$gray-100;
-
-  .btn-ghost {
-    padding: 8px 14px;
-    border-radius: variables.$radius-sm;
-    border: 1px solid variables.$gray-200;
-    background: variables.$white;
-    color: variables.$gray-700;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-
-    &:hover { border-color: variables.$mobili-blue; }
-  }
 
   .btn-primary {
     @include mixins.btn-primary;
