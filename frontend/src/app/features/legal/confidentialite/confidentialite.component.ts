@@ -15,10 +15,11 @@ interface LegalSection {
  * (mobile_app/lib/features/legal/presentation/confidentialite_page.dart), même arbitrage que
  * pour les CGU : un seul texte juridique cohérent entre mobile et web.
  *
- * Contenu externalisé dans confidentialite-content.json : c'est aussi la source lue par
- * scripts/generate-legal-static.mjs pour générer la version statique servie aux
- * robots/crawlers sans JS (voir public/confidentialite/index.html) — ne jamais dupliquer le
- * texte ailleurs, toujours modifier le JSON.
+ * Contenu externalisé dans confidentialite-content.json — ne jamais dupliquer le texte ailleurs,
+ * toujours modifier le JSON. Cette route est en RenderMode.Prerender (voir app.routes.server.ts) :
+ * les crawlers/robots reçoivent directement le HTML complet généré par ce composant au build,
+ * plus besoin d'une version statique dupliquée à la main (ancien
+ * scripts/generate-legal-static.mjs, retiré une fois le SSR en place).
  */
 @Component({
   selector: 'app-confidentialite',

@@ -17,10 +17,6 @@ COPY . .
 # On utilise || true pour éviter que le build plante si le fichier est introuvable
 RUN sed -i "s|__MOBILI_API_BASE_URL__|${MOBILI_API_BASE_URL}|g" src/index.html
 
-# Pages légales statiques (sans JS) pour les crawlers/robots — voir scripts/generate-legal-static.mjs.
-# Doit tourner AVANT ng build : écrit dans public/, qu'Angular copie ensuite dans le bundle.
-RUN node scripts/generate-legal-static.mjs
-
 # sitemap.xml (aucun n'existait avant — voir scripts/generate-sitemap.mjs) : même contrainte,
 # doit tourner avant ng build pour finir dans public/ puis dans le bundle servi par Nginx.
 RUN node scripts/generate-sitemap.mjs

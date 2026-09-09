@@ -16,10 +16,11 @@ interface LegalSection {
  * juridique cohérent entre les deux plateformes. Ne pas modifier le contenu sans repasser par le
  * même arbitrage que côté mobile.
  *
- * Contenu externalisé dans cgu-content.json : c'est aussi la source lue par
- * scripts/generate-legal-static.mjs pour générer la version statique servie aux
- * robots/crawlers sans JS (voir public/cgu/index.html) — ne jamais dupliquer le texte
- * ailleurs, toujours modifier le JSON.
+ * Contenu externalisé dans cgu-content.json — ne jamais dupliquer le texte ailleurs, toujours
+ * modifier le JSON. Cette route est en RenderMode.Prerender (voir app.routes.server.ts) : les
+ * crawlers/robots reçoivent directement le HTML complet généré par ce composant au build, plus
+ * besoin d'une version statique dupliquée à la main (ancien scripts/generate-legal-static.mjs,
+ * retiré une fois le SSR en place).
  */
 @Component({
   selector: 'app-cgu',
