@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /my-account/
+Disallow: /admin/
+Disallow: /booking/
+Disallow: /payment/
+
+Sitemap: https://www.my-mobili.com/sitemap.xml

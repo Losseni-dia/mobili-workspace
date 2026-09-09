@@ -21,6 +21,10 @@ RUN sed -i "s|__MOBILI_API_BASE_URL__|${MOBILI_API_BASE_URL}|g" src/index.html
 # Doit tourner AVANT ng build : écrit dans public/, qu'Angular copie ensuite dans le bundle.
 RUN node scripts/generate-legal-static.mjs
 
+# sitemap.xml (aucun n'existait avant — voir scripts/generate-sitemap.mjs) : même contrainte,
+# doit tourner avant ng build pour finir dans public/ puis dans le bundle servi par Nginx.
+RUN node scripts/generate-sitemap.mjs
+
 # Compilation production (le flag --configuration production masque tes logs de succès)
 RUN npx ng build --configuration production
 
