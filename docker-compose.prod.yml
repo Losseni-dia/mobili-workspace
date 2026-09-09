@@ -5,10 +5,35 @@ services:
     container_name: "frontend-user-prod"
     build:
       context: ./frontend
-      dockerfile: Dockerfile.prod.user 
+      dockerfile: Dockerfile.prod.user
+      # Chantier SSR : Dockerfile.prod.user a maintenant 2 stages finaux (nginx-runtime,
+      # ssr-runtime — voir Dockerfile.prod.user et nginx.conf). Sans "target" explicite, Docker
+      # construit le DERNIER stage du fichier (ssr-runtime), pas nginx-runtime comme avant.
+      target: nginx-runtime
     image: mobili-frontend-user:prod
     ports:
       - "80:80" # Accessible sur http://localhost
+    restart: always
+    networks:
+      - frontend-network
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # SSR à la demande (RenderMode.Server, ex. /search-results) — voir nginx.conf
+  # (proxy_pass vers host.docker.internal:3010 en local docker-compose... à ajuster si le nom de
+  # service Docker Compose "frontend-user-ssr" doit remplacer host.docker.internal ici, réseau
+  # Compose déjà partagé via frontend-network).
+  frontend-user-ssr:
+    container_name: "frontend-user-ssr-prod"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod.user
+      target: ssr-runtime
+    image: mobili-frontend-user-ssr:prod
+    ports:
+      - "3010:4000"
+    environment:
+      MOBILI_API_BASE_URL: "http://backend:8080"
     restart: always
     networks:
       - frontend-network

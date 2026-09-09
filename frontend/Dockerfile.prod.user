@@ -28,18 +28,45 @@ RUN node scripts/generate-sitemap.mjs
 # Compilation production (le flag --configuration production masque tes logs de succès)
 RUN npx ng build --configuration production
 
-# --- ÉTAPE 2 : Serveur de Production ---
-FROM nginx:alpine
+# --- ÉTAPE 2a : Node SSR (routes RenderMode.Server, ex. /search-results) ---
+# Image à builder séparément avec `--target ssr-runtime` — voir plan SSR
+# (C:\Users\User\.claude\plans\virtual-munching-pebble.md, Étape C) : Nginx (stage suivant) reste
+# la voie par défaut pour tout le reste (statique/prerendered), ce conteneur ne sert que ce
+# qu'Angular ne peut pas prérendre à l'avance.
+FROM node:22-alpine AS ssr-runtime
+WORKDIR /app
+
+RUN apk update && apk upgrade --no-cache
+
+# server.mjs importe ses dépendances (express, @angular/ssr/node, etc.) au runtime — copier le
+# dist ET les node_modules de production, pas de bundle unique autonome dans cette config.
+COPY --from=builder /app/dist/frontend/server ./dist/frontend/server
+COPY --from=builder /app/dist/frontend/browser ./dist/frontend/browser
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev
+
+EXPOSE 4000
+
+CMD ["node", "dist/frontend/server/server.mjs"]
+
+# --- ÉTAPE 2b : Nginx (fichiers statiques + pages prerendered) ---
+# Dernier stage du fichier = cible par défaut d'un `docker build` sans `--target` explicite :
+# conserve exactement le comportement précédent (avant ce chantier SSR, ce Dockerfile n'avait
+# qu'un seul stage final, celui-ci) pour quiconque construit cette image sans le savoir (voir
+# docker-compose.prod.yml, corrigé pour cibler explicitement ce stage).
+FROM nginx:alpine AS nginx-runtime
 
 # Patch des paquets alpine (openssl, etc.) à la date du build — l'image nginx:alpine de base
 # peut être en retard sur les derniers correctifs CVE (ex: CVE-2026-14456 libssl3/libcrypto3),
 # ce qui fait échouer le scan Trivy du pipeline de déploiement.
 RUN apk update && apk upgrade --no-cache
 
-# Récupération du build
+# Récupération du build (browser/ contient aussi le HTML prerendered des routes statiques —
+# voir app.routes.server.ts — Nginx les sert tel quel, sans jamais toucher au conteneur Node)
 COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
 
-# Configuration Nginx (gestion des routes Angular)
+# Configuration Nginx (gestion des routes Angular + reverse-proxy vers ssr-runtime pour les
+# quelques routes dynamiques, voir nginx.conf)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

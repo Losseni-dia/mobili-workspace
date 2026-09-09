@@ -39,6 +39,13 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
+            },
+            "security": {
+              "allowedHosts": [
+                "www.my-mobili.com",
+                "my-mobili.com",
+                "localhost"
+              ]
             }
           },
           "configurations": {

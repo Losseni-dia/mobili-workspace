@@ -33,13 +33,26 @@ export class ConfigurationService {
      * 1) window.__MOBILI_API_URL__ (ex. balise script avant le bundle)
      * 2) <meta name="mobili-api-base" content="https://api…/v1">
      *
-     * Rendu côté serveur (SSR) : ni `window` ni `document` n'existent — repli sur
-     * `CONFIGURATION_DATA.variables[envName]` (voir resolveMobiliEnvName, 'prod' par défaut côté
-     * serveur), le même comportement que si aucune override n'était trouvée en navigateur.
+     * Rendu côté serveur (SSR, ex. /search-results en RenderMode.Server) : ni `window` ni
+     * `document` n'existent, et l'apiUrl "relatif" (`/v1`, résolu par le navigateur contre
+     * l'origine de la page puis proxifié par Nginx) n'a pas de sens pour `fetch()` sous Node —
+     * il lui faut une URL absolue. Repli sur la variable d'environnement `MOBILI_API_BASE_URL` du
+     * conteneur ssr-runtime (voir Dockerfile.prod.user), la même utilisée pour injecter l'URL
+     * dans index.html au build — mais ici lue à l'exécution, car ce process Node fait ses
+     * propres appels HTTP indépendamment du navigateur.
      */
     private readApiOverride(): string | null {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
-            return null;
+            // `process` (Node) n'est pas typé dans tous les projets consommant ce service partagé
+            // (voir @mobili-app/* — mobili-business n'a pas @types/node) : lecture via `globalThis`
+            // pour ne pas dépendre de la config TS de chaque projet, même pattern que
+            // typeof window/document ci-dessus.
+            const nodeProcess = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+                .process;
+            const serverApiBase = nodeProcess?.env?.['MOBILI_API_BASE_URL'];
+            return serverApiBase && serverApiBase.trim().length > 0
+                ? normalizeApiBase(serverApiBase)
+                : null;
         }
         const w = window as unknown as { __MOBILI_API_URL__?: string };
         if (w.__MOBILI_API_URL__ && w.__MOBILI_API_URL__.trim().length > 0) {

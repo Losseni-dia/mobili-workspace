@@ -39,9 +39,16 @@ jobs:
         working-directory: frontend
         run: npx ng test mobili-shared --watch=false
 
-      - name: Build user image
+      - name: Build user image (Nginx — statique + pages prerendered)
         working-directory: frontend
-        run: docker build -f Dockerfile.prod.user -t mobili-frontend-user:prod --build-arg MOBILI_API_BASE_URL=https://www.my-mobili.com .
+        run: docker build -f Dockerfile.prod.user --target nginx-runtime -t mobili-frontend-user:prod --build-arg MOBILI_API_BASE_URL=https://www.my-mobili.com .
+
+      # SSR à la demande (RenderMode.Server, ex. /search-results — voir app.routes.server.ts et
+      # nginx.conf) : même Dockerfile, second stage buildé séparément via --target. Voir plan SSR
+      # (C:\Users\User\.claude\plans\virtual-munching-pebble.md, Étape C).
+      - name: Build user SSR image (Node — routes dynamiques uniquement)
+        working-directory: frontend
+        run: docker build -f Dockerfile.prod.user --target ssr-runtime -t mobili-frontend-user-ssr:prod --build-arg MOBILI_API_BASE_URL=https://www.my-mobili.com .
 
       - name: Build business image
         working-directory: frontend
@@ -54,6 +61,14 @@ jobs:
           format: 'table'
           # AUDIT-MOBILI.md §2.8 : exit-code '0' rendait le scan purement informatif — une
           # vulnérabilité CRITICAL/HIGH était loggée mais ne bloquait jamais le déploiement.
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan user SSR image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mobili-frontend-user-ssr:prod'
+          format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
@@ -71,6 +86,7 @@ jobs:
         working-directory: frontend
         run: |
           docker save mobili-frontend-user:prod | gzip > user-frontend.tar.gz
+          docker save mobili-frontend-user-ssr:prod | gzip > user-ssr-frontend.tar.gz
           docker save mobili-frontend-business:prod | gzip > business-frontend.tar.gz
 
       - name: Copy images to EC2
@@ -79,7 +95,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend/user-frontend.tar.gz,frontend/business-frontend.tar.gz"
+          source: "frontend/user-frontend.tar.gz,frontend/user-ssr-frontend.tar.gz,frontend/business-frontend.tar.gz"
           target: "/home/ec2-user/"
           strip_components: 1
 
@@ -91,9 +107,13 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             docker load < /home/ec2-user/user-frontend.tar.gz
+            docker load < /home/ec2-user/user-ssr-frontend.tar.gz
             docker load < /home/ec2-user/business-frontend.tar.gz
-            docker stop mobili-frontend-user mobili-frontend-business || true
-            docker rm mobili-frontend-user mobili-frontend-business || true
+            docker stop mobili-frontend-user mobili-frontend-user-ssr mobili-frontend-business || true
+            docker rm mobili-frontend-user mobili-frontend-user-ssr mobili-frontend-business || true
+            # ssr-runtime doit être démarré AVANT nginx (nginx.conf proxy_pass vers son port dès
+            # la première requête sur /search-results, pas de retry/backoff configuré côté Nginx).
+            docker run -d --name mobili-frontend-user-ssr -p 3010:4000 -e MOBILI_API_BASE_URL=https://www.my-mobili.com --add-host=host.docker.internal:host-gateway --restart unless-stopped mobili-frontend-user-ssr:prod
             docker run -d --name mobili-frontend-user -p 3000:80 --add-host=host.docker.internal:host-gateway --restart unless-stopped mobili-frontend-user:prod
             docker run -d --name mobili-frontend-business -p 3001:81 --add-host=host.docker.internal:host-gateway --restart unless-stopped mobili-frontend-business:prod
-            rm /home/ec2-user/user-frontend.tar.gz /home/ec2-user/business-frontend.tar.gz
+            rm /home/ec2-user/user-frontend.tar.gz /home/ec2-user/user-ssr-frontend.tar.gz /home/ec2-user/business-frontend.tar.gz
