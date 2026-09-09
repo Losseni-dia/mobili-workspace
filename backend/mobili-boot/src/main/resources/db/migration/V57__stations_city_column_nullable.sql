@@ -1,0 +1,11 @@
+-- V53 remplaçait stations.city (texte libre) par stations.city_id (FK vers cities), en gardant
+-- délibérément l'ancienne colonne "city" en place pour ne rien casser côté lecture (sécurité,
+-- réversibilité). Oubli : cette ancienne colonne était NOT NULL depuis l'origine du schéma, et
+-- Station.java (entité) ne l'écrit plus du tout depuis le passage à City/city_id — chaque
+-- création/modification de gare échouait donc avec "null value in column city violates
+-- not-null constraint" (constaté en test staging, toutes les créations de gare bloquées).
+--
+-- La colonne reste en place (toujours pas supprimée, même logique de prudence que V53) mais
+-- devient nullable : plus jamais alimentée par l'application, uniquement conservée pour lecture
+-- historique / audit.
+ALTER TABLE stations ALTER COLUMN city DROP NOT NULL;
