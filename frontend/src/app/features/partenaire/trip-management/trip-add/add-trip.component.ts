@@ -52,7 +52,8 @@ export class AddTripComponent implements OnInit {
 
   cityLabelsPreview = signal<string[]>([]);
   /** Prix par combinaison from→to, clé "fromIndex-toIndex" — toutes les combinaisons possibles,
-   *  pas seulement consécutives (voir legRows/onSubmit), chacune optionnelle. */
+   *  pas seulement consécutives (voir legRows/onSubmit) ; chacune reste obligatoire (>0) avant
+   *  enregistrement. */
   legPrices = signal<Map<string, number>>(new Map());
 
   /**
@@ -106,8 +107,7 @@ export class AddTripComponent implements OnInit {
 
   /** Toutes les combinaisons from→to (pas seulement consécutives) — un passager peut acheter
    *  directement un tronçon non adjacent (ex. Abidjan→Divo) à un tarif dédié, même logique que
-   *  create_trip_page.dart (mobilipro). Chaque tarif est optionnel : laissé vide, la billetterie
-   *  retombe sur le prix du trajet complet (voir needsOriginDestinationPrice/onSubmit). */
+   *  create_trip_page.dart (mobilipro). Chaque tarif reste obligatoire (voir onSubmit). */
   legRows = computed(() => {
     const labs = this.cityLabelsPreview();
     const prices = this.legPrices();
@@ -401,26 +401,21 @@ export class AddTripComponent implements OnInit {
     );
     const last = lastStopIndexFromLabels(labels);
     const rows = this.legRows();
-    // Tarifs par tronçon désormais optionnels (toutes les combinaisons, pas seulement
-    // consécutives — voir legRows) : seul le prix global du trajet reste obligatoire, qu'il
-    // s'agisse du champ "Prix" (trajet direct, 2 arrêts) ou du "Prix trajet complet" (3+ arrêts).
+    // Toutes les combinaisons (pas seulement consécutives — voir legRows) restent obligatoires :
+    // chaque tronçon affiché doit avoir un prix strictement positif avant enregistrement.
     if (last === 0) {
       const p = Number(this.tripForm.value.price);
       if (p == null || p <= 0 || Number.isNaN(p)) {
         this.notification.show('Indiquez un prix valide pour le trajet.', 'error');
         return;
       }
-    } else if (last === 1) {
-      // Trajet direct à 2 arrêts : une seule combinaison possible (0-1), c'est elle qui porte le
-      // prix du trajet — mandataire comme avant, ce n'est pas un "tronçon partiel" optionnel ici.
-      const p = rows[0]?.price ?? 0;
-      if (!p || p <= 0 || Number.isNaN(p)) {
-        this.legFaresInvalid.set(true);
-        this.notification.show('Indiquez un prix valide pour ce trajet.', 'error');
-        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-    } else {
+    } else if (rows.some((r) => r.price == null || r.price <= 0 || Number.isNaN(r.price))) {
+      this.legFaresInvalid.set(true);
+      this.notification.show('Indiquez un prix strictement positif pour chaque tronçon.', 'error');
+      this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (last > 1) {
       const od = Number(this.tripForm.value.originDestinationPrice);
       if (od == null || od <= 0 || Number.isNaN(od)) {
         this.notification.show(
@@ -443,15 +438,11 @@ export class AddTripComponent implements OnInit {
 
     const partnerId = currentUser?.partnerId || currentUser?.id;
 
-    // Toutes les combinaisons ayant un prix renseigné (>0) partent en tarifs optionnels — mobile
-    // fait de même (create_trip_page.dart) : chaque segment i→j peut avoir son propre prix, la
-    // combinaison 0→dernier n'étant qu'une entrée parmi d'autres ici (le "prix complet" ci-dessus
-    // reste la source de vérité pour le trajet porte-à-porte).
-    const legFares: TripLegFarePayload[] | undefined = rows.some((r) => r.price > 0)
-      ? rows
-          .filter((r) => r.price > 0)
-          .map((r) => ({ fromStopIndex: r.fromIndex, toStopIndex: r.toIndex, price: r.price }))
-      : undefined;
+    // Toutes les combinaisons (validées obligatoires ci-dessus) sont envoyées.
+    const legFares: TripLegFarePayload[] | undefined =
+      rows.length > 0
+        ? rows.map((r) => ({ fromStopIndex: r.fromIndex, toStopIndex: r.toIndex, price: r.price }))
+        : undefined;
 
     const mainTripPrice =
       last === 0 ? Number(formValue.price) : last === 1 ? rows[0]?.price ?? 0 : Number(formValue.originDestinationPrice);

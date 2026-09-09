@@ -53,8 +53,8 @@ export class TripEditComponent implements OnInit {
 
   cityLabelsPreview = signal<string[]>([]);
   /** Prix par combinaison from→to, clé "fromIndex-toIndex" — toutes les combinaisons possibles,
-   *  pas seulement consécutives (voir legRows/onSubmit, même pattern qu'AddTripComponent et
-   *  create_trip_page.dart), chacune optionnelle. */
+   *  pas seulement consécutives (voir legRows/onSubmit, même pattern qu'AddTripComponent) ;
+   *  chacune reste obligatoire (>0) avant enregistrement. */
   legPrices = signal<Map<string, number>>(new Map());
 
   /** Autocomplétion ville — voir AddTripComponent (même pattern), rattachée au pays de la
@@ -434,25 +434,19 @@ export class TripEditComponent implements OnInit {
     );
     const last = lastStopIndexFromLabels(labels);
     const rows = this.legRows();
-    // Tarifs par tronçon désormais optionnels (toutes les combinaisons, pas seulement
-    // consécutives — voir legRows/AddTripComponent) : seul le prix global du trajet reste
-    // obligatoire, direct (2 arrêts) ou "trajet complet" (3+ arrêts).
+    // Toutes les combinaisons (pas seulement consécutives — voir legRows) restent obligatoires :
+    // chaque tronçon affiché doit avoir un prix strictement positif avant enregistrement.
     if (last === 0) {
       const p = Number(this.tripForm.value.price);
       if (p == null || p <= 0 || Number.isNaN(p)) {
         this.notification.show('Indiquez un prix valide pour le trajet.', 'error');
         return;
       }
-    } else if (last === 1) {
-      // Trajet direct à 2 arrêts : une seule combinaison possible (0-1), c'est elle qui porte le
-      // prix du trajet — mandataire comme avant.
-      const p = rows[0]?.price ?? 0;
-      if (!p || p <= 0 || Number.isNaN(p)) {
-        this.legFaresInvalid.set(true);
-        this.notification.show('Indiquez un prix valide pour ce trajet.', 'error');
-        this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
+    } else if (rows.some((r) => r.price == null || r.price <= 0 || Number.isNaN(r.price))) {
+      this.legFaresInvalid.set(true);
+      this.notification.show('Indiquez un prix strictement positif pour chaque tronçon.', 'error');
+      this.legFaresBlock?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
     }
 
     this.isLoading.set(true);
@@ -521,11 +515,12 @@ export class TripEditComponent implements OnInit {
       tripPayload['originDestinationPrice'] = mainTripPrice;
     }
 
-    // Toutes les combinaisons ayant un prix renseigné (>0) partent en tarifs optionnels — voir
-    // AddTripComponent.onSubmit (même logique, alignée sur create_trip_page.dart).
-    tripPayload['legFares'] = rows
-      .filter((r) => r.price > 0)
-      .map((r) => ({ fromStopIndex: r.fromIndex, toStopIndex: r.toIndex, price: r.price }));
+    // Toutes les combinaisons (validées obligatoires ci-dessus) sont envoyées.
+    tripPayload['legFares'] = rows.map((r) => ({
+      fromStopIndex: r.fromIndex,
+      toStopIndex: r.toIndex,
+      price: r.price,
+    }));
     tripPayload['transportType'] = formValue.transportType ?? 'PUBLIC';
 
     if (this.showChauffeurPicker()) {
