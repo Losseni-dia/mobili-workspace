@@ -20,7 +20,11 @@ export class ImagePanDirective {
     const e = event instanceof MouseEvent ? event : event.touches[0];
     this.startX = e.clientX;
     this.startY = e.clientY;
-    document.body.style.cursor = 'grabbing';
+    // Les @HostListener ne sont de toute façon jamais déclenchés côté serveur (pas de vrais
+    // événements DOM/window sans navigateur) — gardé par robustesse.
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'grabbing';
+    }
   }
 
   @HostListener('window:mousemove', ['$event'])
@@ -44,6 +48,8 @@ export class ImagePanDirective {
   @HostListener('window:touchend')
   stopDrag() {
     this.isDragging = false;
-    document.body.style.cursor = 'default';
+    if (typeof document !== 'undefined') {
+      document.body.style.cursor = 'default';
+    }
   }
 }

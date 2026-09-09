@@ -108,7 +108,9 @@ export class AdminPartners implements OnInit {
    * un partenaire `enabled=true` mais `approvalStatus=PENDING` en base (bug corrigé ici).
    */
   approvePartner(id: number) {
-    if (!window.confirm('Approuver ce partenaire ? Il pourra publier des trajets immédiatement.')) {
+    // Toujours déclenché par un clic (jamais au chargement) — /admin/** est en RenderMode.Client
+    // de toute façon (voir app.routes.server.ts), gardé par robustesse.
+    if (typeof window !== 'undefined' && !window.confirm('Approuver ce partenaire ? Il pourra publier des trajets immédiatement.')) {
       return;
     }
     this.adminService.approvePartner(id).subscribe({

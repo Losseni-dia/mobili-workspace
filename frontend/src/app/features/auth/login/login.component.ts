@@ -57,7 +57,7 @@ export class LoginComponent implements OnInit {
           configuration: this.configuration,
           returnUrlRaw: this.route.snapshot.queryParams['returnUrl'],
         });
-        if (target.startsWith('http://') || target.startsWith('https://')) {
+        if (typeof window !== 'undefined' && (target.startsWith('http://') || target.startsWith('https://'))) {
           window.location.assign(target);
         } else {
           void this.router.navigateByUrl(target);

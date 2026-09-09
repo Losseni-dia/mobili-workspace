@@ -283,7 +283,7 @@ export class PartnerShellComponent implements OnInit {
 
   copyCompanyCode() {
     const c = this.companyRegistrationCode();
-    if (!c) return;
+    if (!c || typeof navigator === 'undefined' || !navigator.clipboard) return;
     void navigator.clipboard.writeText(c).then(() => {
       this.codeCopyFeedback.set(true);
       setTimeout(() => this.codeCopyFeedback.set(false), 2000);

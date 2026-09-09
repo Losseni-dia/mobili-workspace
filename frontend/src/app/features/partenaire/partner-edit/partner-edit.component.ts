@@ -61,7 +61,7 @@ export class PartnerEditComponent implements OnInit {
 
   copyRegistrationCode() {
     const code = this.registrationCode();
-    if (!code) return;
+    if (!code || typeof navigator === 'undefined' || !navigator.clipboard) return;
     void navigator.clipboard.writeText(code).then(() => {
       this.copyFeedback.set(true);
       setTimeout(() => this.copyFeedback.set(false), 2000);

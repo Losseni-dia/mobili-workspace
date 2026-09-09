@@ -18,6 +18,12 @@ export class TravelerRouteRedirectComponent implements OnInit {
   private configuration = inject(ConfigurationService);
 
   ngOnInit(): void {
+    // Rendu côté serveur : pas de `window` — cette redirection n'a de sens que dans un vrai
+    // navigateur. Utilisé uniquement côté Mobili Business (voir business.routes.ts), jamais dans
+    // les routes SSR de ce projet, mais gardé par robustesse (atteignable par une URL partagée).
+    if (typeof window === 'undefined') {
+      return;
+    }
     const raw = this.route.snapshot.data['travelerPath'] ?? '/';
     const path = typeof raw === 'string' ? raw : String(raw);
     const origin = this.configuration.getTravelerWebBaseUrl().replace(/\/$/, '');

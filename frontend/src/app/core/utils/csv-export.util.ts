@@ -4,7 +4,9 @@
  * (nécessiterait une librairie dédiée, hors périmètre).
  */
 export function exportToCsv(filename: string, rows: Record<string, string | number | null | undefined>[]): void {
-  if (!rows.length) return;
+  // Toujours déclenché par un clic utilisateur (jamais au chargement initial d'une page) — mais
+  // gardé par robustesse : `document`/`Blob`/`URL` n'existent pas côté serveur (SSR).
+  if (typeof document === 'undefined' || !rows.length) return;
 
   const headers = Object.keys(rows[0]);
   const escape = (v: unknown) => {

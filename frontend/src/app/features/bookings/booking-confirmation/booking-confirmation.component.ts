@@ -124,7 +124,7 @@ export class BookingConfirmationComponent implements OnInit {
     const email = this.authService.currentUser()?.email ?? null;
     this.bookingService.getFedaPayUrl(cleanId, email).subscribe({
       next: (response) => {
-        window.location.href = response.paymentUrl;
+        if (typeof window !== 'undefined') { window.location.href = response.paymentUrl; }
       },
       error: () => {
         this.isProcessing.set(false);
@@ -160,7 +160,7 @@ export class BookingConfirmationComponent implements OnInit {
     this.isProcessingCard.set(true);
     this.bookingService.getStripeCheckoutUrl(cleanId, email).subscribe({
       next: (response) => {
-        window.location.href = response.paymentUrl;
+        if (typeof window !== 'undefined') { window.location.href = response.paymentUrl; }
       },
       error: () => {
         this.isProcessingCard.set(false);

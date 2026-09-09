@@ -37,9 +37,16 @@ export class RedirectToBusinessComponent implements OnInit {
   private readonly config = inject(ConfigurationService);
 
   ngOnInit(): void {
+    // Rendu côté serveur : pas de `window` — cette redirection ne peut de toute façon avoir de
+    // sens que dans un vrai navigateur (elle change window.location). Ces routes sont en
+    // RenderMode.Client (voir app.routes.server.ts), donc jamais rendues côté Node en pratique ;
+    // gardé quand même par robustesse (composant atteignable directement par une URL partagée).
+    if (typeof window === 'undefined') {
+      return;
+    }
     const base = this.config.getBusinessWebBaseUrl();
     const path = this.router.url.split('?')[0] || '/';
-    const search = typeof window !== 'undefined' ? window.location.search : '';
+    const search = window.location.search;
     const target = `${base.replace(/\/$/, '')}${path === '/' ? '' : path}${search}`;
     window.location.replace(target);
   }
