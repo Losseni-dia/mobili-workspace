@@ -160,25 +160,40 @@ class TripEtaNotifier extends StateNotifier<TripEtaState> {
     _timer = Timer.periodic(_refreshInterval, (_) => _refresh());
   }
 
-  // Recalcul toutes les 5 min tant que l'écran de suivi est ouvert — jamais
-  // à chaque position GPS (10-15s), qui doublerait le coût des appels
-  // Mapbox/Google Maps pour rien (voir plan Étape 5, backend TripEtaService).
+  // Timer de secours (position GPS figée/coupée) — le vrai rythme de
+  // rafraîchissement vient de updatePosition() ci-dessous, à chaque position
+  // Firestore (10-15s) mais throttlé à _minRefreshInterval pour ne pas
+  // dépasser le cache serveur (TripEtaService, TTL 75s) : au-delà de ce
+  // throttle, un appel supplémentaire ne coûterait rien en Mapbox/Google
+  // Maps (réponse servie depuis le cache) mais n'apporterait rien non plus.
   static const _refreshInterval = Duration(minutes: 5);
+
+  // Doit rester <= au TTL du cache serveur (TripEtaService) pour qu'aucun
+  // appel dans cette fenêtre ne déclenche jamais un vrai calcul Mapbox/Google
+  // Maps supplémentaire — seulement des réponses déjà en cache.
+  static const _minRefreshInterval = Duration(seconds: 75);
 
   final int _tripId;
   final TripService _service;
   Timer? _timer;
   double? _lastLat;
   double? _lastLng;
+  DateTime? _lastRefreshAt;
 
-  /// Appelé par TripLiveMap à chaque nouvelle position Firestore. Ne
-  /// déclenche un appel réseau immédiat que pour le tout premier calcul
-  /// (avant, aucune position connue) — les suivants attendent le timer.
+  /// Appelé par TripLiveMap à chaque nouvelle position Firestore. Recalcule
+  /// au plus une fois par _minRefreshInterval — jamais 5 min d'attente avant
+  /// de refléter un changement de prochain arrêt (ex. chauffeur qui clique
+  /// "départ" à un arrêt intermédiaire), retour du test Bruxelles-Lille-Paris
+  /// où l'ETA restait bloquée sur Lille après le départ réel de Lille.
   void updatePosition(double lat, double lng) {
     final isFirstPosition = _lastLat == null;
     _lastLat = lat;
     _lastLng = lng;
-    if (isFirstPosition) {
+    final now = DateTime.now();
+    final dueForRefresh =
+        _lastRefreshAt == null || now.difference(_lastRefreshAt!) >= _minRefreshInterval;
+    if (isFirstPosition || dueForRefresh) {
+      _lastRefreshAt = now;
       unawaited(_refresh());
     }
   }
