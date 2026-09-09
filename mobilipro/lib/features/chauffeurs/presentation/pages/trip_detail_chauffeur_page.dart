@@ -939,78 +939,55 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
 
         return Column(
           children: [
-            // ── Sélecteur arrêt avec nom ville ──────
+            // ── Arrêt courant (lecture seule — jamais de navigation vers un
+            // autre arrêt ici : seule une action réelle de départ change
+            // _currentStop, voir _recordDeparture/handleAutoDeparture/
+            // _undoLastDeparture. Simplifié suite au retour utilisateur
+            // "trop de boutons" — les anciennes flèches ‹ › ne servaient
+            // qu'à consulter, sans rapport avec l'avancée réelle du trajet).
             Container(
+              width: double.infinity,
               color: AppColors.white,
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
                 children: [
-                  IconButton(
-                    onPressed: _currentStop > 0
-                        ? () {
-                            setState(() => _currentStop--);
-                            _refreshStop();
-                          }
-                        : null,
-                    icon: const Icon(Icons.chevron_left_rounded),
-                    color: _currentStop > 0
-                        ? AppColors.mobiliBlue
-                        : AppColors.gray300,
+                  Text(
+                    currentStopName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppColors.mobiliBlueDeep,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          currentStopName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: AppColors.mobiliBlueDeep,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          _tripEnded
-                              ? 'Trajet terminé 🏁'
-                              : 'Arrêt $_currentStop / $maxStop',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _tripEnded
-                                ? AppColors.stationGreen
-                                : AppColors.gray400,
-                            fontWeight: _tripEnded
-                                ? FontWeight.w700
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: maxStop > 0 ? _currentStop / maxStop : 0,
-                            backgroundColor: AppColors.gray200,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              _tripEnded
-                                  ? AppColors.stationGreen
-                                  : AppColors.mobiliBlue,
-                            ),
-                            minHeight: 4,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    _tripEnded
+                        ? 'Trajet terminé 🏁'
+                        : 'Arrêt $_currentStop / $maxStop',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _tripEnded
+                          ? AppColors.stationGreen
+                          : AppColors.gray400,
+                      fontWeight: _tripEnded
+                          ? FontWeight.w700
+                          : FontWeight.normal,
                     ),
                   ),
-                  if (!isLastStop && !_tripEnded)
-                    IconButton(
-                      onPressed: () {
-                        setState(() => _currentStop++);
-                        _refreshStop();
-                      },
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      color: AppColors.mobiliBlue,
-                    )
-                  else
-                    const SizedBox(width: 48),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: maxStop > 0 ? _currentStop / maxStop : 0,
+                      backgroundColor: AppColors.gray200,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _tripEnded
+                            ? AppColors.stationGreen
+                            : AppColors.mobiliBlue,
+                      ),
+                      minHeight: 4,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1055,19 +1032,9 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          TextButton.icon(
-                            onPressed: _isRecordingDeparture
-                                ? null
-                                : _undoLastDeparture,
-                            icon: const Icon(
-                              Icons.undo_rounded,
-                              size: 16,
-                              color: AppColors.gray500,
-                            ),
-                            label: const Text(
-                              'Annuler (clic par erreur)',
-                              style: TextStyle(color: AppColors.gray500),
-                            ),
+                          _UndoDepartureLink(
+                            enabled: !_isRecordingDeparture,
+                            onPressed: _undoLastDeparture,
                           ),
                         ],
                       ),
@@ -1078,69 +1045,11 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
-                          const _SectionHeader(
-                            icon: Icons.login_rounded,
-                            label: 'Passagers qui montent',
-                            color: AppColors.stationGreen,
-                          ),
-                          const SizedBox(height: 8),
-                          boardingsAsync.when(
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.mobiliBlue,
-                              ),
-                            ),
-                            error: (e, _) => Text(
-                              'Erreur : $e',
-                              style: const TextStyle(color: AppColors.danger),
-                            ),
-                            data: (boardings) => boardings.isEmpty
-                                ? const _EmptyStop(
-                                    label: 'Aucun montant à cet arrêt',
-                                  )
-                                : Column(
-                                    children: boardings
-                                        .map(
-                                          (p) => _StopPassengerCard(
-                                            passenger: p,
-                                            isBoarding: true,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                          ),
-                          const SizedBox(height: 16),
-                          const _SectionHeader(
-                            icon: Icons.logout_rounded,
-                            label: 'Passagers qui descendent',
-                            color: AppColors.warning,
-                          ),
-                          const SizedBox(height: 8),
-                          alightingsAsync.when(
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.mobiliBlue,
-                              ),
-                            ),
-                            error: (e, _) => Text(
-                              'Erreur : $e',
-                              style: const TextStyle(color: AppColors.danger),
-                            ),
-                            data: (alightings) => alightings.isEmpty
-                                ? const _EmptyStop(
-                                    label: 'Aucun descendant à cet arrêt',
-                                  )
-                                : Column(
-                                    children: alightings
-                                        .map(
-                                          (p) => _StopPassengerCard(
-                                            passenger: p,
-                                            isBoarding: false,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                          ),
+                          // Une seule liste, montée et descente distinguées
+                          // par badge sur chaque carte (voir _StopPassengerCard)
+                          // — remplace les 2 sections empilées d'avant, moins
+                          // de scroll pour le même niveau de détail.
+                          _buildMergedPassengerList(boardingsAsync, alightingsAsync),
                           const SizedBox(height: 20),
                           // Arrêt 0 avant le tout premier départ : pas de bouton
                           // "Quitter [ville origine]" ici — le grand bouton
@@ -1221,22 +1130,9 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
                               ),
                             ),
                             Center(
-                              child: TextButton.icon(
-                                onPressed: _isRecordingDeparture
-                                    ? null
-                                    : _undoLastDeparture,
-                                icon: const Icon(
-                                  Icons.undo_rounded,
-                                  size: 14,
-                                  color: AppColors.gray400,
-                                ),
-                                label: const Text(
-                                  'Annuler le dernier départ',
-                                  style: TextStyle(
-                                    color: AppColors.gray400,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                              child: _UndoDepartureLink(
+                                enabled: !_isRecordingDeparture,
+                                onPressed: _undoLastDeparture,
                               ),
                             ),
                           ],
@@ -1249,6 +1145,64 @@ class _StopsTabState extends ConsumerState<_StopsTab> {
       },
     );
   }
+
+  /// Fusionne montants et descendants en une seule liste, triée par siège —
+  /// chaque _StopPassengerCard porte son propre badge ↑Monte/↓Descend
+  /// (voir isBoarding). Simplification suite au retour utilisateur ("trop
+  /// de choses inutiles") : deux sections empilées avec titres séparés
+  /// n'apportaient rien que le badge par ligne ne dise déjà.
+  Widget _buildMergedPassengerList(
+    AsyncValue<List<_StopPassenger>> boardingsAsync,
+    AsyncValue<List<_StopPassenger>> alightingsAsync,
+  ) {
+    if (boardingsAsync.isLoading || alightingsAsync.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: AppColors.mobiliBlue),
+        ),
+      );
+    }
+    if (boardingsAsync.hasError || alightingsAsync.hasError) {
+      return Text(
+        'Erreur : ${boardingsAsync.error ?? alightingsAsync.error}',
+        style: const TextStyle(color: AppColors.danger),
+      );
+    }
+    final boardings = boardingsAsync.value ?? const <_StopPassenger>[];
+    final alightings = alightingsAsync.value ?? const <_StopPassenger>[];
+    if (boardings.isEmpty && alightings.isEmpty) {
+      return const _EmptyStop(label: 'Aucun mouvement passager à cet arrêt');
+    }
+    final merged = [
+      for (final p in boardings) (passenger: p, isBoarding: true),
+      for (final p in alightings) (passenger: p, isBoarding: false),
+    ]..sort((a, b) => a.passenger.seatNumber.compareTo(b.passenger.seatNumber));
+    return Column(
+      children: merged
+          .map((m) => _StopPassengerCard(passenger: m.passenger, isBoarding: m.isBoarding))
+          .toList(),
+    );
+  }
+}
+
+/// Petit lien "Annuler le dernier départ" — une seule présentation partagée
+/// (avant, deux variantes légèrement différentes existaient selon que le
+/// trajet était terminé ou non, pour la même action).
+class _UndoDepartureLink extends StatelessWidget {
+  const _UndoDepartureLink({required this.enabled, required this.onPressed});
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton.icon(
+    onPressed: enabled ? onPressed : null,
+    icon: const Icon(Icons.undo_rounded, size: 14, color: AppColors.gray400),
+    label: const Text(
+      'Annuler le dernier départ',
+      style: TextStyle(color: AppColors.gray400, fontSize: 12),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1431,12 +1385,28 @@ class _StopPassengerCard extends StatelessWidget {
                     color: AppColors.mobiliBlueDeep,
                   ),
                 ),
-                Text(
-                  'Siège ${passenger.seatNumber}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.gray500,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Siège ${passenger.seatNumber}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                    const Text(' · ', style: TextStyle(fontSize: 11, color: AppColors.gray300)),
+                    Text(
+                      // Badge textuel explicite — la liste montants+descendants
+                      // est désormais fusionnée (plus de titre de section pour
+                      // le dire), ce badge est la seule indication.
+                      isBoarding ? '↑ Monte' : '↓ Descend',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isBoarding ? AppColors.stationGreen : AppColors.warning,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1466,33 +1436,6 @@ class _StopPassengerCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Widgets utilitaires
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(icon, size: 16, color: color),
-      const SizedBox(width: 6),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-    ],
-  );
-}
 
 class _EmptyStop extends StatelessWidget {
   const _EmptyStop({required this.label});
