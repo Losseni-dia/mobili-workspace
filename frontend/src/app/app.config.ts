@@ -1,4 +1,5 @@
-import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
+import * as Sentry from '@sentry/angular';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
@@ -34,6 +35,11 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
     ),
     provideBrowserGlobalErrorListeners(),
+    // Error tracking (Sentry) — voir main.ts pour Sentry.init(), uniquement côté navigateur.
+    // Sûr à fournir ici même si app.config.ts est partagé avec le SSR (app.config.server.ts) :
+    // le SDK Sentry n'a jamais reçu d'appel `init()` côté serveur, donc `handleError` n'y fait
+    // simplement rien (pas d'exception, pas d'appel réseau) au lieu de planter le rendu.
+    { provide: ErrorHandler, useValue: Sentry.createErrorHandler() },
 
     provideHttpClient(
       // withFetch() : HttpClient utilise XMLHttpRequest par défaut, absent sous Node (SSR) —
