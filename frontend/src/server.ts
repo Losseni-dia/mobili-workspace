@@ -10,7 +10,13 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+// Ce serveur n'est jamais exposé directement à Internet — seul Nginx (nginx.conf, même conteneur
+// réseau) lui parle, via un `proxy_pass` qui ajoute X-Forwarded-For/X-Forwarded-Proto (voir
+// nginx.conf). Sans `trustProxyHeaders`, Angular refuse ces en-têtes par défaut (protection SSRF)
+// et retombe silencieusement en CSR pur pour toute requête passée par ce proxy — constaté en
+// testant le conteneur derrière Nginx en local (fonctionnait en direct sur le port 4000, pas via
+// le proxy_pass).
+const angularApp = new AngularNodeAppEngine({ trustProxyHeaders: true });
 
 /**
  * Example Express Rest API endpoints can be defined here.

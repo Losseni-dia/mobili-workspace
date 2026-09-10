@@ -39,7 +39,13 @@ RUN apk update && apk upgrade --no-cache
 COPY --from=builder /app/dist/frontend/server ./dist/frontend/server
 COPY --from=builder /app/dist/frontend/browser ./dist/frontend/browser
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev
+# npm/npx/corepack ne servent qu'à cette étape (installer les deps) — jamais utilisés à
+# l'exécution (CMD lance node directement) : retirés du runtime final, avec leurs propres
+# dépendances embarquées (tar, pacote, sigstore...) qui faisaient échouer le scan Trivy
+# alors qu'elles n'appartiennent pas à notre code.
+RUN npm ci --omit=dev \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 EXPOSE 4000
 
