@@ -23,9 +23,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      # npm ci (retiré) exigeait une synchronisation stricte lockfile↔package.json qu'une chaîne
+      # de dépendances optionnelles wasm32 (outillage de test, jamais réellement installée sur
+      # ubuntu-latest — @rolldown/binding-wasm32-wasi → @napi-rs/wasm-runtime → @emnapi/*) rend
+      # impossible à satisfaire de façon fiable — bug npm connu sur ce type de chaînes optionnelles
+      # multi-plateformes (npm/cli#4828). Même correctif que Dockerfile.prod.user/.business.
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Run unit tests (frontend voyageur)
         working-directory: frontend
