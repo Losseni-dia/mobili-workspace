@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
+      # Un commit qui ne touche QUE ce workflow (ex. corriger une étape CI) ne matchait jamais
+      # 'frontend/**' et ne se déclenchait donc jamais tout seul — constaté en pratique (fix CI
+      # poussé sans relancer le déploiement). Se déclenche maintenant aussi sur ses propres
+      # modifications.
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 jobs:
