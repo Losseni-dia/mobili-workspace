@@ -6,7 +6,9 @@ WORKDIR /app
 ARG MOBILI_API_BASE_URL
 
 COPY package*.json ./
-RUN npm ci
+# npm ci retiré — voir Dockerfile.prod.user pour le détail (bug npm connu sur les dépendances
+# optionnelles wasm32 de l'outillage de test, npm/cli#4828).
+RUN npm install --legacy-peer-deps
 
 COPY . .
 

@@ -7,7 +7,13 @@ ARG MOBILI_API_BASE_URL
 
 # Installation des dépendances
 COPY package*.json ./
-RUN npm ci
+# `npm ci` (retiré) exigeait une synchronisation stricte lockfile↔package.json qu'une chaîne de
+# dépendances optionnelles wasm32 (outillage de test, jamais réellement installée sur cette
+# plateforme — @rolldown/binding-wasm32-wasi → @napi-rs/wasm-runtime → @emnapi/*) rendait
+# impossible à satisfaire de façon fiable (bug npm connu sur ce type de dépendances optionnelles
+# multi-plateformes, cf. npm/cli#4828). `npm install` résout correctement le même arbre sans
+# cette vérification stricte.
+RUN npm install --legacy-peer-deps
 
 # Copie du code source
 COPY . .
@@ -43,7 +49,7 @@ COPY --from=builder /app/package*.json ./
 # l'exécution (CMD lance node directement) : retirés du runtime final, avec leurs propres
 # dépendances embarquées (tar, pacote, sigstore...) qui faisaient échouer le scan Trivy
 # alors qu'elles n'appartiennent pas à notre code.
-RUN npm ci --omit=dev \
+RUN npm install --omit=dev --legacy-peer-deps \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
        /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
