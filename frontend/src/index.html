@@ -48,6 +48,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
     crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <!-- Analytics visiteurs — Plausible (respectueux de la vie privée : pas de cookies, pas de
+       tracking cross-site, aucune bannière de consentement RGPD nécessaire). Choisi plutôt qu'un
+       auto-hébergement (ex. Umami) : le serveur EC2 est déjà à la limite de sa RAM sans swap
+       configuré (voir docs/INFRA-OPS.md) — ajouter un service de plus dessus aurait été un risque
+       réel de casser le backend en prod pour économiser un abonnement mensuel. -->
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-0zsk61eFPRO_SQ_Yr9RLd.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
 </head>
 
 <body>
