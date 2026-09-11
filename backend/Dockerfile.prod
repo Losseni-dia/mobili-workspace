@@ -17,8 +17,12 @@ RUN mvn -B -f pom.xml -pl mobili-boot -am package -DskipTests
 # ---------- ÉTAPE 2 : Runtime (JRE uniquement) ----------
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
-# Outils de diagnostic et utilisateur non-root pour la sécurité
-RUN apk add --no-cache wget \
+# Outils de diagnostic et utilisateur non-root pour la sécurité, + mise à jour des paquets
+# Alpine hérités de l'image de base (Trivy CRITICAL/HIGH — openssl/libexpat, cf. commit qui a
+# introduit cette ligne) : eclipse-temurin:21-jre-alpine n'est pas rebuilt à chaque CVE Alpine,
+# donc un `apk upgrade` explicite au build est nécessaire même sans rien changer côté Java.
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache wget \
     && addgroup -g 1000 mobili \
     && adduser -D -u 1000 -G mobili mobili
 
