@@ -1,6 +1,6 @@
 name: mobili
 description: Application voyageur Mobili — transport Afrique
-version: 1.0.0+1
+version: 1.0.0+7
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -42,7 +42,7 @@ dependencies:
   image_picker: ^1.2.2
   file_picker: ^8.1.2 # pièces jointes support/réclamations (image ou PDF)
   qr_flutter: ^4.1.0
-  mobile_scanner: ^5.2.3
+  mobile_scanner: ^7.4.1
   screenshot: ^3.0.0
   share_plus: ^12.0.2
   app_links: ^7.1.1
