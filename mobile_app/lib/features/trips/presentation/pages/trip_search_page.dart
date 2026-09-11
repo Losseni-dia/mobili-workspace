@@ -217,8 +217,7 @@ class _TripSearchPageState extends ConsumerState<TripSearchPage> {
             child: tripsAsync.when(
               loading: () => const MobiliSkeletonList(count: 4),
               error: (err, _) => MobiliErrorWidget(
-                error:
-                    MobiliErrorData(errorCode: 'NET', message: err.toString()),
+                error: mobiliErrorDataFrom(err),
                 onRetry: () => ref.invalidate(tripsProvider),
               ),
               data: (trips) {

@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/models/mobili_error.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -66,6 +68,39 @@ class MobiliErrorData {
         'NET'         => 'Connexion impossible. Vérifiez votre réseau.',
         _             => message,
       };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Conversion générique : n'importe quel objet capturé dans un `catch`/
+// `AsyncError` → un MobiliErrorData propre, avec le vrai errorCode/message
+// (jamais error.toString(), qui expose le préfixe technique
+// "DioException [...]" ou "MobiliException[...] status=..." à l'utilisateur).
+// ─────────────────────────────────────────────────────────────────────────────
+
+MobiliErrorData mobiliErrorDataFrom(Object error) {
+  if (error is MobiliException) {
+    return MobiliErrorData(
+      errorCode: error.errorCode,
+      message: error.message,
+      status: error.status,
+      fieldErrors: error.validationErrors,
+    );
+  }
+  if (error is DioException) {
+    final mobili = error.error;
+    if (mobili is MobiliException) {
+      return MobiliErrorData(
+        errorCode: mobili.errorCode,
+        message: mobili.message,
+        status: mobili.status,
+        fieldErrors: mobili.validationErrors,
+      );
+    }
+    // Pas de MobiliException attachée (ex. pas de connexion réseau du tout,
+    // avant même d'atteindre le serveur) -> vraie erreur réseau.
+    return MobiliErrorData.network();
+  }
+  return MobiliErrorData.generic();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

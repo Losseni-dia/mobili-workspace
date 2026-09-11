@@ -191,7 +191,7 @@ class _TripsListPageState extends ConsumerState<TripsListPage> {
                 child: tripsAsync.when(
                   loading: () => const _SkeletonList(),
                   error: (error, _) => MobiliErrorWidget(
-                    error: MobiliErrorData.generic(error.toString()),
+                    error: mobiliErrorDataFrom(error),
                     onRetry: () => ref.invalidate(tripsProvider),
                   ),
                   data: (trips) {
