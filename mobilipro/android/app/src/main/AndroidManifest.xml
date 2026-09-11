@@ -14,6 +14,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Injectée automatiquement par com.google.android.gms:play-services-location (dépendance
+         native de flutter_background_geolocation, pour son ActivityRecognitionClient — détection
+         immobile/en mouvement, sert uniquement à optimiser la fréquence d'échantillonnage GPS/
+         batterie). Retirée explicitement : déclenche le questionnaire Play Console "Applis de
+         santé" sans rapport avec l'usage réel, et le plugin fonctionne sans (juste une
+         optimisation batterie légèrement moindre, cf. doc Transistorsoft). -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" tools:node="remove" />
     <application
         android:label="Mobilipro"
         android:name="${applicationName}"
