@@ -25,10 +25,17 @@ static const String baseUrlProd = 'https://business.my-mobili.com/v1';
   // Build normal (rien ne change) -> baseUrlProd. Build de test ->
   // `flutter build apk --dart-define=API_BASE_URL=https://staging-api.my-mobili.com/v1`
   // pour tester contre le backend staging sans toucher à la vraie prod (Play Store).
-  static const String baseUrl = String.fromEnvironment(
+  //
+  // .trim() + strip d'un éventuel '~' de fin : constaté en pratique qu'une valeur
+  // --dart-define collée/tapée dans certains terminaux peut se retrouver avec un
+  // caractère parasite en fin de chaîne (ex. "...v1~") — cause silencieuse de 404
+  // sur toutes les routes ("/v1~/auth/login" au lieu de "/v1/auth/login"), difficile
+  // à repérer car invisible à l'oeil dans la commande d'origine. Filet de sécurité
+  // ici plutôt que de dépendre de la commande de build étant tapée sans erreur.
+  static final String baseUrl = const String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: baseUrlProd,
-  );
+  ).trim().replaceFirst(RegExp(r'[^a-zA-Z0-9/]+$'), '');
 
   /// Timeouts tuned for slow African mobile networks
   static const Duration connectTimeout = Duration(seconds: 15);
