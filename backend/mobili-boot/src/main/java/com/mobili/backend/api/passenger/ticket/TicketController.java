@@ -70,6 +70,17 @@ public class TicketController {
         return ticketMapper.toDto(ticket);
     }
 
+    // CONSULTER UN TICKET PAR SON NUMÉRO — lecture seule, aucun effet de bord
+    // (contrairement à /verify/{ticketNumber}) : sert le scanner QR "standalone"
+    // (onglet général sans trajet précis, voir mobilipro QrScannerWidget) qui
+    // n'appelait jusqu'ici aucun endpoint existant.
+    @GetMapping("/{ticketNumber}")
+    @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
+    public TicketResponseDTO getByTicketNumber(@PathVariable String ticketNumber) {
+        Ticket ticket = ticketService.findByTicketNumber(ticketNumber);
+        return ticketMapper.toDto(ticket);
+    }
+
     @GetMapping("/trip/{tripId}")
     @PreAuthorize("hasAnyAuthority('ROLE_CHAUFFEUR', 'ROLE_PARTNER', 'ROLE_GARE', 'ROLE_ADMIN','ROLE_STATION')")
     public List<TicketResponseDTO> getByTrip(@PathVariable Long tripId) {

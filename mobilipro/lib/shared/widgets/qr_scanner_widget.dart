@@ -140,8 +140,14 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
         );
         final data = res.data!;
         final status = data['status'] as String? ?? '';
-       result = QrScanResult(
-          valid: status == 'CONFIRMED' || status == 'USED',
+        // Les vraies valeurs de l'enum backend (TicketStatus.java) sont en
+        // français : VALIDÉ / UTILISÉ / ANNULÉ / ARRIVÉ — jamais
+        // "CONFIRMED"/"USED" (ancienne comparaison, ne matchait jamais rien,
+        // valid était donc toujours false). Un billet est "valide" tant qu'il
+        // n'a pas été annulé — ANNULÉ est le seul statut vraiment invalide ici,
+        // ce endpoint étant une simple consultation, pas une action d'embarquement.
+        result = QrScanResult(
+          valid: status.isNotEmpty && status != 'ANNULÉ',
           ticketNumber: ticketNumber,
           passengerName: data['passengerFullName'] as String?,
           seatNumber: data['seatNumber'] as String?,

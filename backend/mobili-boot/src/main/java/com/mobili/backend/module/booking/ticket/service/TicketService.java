@@ -218,6 +218,20 @@ public class TicketService {
         }
     }
 
+    /**
+     * Lecture seule — consultation d'un billet par son numéro sans effet de bord
+     * (contrairement à {@link #verifyAndUseTicket}, ne marque jamais le passager
+     * comme monté). Sert au scanner QR "standalone" (onglet général, sans trajet
+     * précis) : voir un billet est valide/ses infos sans confirmer l'embarquement.
+     */
+    @Transactional(readOnly = true)
+    public Ticket findByTicketNumber(String ticketNumber) {
+        return ticketRepository.findByTicketNumber(ticketNumber)
+                .orElseThrow(() -> new MobiliException(
+                        MobiliErrorCode.RESOURCE_NOT_FOUND,
+                        "Ticket invalide ou inexistant."));
+    }
+
     @Transactional
     public Ticket verifyAndUseTicket(String ticketNumber) {
         // 1. Recherche du ticket
