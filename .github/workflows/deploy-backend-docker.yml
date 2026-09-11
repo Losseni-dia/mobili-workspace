@@ -1,0 +1,129 @@
+name: Deploy Mobili Backend (Docker)
+
+# Remplace deploy.yml (jar + systemd, désactivé le 2026-09-11 — voir ce fichier) : le backend
+# tourne maintenant en Docker sur l'EC2 (voir docs/INFRA-OPS.md), deux conteneurs séparés
+# (mobili-backend-staging port 8080, mobili-backend-prod port 8081), chacun avec son propre
+# fichier env (/etc/mobili/staging.env, /etc/mobili/prod.env) et sa propre base RDS
+# (mobili-db-staging, mobili-db-prod). Même convention de déclenchement que l'ancien deploy.yml :
+# push sur main -> staging, tag v* -> prod (pas une nouvelle convention inventée).
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend-docker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build image
+        working-directory: backend
+        run: docker build -f Dockerfile.prod -t mobili-backend:latest .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mobili-backend:latest'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Save image
+        working-directory: backend
+        run: docker save mobili-backend:latest | gzip > mobili-backend.tar.gz
+
+      - name: Copy image to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/mobili-backend.tar.gz"
+          target: "/home/ec2-user/"
+          strip_components: 1
+
+      # Jamais "docker restart" (ne relit pas --env-file) — toujours stop+rm+run complet, y
+      # compris quand seule l'image change (règle établie sur ce projet, cf. docs/INFRA-OPS.md).
+      - name: Load and restart staging container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker load < /home/ec2-user/mobili-backend.tar.gz
+            sudo docker stop mobili-backend-staging || true
+            sudo docker rm mobili-backend-staging || true
+            sudo docker run -d --name mobili-backend-staging --network host \
+              --env-file /etc/mobili/staging.env \
+              -e SERVER_PORT=8080 \
+              -v /home/ec2-user/uploads:/app/uploads \
+              --restart unless-stopped \
+              mobili-backend:latest
+            rm /home/ec2-user/mobili-backend.tar.gz
+
+  deploy-prod:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build image
+        working-directory: backend
+        run: docker build -f Dockerfile.prod -t mobili-backend:latest .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mobili-backend:latest'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Save image
+        working-directory: backend
+        run: docker save mobili-backend:latest | gzip > mobili-backend.tar.gz
+
+      - name: Copy image to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/mobili-backend.tar.gz"
+          target: "/home/ec2-user/"
+          strip_components: 1
+
+      - name: Load and restart prod container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker load < /home/ec2-user/mobili-backend.tar.gz
+            sudo docker stop mobili-backend-prod || true
+            sudo docker rm mobili-backend-prod || true
+            sudo docker run -d --name mobili-backend-prod --network host \
+              --env-file /etc/mobili/prod.env \
+              -e SERVER_PORT=8081 \
+              -v /home/ec2-user/uploads-prod:/app/uploads \
+              --restart unless-stopped \
+              mobili-backend:latest
+            rm /home/ec2-user/mobili-backend.tar.gz

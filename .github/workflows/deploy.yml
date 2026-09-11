@@ -1,9 +1,14 @@
-name: Deploy Mobili Backend
+name: Deploy Mobili Backend (jar + systemd — DÉSACTIVÉ, remplacé par deploy-backend-docker.yml)
 
+# Ancien chemin de déploiement (jar copié par scp, lancé via systemd) — remplacé le 2026-09-11 par
+# deploy-backend-docker.yml (voir ce fichier + docs/INFRA-OPS.md). mobili.service et
+# mobili-prod.service sont désormais stop+disable sur l'EC2, remplacés par des conteneurs Docker
+# occupant les mêmes ports (8080/8081) : si ce workflow se redéclenchait automatiquement, son
+# "systemctl restart" relancerait l'ancien jar en conflit de port avec les conteneurs Docker déjà
+# en place. Déclenchement automatique retiré ; gardé en workflow_dispatch pour rollback manuel
+# uniquement si le chantier Docker devait être annulé.
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
+  workflow_dispatch:
 
 jobs:
   deploy-staging:
