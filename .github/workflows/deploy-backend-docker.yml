@@ -69,6 +69,7 @@ jobs:
               --env-file /etc/mobili/staging.env \
               -e SERVER_PORT=8080 \
               -v /home/ec2-user/uploads:/app/uploads \
+              -v /etc/mobili/firebase-service-account.json:/etc/mobili/firebase-service-account.json:ro \
               --restart unless-stopped \
               mobili-backend:latest
             rm /home/ec2-user/mobili-backend.tar.gz
@@ -124,6 +125,7 @@ jobs:
               --env-file /etc/mobili/prod.env \
               -e SERVER_PORT=8081 \
               -v /home/ec2-user/uploads-prod:/app/uploads \
+              -v /etc/mobili/firebase-service-account.json:/etc/mobili/firebase-service-account.json:ro \
               --restart unless-stopped \
               mobili-backend:latest
             rm /home/ec2-user/mobili-backend.tar.gz
