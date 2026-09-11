@@ -22,7 +22,13 @@ class ApiConstants {
   // api.my-mobili.com.
 static const String baseUrlProd = 'https://business.my-mobili.com/v1';
 
-  static const String baseUrl = baseUrlProd; // Toggle for build flavors
+  // Build normal (rien ne change) -> baseUrlProd. Build de test ->
+  // `flutter build apk --dart-define=API_BASE_URL=https://staging-api.my-mobili.com/v1`
+  // pour tester contre le backend staging sans toucher à la vraie prod (Play Store).
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: baseUrlProd,
+  );
 
   /// Timeouts tuned for slow African mobile networks
   static const Duration connectTimeout = Duration(seconds: 15);
