@@ -7,7 +7,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mobili.backend.infrastructure.security.authentication.UserPrincipal;
 import com.mobili.backend.module.booking.booking.dto.BookingPricePreviewRequest;
 import com.mobili.backend.module.booking.booking.dto.BookingPricePreviewResponse;
 import com.mobili.backend.module.booking.booking.dto.BookingRequestDTO;
@@ -97,11 +101,41 @@ public class BookingController {
         return seats != null ? seats : new ArrayList<>();
     }
 
+    /**
+     * IDOR corrigé (audit sécurité 2026-09-12, suite au constat sur GET /trips/{id}) :
+     * {@code @PreAuthorize("isAuthenticated()")} seul ne vérifiait que l'appelant avait un compte
+     * Mobili, pas que la réservation lui appartenait — n'importe quel utilisateur connecté pouvait
+     * lire la réservation de n'importe qui d'autre en itérant les ID dans l'URL (ex.
+     * /booking/confirmation/335), obtenant nom/prénom/photo du client, trajet, prix, sièges...
+     * Vérification d'appartenance ajoutée ci-dessous, sur le même principe que celle déjà en place
+     * sur GET /bookings/user/{userId} (ligne ~84) : staff (admin/partenaire/gare/station) toujours
+     * autorisé, sinon uniquement le client propriétaire de la réservation.
+     */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public BookingResponseDTO getById(@PathVariable Long id) {
+    public BookingResponseDTO getById(@PathVariable Long id, Authentication authentication) {
         Booking booking = bookingService.findById(id);
+        assertCanViewBooking(booking, authentication);
         return bookingMapper.toDto(booking);
+    }
+
+    private static final List<String> STAFF_AUTHORITIES =
+            List.of("ROLE_ADMIN", "ROLE_PARTNER", "ROLE_GARE", "ROLE_STATION");
+
+    private void assertCanViewBooking(Booking booking, Authentication authentication) {
+        boolean isStaff = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(STAFF_AUTHORITIES::contains);
+        if (isStaff) {
+            return;
+        }
+        Object rawPrincipal = authentication.getPrincipal();
+        if (rawPrincipal instanceof UserPrincipal userPrincipal
+                && booking.getCustomer() != null
+                && booking.getCustomer().getId().equals(userPrincipal.getUser().getId())) {
+            return;
+        }
+        throw new AccessDeniedException("Vous n'avez pas accès à cette réservation.");
     }
 
     @GetMapping(path = "")

@@ -18,6 +18,20 @@ public final class MobiliApiPaths {
     /** Catalogue trajets, canal public, QR chauffeur. */
     public static final String TRIPS = "/trips";
     public static final String TRIPS_GLOB = TRIPS + "/**";
+    /**
+     * Détail d'un trajet précis ({@code GET /trips/{id}}) — segment unique et purement numérique,
+     * donc ne capture ni {@code /trips/search}, {@code /trips/cities}, {@code /trips/countries}
+     * ni {@code /trips/my-trips} (non numériques), ni {@code /trips/{id}/stops} ou {@code /eta}
+     * (segments supplémentaires). Isolé de {@link #TRIPS_GLOB} pour exiger une authentification
+     * dessus spécifiquement : contrairement à {@code /trips} (catalogue) et {@code /trips/search}
+     * qui doivent rester {@code permitAll()} (pages publiques indexables /trajets/**,
+     * recherche invité), cet endpoint renvoie l'identité (nom + photo) de l'organisateur
+     * covoiturage / chauffeur assigné — n'importe qui pouvait jusqu'ici la récupérer sans
+     * connexion en itérant simplement les ID dans l'URL (ex. /booking/trip/29). Les seuls
+     * usages frontend de cet endpoint (booking-trip, covoiturage-edit, trip-edit partenaire)
+     * sont déjà des écrans authentifiés.
+     */
+    public static final String TRIPS_DETAIL = TRIPS + "/{id:[0-9]+}";
     public static final String TRIPS_CHAUFFEUR = TRIPS + "/chauffeur/**";
     public static final String TRIPS_WILD_DRIVER = TRIPS + "/*/driver/**";
     public static final String TRIPS_WILD_CHANNEL_MESSAGES = TRIPS + "/*/channel/messages";

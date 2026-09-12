@@ -84,7 +84,26 @@ public class TripReadController {
         TransportType tt = parseTransportType(transportType);
         return tripService.findAllUpcoming(tt).stream()
                 .map(this::toDtoWithNextStop)
+                .peek(TripReadController::stripPublicOrganizerAndChauffeurIdentity)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Retire l'identité (nom, prénom, photo) de l'organisateur covoiturage / chauffeur assigné
+     * des réponses accessibles sans authentification (catalogue {@code GET /trips}, recherche
+     * {@code GET /trips/search} — y compris les pages indexables /trajets/** qui appellent ce
+     * dernier). Corrige une fuite de données personnelles : n'importe qui pouvait jusqu'ici
+     * scraper nom + photo d'un chauffeur en itérant simplement les trajets, sans compte. Le détail
+     * d'un trajet précis ({@code GET /trips/{id}}, désormais authentifié — voir
+     * MobiliApiPaths.TRIPS_DETAIL) continue lui de renvoyer ces champs, seul contexte légitime
+     * (un utilisateur connecté qui consulte/réserve CE trajet).
+     */
+    private static void stripPublicOrganizerAndChauffeurIdentity(TripResponseDTO dto) {
+        dto.setCovoiturageOrganizerFirstname(null);
+        dto.setCovoiturageOrganizerLastname(null);
+        dto.setCovoiturageOrganizerDriverPhotoUrl(null);
+        dto.setAssignedChauffeurFirstname(null);
+        dto.setAssignedChauffeurLastname(null);
     }
 
     /** Catalogue voyageur : "En route vers X" pour les trajets déjà partis. */
@@ -160,6 +179,7 @@ public class TripReadController {
 
         return results.stream()
                 .map(this::toDtoWithNextStop)
+                .peek(TripReadController::stripPublicOrganizerAndChauffeurIdentity)
                 .collect(Collectors.toList());
     }
 

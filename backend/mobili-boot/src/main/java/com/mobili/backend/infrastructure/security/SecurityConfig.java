@@ -93,6 +93,13 @@ public class SecurityConfig {
                                                                 "ROLE_STATION")
                                                 .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_CHAUFFEUR)
                                                 .hasAnyAuthority("ROLE_CHAUFFEUR", "ROLE_ADMIN")
+                                                // Détail d'un trajet (nom + photo organisateur covoiturage /
+                                                // chauffeur assigné inclus dans la réponse) : doit être authentifié,
+                                                // contrairement au catalogue/recherche ci-dessous. Règle plus
+                                                // spécifique que TRIPS_GLOB, donc déclarée avant lui (premier match
+                                                // gagnant chez Spring Security). Voir Javadoc de TRIPS_DETAIL.
+                                                .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS_DETAIL)
+                                                .authenticated()
                                                 .requestMatchers(HttpMethod.GET, MobiliApiPaths.TRIPS,
                                                                 MobiliApiPaths.TRIPS_GLOB)
                                                 .permitAll()
