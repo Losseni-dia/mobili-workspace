@@ -1,12 +1,12 @@
-<div class="results-page" data-testid="city-pair-landing-page">
+<div class="home-page" data-testid="city-pair-landing-page">
   @if (invalidRoute) {
-  <div class="search-info">
+  <section class="trips-section container">
     <h2>Liaison non disponible</h2>
     <p>Cette liaison n'est pas encore proposée par Mobili.</p>
     <a routerLink="/">← Retour à l'accueil</a>
-  </div>
+  </section>
   } @else {
-  <div class="search-info">
+  <section class="trips-section container">
     <h2 data-testid="city-pair-landing-heading">
       {{ fromCity?.name }} → {{ toCity?.name }}
     </h2>
@@ -14,77 +14,97 @@
       Trajets bus, car et covoiturage entre {{ fromCity?.name }} et {{ toCity?.name }} —
       réservez en ligne avec Mobili.
     </p>
-  </div>
 
-  @if (error) {
-  <p class="error-banner">{{ error }}</p>
-  }
-
-  <div class="trips-list">
-    @if (!error && trips.length === 0) {
-    <div class="empty-state">
-      <p>Aucun trajet disponible pour le moment sur cette liaison. Revenez bientôt.</p>
-    </div>
+    @if (error) {
+    <p class="error-banner">{{ error }}</p>
     }
 
-    @for (trip of trips; track trip.id) {
-    <div class="trip-card" data-testid="city-pair-landing-trip-card">
-      <div class="trip-main">
-        <div class="time-box">
-          <span class="time">{{ trip.departureDateTime | date : 'HH:mm' }}</span>
-          <span class="city">{{ trip.departureCity }}</span>
+    <div class="trips-grid">
+      @for (trip of trips; track trip.id) {
+      <div class="trip-card" data-testid="city-pair-landing-trip-card">
+        <div class="trip-image">
+          <div class="trip-image__inner">
+            @if (trip.vehicleImageUrl) {
+            <img
+              class="trip-image__media"
+              [src]="tripVehicleImageSrc(trip.vehicleImageUrl)"
+              (error)="$any($event.target).src = 'assets/images/default-vehicle.svg'"
+              [alt]="buildVehicleAltText(trip)"
+              loading="lazy" />
+            } @else {
+            <div class="placeholder-img" aria-hidden="true">🚌</div>
+            }
+          </div>
         </div>
 
-        <div class="duration-indicator">
-          <div class="line"></div>
-          <span class="icon">🚌</span>
-        </div>
+        <div class="trip-details">
+          <div class="route-header">
+            <span class="city">{{ trip.departureCity }}</span>
+            <span class="arrow">➔</span>
+            <span class="city">{{ trip.arrivalCity }}</span>
+          </div>
 
-        <div class="time-box">
-          <span class="route-terminus">{{ trip.arrivalCity }}</span>
-          <span class="city">Arrivée</span>
-        </div>
-      </div>
+          <div class="time-info">
+            📅 {{ trip.departureDateTime | date : 'dd MMM' }} à
+            <strong>{{ trip.departureDateTime | date : 'HH:mm' }}</strong>
+          </div>
 
-      <div class="trip-meta">
-        <span>{{ trip.departureDateTime | date : 'EEE d MMM' }}</span>
-        @if (trip.boardingPoint) {
-        <span>· 📍 {{ trip.boardingPoint }}</span>
-        }
-        @if (isTripInProgress(trip.status)) {
-        <span class="trip-in-progress">🚌 {{ tripInProgressLabel(trip.nextStopCity) }}</span>
-        }
-      </div>
-
-      <div class="trip-details">
-        <div class="partner">
-          @if (trip.transportType === 'COVOITURAGE') {
-          <span class="tt-badge tt-badge--pool">Covoiturage</span>
-          } @else {
-          <span class="tt-badge">Transport public</span>
+          @if (trip.boardingPoint) {
+          <div class="boarding-info">
+            <span class="pin-icon">📍</span>
+            <strong>{{ trip.boardingPoint }}</strong>
+          </div>
           }
-          <strong>{{ trip.partnerName }}</strong>
-          <span>{{ formatVehicleType(trip.vehicleType) }}</span>
+
+          @if (isTripInProgress(trip.status)) {
+          <div class="trip-in-progress">
+            🚌 {{ tripInProgressLabel(trip.nextStopCity) }}
+          </div>
+          }
+
+          @if (trip.moreInfo) {
+          <div class="stops-container">
+            @for (stop of trip.moreInfo.split(','); track stop) {
+            <span class="stop-badge">{{ stop.trim() }}</span>
+            }
+          </div>
+          }
+
+          <div class="partner-info">
+            <span class="vehicle-type">{{ formatVehicleType(trip.vehicleType) }}</span>
+            <span class="dot">•</span>
+            <span class="company">{{ trip.partnerName }}</span>
+          </div>
         </div>
-        <div class="pricing">
-          <span class="seats" [class.low]="trip.availableSeats < 5">
+
+        <div class="trip-action">
+          <div class="price-tag">{{ listPrice(trip) | number }} <span>FCFA</span></div>
+
+          <div class="seats-left" [class.low]="trip.availableSeats < 5">
             @if (trip.availableSeats > 0) {
             {{ trip.availableSeats }} places restantes
             } @else {
-            Complet
+            <span class="sold-out">Complet</span>
             }
-          </span>
-          <span class="price">{{ listPrice(trip) | number }} FCFA</span>
+          </div>
+
+          <button
+            type="button"
+            class="btn-book"
+            (click)="openBooking(trip)"
+            [disabled]="trip.availableSeats === 0">
+            Réserver
+          </button>
         </div>
       </div>
-
-      @if (trip.availableSeats > 0) {
-      <a class="btn-book" [routerLink]="['/booking/trip', trip.id]">Réserver</a>
-      } @else {
-      <span class="btn-book btn-book--soldout">Complet</span>
       }
     </div>
+
+    @if (!error && trips.length === 0) {
+    <div class="no-results">
+      <p>Aucun trajet disponible pour le moment sur cette liaison. Revenez bientôt. 🚌</p>
+    </div>
     }
-  </div>
+  </section>
   }
 </div>

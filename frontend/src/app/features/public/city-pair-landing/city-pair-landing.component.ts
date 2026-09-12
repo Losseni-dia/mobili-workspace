@@ -1,6 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Trip } from '../../../core/services/trip/trip.service';
@@ -10,7 +10,8 @@ import { isTripInProgress, tripInProgressLabel } from '../../../core/utils/trip-
 import { SeoService } from '../../../core/services/seo/seo.service';
 import { TripLandingCity, findCityBySlug } from '../../../core/constants/trip-landing-cities';
 import { CityPairTripsResult } from './city-pair-landing.resolver';
-import { DestroyRef } from '@angular/core';
+import { ConfigurationService } from '../../../configurations/services/configuration.service';
+import { AuthService } from '../../../core/services/auth/auth.service';
 
 const SITE_ORIGIN = 'https://www.my-mobili.com';
 
@@ -25,18 +26,25 @@ const SITE_ORIGIN = 'https://www.my-mobili.com';
  * Données chargées via un resolver de route (city-pair-landing.resolver.ts), pas un fetch dans
  * ngOnInit — c'est le resolver, pas `PendingTasks`, qui garantit que RenderMode.Server sérialise
  * le HTML avec les vraies données (voir commentaire du resolver pour l'historique du bug trouvé).
+ *
+ * Gabarit de carte trajet repris à l'identique de HomeComponent (catalogue accueil) — retour
+ * utilisateur explicite préférant ce design (image véhicule, badges arrêts) à celui, plus sobre,
+ * de SearchResultsComponent utilisé dans une première version de cette page.
  */
 @Component({
   selector: 'app-city-pair-landing',
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './city-pair-landing.component.html',
-  styleUrl: '../search-results/search-results.component.scss',
+  styleUrl: '../home/home.component.scss',
 })
 export class CityPairLandingComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly seo = inject(SeoService);
+  private readonly configuration = inject(ConfigurationService);
+  private readonly authService = inject(AuthService);
 
   fromCity: TripLandingCity | null = null;
   toCity: TripLandingCity | null = null;
@@ -50,6 +58,24 @@ export class CityPairLandingComponent implements OnInit {
   formatVehicleType = formatVehicleTypeLabel;
   isTripInProgress = isTripInProgress;
   tripInProgressLabel = tripInProgressLabel;
+
+  /** URL finale photo véhicule — alignée sur l'origine de l'API (pas `localhost` en dur). */
+  tripVehicleImageSrc(tripVehiclePath: string | null | undefined): string {
+    return this.configuration.resolveUploadMediaUrl(tripVehiclePath ?? null) ?? '';
+  }
+
+  buildVehicleAltText(trip: Trip): string {
+    const vehicle = this.formatVehicleType(trip.vehicleType);
+    return `Véhicule ${vehicle} — trajet ${trip.departureCity} → ${trip.arrivalCity}`;
+  }
+
+  openBooking(trip: Trip): void {
+    if (!this.authService.currentUser()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+    this.router.navigate(['/booking/trip', trip.id]);
+  }
 
   ngOnInit(): void {
     this.route.data.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
