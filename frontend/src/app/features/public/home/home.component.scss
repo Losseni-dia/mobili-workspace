@@ -569,7 +569,12 @@
           border-radius: variables.$radius-md;
           border: 1.5px solid variables.$gray-200;
           background: variables.$white;
-          color: variables.$gray-400;
+          // Contraste insuffisant avec $gray-400 (#94a3b8 sur blanc = ratio ~2.6:1, sous le
+          // minimum WCAG AA de 4.5:1) — trouvé via audit Lighthouse (accessibilité 77/100,
+          // "couleurs d'arrière-plan et de premier plan pas suffisamment contrastées" sur les
+          // overlays "Quand ?" / "Public ou Covoiturage ?" en mobile). $gray-600 (#475569) donne
+          // ~7.6:1, largement conforme.
+          color: variables.$gray-600;
           font-size: 0.88rem;
           pointer-events: none;
         }

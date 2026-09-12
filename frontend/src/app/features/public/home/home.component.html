@@ -11,9 +11,10 @@
     <div class="search-card">
         <form class="search-form" [formGroup]="searchForm">
             <div class="input-block">
-                <label>Départ</label>
+                <label for="home-search-departure">Départ</label>
                 <div class="city-field">
                     <input
+                        id="home-search-departure"
                         type="text"
                         formControlName="departure"
                         placeholder="D'où partez-vous ?"
@@ -35,9 +36,10 @@
             </div>
 
             <div class="input-block">
-                <label>Arrivée</label>
+                <label for="home-search-arrival">Arrivée</label>
                 <div class="city-field">
                     <input
+                        id="home-search-arrival"
                         type="text"
                         formControlName="arrival"
                         placeholder="Où allez-vous ?"
@@ -59,9 +61,9 @@
             </div>
 
             <div class="input-block input-block--date">
-                <label>Date</label>
+                <label for="home-search-date">Date</label>
                 <div class="date-field">
-                    <input type="date" formControlName="date">
+                    <input id="home-search-date" type="date" formControlName="date">
                     @if (!searchForm.get('date')?.value) {
                         <span class="date-field__placeholder">Quand ?</span>
                     }
@@ -69,9 +71,9 @@
             </div>
 
             <div class="input-block input-block--transport">
-                <label>Type de transport</label>
+                <label for="home-search-transport-type">Type de transport</label>
                 <div class="select-field">
-                    <select formControlName="transportType">
+                    <select id="home-search-transport-type" formControlName="transportType">
                         <option value="">Tous</option>
                         <option value="PUBLIC">Transport public</option>
                         <option value="COVOITURAGE">Covoiturage</option>
