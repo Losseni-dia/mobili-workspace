@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { cityPairTripsResolver } from './features/public/city-pair-landing/city-pair-landing.resolver';
+import { searchResultsResolver } from './features/public/search-results/search-results.resolver';
 import { authGuard } from './core/guard/auth.guard';
 import { adminGuard } from './core/guard/admin.guard';
 import { chauffeurGuard } from './core/guard/chauffeur.guard';
@@ -20,6 +22,19 @@ export const routes: Routes = [
       import('./features/public/search-results/search-results.component').then(
         (m) => m.SearchResultsComponent,
       ),
+    resolve: { result: searchResultsResolver },
+    // Défaut du Router : les resolvers ne se relancent pas sur un simple changement de query
+    // params (seulement au premier chargement de la route) — indispensable ici puisque cette
+    // page ne change jamais de path, seulement ses query params (nouvelle recherche).
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
+  },
+  {
+    path: 'trajets/:from/:to',
+    loadComponent: () =>
+      import('./features/public/city-pair-landing/city-pair-landing.component').then(
+        (m) => m.CityPairLandingComponent,
+      ),
+    resolve: { result: cityPairTripsResolver },
   },
   {
     path: 'cgu',

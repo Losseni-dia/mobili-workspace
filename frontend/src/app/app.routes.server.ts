@@ -23,6 +23,12 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'auth/register-carpool-chauffeur', renderMode: RenderMode.Prerender },
 
   { path: 'search-results', renderMode: RenderMode.Server },
+  // Pages de trajets indexables (backlog SEO section 2bis) — contenu réel interrogé en direct au
+  // backend à chaque requête (jamais de données figées/fausses). Première route paramétrée en
+  // RenderMode.Server sur ce projet (jusqu'ici seul search-results, un chemin littéral) — l'API
+  // Angular documente le support des segments `:param`, vérifié après implémentation via un build
+  // + un test manuel (voir docs/GUIDE-SEO-SSR-ANGULAR.md).
+  { path: 'trajets/:from/:to', renderMode: RenderMode.Server },
 
   { path: 'my-account/**', renderMode: RenderMode.Client },
   { path: 'partenaire/**', renderMode: RenderMode.Client },

@@ -1,24 +1,19 @@
-<div class="results-page" data-testid="search-results-page">
+<div class="results-page" data-testid="city-pair-landing-page">
+  @if (invalidRoute) {
   <div class="search-info">
-    <h2 data-testid="search-results-heading">
-      @if (searchParams.departure || searchParams.arrival) {
-      {{ searchParams.departure || '…' }} → {{ searchParams.arrival || '…' }}
-      } @else {
-      Résultats de recherche
-      }
+    <h2>Liaison non disponible</h2>
+    <p>Cette liaison n'est pas encore proposée par Mobili.</p>
+    <a routerLink="/">← Retour à l'accueil</a>
+  </div>
+  } @else {
+  <div class="search-info">
+    <h2 data-testid="city-pair-landing-heading">
+      {{ fromCity?.name }} → {{ toCity?.name }}
     </h2>
-    @if (searchParams.date) {
-    <p>{{ searchParams.date | date : 'fullDate' }}</p>
-    }
-    @if (searchParams.transportType) {
-    <p class="search-transport">
-      @switch (searchParams.transportType) {
-        @case ('COVOITURAGE') { Covoiturage uniquement }
-        @case ('PUBLIC') { Transport public uniquement }
-        @default { {{ searchParams.transportType }} }
-      }
+    <p>
+      Trajets bus, car et covoiturage entre {{ fromCity?.name }} et {{ toCity?.name }} —
+      réservez en ligne avec Mobili.
     </p>
-    }
   </div>
 
   @if (error) {
@@ -28,12 +23,12 @@
   <div class="trips-list">
     @if (!error && trips.length === 0) {
     <div class="empty-state">
-      <p>Aucun trajet trouvé pour cette recherche.</p>
+      <p>Aucun trajet disponible pour le moment sur cette liaison. Revenez bientôt.</p>
     </div>
     }
 
     @for (trip of trips; track trip.id) {
-    <div class="trip-card" data-testid="search-results-trip-card">
+    <div class="trip-card" data-testid="city-pair-landing-trip-card">
       <div class="trip-main">
         <div class="time-box">
           <span class="time">{{ trip.departureDateTime | date : 'HH:mm' }}</span>
@@ -52,9 +47,7 @@
       </div>
 
       <div class="trip-meta">
-        @if (!searchParams.date) {
         <span>{{ trip.departureDateTime | date : 'EEE d MMM' }}</span>
-        }
         @if (trip.boardingPoint) {
         <span>· 📍 {{ trip.boardingPoint }}</span>
         }
@@ -93,4 +86,5 @@
     </div>
     }
   </div>
+  }
 </div>
