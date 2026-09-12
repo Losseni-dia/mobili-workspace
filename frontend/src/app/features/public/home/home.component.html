@@ -99,7 +99,7 @@
                             class="trip-image__media"
                             [src]="tripVehicleImageSrc(trip.vehicleImageUrl)"
                             (error)="$any($event.target).src = 'assets/images/default-vehicle.svg'"
-                            alt="Photo du véhicule"
+                            [alt]="buildVehicleAltText(trip)"
                             loading="lazy" />
                         } @else {
                         <div class="placeholder-img" aria-hidden="true">🚌</div>

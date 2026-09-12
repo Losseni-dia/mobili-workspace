@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
+import { SeoService } from '../../../core/services/seo/seo.service';
 
 /** Miroir de la contrainte backend `RegisterCarpoolChauffeurDTO.idValidUntil` (`@Future`). */
 function futureDateValidator(): ValidatorFn {
@@ -24,15 +25,24 @@ function futureDateValidator(): ValidatorFn {
   templateUrl: './register-carpool-chauffeur.component.html',
   styleUrls: ['./register-carpool-chauffeur.component.scss'],
 })
-export class RegisterCarpoolChauffeurComponent {
+export class RegisterCarpoolChauffeurComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private readonly seo = inject(SeoService);
 
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   showPassword = signal(false);
   showConfirmPassword = signal(false);
+
+  ngOnInit(): void {
+    this.seo.setPageSeo({
+      title: 'Devenir chauffeur covoiturage — Mobili',
+      description: 'Inscrivez-vous comme chauffeur covoiturage sur Mobili et proposez vos trajets aux voyageurs en Afrique de l’Ouest.',
+      canonicalPath: '/auth/register-carpool-chauffeur',
+    });
+  }
 
   togglePassword() {
     this.showPassword.update((v) => !v);

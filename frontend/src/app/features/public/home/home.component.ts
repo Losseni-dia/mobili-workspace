@@ -193,6 +193,15 @@ export class HomeComponent implements OnInit {
   isTripInProgress = isTripInProgress;
   tripInProgressLabel = tripInProgressLabel;
 
+  /**
+   * Alt text descriptif par trajet — avant, "Photo du véhicule" identique pour toutes les
+   * cartes (mauvais pour l'accessibilité et le SEO image), sans lien avec le trajet affiché.
+   */
+  buildVehicleAltText(trip: Trip): string {
+    const vehicle = this.formatVehicleType(trip.vehicleType);
+    return `Véhicule ${vehicle} — trajet ${trip.departureCity} → ${trip.arrivalCity}`;
+  }
+
   resetFilter(): void {
     this.searchForm.reset({ departure: '', arrival: '', date: '', transportType: '' });
     this.loadAllTrips();

@@ -28,9 +28,14 @@ const SITEMAP_ROUTES = [
   { path: 'confidentialite', changefreq: 'yearly', priority: '0.3' },
 ];
 
+// Date du jour (build), pas une date par page réelle — suffisant pour des pages quasi-statiques,
+// évite de maintenir une date de dernière modification à la main pour chaque route.
+const LASTMOD = new Date().toISOString().slice(0, 10);
+
 const urlsXml = SITEMAP_ROUTES.map(
   ({ path: p, changefreq, priority }) => `  <url>
     <loc>${SITE_ORIGIN}/${p}</loc>
+    <lastmod>${LASTMOD}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`,

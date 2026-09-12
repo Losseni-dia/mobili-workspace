@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import legalContent from '../cgu-content.json';
+import { SeoService } from '../../../core/services/seo/seo.service';
 
 interface LegalSection {
   number: string;
@@ -29,7 +30,25 @@ interface LegalSection {
   templateUrl: './cgu.component.html',
   styleUrl: './cgu.component.scss',
 })
-export class CguComponent {
+export class CguComponent implements OnInit {
+  private readonly seo = inject(SeoService);
+
   readonly version = legalContent.version;
   readonly sections: LegalSection[] = legalContent.sections;
+
+  ngOnInit(): void {
+    this.seo.setPageSeo({
+      title: "Conditions générales d'utilisation — Mobili",
+      description:
+        "Conditions générales d'utilisation de Mobili : réservation de trajets bus, car et covoiturage en Afrique de l'Ouest.",
+      canonicalPath: '/cgu',
+    });
+    this.seo.setStructuredData({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: "Conditions générales d'utilisation — Mobili",
+      url: 'https://www.my-mobili.com/cgu',
+      isPartOf: { '@type': 'WebSite', name: 'Mobili', url: 'https://www.my-mobili.com' },
+    });
+  }
 }

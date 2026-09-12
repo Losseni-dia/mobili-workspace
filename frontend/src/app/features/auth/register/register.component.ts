@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ImagePanDirective } from '../../../shared/directives/image-pan.directive';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
+import { SeoService } from '../../../core/services/seo/seo.service';
 
 @Component({
   selector: 'app-register',
@@ -19,6 +20,7 @@ export class RegisterComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private readonly seo = inject(SeoService);
 
   /** Renseigné via ?returnUrl= (ex. flux société → partenaire). */
   returnUrl: string | null = null;
@@ -49,6 +51,11 @@ export class RegisterComponent implements OnInit {
   imageZoom = signal(1);
 
   ngOnInit(): void {
+    this.seo.setPageSeo({
+      title: 'Créer un compte — Mobili',
+      description: 'Créez votre compte Mobili pour réserver et gérer vos trajets bus, car et covoiturage en Afrique de l’Ouest.',
+      canonicalPath: '/auth/inscription',
+    });
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
   }
 

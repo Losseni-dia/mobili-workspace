@@ -8,6 +8,7 @@ import { MOBILI_APP_KIND, type MobiliAppKind } from '../../../core/config/mobili
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { extractApiErrorMessage } from '../../../core/utils/api-error.util';
+import { SeoService } from '../../../core/services/seo/seo.service';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ export class LoginComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private configuration = inject(ConfigurationService);
+  private readonly seo = inject(SeoService);
   /** Public (pas private) : le template distingue l'habillage pro (bleu + logo) du voyageur. */
   readonly appKind = inject<MobiliAppKind>(MOBILI_APP_KIND);
 
@@ -32,6 +34,12 @@ export class LoginComponent implements OnInit {
   postRegisterHint = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.seo.setPageSeo({
+      title: 'Connexion — Mobili',
+      description: 'Connectez-vous à votre compte Mobili pour réserver vos trajets bus, car et covoiturage en Afrique de l’Ouest.',
+      canonicalPath: '/auth/login',
+    });
+
     const reg = this.route.snapshot.queryParamMap.get('registered');
     if (reg === 'carpool') {
       this.postRegisterHint.set(
