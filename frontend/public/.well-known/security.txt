@@ -1,0 +1,4 @@
+Contact: mailto:losdiakite@gmail.com
+Expires: 2027-09-12T00:00:00.000Z
+Preferred-Languages: fr
+Canonical: https://www.my-mobili.com/.well-known/security.txt
